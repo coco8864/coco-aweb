@@ -1,6 +1,6 @@
 #summary 動作確認しているブラウザ一覧
 
- 動作確認したブラウザと動作時のメモを記載します。
+ 動作確認ブラウザと動作時のメモを記載します。
 
  = <img src='http://www.google.com/images/icons/product/chrome-16.png'>Googole Chrome =
   * 10.0.648.204
