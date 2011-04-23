@@ -1,0 +1,148 @@
+<script type="text/javascript">
+##使用しない
+function setBroadcaster(){
+ ph.admin.doCommand('setBroadcaster',{
+  interval:ph.jQuery("#broardcastInterval").val()
+  },
+  function(x){
+##setTimeouts完了
+  });
+}
+
+function updateStastics(msg){
+	var stcs=msg.message;
+	ph.jQuery("#broadcasterTime").text(ph.admin.formatYmdhms(msg.time)+"("+ stcs.counter +")");
+	var memory=stcs.memory;
+	var useRate=(memory.max-memory.free)*100.0/memory.max;
+	ph.jQuery("#broadcasterMemory").text(memory.free +"/" +memory.max+"("+ useRate.toFixed(2) +"%)");
+	
+	var channelStastics=stcs.channelStastics;
+	ph.jQuery("#broadcasterIo").text(
+				channelStastics.asyncAcceptCount +":" +
+				channelStastics.onAcceptedCount +":" +
+				channelStastics.onConnectedCount +":" +
+				channelStastics.asyncReadCount +"(" +
+				channelStastics.onReadLength +"):" +
+				channelStastics.asyncWriteCount +"(" +
+				channelStastics.asyncWriteLength +")" );
+	var selectorStasticses=stcs.selectorStasticses;
+	var selectText="";
+	for(var i=0;i<selectorStasticses.length;i++){
+		var s=selectorStasticses[i];
+		selectText+=s.loopCount +"(" + s.selectCount +"):";
+	}
+	ph.jQuery("#broadcasterSelector").text(
+				selectText
+				);
+//ph.dump(selectorStasticses[0]);
+	var storeStack=stcs.storeStack;
+	ph.jQuery("#broadcasterStore").text(storeStack.join(":"));
+
+	var channelContext=stcs.channelContext;
+	var cur=(channelContext.instance-channelContext.pool-channelContext.gc);
+	ph.jQuery("#broadcasterChannel").text(cur+"("+channelContext.total +")");
+	var requestContext=stcs.requestContext;
+	cur=(requestContext.instance-requestContext.pool-requestContext.gc);
+	ph.jQuery("#broadcasterRequest").text(cur+"("+requestContext.total +")");
+
+	var authSession=stcs.authSession;
+	cur=(authSession.instance-authSession.pool-authSession.gc);
+	ph.jQuery("#broadcasterSession").text(cur+"("+authSession.total +")");
+
+	if(!isWatchCheck()){
+		unwatchStastics();
+	}
+}
+
+function watchStastics(){
+	ph.queue.subscribeByName("PhStastics","$esc.javascript($loginUser.loginId)",{
+		onMessage:updateStastics,
+		onError:function(msg){ph.log("subscribeByName error.PhStastics")}
+	},false,null);
+}
+
+function unwatchStastics(){
+	ph.queue.unsubscribe("PhStastics");
+}
+
+
+function isWatchCheck(){
+	return ph.jQuery('#broardcastWatchCheck').attr('checked');
+}
+function setWatchCheck(checked){
+}
+
+function onWatchCheck(){
+	if(isWatchCheck()){
+		watchStastics();
+		sessionStorage['broardcastWatch']='true';
+	}else{
+		sessionStorage['broardcastWatch']='false';
+	}
+}
+
+ph.jQuery(function() {
+	ph.jQuery('#terminateBt').bind('click',terminate);
+	watchStastics();//起動後一回は必ず取得する
+	if(ph.isUseSessionStorage && sessionStorage['broardcastWatch']=='true'){
+		ph.jQuery('#broardcastWatchCheck').attr('checked','checked');
+	}else{
+		ph.jQuery('#broardcastWatchCheck').attr('checked','');
+	}
+});
+
+function terminate(){
+	ph.queue.end();
+	ph.jQuery('#terminateH2').text('停止処理中... 再起動後リロードしてください');
+	ph.jQuery('#terminateBt').val('reload');
+	ph.jQuery('#terminateBt').unbind();
+	ph.jQuery('#terminateBt').bind('click',function(){location.reload();});
+	ph.admin.doCommand('terminate');//terminalするとレスポンスも途切れてしまう。
+}
+
+function phlog(){
+	ph.jQuery('#phlogNumber').val(ph.jQuery('#phlogNumberSelect').val());
+	ph.jQuery('#phlogDownloadForm').submit();
+}
+</script> 
+<H1>動作状況</H1>
+
+<Hr/>
+<H2>状態:<span id='terminateH2'>起動</span></H2>
+<input id='terminateBt' type="button" value="Phantom Proxy 停止" />
+
+<Hr/>
+<H2>統計情報</H2>
+監視<input type="checkBox" id="broardcastWatchCheck" onclick='onWatchCheck();'/>
+interval:$!esc.html($!{config.getString('broardcastInterval')})ms
+<input type="button" onclick="ph.admin.doCommand('checkPool');" value="PoolCheck" title="結果は、ph.logに出力されます"/>
+##interval:<input type="text" id="broardcastInterval" size="8" value="$!esc.html($!{config.getString('broardcastInterval')})"/>ms<input type="button" value="設定" onclick="setBroadcaster();" />
+<table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
+<thead>
+<tr><th>name</th><th>value</th></tr>
+</thead>
+<tr><td>time(count)</td><td id="broadcasterTime">-</td></tr>
+<tr><td>freeMemory/maxMemory(useRate)</td><td id="broadcasterMemory">取得中</td></tr>
+<tr><td>select,accept,connect,read(length),write(length)</td><td id="broadcasterIo">-</td></tr>
+<tr><td>selector</td><td id="broadcasterSelector">-</td></tr>
+<tr><td>store</td><td id="broadcasterStore">-</td></tr>
+<tr><td>channel(total-instance)</td><td id="broadcasterChannel">-</td></tr>
+<tr><td>request(total-instance)</td><td id="broadcasterRequest">-</td></tr>
+<tr><td>session(total-instance)</td><td id="broadcasterSession">-</td></tr>
+</table>
+
+<Hr/>
+<H2>ph.log</H2>
+履歴:<select id="phlogNumberSelect" size="1">
+<option value="0"></option>
+<option value="1">1</option>
+<option value="2">2</option>
+<option value="3">3</option>
+<option value="4">4</option>
+<option value="5">5</option>
+<option value="6">6</option>
+<option value="7">7</option>
+<option value="8">8</option>
+<option value="9">9</option>
+</select>
+<input type="button" value="download" onclick="phlog();" />

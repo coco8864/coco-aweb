@@ -1,0 +1,10 @@
+<html>
+<head>
+<script type='text/javascript'><!--
+location='$esc.javascript(${config.PublicWebUrl})';
+--></script>
+</head>
+<body>
+webAuth.vsp
+</body>
+</html>

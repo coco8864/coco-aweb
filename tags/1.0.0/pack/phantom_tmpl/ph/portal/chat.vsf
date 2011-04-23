@@ -1,0 +1,63 @@
+<H1>Chat操作</H1>
+<div id="queueInfo"></div>
+<hr/>
+<p>入力
+<input type="button" value="送信" onclick="onChatSend();"/>
+<input type="button" value="who" onclick="ph.queue.listUsers('phChat');"/>
+<input type="reset" value="クリア" onclick="jQuery('#chatInputTextArea').val('');"/>
+<input type="checkBox" value="echoback" id="chatEchoback" checked="checked">echoback</input></p>
+<textarea id="chatInputTextArea" rows="10" cols="80">
+</textarea><br/>
+<p>出力
+<input type="button" value="クリア" onclick="jQuery('#chatOutputTextArea').val('');"/></p>
+<textarea id="chatOutputTextArea" rows="10" cols="80" readonly="readonly">
+</textarea>
+<script type="text/javascript"> 
+jQuery("#chatInputTextArea").resizable({
+	handles: "se"
+});
+jQuery("#chatOutputTextArea").resizable({
+	handles: "se"
+});
+
+function onChatSend(){
+	ph.queue.publish('phChat',//queue名
+			jQuery('#chatInputTextArea').val(),//message
+			jQuery('#chatEchoback').attr('checked'));//echoback可否
+	jQuery('#chatInputTextArea').val('');
+}
+ph.queue.subscribeByName("phChat","$loginUser.getLoginId()",{
+	onMessage:function(msg){
+##chat画面を表示していない可能性がある
+			var outputArea=jQuery('#chatOutputTextArea');
+			if(outputArea.length==0){
+				return;
+			}
+			var addText=ph.dateFormat(ph.df_ymdhms,msg)+':'+msg.from +'>\n' +
+					msg.message+'\n';
+			var text=addText+outputArea.val();
+			outputArea.val(text);
+		},
+	onError:function(msg){ph.log("subscribeByName error.phChat")}
+	},true,"phChat");
+
+
+function queueInfo(){
+	var queueInfo;
+	if(!ph.queue.isAuth){
+		return "未認証"
+	}else{
+		queueInfo="接続中";
+	}
+	if(ph.isUseWebSocket){
+		queueInfo+=":WebSocket";
+	}else{
+		queueInfo+=":Polling("+ph.queue.interval+")";
+	}
+	if(ph.isUseSessionStorage){
+		queueInfo+=":SessionStorage";
+	}
+	return queueInfo;
+}
+jQuery('#queueInfo').text(queueInfo());
+</script>

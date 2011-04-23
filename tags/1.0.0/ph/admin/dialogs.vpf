@@ -1,0 +1,217 @@
+<script type="text/javascript"><!--
+function editSave(){
+	var textArea=ph.jQuery("#textEditTextArea");
+	if( textArea.attr("readonly") ){
+		alert('could not save');
+		jQuery('#textEdit').dialog('close');
+		return;
+	}
+	ph.jQuery("#traceSaveButton").removeAttr("disabled");
+	trace.isEdit=true;
+	var part=ph.jQuery("#textEditPart").text();
+	trace[part]=textArea.val();
+	trace[part+"Encode"]=ph.jQuery("#textEditEncode").val();
+	if(part=="requestHeader"){
+		ph.jQuery("#requestHeader").text(trace[part]);
+	}else if(part=="responseHeader"){
+		ph.jQuery("#responseHeader").text(trace[part]);
+	}
+	jQuery('#textEdit').dialog('close');
+}
+
+##stressダイアログから呼ばれる
+var doStressCb={
+	onComplete:function(msg){ph.log('doStress onComplete:');alert(msg.message);},
+	onError:function(msg){ph.log('doStress onError:');ph.dump(msg);},
+	onMessage:function(msg){ph.log('doStress onMessage:');ph.dump(msg);}
+};
+function doStress(){
+	ph.admin.doCommand('stress',{
+		name:ph.jQuery('#stressName').val(),
+		list:ph.jQuery('#stressAccessLogList').text(),
+		browserCount:ph.jQuery('#stressBrowserCount').val(),
+		loopCount:ph.jQuery('#loopCount').val(),
+		time:ph.jQuery('#stressTime').val(),//未使用
+		keepAlive:ph.jQuery('#stressKeepAlive').attr('checked'),
+		accessLog:ph.jQuery('#stressAccessLog').attr('checked'),
+		tesponseHeaderTrace:ph.jQuery('#stressTesponseHeaderTrace').attr('checked'),
+		tesponseBodyTrace:ph.jQuery('#stressTesponseBodyTrace').attr('checked')
+		},
+		function(chId){ph.queue.subscribeById(chId,doStressCb)});
+	ph.jQuery(".logIdCheck").attr("checked",false);
+}
+
+function reloadEditDialog(){
+//	var dialog=ph.jQuery("#textEdit");
+	var digest=ph.jQuery("#textEditDigest").val();
+	ph.jQuery("#textEditTextArea").val("");
+	var url="storeDownload?storeDigest="+encodeURIComponent(digest);
+	var encode=ph.jQuery("#textEditEncode").val();
+	if(encode!=""){
+		url+="&encode="+encode;
+	}
+	if(ph.jQuery("#textEditGzip").attr("checked")){
+		url+="&zgip=true"
+	}
+	if(ph.jQuery("#textEditChunk").attr("checked")){
+		url+="&chunk=true"
+	}
+	ph.jQuery.get(url,null, function(text){
+		ph.jQuery("#textEditTextArea").val(text);
+	},"html");
+}
+
+function _openEditDialog(digest,id,requestLine,part,readonly,editText,encode){
+	ph.jQuery("#textEditChunk").attr("checked",false);
+	ph.jQuery("#textEditGzip").attr("checked",false);
+
+	ph.jQuery("#textEditDigest").val(digest);
+	ph.jQuery("#textEditEncode").val(encode);
+	ph.jQuery("#textEditId").text(id);
+	ph.jQuery("#textEditRequestLine").text(requestLine);
+	ph.jQuery("#textEditPart").text(part);
+	ph.jQuery("#textEditTextArea").val(editText);
+	ph.jQuery("#textEditTextArea").attr("readonly",readonly);
+
+	var dialog=jQuery("#textEdit");
+	dialog.dialog("option", "position", 'center');
+	dialog.dialog("open");
+}
+
+function openEditDialog(digest,id,requestLine,part,readonly){
+	
+	if(trace[part]!=null){
+		_openEditDialog(digest,id,requestLine,part,readonly,trace[part],trace[part+'Encode']);
+	}else{
+		ph.jQuery.get("storeDownload?storeDigest="+encodeURIComponent(digest),null, 
+			function(text){
+				_openEditDialog(digest,id,requestLine,part,readonly,text,"");
+		},"html");
+	}
+}
+
+// --></script>
+##イメージ表示用ダイアログ
+<div id="imageBox">
+<div>id:<span id="imageBoxId"></span></div>
+<div>requestLine:<span id="imageBoxRequestLine"></span></div>
+<img id="imageBoxImage">
+<div style="float:right"><input type="button" value="close" onClick="jQuery('#imageBox').dialog('close')"/></div>
+</div>
+
+##テキスト編集用ダイアログ
+<div id="textEdit">
+<div>id:<span id="textEditId"></span></div>
+<div>requestLine:<span id="textEditRequestLine"></span></div>
+<div>part:<span id="textEditPart"></span></div>
+<div><label for="textEditDigest">digest:</label><input type="text" id="textEditDigest" size="32"/></div>
+<div><label for="textEditChunk">chunk:</label><input type="checkBox" id="textEditChunk" /><label for="textEditGzip">gzip:</label><input type="checkBox" id="textEditGzip" /><label for="textEditEncode">encode:</label><input id="textEditEncode" type="text"/><input type="button" value="reload" onClick="reloadEditDialog();"></div>
+<textarea name="textEditTextArea" id="textEditTextArea" rows="24" cols="72" ></textarea>
+<div style="float:right"><input type="button" value="save" onClick="editSave();"/><input type="button" value="cancel" onClick="jQuery('#textEdit').dialog('close');"/></div>
+</div> 
+
+##負荷テスト用ダイアログ
+<div id="stress">
+accessLog list:<span id="stressAccessLogList"></span><br/>
+test name:<input id="stressName" type="text"><br/>
+browser count:<input id="stressBrowserCount" type="text"><br/>
+loop count:<input id="loopCount" type="text"><br/>
+<!--time(s):<input id="stressTime" type="text"><br/> -->
+keepAlive:<input id="stressKeepAlive" type="checkBox"><br/>
+accessLog:<input id="stressAccessLog" type="checkBox"><br/>
+responseHeaderTrace:<input id="stressTesponseHeaderTrace" type="checkBox"><br/>
+responseBodyTrace:<input id="stressTesponseBodyTrace" type="checkBox"><br/>
+<input type="button" value="ok" onClick='doStress()'>
+<input type="button" value="cancel" onClick="jQuery('#stress').dialog('close')">
+</div> 
+
+##mapping入力用ダイアログ
+<div id="mappingDialog">
+id:<span id="mappingId"></span>
+enable:<input id="mappingEnabled" type="checkBox"><br/>
+notes:<input id="mappingNotes" type="text" size="64"><br/>
+realHost:<input id="mappingRealHost" type="text" size="40"><br/>
+sourceType:<select id="mappingSourceType" size="1">
+<option value="PROXY">PROXY</option>
+<option value="WEB">WEB</option>
+<option value="WS">WS</option>
+</select><br/>
+secureType:<select id="mappingSecureType" size="1">
+<option value="PLAIN">PLAIN</option>
+<option value="SSL">SSL</option>
+</select><br/>
+sourceServer:<input id="mappingSourceServer" type="text" size="64"><br/>
+sourcePath:<input id="mappingSourcePath" type="text" size="64"><br/>
+destinationType:<select id="mappingDestinationType" size="1">
+<option value="HTTP">HTTP</option>
+<option value="HTTPS">HTTPS</option>
+<option value="FILE">FILE</option>
+<option value="HANDLER">HANDLER</option>
+</select><br/>
+destinationServer:<input id="mappingDestinationServer" type="text" size="64"><br/>
+destinationPath:<input id="mappingDestinationPath" type="text" size="64"><br/>
+roles:<input id="mappingRoles" type="text" size="64"><br/>
+options:<textArea id="mappingOptions"rows="4" cols="64"></textArea><br/>
+<input type="button" value="save" onClick='doMappingCommand("mappingUpdate");'>
+<input type="button" value="save new" onClick='doMappingCommand("mappingInsert");'>
+<input type="button" value="delete" onClick='doMappingCommand("mappingDelete");'>
+<input type="button" value="cancel" onClick="jQuery('#mappingDialog').dialog('close')">
+</div> 
+
+##realHost入力用ダイアログ
+<div id="realHostDialog">
+name:<input id="realHostName" type="text" size="40"><br/>
+init:<input id="realHostInitBind" type="checkBox"><br/>
+bindHost:<input id="realHostBindHost" type="text" size="40"><br/>
+bindPort:<input id="realHostBindPort" type="text" size="40"><br/>
+backlog:<input id="realHostBacklog" type="text" size="40"><br/>
+##virtualHosts:<input id="realHostVirtualHosts" type="text" size="40"><br/>virtualHostsは使われていない
+whiteIpPattern:<input id="realHostWhitePattern" type="text" size="50"><br/>
+blackIpPattern:<input id="realHostBlackPattern" type="text" size="50"><br/>
+<input type="button" value="save" onClick="realHostCreate()">
+<input  id="realHostDelete" type="button" value="delete" onClick="ph.admin.doObjCommand('realHost','realHostDelete',{name:ph.jQuery('#realHostName').val()},realHostList)">
+<input id="realHostBindButton" type="button" value="bind" onClick="ph.admin.doObjCommand('realHost','realHostBind',{name:ph.jQuery('#realHostName').val()},realHostList)">
+<input id="realHostUnbindButton" type="button" value="unbind" onClick="ph.admin.doObjCommand('realHost','realHostUnbind',{name:ph.jQuery('#realHostName').val()},realHostList)">
+<input type="button" value="cancel" onClick="jQuery('#realHostDialog').dialog('close')">
+</div> 
+
+##user入力用ダイアログ
+<div id="userDialog">
+<div class="userUpdateMode">
+id:<span id="userId"></span><br/>
+loginId:<span id="userLoginIdShow"></span><br/>
+</div>
+<div class="userInsertMode" style="display: none">
+loginId:<input id="userLoginIdEdit" type="text" size="64"><br/>
+</div>
+password1:<input id="userPassword1" type="password" size="64"><br/>
+password2:<input id="userPassword2" type="password" size="64"><br/>
+roles:<input id="userRoles" type="text" size="64"><br/>
+firstName:<input id="userFirstName" type="text" size="64"><br/>
+lastName:<input id="userLastName" type="text" size="64"><br/>
+footSize:<input id="userfootSize" type="text" size="16"><br/>
+##lastLogin:<span id="userlastLogin"><br/>一覧で見えてるから必要なし
+##changePass:<span id="userchangePass"><br/>
+##createDate:<span id="usercreateDate"><br/>
+<input type="button" value="save" onClick='doUserSave();'>
+<input type="button" value="delete" onClick='doUserDelete();' class="userUpdateMode">
+<input type="button" value="cancel" onClick="jQuery('#userDialog').dialog('close')">
+</div> 
+
+##commisionAuth入力用ダイアログ
+<div id="commissionAuthDialog">
+notes:<input id="commissionAuthNotes" size="64"><br/>
+type:<select id="commissionAuthType" size="1">
+<option value="basic">basic</option>
+<option value="form">form</option>
+</select><br/>
+realm:<input id="commissionAuthRealm" size="64"><br/>
+method:<select id="commissionAuthMethod" size="1">
+<option value="GET">GET</option>
+<option value="POST">POST</option>
+</select><br/>
+url:<input id="commissionAuthUrl" size="64"><br/>
+body:<input id="commissionAuthBody" size="64"><br/>
+<input type="button" value="save" onClick='addCommissionUrl();'>
+<input type="button" value="cancel" onClick="jQuery('#commissionAuthDialog').dialog('close')">
+</div> 
