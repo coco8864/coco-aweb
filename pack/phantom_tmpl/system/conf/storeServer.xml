@@ -1,0 +1,19 @@
+<?xml version="1.0" ?>
+<queueApp>
+  <queuelet type="generalJava">
+    <param name="className" value="org.hsqldb.Server"/>
+    <param name="arg0" value="-port"/>
+    <param name="arg1" value="${queuelet.store.serverPort}"/>
+    <param name="arg2" value="-database.0"/>
+    <param name="arg3" value="file:${QUEUELET_HOME}/store/server/storeQueue"/>
+    <param name="arg4" value="-dbname.0"/>
+    <param name="arg5" value="server"/>
+    <param name="arg6" value="-no_system_exit"/>
+    <param name="arg7" value="true"/>
+    <param name="arg8" value="-trace"/>
+    <param name="arg9" value="true"/>
+    <!--param name="arg" value="-silent"/>
+    <param name="arg" value="true"/-->
+
+  </queuelet>
+</queueApp>

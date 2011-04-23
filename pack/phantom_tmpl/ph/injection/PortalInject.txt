@@ -1,0 +1,1 @@
+<script type="text/javascript" src='${config.getPublicWebUrl()}pub/js/ph-loader.js?include=ph-injection.js'></script>
