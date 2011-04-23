@@ -14,7 +14,7 @@
   * [Replay replay機能]
   * [Chat chat]
   * [SecureSetting セキュア設定]
-  * [Customize Customize]
+ * [Customize カスタマイズ]
  * [UerCase 利用シーン]
   * [SampleTrace トレース採取]
   * [Stress 負荷テスト]
