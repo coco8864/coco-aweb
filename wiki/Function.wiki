@@ -1,0 +1,15 @@
+#summary Phantom Proxyの提供機能
+
+= 機能 =
+ Phantom Proxyの提供機能について説明します。
+
+ 基本的な操作については、[GettingStarted Getting Started]の通りです。画面を見ながら直感的に操作できる事を目指しました。
+ 詳細を以下に説明します。
+  * [RealHost realHost]
+  * [Mapping mapping]
+  * [Authentication 認証]
+  * [AccessLog accessLog]
+  * [Trace trace]
+  * [Replay replay機能]
+  * [Chat chat]
+  * [SecureSetting セキュア設定]

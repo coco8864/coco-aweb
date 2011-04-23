@@ -1,0 +1,17 @@
+#summary 利用シーンに沿った使用方法
+
+= 利用シーン =
+
+ 利用シーンに沿って具体的な使用方法を説明します。
+ 大別すると、Web調査ツールとしての利用と一般サーバとして利用が考えられます。
+
+ ==Web調査ツールとして利用する場合==
+  * [Stress 負荷テスト]
+  * [ContentsReplace コンテンツ修正]
+
+ ==汎用サーバとして利用する場合==
+  * [Servers 汎用サーバ]
+   * [Servers#webServer webサーバ]
+   * [Servers#proxyServer proxyサーバ]
+   * [Servers#reverseProxyServer reverse proxyサーバ]
+   * [Servers#virtualHost virtual host]

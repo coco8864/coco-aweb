@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja" dir="ltr">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Pragma" content="no-cache"> 
+<meta http-equiv="Cache-Control" content="no-cache"> 
+<meta http-equiv="Expires" content="0"> 
+<script type="text/javascript" src="/pub/js/ph-loader.js"></script>
+<script  type="text/javascript"><!--
+function onMessageFromParent(ev){
+	var origin = ev.origin;//TODO domain check
+	if(!ev.data){
+		return;
+  	}
+	var req=ph.JSON.parse(ev.data);
+	var cb=function(data){
+		var msg=ph.JSON.parse(data);
+		var res={type:req.type,result:true,data:msg};
+		postMessageToParent(res);
+	}
+	if(req.type=="getUser"){
+		var cb=function(data){
+			var msg=ph.JSON.parse(data);
+			var res={type:req.type,result:true,data:msg};
+			postMessageToParent(res);
+		}
+		ph.jQuery.post(ph.authUrl+"/ajaxUser",{},cb,"html");
+	}else if(req.type=="getPathOnceId"){
+		var cb=function(data){
+			var res={type:req.type,result:true,data:data};
+			postMessageToParent(res);
+		}
+		ph.jQuery.post(ph.authUrl+"/ajaxPathOnceId",{authId:req.authId},cb,"html");
+	}
+}
+function postMessageToParent(msg){
+	var jsonMsg=ph.JSON.stringify(msg);
+	parent.postMessage(jsonMsg,'*');
+}
+ph.jQuery(function(){
+	if(window.addEventListener){
+		window.addEventListener('message',onMessageFromParent, false);
+	}else if(window.attachEvent){
+		window.attachEvent('onmessage',onMessageFromParent);
+	}
+	postMessageToParent("{load:true}",'*');
+});
+// --></script>
+</head>
+<body>
+認証処理用フレームコンテンツ
+</body>
+</html>

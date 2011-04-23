@@ -1,0 +1,30 @@
+#summary traceタブの使用方法
+
+= trace =
+
+ traceタブの使用方法を説明します。
+
+ traceタブでは、１つのaccessLogの情報を詳細に表示するとともに、その内容を変更することができます。
+ 編集したデータでリクエストを送信したり、[Replay replay機能]経由で利用するデータにできたりします。
+
+ == ボタンとリンク ==
+  * id指定ボタン
+    表示内容をIDで指定したエントリに切り替えます。
+  * parentボタン
+    編集後のデータが表示されている場合、編集前のエントリにジャンプします。
+  * requestボタン
+    画面上表示されているrequestデータ(HeaderとBody)でリクエストします。レスポンス受信後、そのエントリにジャンプします。
+  * save newボタン
+    画面上表示されているエントリで新たにエントリを作成します。データ編集を行った場合にアクティブになります。
+  * Request Headerボタン
+    Request Headerの編集ダイアログが表示されます。saveした場合、画面上のデータが更新されます。
+  * Request Bodyボタン
+    Request Bodyの編集ダイアログが表示されます。saveした場合、画面上のデータが更新されます。
+  * Request Bodyボタン右のDigestリンク
+    表示されている文字列は、Request BodyデータのDigest値です。Request Bodyデータをダウンロードします。右クリックで使ってください。
+  * Response Headerボタン
+    Response Headerの編集ダイアログが表示されます。saveした場合、画面上のデータが更新されます。
+  * Response Bodyボタン
+    Response Bodyがimageの場合、そのイメージを表示します。その他のコンテンツの場合Response Bodyの編集ダイアログが表示されます。saveした場合、画面上のデータが更新されます。
+  * Response Bodyボタン右のDigestリンク
+    表示されている文字列は、Response BodyデータのDigest値です。Response Bodyデータをダウンロードします。右クリックで使ってください。
