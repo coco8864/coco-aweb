@@ -35,6 +35,7 @@ QUEUELET_HOME=${phantom}
 }}}
  # 以下定義ファイルにネットワーク環境を記述してください。
    ${phantom}/ph/setting/ph.env.properties
+    ローカルプロキシーとして使用し、webアクセスにproxyサーバの必要がない環境では、編集の必要はありません。
    * インストールしたサーバの情報を設定してください。
 {{{
 #This setting is enabled when the cleanup and initial startup.Referred to by ph.ini.properties
