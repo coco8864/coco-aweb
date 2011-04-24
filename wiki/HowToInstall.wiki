@@ -34,7 +34,7 @@ QUEUELET_HOME=${phantom}
 #chmod +x ${phantom}/bin/run.sh
 }}}
  # 以下定義ファイルにネットワーク環境を記述してください。
-    ローカルプロキシーとして使用し、webアクセスにproxyサーバの必要がない環境では、編集の必要はありません。
+  ただし、ローカルプロキシーとして使用し、webアクセスにproxyサーバの必要がない環境では、編集の必要はありません。
    ${phantom}/ph/setting/ph.env.properties
    * インストールしたサーバの情報を設定してください。
 {{{
