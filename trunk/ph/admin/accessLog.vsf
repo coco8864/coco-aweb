@@ -276,7 +276,9 @@ function mkImageTag(accessLog){
 					accessLog.id,
 					accessLog.requestLine,
 					'responseBody',
-					true
+					true,
+					accessLog.transferEncoding=='chunked',
+					accessLog.contentEncoding=='gzip'
 					);
 			});
 	}

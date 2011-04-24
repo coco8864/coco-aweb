@@ -61,9 +61,9 @@ function reloadEditDialog(){
 	},"html");
 }
 
-function _openEditDialog(digest,id,requestLine,part,readonly,editText,encode){
-	ph.jQuery("#textEditChunk").attr("checked",false);
-	ph.jQuery("#textEditGzip").attr("checked",false);
+function _openEditDialog(digest,id,requestLine,part,readonly,editText,encode,chunk,gzip){
+	ph.jQuery("#textEditChunk").attr("checked",chunk);
+	ph.jQuery("#textEditGzip").attr("checked",gzip);
 
 	ph.jQuery("#textEditDigest").val(digest);
 	ph.jQuery("#textEditEncode").val(encode);
@@ -78,14 +78,21 @@ function _openEditDialog(digest,id,requestLine,part,readonly,editText,encode){
 	dialog.dialog("open");
 }
 
-function openEditDialog(digest,id,requestLine,part,readonly){
+function openEditDialog(digest,id,requestLine,part,readonly,chunk,gzip){
 	
 	if(trace[part]!=null){
-		_openEditDialog(digest,id,requestLine,part,readonly,trace[part],trace[part+'Encode']);
+		_openEditDialog(digest,id,requestLine,part,readonly,trace[part],trace[part+'Encode'],chunk,gzip);
 	}else{
-		ph.jQuery.get("storeDownload?storeDigest="+encodeURIComponent(digest),null, 
+		var url="storeDownload?storeDigest="+encodeURIComponent(digest);
+		if(chunk){
+			url+="&chunk=true"
+		}
+		if(gzip){
+			url+="&zgip=true"
+		}
+		ph.jQuery.get(url,null, 
 			function(text){
-				_openEditDialog(digest,id,requestLine,part,readonly,text,"");
+				_openEditDialog(digest,id,requestLine,part,readonly,text,"",chunk,gzip);
 		},"html");
 	}
 }
