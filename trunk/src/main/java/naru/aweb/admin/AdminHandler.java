@@ -130,7 +130,7 @@ public class AdminHandler extends WebServerHandler{
 			buffers=DataUtil.toByteBuffers(digest);;
 		}else{
 			byte[] data=null;
-			data=bytes(text,encode);
+			data=bytes(text,encode);//TODO content-typeのcharset=の右なので、javaのencodeとして齟齬がある
 			buffers=BuffersUtil.toByteBufferArray(ByteBuffer.wrap(data));
 		}
 		HeaderParser header=(HeaderParser)PoolManager.getInstance(HeaderParser.class);
@@ -157,7 +157,7 @@ public class AdminHandler extends WebServerHandler{
 			}
 			return DataUtil.toByteBuffers(digest);
 		}
-		byte[] data=bytes(body,bodyEncode);
+		byte[] data=bytes(body,bodyEncode);//TODO content-typeのcharset=の右なので、javaのencodeとして齟齬がある
 		return BuffersUtil.toByteBufferArray(ByteBuffer.wrap(data));
 	}
 	

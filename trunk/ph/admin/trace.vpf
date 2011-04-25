@@ -118,8 +118,13 @@ function responseBodyEdit(){
 		dialog.dialog("option", "position", 'center');
 		dialog.dialog("open");
 	}else{//テキストとは限らないが開けてみる
-//trace.accessLog.transferEncoding ...?'chunked'
-//trace.accessLog.contentEncoding ...?'gzip'
+##trace.accessLog.transferEncoding ...?'chunked'
+##trace.accessLog.contentEncoding ...?'gzip'
+##/charset=(.*)/i
+		var charset='utf-8';
+		if( trace.accessLog.contentType.match(/charset=(.*)/i) ){
+			charset=RegExp.$1;
+		}
 		openEditDialog(
 			trace.accessLog.responseBodyDigest,
 			trace.accessLog.id,
@@ -127,7 +132,8 @@ function responseBodyEdit(){
 			PARTS[3],
 			false,
 			trace.accessLog.transferEncoding=='chunked',
-			trace.accessLog.contentEncoding=='gzip'
+			trace.accessLog.contentEncoding=='gzip',
+			charset
 		);
 	}
 }
