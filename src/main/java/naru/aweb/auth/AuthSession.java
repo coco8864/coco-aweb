@@ -19,6 +19,8 @@ public class AuthSession extends PoolBase{
 	private String token;//CSRF対策
 	private Map<String,Object> attribute=new HashMap<String,Object>();//sessionに付随する属性
 	private boolean isLogout=false;
+	private SessionId sessionId;
+	private AuthSession primarySession;
 	private Set<LogoutEvent> logoutEvents=new HashSet<LogoutEvent>();
 	
 	public void recycle() {
@@ -48,6 +50,9 @@ public class AuthSession extends PoolBase{
 	}
 	
 	public synchronized void logout(){
+		if(isLogout){
+			return;
+		}
 		user.logout();
 		isLogout=true;
 		for(LogoutEvent evnet:logoutEvents){
@@ -77,8 +82,12 @@ public class AuthSession extends PoolBase{
 		return attribute.get(name);
 	}
 	public void setAttribute(String name, Object value) {
-		if(value instanceof PoolBase){
+		if(value!=null && value instanceof PoolBase){
 			((PoolBase)value).ref();
+		}
+		Object obj=attribute.get(name);
+		if(obj!=null && obj instanceof PoolBase){
+			((PoolBase)obj).unref();
 		}
 		attribute.put(name, value);
 	}
@@ -89,6 +98,28 @@ public class AuthSession extends PoolBase{
 
 	public String getToken() {
 		return token;
+	}
+
+	public SessionId getSessionId() {
+		return sessionId;
+	}
+
+	public void setSessionId(SessionId sessionId) {
+		this.sessionId = sessionId;
+	}
+
+	public AuthSession getPrimarySession() {
+		return primarySession;
+	}
+
+	public void setPrimarySession(AuthSession primarySession) {
+		if(primarySession!=null){
+			primarySession.ref();
+		}
+		if(this.primarySession!=null){
+			primarySession.unref();
+		}
+		this.primarySession = primarySession;
 	}
 	
 	/* AuthSessionリーク調査用
