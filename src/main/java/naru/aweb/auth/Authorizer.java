@@ -358,6 +358,7 @@ public class Authorizer implements Timer{
 				pathOnceId.remove();
 			}
 			AuthSession primarySession=primaryId.getAuthSession();
+			AuthSession secondarySession=primarySession.createSecondarySession();
 			//AuthSession secondarySession=Config.getConfig().getAuthenticator().secondLoginUser(null);//TODO 
 			synchronized(secondaryId){
 				secondaryId.setPrimaryId(primaryId);
