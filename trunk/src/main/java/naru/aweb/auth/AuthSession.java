@@ -9,6 +9,7 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 
 import naru.async.pool.PoolBase;
+import naru.async.pool.PoolManager;
 import naru.aweb.config.User;
 
 public class AuthSession extends PoolBase{
@@ -22,6 +23,7 @@ public class AuthSession extends PoolBase{
 	private SessionId sessionId;
 	private AuthSession primarySession;
 	private Set<LogoutEvent> logoutEvents=new HashSet<LogoutEvent>();
+	private Set<AuthSession> secandarySessions=new HashSet<AuthSession>();
 	
 	public void recycle() {
 		Iterator<Object> itr=attribute.values().iterator();
@@ -32,6 +34,11 @@ public class AuthSession extends PoolBase{
 			}
 		}
 		attribute.clear();
+		logoutEvents.clear();
+		for(AuthSession seconadSession:secandarySessions){
+			seconadSession.logout();
+		}
+		secandarySessions.clear();
 		isLogout=false;
 		super.recycle();
 	}
@@ -45,6 +52,13 @@ public class AuthSession extends PoolBase{
 		this.user=user;
 		this.token=token;
 	}
+	
+	public AuthSession createSecondarySession(){
+		AuthSession secodarySession=Authenticator.internalCreateAuthSession(user);
+		secandarySessions.add(secodarySession);
+		return secodarySession;
+	}
+	
 	public User getUser() {
 		return user;
 	}
@@ -56,7 +70,7 @@ public class AuthSession extends PoolBase{
 		user.logout();
 		isLogout=true;
 		for(LogoutEvent evnet:logoutEvents){
-			evnet.onLogout();
+			evnet.onLogout();//onLogoutイベント中synchronizedはタブー
 		}
 		logoutEvents.clear();
 		unref();
