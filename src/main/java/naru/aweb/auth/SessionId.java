@@ -99,6 +99,9 @@ public class SessionId extends PoolBase{
 		sessionId.url=url;
 		sessionId.primaryId=primaryId;
 		sessionId.authSession=authSession;
+		if(authSession!=null){
+			authSession.setSessionId(sessionId);
+		}
 		sessionId.lastAccessTime = System.currentTimeMillis();
 		//idÇÃê∂ê¨ÇÕÅAauthorizerÇ…îCÇπÇÈ
 		authorizer.registerSessionId(sessionId);

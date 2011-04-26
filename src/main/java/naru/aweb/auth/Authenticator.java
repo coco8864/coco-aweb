@@ -49,15 +49,7 @@ public class Authenticator {
 	//loginidとUserのマップ、最新情報を保持,任意のタイミングでDBに格納すれば忘れてもよい
 	private Map<String,User> loginIdUserMap=Collections.synchronizedMap(new HashMap<String,User>());
 	
-	//admin/auth配下のコンテンツを返却する。
-//	public void forwardAuthPage(WebServerHandler handler,String fileName){
-//		MappingResult mapping=handler.getRequestMapping();
-//		mapping.setResolvePath(AUTH_PAGE_FILEPATH + fileName);
-//		mapping.setDesitinationFile(config.getAdminDocumentRoot());
-//		handler.forwardHandler(Mapping.FILE_SYSTEM_HANDLER);
-//	}
-	
-	private static AuthSession internalCreateAuthSession(User user){
+	static AuthSession internalCreateAuthSession(User user){
 		AuthSession authSession=(AuthSession)PoolManager.getInstance(AuthSession.class);
 		authSession.init(user,getNextRandom(tokenRandom));
 		return authSession;
