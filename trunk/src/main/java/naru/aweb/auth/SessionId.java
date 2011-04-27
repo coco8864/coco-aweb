@@ -154,11 +154,11 @@ public class SessionId extends PoolBase{
 			}
 			//isValidは、createSessionIdでtrueにしてここでしかfalseを設定しない。
 			//１つのSessionIDに対して、このルートが２回走行する事はない
-			for(SessionId secondaryId:secondaryIds.values()){
+/*			for(SessionId secondaryId:secondaryIds.values()){
 				secondaryId.remove();
 				counter++;
 			}
-			secondaryIds.clear();
+			secondaryIds.clear();*/
 			authorizer.removeSessionId(type,this.id);
 			if(authSession!=null){
 				if(type==Type.PRIMARY){
@@ -181,10 +181,11 @@ public class SessionId extends PoolBase{
 	private String id;
 	private AuthSession authSession;
 	private SessionId primaryId;
-	private Map<Long, SessionId> secondaryIds=new HashMap<Long,SessionId>();// primaryIdが生きている間は増えていく一方
+//	private Map<Long, SessionId> secondaryIds=new HashMap<Long,SessionId>();// primaryIdが生きている間は増えていく一方
 //	private Map<String, SessionId> pathOnceIds;
 	private String url;
 	private long lastAccessTime;
+	private Mapping mapping;//secondary用の場合、どのmapping用のSessionIdか
 
 	/*
 	public void onTimer(Object userContext) {
@@ -244,12 +245,12 @@ public class SessionId extends PoolBase{
 		return true;
 	}
 	
-	public boolean isMatch(Type type,String id,Mapping mapping,SessionId primaryId){
+	public boolean isMatch(Type type,String id,Mapping mapping){
 		if(!isMatch(type,id)){
 			return false;
 		}
 		if(mapping.getSourceType()!=Mapping.SourceType.WS){//WebSocketは直接認証していない
-			if(primaryId.secondaryIds.get(mapping.getId())!=this){
+			if(this.mapping!=mapping){
 				return false;
 			}
 		}
@@ -335,6 +336,7 @@ public class SessionId extends PoolBase{
 		this.url=url;
 	}
 	
+	/*
 	public void addSecondaryId(Mapping mapping,SessionId secondaryId) {
 		SessionId orgSecondaryId=secondaryIds.remove(mapping);
 		secondaryIds.put(mapping.getId(), secondaryId);
@@ -342,6 +344,7 @@ public class SessionId extends PoolBase{
 			orgSecondaryId.remove();
 		}
 	}
+	*/
 	
 	public void setPrimaryId(SessionId primaryId) {
 		this.primaryId=primaryId;
@@ -372,6 +375,10 @@ public class SessionId extends PoolBase{
 	}
 	public String getAuthId(){
 		return authId;
+	}
+
+	public void setMapping(Mapping mapping) {
+		this.mapping=mapping;
 	}
 
 }

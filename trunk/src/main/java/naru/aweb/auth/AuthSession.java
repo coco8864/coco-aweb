@@ -9,7 +9,7 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 
 import naru.async.pool.PoolBase;
-import naru.async.pool.PoolManager;
+import naru.aweb.config.Mapping;
 import naru.aweb.config.User;
 
 public class AuthSession extends PoolBase{
@@ -21,7 +21,7 @@ public class AuthSession extends PoolBase{
 	private Map<String,Object> attribute=new HashMap<String,Object>();//sessionに付随する属性
 	private boolean isLogout=false;
 	private SessionId sessionId;
-	private AuthSession primarySession;
+//	private AuthSession primarySession;
 	private Set<LogoutEvent> logoutEvents=new HashSet<LogoutEvent>();
 	private Set<AuthSession> secandarySessions=new HashSet<AuthSession>();
 	
@@ -55,6 +55,7 @@ public class AuthSession extends PoolBase{
 	
 	public AuthSession createSecondarySession(){
 		AuthSession secodarySession=Authenticator.internalCreateAuthSession(user);
+//		secodarySession.setPrimarySession(this);
 		secandarySessions.add(secodarySession);
 		return secodarySession;
 	}
@@ -122,6 +123,7 @@ public class AuthSession extends PoolBase{
 		this.sessionId = sessionId;
 	}
 
+	/*
 	public AuthSession getPrimarySession() {
 		return primarySession;
 	}
@@ -135,6 +137,7 @@ public class AuthSession extends PoolBase{
 		}
 		this.primarySession = primarySession;
 	}
+	*/
 	
 	/* AuthSessionリーク調査用
 	@Override

@@ -293,26 +293,21 @@ public class Authorizer implements Timer{
 		if (secondaryId == null) {
 			return null;
 		}
-		SessionId primaryId=secondaryId.getPrimaryId();
-		if (primaryId == null) {
-			return null;//瞬間的に開放されてしまった場合
-		}
+//		SessionId primaryId=secondaryId.getPrimaryId();
+//		if (primaryId == null) {
+//			return null;//瞬間的に開放されてしまった場合
+//		}
 		
 		//ここまでであくまで可能性のある、primaryIdとsecondaryIdを捕まえた
 		//本当に欲するものか否かは、ロック後確認する
-		synchronized(primaryId){
-			if(!primaryId.isMatch(Type.PRIMARY)){
+		synchronized(secondaryId){
+			if(!secondaryId.isMatch(Type.SECONDARY, id,mapping)){
 				return null;
 			}
-			synchronized(secondaryId){
-				if(!secondaryId.isMatch(Type.SECONDARY, id,mapping,primaryId)){
-					return null;
-				}
-			}
 			if(mapping.isSessionUpdate()){//ws等はタイムアウト時間計算時にセションアクセスとみなさない
-				primaryId.setLastAccessTime();//最終アクセス時間を更新
+				secondaryId.getPrimaryId().setLastAccessTime();//最終アクセス時間を更新
 			}
-			AuthSession authSession=primaryId.getAuthSession();
+			AuthSession authSession=secondaryId.getAuthSession();
 			authSession.ref();
 			return authSession;
 		}
@@ -363,7 +358,7 @@ public class Authorizer implements Timer{
 			synchronized(secondaryId){
 				secondaryId.setPrimaryId(primaryId);
 				secondaryId.setAuthSession(secondarySession);
-				primaryId.addSecondaryId(mapping, secondaryId);
+				secondaryId.setMapping(mapping);
 				return true;
 			}
 		}
