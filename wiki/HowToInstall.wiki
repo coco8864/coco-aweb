@@ -49,8 +49,8 @@ phantom.selfPort=サーバを動作させるポート番号
 #This setting is enabled when the cleanup and initial startup.Referred to by ph.ini.properties
 #Proxy information used by this server
 phantom.pacUrl=自動構成スクリプトによりproxyを動的に設定している場合
-phantom.proxyServer=http proxyのipまたはホスト名
-phantom.sslProxyServer=https proxyのipまたはホスト名
+phantom.proxyServer=http proxyのipまたはホスト名:ポート
+phantom.sslProxyServer=https proxyのipまたはホスト名:ポート
 phantom.exceptProxyDomains=proxyを使わないホスト一覧を設定してください。
 }}}
     phantom.pacUrlが指定された場合、以降は無視されます。いずれも設定しない場合、proxyサーバを利用しません。
