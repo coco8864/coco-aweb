@@ -13,6 +13,7 @@ import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.URL;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -22,6 +23,7 @@ import java.util.regex.Pattern;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
+import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
@@ -178,12 +180,36 @@ public class ProxyFinder {
 	private void loadPac(String pac) {
 		this.pac = pac;
 		try {
-			ScriptEngineManager factory = new ScriptEngineManager();
+			ScriptEngineManager factory = new ScriptEngineManager(null);
 			// create a JavaScript engine
-			ScriptEngine pacScriptEngine = factory
-					.getEngineByName("JavaScript");
-			InputStream is = ProxyFinder.class
-					.getResourceAsStream("pacscript.js");
+			ScriptEngine pacScriptEngine = factory.getEngineByName("JavaScript");
+			if(pacScriptEngine==null){
+				logger.error("fail to getEngineByName(JavaScript) pacScriptEngine is null");
+				logger.error("SecurityManager:"+System.getSecurityManager());
+				for(ScriptEngineFactory f:factory.getEngineFactories()){
+					logger.error(f.getEngineName() +":" + f.getEngineVersion() +":" + f.getLanguageName());
+				}
+				ClassLoader ctxtLoader = Thread.currentThread().getContextClassLoader();
+				logger.error("ctxtLoader:"+ctxtLoader);
+				Enumeration configs = ctxtLoader.getResources("META-INF/services/"+ScriptEngineFactory.class);
+				logger.error("ContextClassLoader configs:"+configs);
+				while(configs.hasMoreElements()){
+					Object o=configs.nextElement();
+					logger.error("ContextClassLoader loaderScriptEngineFactory resouce:" + o);
+				}
+				ClassLoader loader = ClassLoader.getSystemClassLoader();
+				configs = loader.getResources("META-INF/services/"+ScriptEngineFactory.class);
+				logger.error("SystemClassLoader:"+loader);
+				logger.error("SystemClassLoader configs:"+configs);
+				while(configs.hasMoreElements()){
+					Object o=configs.nextElement();
+					logger.error("SystemClassLoader loaderScriptEngineFactory resouce:" + o);
+				}
+				return;
+			}else{
+				logger.debug("pacScriptEngine:" + pacScriptEngine.getClass().getName());
+			}
+			InputStream is = ProxyFinder.class.getResourceAsStream("pacscript.js");
 			Reader reader = new InputStreamReader(is);
 			// evaluate script
 			pacScriptEngine.eval(reader);
