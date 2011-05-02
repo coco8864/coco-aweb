@@ -23,6 +23,7 @@ import naru.aweb.core.Main;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.KeepAliveContext;
 import naru.aweb.http.ParameterParser;
+import naru.aweb.http.RequestContext;
 import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.queue.QueueManager;
@@ -458,8 +459,9 @@ public class AdminHandler extends WebServerHandler{
 	}
 	
 	private boolean checkToken(ParameterParser parameter){
-		KeepAliveContext keepAliveContext=getKeepAliveContext();
-		String token=keepAliveContext.getAuthSession().getToken();
+		RequestContext requestContext=getRequestContext();
+//		KeepAliveContext keepAliveContext=getKeepAliveContext();
+		String token=requestContext.getAuthSession().getToken();
 		String paramToken=parameter.getParameter("token");
 		if(paramToken!=null){
 			if(token.equals(paramToken)){

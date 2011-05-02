@@ -9,7 +9,6 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 
 import naru.async.pool.PoolBase;
-import naru.aweb.config.Mapping;
 import naru.aweb.config.User;
 
 public class AuthSession extends PoolBase{
@@ -21,7 +20,6 @@ public class AuthSession extends PoolBase{
 	private Map<String,Object> attribute=new HashMap<String,Object>();//sessionに付随する属性
 	private boolean isLogout=false;
 	private SessionId sessionId;
-//	private AuthSession primarySession;
 	private Set<LogoutEvent> logoutEvents=new HashSet<LogoutEvent>();
 	private Set<AuthSession> secandarySessions=new HashSet<AuthSession>();
 	
@@ -35,9 +33,6 @@ public class AuthSession extends PoolBase{
 		}
 		attribute.clear();
 		logoutEvents.clear();
-		for(AuthSession seconadSession:secandarySessions){
-			seconadSession.logout();
-		}
 		secandarySessions.clear();
 		isLogout=false;
 		super.recycle();
@@ -55,7 +50,6 @@ public class AuthSession extends PoolBase{
 	
 	public AuthSession createSecondarySession(){
 		AuthSession secodarySession=Authenticator.internalCreateAuthSession(user);
-//		secodarySession.setPrimarySession(this);
 		secandarySessions.add(secodarySession);
 		return secodarySession;
 	}
@@ -68,12 +62,28 @@ public class AuthSession extends PoolBase{
 		if(isLogout){
 			return;
 		}
+		if(sessionId.getType()!=SessionId.Type.PRIMARY){
+			logger.error("logout type error."+sessionId.getType(),new Exception());
+			return;
+		}
 		user.logout();
 		isLogout=true;
+		for(AuthSession secondarySession:secandarySessions){
+			synchronized(secondarySession){
+				if(secondarySession.isLogout()){
+					continue;
+				}
+				SessionId secondaryId=secondarySession.getSessionId();
+				secondaryId.remove();
+				secondarySession.unref();
+			}
+		}
+		secandarySessions.clear();
 		for(LogoutEvent evnet:logoutEvents){
 			evnet.onLogout();//onLogoutイベント中synchronizedはタブー
 		}
 		logoutEvents.clear();
+		sessionId.remove();//sessionIdを開放する
 		unref();
 	}
 	
@@ -146,11 +156,9 @@ public class AuthSession extends PoolBase{
 		logger.debug("ref:"+getPoolId(),new Exception());
 	}
 
-	/*
 	@Override
 	public boolean unref() {
 		logger.debug("unref:"+getPoolId(),new Exception());
 		return super.unref();
-	}
-	*/
+	}*/
 }

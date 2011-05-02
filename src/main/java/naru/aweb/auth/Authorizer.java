@@ -76,8 +76,15 @@ public class Authorizer implements Timer{
 	
 	public void term() {
 		TimerManager.clearInterval(timerContext);
-		int count;
-		count=freeIds(primaryIds);//この中で、secondaryIdsもクリアされる
+		int count=0;
+//		count=freeIds(primaryIds);//この中で、secondaryIdsもクリアされる
+		for(SessionId primaryId:primaryIds.values()){
+			AuthSession authSession=primaryId.getAuthSession();
+			if(authSession!=null){
+				count++;
+				authSession.logout();
+			}
+		}
 		logger.info("Term free primaryIds:"+count);
 		count=freeIds(pathOnceIds);
 		logger.info("Term free pathOnceIds:"+count);
@@ -123,7 +130,9 @@ public class Authorizer implements Timer{
 		if(sessionId==null){
 			return false;
 		}
-		return sessionId.logout(id);
+		AuthSession authSession=sessionId.getAuthSession();
+		authSession.logout();
+		return true;
 	}
 	
 	private Map<String,SessionId> getIds(Type type){
@@ -293,10 +302,6 @@ public class Authorizer implements Timer{
 		if (secondaryId == null) {
 			return null;
 		}
-//		SessionId primaryId=secondaryId.getPrimaryId();
-//		if (primaryId == null) {
-//			return null;//瞬間的に開放されてしまった場合
-//		}
 		
 		//ここまでであくまで可能性のある、primaryIdとsecondaryIdを捕まえた
 		//本当に欲するものか否かは、ロック後確認する
@@ -305,7 +310,8 @@ public class Authorizer implements Timer{
 				return null;
 			}
 			if(mapping.isSessionUpdate()){//ws等はタイムアウト時間計算時にセションアクセスとみなさない
-				secondaryId.getPrimaryId().setLastAccessTime();//最終アクセス時間を更新
+				SessionId primaryId=secondaryId.getPrimaryId();
+				primaryId.setLastAccessTime();//最終アクセス時間を更新
 			}
 			AuthSession authSession=secondaryId.getAuthSession();
 			authSession.ref();
@@ -326,7 +332,7 @@ public class Authorizer implements Timer{
 			return false;
 		}
 		//ここまでであくまで可能性のある、primaryIdとsecondaryIdを捕まえた
-		//本当に欲するものか否かは、ロック後確認する
+		//本当に要求したものか否かは、ロック後確認する
 		synchronized(temporaryId){
 			try {
 				if(!temporaryId.isMatch(Type.TEMPORARY,id,url)){
@@ -354,7 +360,7 @@ public class Authorizer implements Timer{
 			}
 			AuthSession primarySession=primaryId.getAuthSession();
 			AuthSession secondarySession=primarySession.createSecondarySession();
-			//AuthSession secondarySession=Config.getConfig().getAuthenticator().secondLoginUser(null);//TODO 
+			secondarySession.setSessionId(secondaryId);
 			synchronized(secondaryId){
 				secondaryId.setPrimaryId(primaryId);
 				secondaryId.setAuthSession(secondarySession);

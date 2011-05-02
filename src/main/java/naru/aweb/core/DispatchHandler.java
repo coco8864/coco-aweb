@@ -24,6 +24,7 @@ import naru.aweb.config.Mapping;
 import naru.aweb.config.User;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.KeepAliveContext;
+import naru.aweb.http.RequestContext;
 import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.Mapper;
 import naru.aweb.mapping.MappingResult;
@@ -366,19 +367,19 @@ public class DispatchHandler extends ServerBaseHandler {
 	}
 
 	private MappingResult proxyHandler(HeaderParser requestHeader,
-			KeepAliveContext keepAliveContext) {
+			KeepAliveContext keepAliveContext,RequestContext requestContext) {
 		ServerParser server = requestHeader.getServer();
 		keepAliveContext.setProxyTargetServer(server);
 		String realHost = keepAliveContext.getRealHost().getName();// getRealHost(localIp,localPort)
 		String path = requestHeader.getPath();
 		MappingResult mapping = proxyMapping(mapper, realHost, server, path);
-		mapping = checkPhAuth(requestHeader, keepAliveContext, mapping);
+		mapping = checkPhAuth(requestHeader, keepAliveContext, requestContext,mapping);
 		return mapping;
 	}
 
 	// private static final String PROXY_AUTHENTICATION_PATH="/authentication";
 	private MappingResult webHandler(HeaderParser requestHeader,
-			KeepAliveContext keepAliveContext) {
+			KeepAliveContext keepAliveContext,RequestContext requestContext) {
 		String realHost = keepAliveContext.getRealHost().getName();// getRealHost(localIp,localPort)
 		String path = requestHeader.getPath();
 		// if(PROXY_AUTHENTICATION_PATH.equals(path)){//認証リクエスト,?action=logon,?action=logoff
@@ -389,12 +390,12 @@ public class DispatchHandler extends ServerBaseHandler {
 			mapping = DispatchResponseHandler.notfound("not found mapping");
 			return mapping;
 		}
-		mapping = checkPhAuth(requestHeader, keepAliveContext, mapping);
+		mapping = checkPhAuth(requestHeader, keepAliveContext,requestContext, mapping);
 		return mapping;
 	}
 
 	private MappingResult wsHandler(HeaderParser requestHeader,
-			KeepAliveContext keepAliveContext) {
+			KeepAliveContext keepAliveContext,RequestContext requestContext) {
 		String realHost = keepAliveContext.getRealHost().getName();// getRealHost(localIp,localPort)
 		String path = requestHeader.getPath();
 		ServerParser server = requestHeader.getServer();
@@ -403,13 +404,14 @@ public class DispatchHandler extends ServerBaseHandler {
 			mapping = DispatchResponseHandler.notfound("not found mapping");
 			return mapping;
 		}
-		mapping = checkPhAuth(requestHeader, keepAliveContext, mapping);
+		mapping = checkPhAuth(requestHeader, keepAliveContext,requestContext,mapping);
 		return mapping;
 	}
 	
 	// 認証情報があれば取得してkeepAliveContextに設定する
 	private MappingResult checkPhAuth(HeaderParser requestHeader,
-			KeepAliveContext keepAliveContext, MappingResult mapping) {
+			KeepAliveContext keepAliveContext,RequestContext requestContext, 
+			MappingResult mapping) {
 		boolean isAuthId=false;
 		if(!requestHeader.isProxy()&&!requestHeader.isWs()){
 			String path=mapping.getResolvePath();
@@ -428,7 +430,7 @@ public class DispatchHandler extends ServerBaseHandler {
 					mapping = DispatchResponseHandler.forbidden("fail to authrize.");
 					return mapping;
 				}
-				keepAliveContext.setAuthSession(authSession);
+				requestContext.registerAuthSession(authSession);
 				if(isAuthId){
 					mapping.unref();
 					mapping = DispatchResponseHandler.ajaxAleadyAuth();
@@ -449,8 +451,9 @@ public class DispatchHandler extends ServerBaseHandler {
 	}
 
 	private MappingResult checkMappingAuth(HeaderParser requestHeader,
-			KeepAliveContext keepAliveContext,MappingResult mapping){
-		if(keepAliveContext.getAuthSession()!=null){//ph認証済みの場合はそれを優先
+			KeepAliveContext keepAliveContext,RequestContext requestContext,
+			MappingResult mapping){
+		if(requestContext.getAuthSession()!=null){//ph認証済みの場合はそれを優先
 			return mapping;
 		}
 		//TODO mappingベースの認証を実施
@@ -461,7 +464,7 @@ public class DispatchHandler extends ServerBaseHandler {
 		AuthSession authSession=mappingAuth.authorize(requestHeader);
 		if(authSession!=null){
 			authSession.ref();
-			keepAliveContext.setAuthSession(authSession);
+			requestContext.registerAuthSession(authSession);
 			return mapping;
 		}
 		mapping.unref();
@@ -472,6 +475,8 @@ public class DispatchHandler extends ServerBaseHandler {
 	private void mappingHandler() {
 		HeaderParser requestHeader = getRequestHeader();
 		KeepAliveContext keepAliveContext = getKeepAliveContext();
+		RequestContext requestContext=getRequestContext();
+		
 		// 認証情報があれば取得してkeepAliveContextに設定する
 		// doAuth(requestHeader,keepAliveContext);
 		boolean isSslProxy = requestHeader.isSslProxy();
@@ -491,35 +496,35 @@ public class DispatchHandler extends ServerBaseHandler {
 			}
 			// TODO httpsをpeekせずにproxyする場合の認証...いまのところ無条件で利用できる,mappingAuthは効く
 		} else if (isProxy) {// http proxyの場合
-			mapping = proxyHandler(requestHeader, keepAliveContext);
+			mapping = proxyHandler(requestHeader, keepAliveContext,requestContext);
 		} else if (isWs) {// WebSocketリクエストの場合
 		//wsはhttp側でcookieを付加して認証する
-			mapping = wsHandler(requestHeader, keepAliveContext);
+			mapping = wsHandler(requestHeader, keepAliveContext,requestContext);
 		} else {// httpリクエストの場合,sslproxyをpeekする時もここ
 			if (keepAliveContext.isSslProxy()) {
 				// ssl proxyからwebリクエストを取り出した
 				// mapping=sslProxyHandler(requestHeader, keepAliveContext);
-				mapping = webHandler(requestHeader, keepAliveContext);
+				mapping = webHandler(requestHeader, keepAliveContext,requestContext);
 			} else {
-				mapping = webHandler(requestHeader, keepAliveContext);
+				mapping = webHandler(requestHeader, keepAliveContext,requestContext);
 			}
 		}
 		
 		//mapping Authを実施
 		//optionsにauth:{realm:"relm",type:"basic"|"digest",roles:"role1,role2"}
 		if(!isWs){
-			mapping=checkMappingAuth(requestHeader,keepAliveContext,mapping);
+			mapping=checkMappingAuth(requestHeader,keepAliveContext,requestContext,mapping);
 		}
-		if(keepAliveContext.getAuthSession()==null){
+		if(requestContext.getAuthSession()==null){
 			AuthSession.UNAUTH_SESSION.ref();
-			keepAliveContext.setAuthSession(AuthSession.UNAUTH_SESSION);
+			requestContext.registerAuthSession(AuthSession.UNAUTH_SESSION);
 		}
 		
 		// mapping=checkRole(mapping,auth);
 		keepAliveContext.startRequest(requestHeader);
 		/* mapping処理 */
 		String realHost = keepAliveContext.getRealHost().getName();// getRealHost(localIp,localPort)
-		AuthSession auth = keepAliveContext.getAuthSession();
+		AuthSession auth = requestContext.getAuthSession();
 		
 		/* dispatchHandlerを出航するときにAccessLogを付加 */
 		keepAliveContext.getRequestContext().allocAccessLog();
