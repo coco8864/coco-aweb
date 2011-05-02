@@ -39,7 +39,6 @@ import naru.aweb.http.Cookie;
 public class SessionId extends PoolBase{
 	private static Logger logger = Logger.getLogger(SessionId.class);
 	private static Config config=Config.getConfig();
-//	public static final String SESSION_ID = "phId";
 	public static final String SESSION_ID = config.getString("sessionCookieKey", "phId");
 	private static Pattern pathInfoPattern = Pattern.compile(";"+SESSION_ID+"=([^\\s;/?]*)");
 	private static Authorizer authorizer=config.getAuthorizer();
@@ -71,7 +70,6 @@ public class SessionId extends PoolBase{
 	public static String delCookieString(String path,boolean isSecure){
 		return Cookie.formatSetCookieHeader(SESSION_ID, SESSION_ID, null, path,0, isSecure);
 	}
-	
 
 	public static SessionId createSecondaryId() {
 		return createSessionId(Type.SECONDARY,null,null,null);
@@ -81,9 +79,6 @@ public class SessionId extends PoolBase{
 		return createSessionId(Type.TEMPORARY,url,null,null);
 	}
 	
-	public static SessionId createPathOnceId(SessionId primaryId) {
-		return createSessionId(Type.PATH_ONCE,null,primaryId,null);
-	}
 	public static SessionId createPathOnceId(String url,SessionId primaryId) {
 		return createSessionId(Type.PATH_ONCE,url,primaryId,null);
 	}
@@ -97,7 +92,7 @@ public class SessionId extends PoolBase{
 		sessionId.type=type;
 		sessionId.isValid = true;
 		sessionId.url=url;
-		sessionId.primaryId=primaryId;
+		sessionId.setPrimaryId(primaryId);
 		sessionId.authSession=authSession;
 		if(authSession!=null){
 			authSession.setSessionId(sessionId);
@@ -106,10 +101,6 @@ public class SessionId extends PoolBase{
 		//idの生成は、authorizerに任せる
 		authorizer.registerSessionId(sessionId);
 		return sessionId;
-	}
-	
-	public boolean logout(String id) {
-		return logoutIfTimeout(id,-1);
 	}
 	
 	public boolean logoutIfTimeout(String id,long lastAccessLimit) {
@@ -123,13 +114,14 @@ public class SessionId extends PoolBase{
 			if(lastAccessLimit>0&&lastAccessTime>lastAccessLimit){
 				return false;
 			}
-//			AuthSession authSession=getAuthSession();
-//			User user=authSession.getUser();
+			if(this.type==Type.PRIMARY){
+				AuthSession authSession=getAuthSession();
+				authSession.logout();//この先でremoveが呼ばれる
+				return true;
+			}
 			if(remove(id)==0){
 				return false;
 			}
-//			user.logout();
-//			authSession.unref();
 			return true;
 		}
 	}
@@ -152,20 +144,10 @@ public class SessionId extends PoolBase{
 			if(id!=null && !id.equals(this.id)){
 				return 0;
 			}
+			setPrimaryId(null);
 			//isValidは、createSessionIdでtrueにしてここでしかfalseを設定しない。
 			//１つのSessionIDに対して、このルートが２回走行する事はない
-/*			for(SessionId secondaryId:secondaryIds.values()){
-				secondaryId.remove();
-				counter++;
-			}
-			secondaryIds.clear();*/
 			authorizer.removeSessionId(type,this.id);
-			if(authSession!=null){
-				if(type==Type.PRIMARY){
-					authSession.logout();
-				}
-				authSession=null;
-			}
 			isValid = false;
 			unref();
 		}
@@ -181,8 +163,6 @@ public class SessionId extends PoolBase{
 	private String id;
 	private AuthSession authSession;
 	private SessionId primaryId;
-//	private Map<Long, SessionId> secondaryIds=new HashMap<Long,SessionId>();// primaryIdが生きている間は増えていく一方
-//	private Map<String, SessionId> pathOnceIds;
 	private String url;
 	private long lastAccessTime;
 	private Mapping mapping;//secondary用の場合、どのmapping用のSessionIdか
@@ -347,6 +327,12 @@ public class SessionId extends PoolBase{
 	*/
 	
 	public void setPrimaryId(SessionId primaryId) {
+		if(primaryId!=null){
+			primaryId.ref();
+		}
+		if(this.primaryId!=null){
+			this.primaryId.unref();
+		}
 		this.primaryId=primaryId;
 	}
 

@@ -394,6 +394,7 @@ public class KeepAliveContext extends PoolBase {
 	public RealHost getRealHost(){
 		return realHost;
 	}
+	/*
 	public AuthSession getAuthSession() {
 		if(requestContext==null){
 			logger.error("fail to getAuthSession.requestContext null,",new Exception());
@@ -411,6 +412,7 @@ public class KeepAliveContext extends PoolBase {
 		}
 		requestContext.registerAuthSession(authSession);
 	}
+	*/
 	public boolean isSelfProxy() {
 		return isSelfProxy;
 	}

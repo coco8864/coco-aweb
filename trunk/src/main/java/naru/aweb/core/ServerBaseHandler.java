@@ -36,7 +36,7 @@ public abstract class ServerBaseHandler extends SslHandler {
 	public static final String ATTRIBUTE_USER="loginUser";
 //	public static final String ATTRIBUTE_AUTH_SESSION="authSession";
 	
-	private RequestContext getRequestContext(){
+	public RequestContext getRequestContext(){
 		KeepAliveContext keepAliveContext=getKeepAliveContext();
 		if(keepAliveContext==null){
 			return null;

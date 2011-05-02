@@ -14,6 +14,7 @@ import naru.aweb.config.Config;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.KeepAliveContext;
 import naru.aweb.http.ParameterParser;
+import naru.aweb.http.RequestContext;
 import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.MappingResult;
 
@@ -98,8 +99,9 @@ public class VelocityPageHandler extends WebServerHandler {
 		ToolContext veloContext=toolManager.createContext();
 		veloContext.put("handler", this);
 		veloContext.put("parameter", getParameterParser());
-		KeepAliveContext keepAliveContext=getKeepAliveContext();
-		veloContext.put("session", keepAliveContext.getAuthSession());
+//		KeepAliveContext keepAliveContext=getKeepAliveContext();
+		RequestContext requestContext=getRequestContext();
+		veloContext.put("session", requestContext.getAuthSession());
 		veloContext.put("config", config);
 		Iterator<String> itr=getRequestAttributeNames();
 		while(itr.hasNext()){
