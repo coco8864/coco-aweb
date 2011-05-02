@@ -39,15 +39,14 @@ function updateStastics(msg){
 	ph.jQuery("#broadcasterStore").text(storeStack.join(":"));
 
 	var channelContext=stcs.channelContext;
-	var cur=(channelContext.instance-channelContext.pool-channelContext.gc);
-	ph.jQuery("#broadcasterChannel").text(cur+"("+channelContext.total +")");
+	var cur=(channelContext.total-channelContext.poolBack-channelContext.gc);
+	ph.jQuery("#broadcasterChannel").text(cur+"("+channelContext.total+"-"+channelContext.instance+")");
 	var requestContext=stcs.requestContext;
-	cur=(requestContext.instance-requestContext.pool-requestContext.gc);
-	ph.jQuery("#broadcasterRequest").text(cur+"("+requestContext.total +")");
-
+	cur=(requestContext.total-requestContext.poolBack-requestContext.gc);
+	ph.jQuery("#broadcasterRequest").text(cur+"("+requestContext.total +"-"+requestContext.instance+")");
 	var authSession=stcs.authSession;
-	cur=(authSession.instance-authSession.pool-authSession.gc);
-	ph.jQuery("#broadcasterSession").text(cur+"("+authSession.total +")");
+	cur=(authSession.total-authSession.poolBack-authSession.gc);
+	ph.jQuery("#broadcasterSession").text(cur+"("+authSession.total +"-"+authSession.instance+")");
 
 	if(!isWatchCheck()){
 		unwatchStastics();
