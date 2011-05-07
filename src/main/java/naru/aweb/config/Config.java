@@ -481,8 +481,11 @@ public class Config {
 		if (isAleadyTerm) {
 			return;
 		}
-		broadcaster.term();
 		isAleadyTerm = true;
+		if(broadcaster!=null){//initの途中で例外した場合broadcasterの可能性がある。
+			broadcaster.term();
+			broadcaster=null;
+		}
 		queueManager.term();
 		logPersister.term();
 		authenticator.term();
@@ -624,6 +627,7 @@ public class Config {
 		dir = configuration.getString(PATH_INJECTION_DIR);
 		injectionDir = new File(dir);
 		injectionHelper = new InjectionHelper(this);
+		
 		// proxy除外リストの初期化
 		updateProxyFinder();
 		broadcaster=new Broadcaster(this);
