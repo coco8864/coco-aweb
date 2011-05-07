@@ -120,14 +120,14 @@ interval:$!esc.html($!{config.getString('broardcastInterval')})ms
 <thead>
 <tr><th>name</th><th>value</th></tr>
 </thead>
-<tr><td>time(count)</td><td id="broadcasterTime">-</td></tr>
-<tr><td>freeMemory/maxMemory(useRate)</td><td id="broadcasterMemory">取得中</td></tr>
-<tr><td>select,accept,connect,read(length),write(length)</td><td id="broadcasterIo">-</td></tr>
-<tr><td>selector</td><td id="broadcasterSelector">-</td></tr>
-<tr><td>store</td><td id="broadcasterStore">-</td></tr>
-<tr><td>channel(total-instance)</td><td id="broadcasterChannel">-</td></tr>
-<tr><td>request(total-instance)</td><td id="broadcasterRequest">-</td></tr>
-<tr><td>session(total-instance)</td><td id="broadcasterSession">-</td></tr>
+<tr><td>time(count)</td><td id="broadcasterTime">processing</td></tr>
+<tr><td>freeMemory/maxMemory(useRate)</td><td id="broadcasterMemory">processing</td></tr>
+<tr><td>select,accept,connect,read(length),write(length)</td><td id="broadcasterIo">processing</td></tr>
+<tr><td>selector</td><td id="broadcasterSelector">processing</td></tr>
+<tr><td>store</td><td id="broadcasterStore">processing</td></tr>
+<tr><td>channel(total-instance)</td><td id="broadcasterChannel">processing</td></tr>
+<tr><td>request(total-instance)</td><td id="broadcasterRequest">processing</td></tr>
+<tr><td>session(total-instance)</td><td id="broadcasterSession">processing</td></tr>
 </table>
 
 <Hr/>

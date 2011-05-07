@@ -8,43 +8,47 @@
 <meta http-equiv="Expires" content="0"> 
 <script type="text/javascript" src="/pub/js/ph-loader.js"></script>
 <script  type="text/javascript"><!--
+var phOrigin;
 function onMessageFromParent(ev){
-	var origin = ev.origin;//TODO domain check
-	if(!ev.data){
+	var origin = ev.origin;
+	if(!ev.data||phOrigin!=origin){
 		return;
   	}
 	var req=ph.JSON.parse(ev.data);
 	var cb=function(data){
 		var msg=ph.JSON.parse(data);
 		var res={type:req.type,result:true,data:msg};
-		postMessageToParent(res);
+		postMessageToParent(res,origin);
 	}
 	if(req.type=="getUser"){
 		var cb=function(data){
 			var msg=ph.JSON.parse(data);
 			var res={type:req.type,result:true,data:msg};
-			postMessageToParent(res);
+			postMessageToParent(res,origin);
 		}
 		ph.jQuery.post(ph.authUrl+"/ajaxUser",{},cb,"html");
 	}else if(req.type=="getPathOnceId"){
 		var cb=function(data){
 			var res={type:req.type,result:true,data:data};
-			postMessageToParent(res);
+			postMessageToParent(res,origin);
 		}
 		ph.jQuery.post(ph.authUrl+"/ajaxPathOnceId",{authId:req.authId},cb,"html");
 	}
 }
-function postMessageToParent(msg){
+function postMessageToParent(msg,origin){
 	var jsonMsg=ph.JSON.stringify(msg);
-	parent.postMessage(jsonMsg,'*');
+//alert(origin);
+	parent.postMessage(jsonMsg,origin);
 }
 ph.jQuery(function(){
+	phOrigin=location.search.substring('?origin='.length);
+//	alert('phOrigin:'+phOrigin); TODO check phOrigin from
 	if(window.addEventListener){
 		window.addEventListener('message',onMessageFromParent, false);
 	}else if(window.attachEvent){
 		window.attachEvent('onmessage',onMessageFromParent);
 	}
-	postMessageToParent("{load:true}",'*');
+	postMessageToParent({load:true},phOrigin);
 });
 // --></script>
 </head>
