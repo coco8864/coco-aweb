@@ -66,8 +66,8 @@ window.ph.auth={
 		if(!ph.auth.isAuthFrameLoad){
 			ph.auth.isAuthFrameLoad=true;
 		}
-		var origin = ev.origin;//TODO domain check
-		if(!ev.data){
+		var origin = ev.origin;
+		if(!ev.data || ph.authUrl.indexOf(origin)!=0){
 			return;
   		}
 		var res=ph.JSON.parse(ev.data);
@@ -85,7 +85,7 @@ window.ph.auth={
 			return;
 		}
 		var jsonMsg=ph.JSON.stringify(msg);
-		window[this.authFrameName].postMessage(jsonMsg,'*');//TODO domain check
+		window[this.authFrameName].postMessage(jsonMsg,ph.authUrl);
 	}
 };
 
@@ -96,7 +96,7 @@ ph.jQuery(function(){
 	}else if(window.attachEvent){
 		window.attachEvent('onmessage',ph.auth._onMessage);
 	}
-	ph.jQuery("body").append('<iframe width="0" height="0" frameborder="no" name="' + ph.auth.authFrameName + '" src="' + ph.authUrl + '/authFrame.vsp" ></iframe>');
+	ph.jQuery("body").append('<iframe width="0" height="0" frameborder="no" name="' + ph.auth.authFrameName + '" src="' + ph.authUrl + '/authFrame.vsp?origin='+location.protocol+'//'+location.host+'" ></iframe>');
 });
 
 })();
