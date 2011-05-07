@@ -352,6 +352,13 @@ if(typeof ph == "undefined"){
 //					this.publicQueue=data.result;
 					return;
 				}
+				if(data.action=='logout'){
+					if(ph.queue._errorCb){
+							ph.queue._errorCb(data);
+							ph.queue._errorCb=null;
+					}
+					return;
+				}
 //以降必ず、typeは、publish,brawserにsubscribeしてくる事はない
 //				if(data.type!=('publish')){
 //					return;//error
