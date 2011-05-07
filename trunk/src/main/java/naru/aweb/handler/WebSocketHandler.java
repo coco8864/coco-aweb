@@ -17,6 +17,7 @@ import naru.aweb.config.Config;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.RequestContext;
 import naru.aweb.http.WebServerHandler;
+import naru.aweb.queue.QueueManager;
 import naru.aweb.util.CodeConverter;
 
 import org.apache.log4j.Logger;

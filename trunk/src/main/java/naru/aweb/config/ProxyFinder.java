@@ -205,9 +205,9 @@ public class ProxyFinder {
 					Object o=configs.nextElement();
 					logger.error("SystemClassLoader loaderScriptEngineFactory resouce:" + o);
 				}
-				return;
+				throw new IllegalStateException("fail to getEngineByName(JavaScript)");
 			}else{
-				logger.debug("pacScriptEngine:" + pacScriptEngine.getClass().getName());
+				logger.info("pacScriptEngine:" + pacScriptEngine.getClass().getName());
 			}
 			InputStream is = ProxyFinder.class.getResourceAsStream("pacscript.js");
 			Reader reader = new InputStreamReader(is);

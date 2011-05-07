@@ -212,4 +212,14 @@ public class WsQueueHandler extends WebSocketHandler {
 		JSONArray responseMsg=processMessages(json,null);//HTTPで処理している
 		responseJson(responseMsg);
 	}
+	
+	/**
+	 * WebSocketで通信中にセションがログアウトした場合に呼び出される
+	 */
+	public void onLogout(){
+		JSON json=QueueManager.publishMessage(null, "logout", "logout",null);
+		postMessage(json.toString());
+		super.onLogout();
+	}
+	
 }

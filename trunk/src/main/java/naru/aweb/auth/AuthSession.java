@@ -73,6 +73,10 @@ public class AuthSession extends PoolBase{
 				if(secondarySession.isLogout()){
 					continue;
 				}
+				for(LogoutEvent evnet:secondarySession.logoutEvents){
+					evnet.onLogout();//onLogoutイベント中synchronizedはタブー
+				}
+				secondarySession.logoutEvents.clear();
 				SessionId secondaryId=secondarySession.getSessionId();
 				secondaryId.remove();
 				secondarySession.unref();
