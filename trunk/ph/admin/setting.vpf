@@ -24,6 +24,17 @@ function setKeepAlive(){
   });
 }
 
+function setHtml5(){
+ ph.admin.doCommand('setHtml5',{
+   isUseWebSocket:ph.jQuery("#isUseWebSocket").attr('checked'),
+   isUseSessionStorage:ph.jQuery("#isUseSessionStorage").attr('checked'),
+   isUseCrossDomain:ph.jQuery("#isUseCrossDomain").attr('checked')
+  },
+  function(x){
+##setKeepAlive完了
+  });
+}
+
 function setAuth(){
  var scheme=ph.jQuery("#authScheme").val();
  ph.jQuery("#curSchme").text(scheme);
@@ -285,4 +296,27 @@ checked="checked"
 /><br/>
 <input type="button" value="設定"  onclick="setKeepAlive();"/><br/>
 </div>
+
+<Hr/>
+<H2 onclick="ph.jQuery('#html5Div').toggle();">+HTML5設定</H2>
+<div class="settingItem" id="html5Div">
+<p>利用可能なブラウザでHTML5機能を使用するか否かを設定してください</p>
+WebSocket API:<input type="checkBox" name="isUseWebSocket" id="isUseWebSocket"
+#if(${config.getBoolean('isUseWebSocket',true)})
+checked="checked"
+#end
+/><br>
+Web Storage sessionStorage:<input type="checkBox" name="isUseSessionStorage" id="isUseSessionStorage"
+#if(${config.getBoolean('isUseSessionStorage',true)})
+checked="checked"
+#end
+/><br>
+Cross-document messaging:<input type="checkBox" name="isUseCrossDomain" id="isUseCrossDomain"
+#if(${config.getBoolean('isUseCrossDomain',true)})
+checked="checked"
+#end
+/><br>
+<input type="button" value="設定" onclick="setHtml5();" /><br/>
+</div>
+
 
