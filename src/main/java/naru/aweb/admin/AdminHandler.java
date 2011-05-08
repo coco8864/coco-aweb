@@ -330,6 +330,14 @@ public class AdminHandler extends WebServerHandler{
 			config.setProperty("contentEncoding", contentEncoding);
 			config.setProperty("allowChunked", allowChunked);
 			responseJson(true);
+		}else if("setHtml5".equals(cmd)){
+			String isUseWebSocket=parameter.getParameter("isUseWebSocket");
+			String isUseSessionStorage=parameter.getParameter("isUseSessionStorage");
+			String isUseCrossDomain=parameter.getParameter("isUseCrossDomain");
+			config.setProperty("isUseWebSocket", isUseWebSocket);
+			config.setProperty("isUseSessionStorage", isUseSessionStorage);
+			config.setProperty("isUseCrossDomain", isUseCrossDomain);
+			responseJson(true);
 		}else if("setAuth".equals(cmd)){
 			String scheme=parameter.getParameter("scheme");
 			String logoutUrl=parameter.getParameter("logoutUrl");
