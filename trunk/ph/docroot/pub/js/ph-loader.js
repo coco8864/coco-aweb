@@ -66,9 +66,12 @@ window.ph={
  }
 };//end of window.ph
 
-ph.isUseSessionStorage=false;
-if(typeof sessionStorage != "undefined"){
- ph.isUseSessionStorage=true;
+ph.isUseSessionStorage=$esc.javascript(${config.getBoolean("isUseSessionStorage",true)});
+if(typeof sessionStorage == "undefined"){
+ ph.isUseSessionStorage=false;
+}
+
+if(ph.isUseSessionStorage){
  if(sessionStorage['ph.debug']=='true'){
 	 ph.setDebug(true);
  }else{
@@ -76,12 +79,12 @@ if(typeof sessionStorage != "undefined"){
  }
 }
 
-ph.isUseWebSocket=true;
+ph.isUseWebSocket=$esc.javascript(${config.getBoolean("isUseWebSocket",true)});
 if(typeof WebSocket == 'undefined'){
  ph.isUseWebSocket=false;
 }
 
-ph.isUseCrossDomain=true;
+ph.isUseCrossDomain=$esc.javascript(${config.getBoolean("isUseCrossDomain",true)});
 if(typeof window.postMessage == 'undefined'){
  ph.isUseCrossDomain=false;
 }

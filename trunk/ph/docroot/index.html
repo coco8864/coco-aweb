@@ -38,21 +38,44 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 				inout.unbind();
 				inout.bind("click",function(){location=ph.authUrl;});
 			}
+			var useText;
+			if(typeof WebSocket != 'undefined'){
+				useText="利用できます"
+			}else{
+				useText="利用できません"
+			}
+			ph.jQuery("#websocket").text(useText);
+			if(typeof sessionStorage != "undefined"){
+				useText="利用できます"
+			}else{
+				useText="利用できません"
+			}
+			ph.jQuery("#sessionStorage").text(useText);
+			if(typeof window.postMessage != 'undefined'){
+				useText="利用できます"
+			}else{
+				useText="利用できません"
+			}
+			ph.jQuery("#crossDocument").text(useText);
+
 			if(ph.isUseWebSocket){
-				ph.jQuery("#websocket").text("使用します");
+				useText="使用します"
 			}else{
-				ph.jQuery("#websocket").text("使用しません");
+				useText="使用しません"
 			}
+			ph.jQuery("#useWebsocket").text(useText);
 			if(ph.isUseSessionStorage){
-				ph.jQuery("#sessionStorage").text("使用します");
+				useText="使用します"
 			}else{
-				ph.jQuery("#sessionStorage").text("使用しません");
+				useText="使用しません"
 			}
+			ph.jQuery("#useSessionStorage").text(useText);
 			if(ph.isUseCrossDomain){
-				ph.jQuery("#crossDocument").text("使用します");
+				useText="使用します"
 			}else{
-				ph.jQuery("#crossDocument").text("使用しません");
+				useText="使用しません"
 			}
+			ph.jQuery("#useCrossDocument").text(useText);
 		});
 	});
 	function goAdmin(){
@@ -75,9 +98,9 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 <hr/>
 <div>Browser support function</div>
 <table>
-<tr><td>WebSocket API</td><td id="websocket"></td></tr>
-<tr><td>Web Storage sessionStorage</td><td id="sessionStorage"></td></tr>
-<tr><td>Cross-document messaging</td><td id="crossDocument"></td></tr>
+<tr><td>WebSocket API</td><td id="websocket"></td><td id="useWebsocket"></td></tr>
+<tr><td>Web Storage sessionStorage</td><td id="sessionStorage"></td><td id="useSessionStorage"></td></tr>
+<tr><td>Cross-document messaging</td><td id="crossDocument"></td><td id="useCrossDocument"></td></tr>
 </table>
 <hr/>
 </body>
