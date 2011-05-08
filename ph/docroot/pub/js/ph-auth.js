@@ -12,12 +12,12 @@ window.ph.auth={
 	_getUserCb:null,
 	getUser:function(cb){
 		this._userCb=cb;
-		if(ph.isUseSessionStorage){
-			this._postMessage({type:'getUser'});
+		if(ph.isUseCrossDomain){
+			ph.auth._postMessage({type:'getUser'});
 		}else{
 			var userCb=function(data){
-				var res={type:'getUser',result:true,data:msg};
-				ph.auth._onMessage(res);
+				ph.auth._userCb(data);
+				ph.auth._userCb=null;
 			}
 			ph.jQuery.post(ph.authUrl+"/ajaxUser",{},userCb,"jsonp");
 		}
@@ -40,7 +40,7 @@ window.ph.auth={
 	},
 	_getPathOnceId:function(authId){
 		ph.log("_getPathOnceId:"+authId);
-		if(ph.isUseSessionStorage){
+		if(ph.isUseCrossDomain){
 			ph.auth._postMessage({type:'getPathOnceId',authId:authId});
 		}else{
 			var pathOnceIdcb=function(data){
