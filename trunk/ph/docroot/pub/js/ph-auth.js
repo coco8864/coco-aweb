@@ -96,7 +96,8 @@ ph.jQuery(function(){
 	}else if(window.attachEvent){
 		window.attachEvent('onmessage',ph.auth._onMessage);
 	}
-	ph.jQuery("body").append('<iframe width="0" height="0" frameborder="no" name="' + ph.auth.authFrameName + '" src="' + ph.authUrl + '/authFrame.vsp?origin='+location.protocol+'//'+location.host+'" ></iframe>');
+	var origin=encodeURIComponent(location.protocol+'//'+location.host);
+	ph.jQuery("body").append('<iframe width="0" height="0" frameborder="no" name="' + ph.auth.authFrameName + '" src="' + ph.authUrl + '/authFrame.vsp?origin='+ origin +'" ></iframe>');
 });
 
 })();

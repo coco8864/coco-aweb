@@ -41,7 +41,7 @@ function postMessageToParent(msg,origin){
 	parent.postMessage(jsonMsg,origin);
 }
 ph.jQuery(function(){
-	phOrigin=location.search.substring('?origin='.length);
+	phOrigin=decodeURIComponent(location.search.substring('?origin='.length));
 //	alert('phOrigin:'+phOrigin); TODO check phOrigin from
 	if(window.addEventListener){
 		window.addEventListener('message',onMessageFromParent, false);

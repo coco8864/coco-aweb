@@ -4,13 +4,12 @@ if(window.ph){
 }
 window.ph={
 ##このjavascriptの取得経路を記録,proxy or web...
- isProxy:${handler.getRequestHeader().isProxy()},
- isSsl:${handler.isSsl()},
- domain:'${handler.getLocalIp()}:${handler.getLocalPort()}',
- hostHeader:'${handler.getRequestHeader().getServer()}',
- authUrl:'${config.authUrl}',
- adminUrl:'${config.adminUrl}',
-// scripts:['jquery-1.4.2.min.js','ph-jqnoconflict.js','ph-json2.js','ph-queue.js'],
+ isProxy:$esc.javascript(${handler.getRequestHeader().isProxy()}),
+ isSsl:$esc.javascript(${handler.isSsl()}),
+ domain:'$esc.javascript(${handler.getLocalIp()}):$esc.javascript(${handler.getLocalPort()})',
+ hostHeader:'$esc.javascript(${handler.getRequestHeader().getServer()})',
+ authUrl:'$esc.javascript(${config.authUrl})',
+ adminUrl:'$esc.javascript(${config.adminUrl})',
  scripts:['jquery-1.5.1.min.js','ph-jqnoconflict.js','ph-json2.js'],
  isUseWebSocket:false,//WebSocketを使うか否か?
  isUseSessionStorage:false,//SessionStorageを使うか否か?
@@ -113,7 +112,7 @@ ph.Tran.prototype.toJson=function(){
  ph.JSON.stringify(this);
 };
 
-var include='$!{parameter.getParameter("include")}'.split(',');
+var include='$!esc.javascript(${parameter.getParameter("include")})'.split(',');
 for(var i=0;i<include.length;i++){
  if(include[i]==''){
   continue;
@@ -130,7 +129,6 @@ if(ph.isSsl){
 }else{
  scriptBase='http://';
 }
-##scriptBase+='${handler.getLocalIp()}:${handler.getLocalPort()}/pub/js/';
 scriptBase+=ph.hostHeader +'/pub/js/';
 //alert(scriptBase);
 for(var i=0;i<ph.scripts.length;i++){
