@@ -250,11 +250,11 @@ public class Mapper {
 	
 	
 	public MappingResult resolveProxy(String realHost, ServerParser server,String path){
-		RealHost host=config.getRealHost(server);
-		if(host!=null){//自サーバをproxyしようとしていると判断
-			MappingResult mappingResult=resolveWeb(host.getName(),false,server,path);
-			return mappingResult;
-		}
+//		RealHost host=config.getRealHost(server);
+//		if(host!=null){//自サーバをproxyしようとしていると判断
+//			MappingResult mappingResult=resolveWeb(host.getName(),false,server,path);
+//			return mappingResult;
+//		}HeaderParser側で対処したため必要なし
 		MappingResult mapping=resolve(activeMappings,realHost,SourceType.PROXY,SecureType.PLAIN,server,path);
 		if(mapping!=null){
 			return mapping;

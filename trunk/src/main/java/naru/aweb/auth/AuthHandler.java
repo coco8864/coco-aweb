@@ -371,10 +371,13 @@ public class AuthHandler extends WebServerHandler {
 				responseJson(false,parameter.getParameter("callback"));
 			}
 			SessionId pathOnceId=authorizer.createPathOnceIdByPrimary(url,cookieId);
+			String callback=parameter.getParameter("callback");
 			if(pathOnceId==null){//cookieIdÇ™ñ≥å¯Ç»èÍçá
-				responseJson(false,parameter.getParameter("callback"));
+				responseJson(false,callback);
+			}else if(callback==null){
+				responseJson(pathOnceId.getId());
 			}else{
-				responseJson(pathOnceId.getId(),parameter.getParameter("callback"));
+				responseJson("'"+pathOnceId.getId()+"'",callback);//TODO Ç»ÇÒÇ©ïœ
 			}
 			return;
 		}else if(AUTHENTICATE_PATH.equals(path)){
