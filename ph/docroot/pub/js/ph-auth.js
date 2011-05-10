@@ -44,8 +44,9 @@ window.ph.auth={
 			ph.auth._postMessage({type:'getPathOnceId',authId:authId});
 		}else{
 			var pathOnceIdcb=function(data){
-				var res={type:'getPathOnceId',result:true,data:data};
-				ph.auth._onMessage(res);
+				ph.auth._setAuth(data);
+//				var res={type:'getPathOnceId',result:true,data:data};
+//				ph.auth._onMessage(res);
 			}
 			ph.jQuery.post(ph.authUrl+"/ajaxPathOnceId",{authId:authId},pathOnceIdcb,"jsonp");
 		}
