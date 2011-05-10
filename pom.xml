@@ -200,17 +200,17 @@
 		<dependency>
 			<groupId>org.datanucleus</groupId>
 			<artifactId>datanucleus-core</artifactId>
-			<version>3.0.0-m3</version>
+			<version>[3.0.0-m3,)</version>
 		</dependency>
 		<dependency>
 			<groupId>org.datanucleus</groupId>
 			<artifactId>datanucleus-rdbms</artifactId>
-			<version>3.0.0-m3</version>
+			<version>[3.0.0-m3,)</version>
 		</dependency>
 		<dependency>
 			<groupId>org.datanucleus</groupId>
 			<artifactId>datanucleus-api-jdo</artifactId>
-			<version>3.0.0-m3</version>
+			<version>[3.0.0-m3,)</version>
 		</dependency>
 		<dependency>
 			<groupId>javax.jdo</groupId>
@@ -259,8 +259,19 @@
 			<artifactId>velocity-tools-generic</artifactId>
 			<version>2.0-beta1</version>
 		</dependency>
-	</dependencies>
 
+<dependency>
+        <groupId>org.seleniumhq.selenium</groupId>
+        <artifactId>selenium-remote-control</artifactId>
+        <version>2.0b3</version>
+</dependency>  
+<dependency>
+    <groupId>org.seleniumhq.selenium</groupId>
+    <artifactId>selenium</artifactId>
+    <version>2.0b3</version>
+</dependency>
+
+	</dependencies>
 	<repositories>
 		<repository>
 			<id>DataNucleus_Repos</id>
@@ -278,6 +289,10 @@
 		<pluginRepository>
 			<id>DataNucleus_2</id>
 			<url>http://www.datanucleus.org/downloads/maven2/</url>
+		</pluginRepository>
+		<pluginRepository>
+			<id>selenium</id>
+			<url>http://repo1.maven.org/maven2/org/seleniumhq/selenium/</url>
 		</pluginRepository>
 	</pluginRepositories>
 </project>
