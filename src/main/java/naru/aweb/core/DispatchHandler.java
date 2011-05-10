@@ -136,6 +136,10 @@ public class DispatchHandler extends ServerBaseHandler {
 				logger.warn("http header error");
 				asyncClose(null);
 			} else {
+				if(headerParser.isProxy()&&config.getRealHost(headerParser.getServer())!=null ){
+					//©•ª©g‚ğproxy‚µ‚æ‚¤‚Æ‚µ‚Ä‚¢‚éB
+					headerParser.forceWebRequest();
+				}
 				mappingHandler();
 			}
 		} else {

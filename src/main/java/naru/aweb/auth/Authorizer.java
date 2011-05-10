@@ -77,7 +77,7 @@ public class Authorizer implements Timer{
 	public void term() {
 		TimerManager.clearInterval(timerContext);
 		int count=0;
-//		count=freeIds(primaryIds);//この中で、secondaryIdsもクリアされる
+//		count=freeIds(primaryIds);//この中で、secondaryIdsもクリアされる.ここでConcurrentModificationException発生
 		for(SessionId primaryId:primaryIds.values()){
 			AuthSession authSession=primaryId.getAuthSession();
 			if(authSession!=null){

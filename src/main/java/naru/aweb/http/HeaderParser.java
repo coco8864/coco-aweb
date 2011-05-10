@@ -27,6 +27,8 @@ import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
 import naru.async.store.Page;
 import naru.async.store.Store;
+import naru.aweb.core.RealHost;
+import naru.aweb.mapping.MappingResult;
 import naru.aweb.util.ServerParser;
 
 import org.apache.log4j.Logger;
@@ -541,7 +543,7 @@ public class HeaderParser extends PoolBase {
 		// proxyへのリクエスト
 			isProxy = true;
 			server = ServerParser.parse(serverString, 80);
-		} else {
+		} else {//TODO WebSocketリクエストをproxyする場合はどうするの？
 			String upgradeHeader = getHeader(UPGRADE_HEADER);
 			if (WEB_SOCKET.equals(upgradeHeader)) {
 				isWs = true;
@@ -1021,5 +1023,14 @@ public class HeaderParser extends PoolBase {
 			server.unref();
 		}
 		server = ServerParser.parse(hostHeader);
+	}
+	
+	public void forceWebRequest(){//強制的にwebリクエストにする
+		isProxy=false;
+		if(query==null){
+			setRequestUri(path);
+		}else{
+			setRequestUri(path +'?'+ query);
+		}
 	}
 }
