@@ -1,4 +1,4 @@
-package naru.selenium;
+package naru.aweb.selenium;
 
 import java.util.List;
 
@@ -22,7 +22,7 @@ import com.google.common.base.Function;
 
 
 public class SeleniumUtil {
-	static Wait wait;
+	private static final long WAIT_TIMEOUT=10;
 
 	static Function<WebDriver, WebElement> presenceOfElementLocated(final By locator) {
         return new Function<WebDriver, WebElement>() {
@@ -32,12 +32,21 @@ public class SeleniumUtil {
         };
 	}
 	
-	private static void createWait(WebDriver driver){
-        wait=new WebDriverWait(driver,30);
+	static Function<WebDriver, WebElement> presenceOfElementTagText(final String tag,final String text) {
+        return new Function<WebDriver, WebElement>() {
+            public WebElement apply(WebDriver driver) {
+            	return tagInText(driver,tag,text);
+            }
+        };
 	}
 	
-	public static boolean waitForLocator(By locator){
-        return (wait.until(presenceOfElementLocated(locator))!=null);
+	public static WebElement waitForLocator(WebDriver driver,By locator){
+        Wait<WebDriver> wait=new WebDriverWait(driver,WAIT_TIMEOUT);
+        return wait.until(presenceOfElementLocated(locator));
+	}
+	public static WebElement waitForTagText(WebDriver driver,String tag,String text){
+        Wait<WebDriver> wait=new WebDriverWait(driver,WAIT_TIMEOUT);
+        return wait.until(presenceOfElementTagText(tag,text));
 	}
 	
 	public static WebDriver chrome(String proxyPac){
@@ -48,7 +57,6 @@ public class SeleniumUtil {
             prop.setProxy(proxy);
         }
         WebDriver driver = new ChromeDriver(prop,new ChromeExtension());
-        createWait(driver);
         return driver;
 	}
 	
@@ -60,7 +68,6 @@ public class SeleniumUtil {
             prop.setProxyPreferences(proxy);
         }
     	WebDriver driver = new FirefoxDriver(prop);
-        createWait(driver);
     	return driver;
 	}
 	
@@ -69,7 +76,6 @@ public class SeleniumUtil {
     	if(proxyPac!=null){
     		driver.setAutoProxy(proxyPac);
     	}
-        createWait(driver);
 		return driver;
 	}
 	
@@ -78,7 +84,6 @@ public class SeleniumUtil {
 			throw new RuntimeException("ie not suppoert proxyPac");
 		}
 		InternetExplorerDriver driver=new InternetExplorerDriver();
-        createWait(driver);
 		return driver;
 	}
 	
