@@ -1,6 +1,4 @@
-package naru.selenium;
-
-import java.util.List;
+package naru.aweb.selenium;
 
 import org.junit.Test;
 import org.openqa.selenium.By;
@@ -14,18 +12,23 @@ public class PhSeTest {
 	public void test1() throws InterruptedException{
     	WebDriver driver=SeleniumUtil.firefox(PROXY_PAC);
     	driver.get("https://ph.ph-sample.appspot.com");
-    	SeleniumUtil.executeScript(driver,"jQuery('#username').val('admin');jQuery('#password').val('admin');;jQuery('#dummyForm').submit();");
-    	Thread.sleep(1000);
-    	driver.get("https://ph.ph-sample.appspot.com/images/11.jpg");
-    	Thread.sleep(1000);
+        WebElement elm=SeleniumUtil.waitForTagText(driver, "h1", "Phatom Proxy Login(digest)");
+    	SeleniumUtil.executeScript(driver,"jQuery('#username').val('admin');jQuery('#password').val('admin');jQuery('#dummyForm').submit();");
+        elm=SeleniumUtil.waitForTagText(driver, "h1", "Phantom Proxy Test");
+//    	Thread.sleep(1000);
+    	driver.get("http://ph.ph-sample.appspot.com");
+        elm=SeleniumUtil.waitForTagText(driver, "h1", "Phantom Proxy Test");
+//    	Thread.sleep(1000);
         driver.get("http://127.0.0.1:1280/admin");
-
-        driver.findElement(By.linkText("setting")).click();
+        elm=SeleniumUtil.waitForTagText(driver, "h1", "ìÆçÏèÛãµ");
+        /*
         WebElement elm=SeleniumUtil.tagInText(driver, "h1", "ìÆçÏèÛãµ");
-        elm=SeleniumUtil.tagInText(driver, "h2", "+AccessLogsëÄçÏ");
+        */
+        driver.findElement(By.linkText("setting")).click();
+        elm=SeleniumUtil.waitForTagText(driver, "h2", "+AccessLogsëÄçÏ");
         elm.click();
-        WebElement e=driver.findElement(By.cssSelector("input[value='à⁄èo']"));
-        e.click();
+        elm=SeleniumUtil.waitForLocator(driver, By.cssSelector("input[value='à⁄èo']"));
+        elm.click();
         
         driver.findElement(By.linkText("mapping")).click();
         driver.findElement(By.linkText("accessLog")).click();
