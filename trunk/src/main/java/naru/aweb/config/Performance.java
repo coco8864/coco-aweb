@@ -170,6 +170,13 @@ public class Performance {
 	@Persistent
 	@Column(name="RESPONSE_BODY_TIME_SUMSQ")
 	private long responseBodyTimeSumsq;
+	@Persistent
+	@Column(name="MAX_MEMORY_SUM")
+	private long maxMemorySum;
+	@Persistent
+	@Column(name="FREE_MEMORY_SUM")
+	private long freeMemorySum;
+	
 	
 	//テストの実行環境
 	@Persistent
@@ -249,6 +256,9 @@ public class Performance {
 		t=accessLog.getResponseBodyTime();
 		responseBodyTimeSum+=t;
 		responseBodyTimeSumsq+=(t*t);
+		Runtime runtime=Runtime.getRuntime();
+		maxMemorySum+=runtime.maxMemory();
+		freeMemorySum+=runtime.freeMemory();
 	}
 	
 	/**
@@ -453,6 +463,22 @@ public class Performance {
 
 	public void setResponseLengthSum(long responseLengthSum) {
 		this.responseLengthSum = responseLengthSum;
+	}
+
+	public long getMaxMemorySum() {
+		return maxMemorySum;
+	}
+
+	public long getFreeMemorySum() {
+		return freeMemorySum;
+	}
+
+	public void setMaxMemorySum(long maxMemorySum) {
+		this.maxMemorySum = maxMemorySum;
+	}
+
+	public void setFreeMemorySum(long freeMemorySum) {
+		this.freeMemorySum = freeMemorySum;
 	}
 	
 }

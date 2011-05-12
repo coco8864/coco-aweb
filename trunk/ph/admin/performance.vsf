@@ -151,12 +151,12 @@ function perfLine(trTag,perf){
 function perfProgress(st){
 	var bar=jQuery("#progressbar");
 	if(!st){
-		ph.jQuery("#stTestStatus").text("未実�?);
+		ph.jQuery("#stTestStatus").text("未実行");
 		bar.progressbar({value:0});
 		return;
 	}
-	if(st.loopCount==st.loop && st.scenarioCount==(st.scenarioIndex+1)){
-		ph.jQuery("#stTestStatus").text("完�?);
+	if(st.runnningBrowserCount==0 && st.scenarioCount==(st.scenarioIndex+1)){
+		ph.jQuery("#stTestStatus").text("完了");
 	}else{
 		ph.jQuery("#stTestStatus").text("実行中");
 	}
@@ -174,28 +174,28 @@ perfProgress(stressData.msg);
 
 <h1>Performance list</h1>
 <hr/>
-<div>�?��ト状�?<span id="stTestStatus"></span>
-memory:<span id="stTestMemory"></span>%
+<div><span id="stTestStatus"></span>
 scenario:<span id="stTestScenario"></span>
 name:<span id="stTestName"></span>
 start:<span id="stTestStartTime"></span>
 time:<span id="stTestScenario"></span>
 browser:<span id="stTestBrowser"></span>
 loop:<span id="stTestLoop"></span></div>
+memory:<span id="stTestMemory"></span>%
 <div id="progressbar"></div> 
 <hr/>
-条件入�?<input type="text" id="perfQuery" value="" size="64" />
+条件入力<input type="text" id="perfQuery" value="" size="64" />
 検索サンプル:
 <select id="searchSample" size="1" onChange="ph.jQuery('#perfQuery').val(this.value);">
-<option value="">JDOQL�?/option>
+<option value="">JDOQL例</option>
 <option value="isMaster">test master</option>
-<option value="name.equals('name')">name�?�?/option>
-<option value="name.indexOf('name')>=0">nameに'name'を含�?/option>
-<option value="testBrowserCount>=10">browser数�?0以�?/option>
-<option value="count>=10">実行回数�?0以�?/option>
+<option value="name.equals('name')">name指定</option>
+<option value="name.indexOf('name')>=0">nameに'name'を含む</option>
+<option value="testBrowserCount>=10">browser数が10以上</option>
+<option value="count>=10">実行回数が10以上</option>
 </select>
 <input type="button" value="検索" onClick="perfTableRefresh();">
-<input type="button" value="削除" onClick="if(confirm('削除しま�?よろしいですか?'))perfDelete();">
+<input type="button" value="削除" onClick="if(confirm('削除します.よろしいですか?'))perfDelete();">
 <div style="margin: 0.4em 0.0em; padding: 0.0em 0.0em;background: #fff none; border: solid 0pt #000;">
 <table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
 <thead>

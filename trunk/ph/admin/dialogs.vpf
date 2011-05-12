@@ -19,7 +19,7 @@ function editSave(){
 	jQuery('#textEdit').dialog('close');
 }
 
-##stress�?��アログから呼ばれる
+##stressダイアログから呼ばれる
 var stressData={
 	chId:-1,
 	msg:null
@@ -27,7 +27,7 @@ var stressData={
 var doStressCb={
 	update:function(data){
 		var msg=data.message;
-		if(msg!=null && msg.loopCount==msg.loop && msg.scenarioCount==(msg.scenarioIndex+1)){
+		if(msg!=null && msg.runnningBrowserCount==0 && msg.scenarioCount==(msg.scenarioIndex+1)){
 			ph.queue.unsubscribe(stressData.chId);
 			stressData.chId=-1;
 		}
@@ -47,6 +47,7 @@ function doStress(){
 		list:ph.jQuery('#stressAccessLogList').text(),
 		browserCount:ph.jQuery('#stressBrowserCount').val(),
 		loopCount:ph.jQuery('#loopCount').val(),
+		thinkingTime:ph.jQuery('#thinkingTime').val(),
 		time:ph.jQuery('#stressTime').val(),//未使用
 		keepAlive:ph.jQuery('#stressKeepAlive').attr('checked'),
 		accessLog:ph.jQuery('#stressAccessLog').attr('checked'),
@@ -138,7 +139,7 @@ function openEditDialog(digest,id,requestLine,part,readonly,chunk,gzip,charset){
 }
 
 // --></script>
-##イメージ表示用�?��アログ
+##イメージ表示用ダイアログ
 <div id="imageBox">
 <div>id:<span id="imageBoxId"></span></div>
 <div>requestLine:<span id="imageBoxRequestLine"></span></div>
@@ -146,7 +147,7 @@ function openEditDialog(digest,id,requestLine,part,readonly,chunk,gzip,charset){
 <div style="float:right"><input type="button" value="close" onClick="jQuery('#imageBox').dialog('close')"/></div>
 </div>
 
-##�?��スト編�?���?��アログ
+##テキスト編集用ダイアログ
 <div id="textEdit">
 <div>id:<span id="textEditId"></span></div>
 <div>requestLine:<span id="textEditRequestLine"></span></div>
@@ -157,14 +158,16 @@ function openEditDialog(digest,id,requestLine,part,readonly,chunk,gzip,charset){
 <div style="float:right"><input type="button" value="save" onClick="editSave();"/><input type="button" value="cancel" onClick="jQuery('#textEdit').dialog('close');"/></div>
 </div> 
 
-##�?���?��ト用�?��アログ
+##負荷テスト用ダイアログ
 <div id="stress">
 accessLog list:<span id="stressAccessLogList"></span><br/>
-file�?�?<input id="isStressFile" type="checkBox" onclick="updateStressDialog();">
+file指定:<input id="isStressFile" type="checkBox" onclick="updateStressDialog();">
+<hr/>
 <div class="stressItem">
 test name:<input id="stressName" type="text"><br/>
 browser count:<input id="stressBrowserCount" type="text"><br/>
 loop count:<input id="loopCount" type="text"><br/>
+thinking time:<input id="thinkingTime" type="text"><br/>
 <!--time(s):<input id="stressTime" type="text"><br/> -->
 keepAlive:<input id="stressKeepAlive" type="checkBox"><br/>
 accessLog:<input id="stressAccessLog" type="checkBox" onclick="updateStressDialog();" >
@@ -182,7 +185,7 @@ json file:<input type="file" name="stressFile" id="stressFile"/>
 <input type="button" value="cancel" onClick="jQuery('#stress').dialog('close')">
 </div> 
 
-##mapping入力用�?��アログ
+##mapping入力用ダイアログ
 <div id="mappingDialog">
 id:<span id="mappingId"></span>
 enable:<input id="mappingEnabled" type="checkBox"><br/>
@@ -215,14 +218,14 @@ options:<textArea id="mappingOptions"rows="4" cols="64"></textArea><br/>
 <input type="button" value="cancel" onClick="jQuery('#mappingDialog').dialog('close')">
 </div> 
 
-##realHost入力用�?��アログ
+##realHost入力用ダイアログ
 <div id="realHostDialog">
 name:<input id="realHostName" type="text" size="40"><br/>
 init:<input id="realHostInitBind" type="checkBox"><br/>
 bindHost:<input id="realHostBindHost" type="text" size="40"><br/>
 bindPort:<input id="realHostBindPort" type="text" size="40"><br/>
 backlog:<input id="realHostBacklog" type="text" size="40"><br/>
-##virtualHosts:<input id="realHostVirtualHosts" type="text" size="40"><br/>virtualHostsは使われて�?���?
+##virtualHosts:<input id="realHostVirtualHosts" type="text" size="40"><br/>virtualHostsは使われていない
 whiteIpPattern:<input id="realHostWhitePattern" type="text" size="50"><br/>
 blackIpPattern:<input id="realHostBlackPattern" type="text" size="50"><br/>
 <input type="button" value="save" onClick="realHostCreate()">
@@ -232,7 +235,7 @@ blackIpPattern:<input id="realHostBlackPattern" type="text" size="50"><br/>
 <input type="button" value="cancel" onClick="jQuery('#realHostDialog').dialog('close')">
 </div> 
 
-##user入力用�?��アログ
+##user入力用ダイアログ
 <div id="userDialog">
 <div class="userUpdateMode">
 id:<span id="userId"></span><br/>
@@ -247,7 +250,7 @@ roles:<input id="userRoles" type="text" size="64"><br/>
 firstName:<input id="userFirstName" type="text" size="64"><br/>
 lastName:<input id="userLastName" type="text" size="64"><br/>
 footSize:<input id="userfootSize" type="text" size="16"><br/>
-##lastLogin:<span id="userlastLogin"><br/>�?��で見えてるから�?��な�?
+##lastLogin:<span id="userlastLogin"><br/>一覧で見えてるから必要なし
 ##changePass:<span id="userchangePass"><br/>
 ##createDate:<span id="usercreateDate"><br/>
 <input type="button" value="save" onClick='doUserSave();'>
@@ -255,7 +258,7 @@ footSize:<input id="userfootSize" type="text" size="16"><br/>
 <input type="button" value="cancel" onClick="jQuery('#userDialog').dialog('close')">
 </div> 
 
-##commisionAuth入力用�?��アログ
+##commisionAuth入力用ダイアログ
 <div id="commissionAuthDialog">
 notes:<input id="commissionAuthNotes" size="64"><br/>
 type:<select id="commissionAuthType" size="1">
