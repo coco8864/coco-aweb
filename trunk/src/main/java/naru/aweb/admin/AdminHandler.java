@@ -100,8 +100,8 @@ public class AdminHandler extends WebServerHandler{
 	private String doStress(String name,int browserCount,int callCount,AccessLog[] accessLogs,
 			boolean isCallerKeepAlive,boolean isAccessLog,boolean isResponseHeaderTrace,boolean isResponseBodyTrace){
 		QueueManager queueManager=QueueManager.getInstance();
-		String chId=queueManager.createQueue();
-		if( Scenario.run(name, browserCount, callCount, accessLogs, isCallerKeepAlive, isAccessLog, isResponseHeaderTrace, isResponseBodyTrace,chId)){
+		String chId=queueManager.createQueue(false,true);
+		if( Scenario.run(accessLogs, name, browserCount, callCount, isCallerKeepAlive, isAccessLog, isResponseHeaderTrace, isResponseBodyTrace,chId)){
 			return chId;
 		}
 		return null;

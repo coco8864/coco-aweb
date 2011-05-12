@@ -19,13 +19,29 @@ function editSave(){
 	jQuery('#textEdit').dialog('close');
 }
 
-##stressダイアログから呼ばれる
+##stress�?��アログから呼ばれる
+var stressData={
+	chId:-1,
+	msg:null
+};
 var doStressCb={
-	onComplete:function(msg){ph.log('doStress onComplete:');alert(msg.message);},
+	update:function(data){
+		var msg=data.message;
+		if(msg!=null && msg.loopCount==msg.loop && msg.scenarioCount==(msg.scenarioIndex+1)){
+			ph.queue.unsubscribe(stressData.chId);
+			stressData.chId=-1;
+		}
+		stressData.msg=msg;
+		if(perfProgress){perfProgress(msg);}
+		},
+	onComplete:function(msg){ph.log('doStress onComplete');doStressCb.update(msg);},
 	onError:function(msg){ph.log('doStress onError:');ph.dump(msg);},
-	onMessage:function(msg){ph.log('doStress onMessage:');ph.dump(msg);}
+	onMessage:function(msg){ph.log('doStress onMessage');doStressCb.update(msg);}
 };
 function doStress(){
+	if(doStressCb.chId>=0){
+		alert("実行中");
+	}
 	ph.admin.doCommand('stress',{
 		name:ph.jQuery('#stressName').val(),
 		list:ph.jQuery('#stressAccessLogList').text(),
@@ -37,8 +53,23 @@ function doStress(){
 		tesponseHeaderTrace:ph.jQuery('#stressTesponseHeaderTrace').attr('checked'),
 		tesponseBodyTrace:ph.jQuery('#stressTesponseBodyTrace').attr('checked')
 		},
-		function(chId){ph.queue.subscribeById(chId,doStressCb)});
+		function(chId){doStressCb.chId=chId;ph.queue.subscribeById(chId,doStressCb)});
 	ph.jQuery(".logIdCheck").attr("checked",false);
+	jQuery('#stress').dialog('close');
+}
+function updateStressDialog(){
+	if(ph.jQuery('#isStressFile').attr('checked')){
+		ph.jQuery('.stressFile').show();
+		ph.jQuery('.stressItem').hide();
+	}else{
+		ph.jQuery('.stressFile').hide();
+		ph.jQuery('.stressItem').show();
+		if(ph.jQuery('#stressAccessLog').attr('checked')){
+			ph.jQuery('.stressTrace').attr('disabled','')
+		}else{
+			ph.jQuery('.stressTrace').attr('disabled','disabled')
+		}
+	}
 }
 
 function reloadEditDialog(){
@@ -107,7 +138,7 @@ function openEditDialog(digest,id,requestLine,part,readonly,chunk,gzip,charset){
 }
 
 // --></script>
-##イメージ表示用ダイアログ
+##イメージ表示用�?��アログ
 <div id="imageBox">
 <div>id:<span id="imageBoxId"></span></div>
 <div>requestLine:<span id="imageBoxRequestLine"></span></div>
@@ -115,7 +146,7 @@ function openEditDialog(digest,id,requestLine,part,readonly,chunk,gzip,charset){
 <div style="float:right"><input type="button" value="close" onClick="jQuery('#imageBox').dialog('close')"/></div>
 </div>
 
-##テキスト編集用ダイアログ
+##�?��スト編�?���?��アログ
 <div id="textEdit">
 <div>id:<span id="textEditId"></span></div>
 <div>requestLine:<span id="textEditRequestLine"></span></div>
@@ -126,22 +157,32 @@ function openEditDialog(digest,id,requestLine,part,readonly,chunk,gzip,charset){
 <div style="float:right"><input type="button" value="save" onClick="editSave();"/><input type="button" value="cancel" onClick="jQuery('#textEdit').dialog('close');"/></div>
 </div> 
 
-##負荷テスト用ダイアログ
+##�?���?��ト用�?��アログ
 <div id="stress">
 accessLog list:<span id="stressAccessLogList"></span><br/>
+file�?�?<input id="isStressFile" type="checkBox" onclick="updateStressDialog();">
+<div class="stressItem">
 test name:<input id="stressName" type="text"><br/>
 browser count:<input id="stressBrowserCount" type="text"><br/>
 loop count:<input id="loopCount" type="text"><br/>
 <!--time(s):<input id="stressTime" type="text"><br/> -->
 keepAlive:<input id="stressKeepAlive" type="checkBox"><br/>
-accessLog:<input id="stressAccessLog" type="checkBox"><br/>
-responseHeaderTrace:<input id="stressTesponseHeaderTrace" type="checkBox"><br/>
-responseBodyTrace:<input id="stressTesponseBodyTrace" type="checkBox"><br/>
+accessLog:<input id="stressAccessLog" type="checkBox" onclick="updateStressDialog();" >
+headerTrace:<input class="stressTrace" disabled='disabled' id="stressTesponseHeaderTrace" type="checkBox">
+bodyTrace:<input class="stressTrace" disabled='disabled' id="stressTesponseBodyTrace" type="checkBox">
+</div>
+<div class="stressFile" style="display:none">
+<form method="post" enctype="multipart/form-data" action="admin" target="uploadFrame">
+json file:<input type="file" name="stressFile" id="stressFile"/>
+<input type="hidden" name="list" id="fileStressAccessLogList"/>
+<input type="hidden" name="cmd" id="stress"/>
+</form>
+</div>
 <input type="button" value="ok" onClick='doStress()'>
 <input type="button" value="cancel" onClick="jQuery('#stress').dialog('close')">
 </div> 
 
-##mapping入力用ダイアログ
+##mapping入力用�?��アログ
 <div id="mappingDialog">
 id:<span id="mappingId"></span>
 enable:<input id="mappingEnabled" type="checkBox"><br/>
@@ -174,14 +215,14 @@ options:<textArea id="mappingOptions"rows="4" cols="64"></textArea><br/>
 <input type="button" value="cancel" onClick="jQuery('#mappingDialog').dialog('close')">
 </div> 
 
-##realHost入力用ダイアログ
+##realHost入力用�?��アログ
 <div id="realHostDialog">
 name:<input id="realHostName" type="text" size="40"><br/>
 init:<input id="realHostInitBind" type="checkBox"><br/>
 bindHost:<input id="realHostBindHost" type="text" size="40"><br/>
 bindPort:<input id="realHostBindPort" type="text" size="40"><br/>
 backlog:<input id="realHostBacklog" type="text" size="40"><br/>
-##virtualHosts:<input id="realHostVirtualHosts" type="text" size="40"><br/>virtualHostsは使われていない
+##virtualHosts:<input id="realHostVirtualHosts" type="text" size="40"><br/>virtualHostsは使われて�?���?
 whiteIpPattern:<input id="realHostWhitePattern" type="text" size="50"><br/>
 blackIpPattern:<input id="realHostBlackPattern" type="text" size="50"><br/>
 <input type="button" value="save" onClick="realHostCreate()">
@@ -191,7 +232,7 @@ blackIpPattern:<input id="realHostBlackPattern" type="text" size="50"><br/>
 <input type="button" value="cancel" onClick="jQuery('#realHostDialog').dialog('close')">
 </div> 
 
-##user入力用ダイアログ
+##user入力用�?��アログ
 <div id="userDialog">
 <div class="userUpdateMode">
 id:<span id="userId"></span><br/>
@@ -206,7 +247,7 @@ roles:<input id="userRoles" type="text" size="64"><br/>
 firstName:<input id="userFirstName" type="text" size="64"><br/>
 lastName:<input id="userLastName" type="text" size="64"><br/>
 footSize:<input id="userfootSize" type="text" size="16"><br/>
-##lastLogin:<span id="userlastLogin"><br/>一覧で見えてるから必要なし
+##lastLogin:<span id="userlastLogin"><br/>�?��で見えてるから�?��な�?
 ##changePass:<span id="userchangePass"><br/>
 ##createDate:<span id="usercreateDate"><br/>
 <input type="button" value="save" onClick='doUserSave();'>
@@ -214,7 +255,7 @@ footSize:<input id="userfootSize" type="text" size="16"><br/>
 <input type="button" value="cancel" onClick="jQuery('#userDialog').dialog('close')">
 </div> 
 
-##commisionAuth入力用ダイアログ
+##commisionAuth入力用�?��アログ
 <div id="commissionAuthDialog">
 notes:<input id="commissionAuthNotes" size="64"><br/>
 type:<select id="commissionAuthType" size="1">
