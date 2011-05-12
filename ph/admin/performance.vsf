@@ -148,23 +148,54 @@ function perfLine(trTag,perf){
 		stdev(perf.responseBodyTimeSum,perf.responseBodyTimeSumsq,count) +')');
 	trTag.appendChild(tdTag);
 }
+function perfProgress(st){
+	var bar=jQuery("#progressbar");
+	if(!st){
+		ph.jQuery("#stTestStatus").text("未実�?);
+		bar.progressbar({value:0});
+		return;
+	}
+	if(st.loopCount==st.loop && st.scenarioCount==(st.scenarioIndex+1)){
+		ph.jQuery("#stTestStatus").text("完�?);
+	}else{
+		ph.jQuery("#stTestStatus").text("実行中");
+	}
+	var ratio=((st.maxMemory-st.freeMemory)/st.maxMemory)*100.0;
+	ph.jQuery("#stTestMemory").text(ratio.toFixed(2));
+	ph.jQuery("#stTestName").text(st.name);
+	ph.jQuery("#stTestScenario").text((st.scenarioIndex+1)+"/"+st.scenarioCount);
+	ph.jQuery("#stTestBrowser").text((st.runnningBrowserCount)+"/"+st.browserCount);
+	ph.jQuery("#stTestLoop").text((st.loop)+"/"+st.loopCount);
+	bar.progressbar({value:(st.loop/st.loopCount)*100});
+}
 perfTableRefresh();
+perfProgress(stressData.msg);
 </script>
 
 <h1>Performance list</h1>
 <hr/>
-条件入力:<input type="text" id="perfQuery" value="" size="64" />
+<div>�?��ト状�?<span id="stTestStatus"></span>
+memory:<span id="stTestMemory"></span>%
+scenario:<span id="stTestScenario"></span>
+name:<span id="stTestName"></span>
+start:<span id="stTestStartTime"></span>
+time:<span id="stTestScenario"></span>
+browser:<span id="stTestBrowser"></span>
+loop:<span id="stTestLoop"></span></div>
+<div id="progressbar"></div> 
+<hr/>
+条件入�?<input type="text" id="perfQuery" value="" size="64" />
 検索サンプル:
 <select id="searchSample" size="1" onChange="ph.jQuery('#perfQuery').val(this.value);">
-<option value="">JDOQL例</option>
+<option value="">JDOQL�?/option>
 <option value="isMaster">test master</option>
-<option value="name.equals('name')">name指定</option>
-<option value="name.indexOf('name')>=0">nameに'name'を含む</option>
-<option value="testBrowserCount>=10">browser数が10以上</option>
-<option value="count>=10">実行回数が10以上</option>
+<option value="name.equals('name')">name�?�?/option>
+<option value="name.indexOf('name')>=0">nameに'name'を含�?/option>
+<option value="testBrowserCount>=10">browser数�?0以�?/option>
+<option value="count>=10">実行回数�?0以�?/option>
 </select>
 <input type="button" value="検索" onClick="perfTableRefresh();">
-<input type="button" value="削除" onClick="perfDelete();">
+<input type="button" value="削除" onClick="if(confirm('削除しま�?よろしいですか?'))perfDelete();">
 <div style="margin: 0.4em 0.0em; padding: 0.0em 0.0em;background: #fff none; border: solid 0pt #000;">
 <table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
 <thead>

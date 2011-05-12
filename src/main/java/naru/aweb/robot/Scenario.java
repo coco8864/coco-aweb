@@ -8,11 +8,15 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import naru.async.pool.Pool;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Performance;
 import naru.aweb.queue.QueueManager;
+import net.sf.json.JSON;
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 
 
 public class Scenario extends PoolBase{
@@ -29,17 +33,83 @@ public class Scenario extends PoolBase{
 	private int runnningBrowserCount;
 	private List<Browser> browsers=new ArrayList<Browser>();
 	private boolean isAccesslog=false;//TODO 外からもらう必要あり
+	private Scenario nextScenario=null;
+	
+	private int scenarioCount=1;//全シナリオ数
+	private int scenarioIndex=0;//自分は何番目のシナリオか？
 	
 	private Performance masterPerformance;
 	private Map<String,Performance> requestPerformances=new HashMap<String,Performance>();
 	private Map<String,Performance> requestStatusCodePerformances;
+	private JSONObject stat=new JSONObject();
 	
-	public static boolean run(String name,int browserCount,int loopCount,AccessLog[] accessLogs,
+	//chidに通知,100単位 or 時間単位 ,scenarioIndex/scenarioCount,loop/loopCount,runnningBrowserCount/browserCount,メモリ使用量,
+	private void broadcast(String chId){
+		if(chId==null){
+			return;
+		}
+		if(loop!=0 && loop!=loopCount && (loop%100)!=0){//TODO 100を動的に変更
+			return;
+		}
+		Runtime runtime=Runtime.getRuntime();
+		stat.element("freeMemory", runtime.freeMemory());
+		stat.element("maxMemory", runtime.maxMemory());
+		stat.element("loop", loop);
+		stat.element("runnningBrowserCount", runnningBrowserCount);
+		
+		QueueManager queueManager=QueueManager.getInstance();
+		queueManager.publish(chId, stat);
+	}
+	
+	/**
+	 * 複数のScenarioを連続的に動作させるためのrun
+	 * @param stresses
+	 * @param accessLogs
+	 * @param chId
+	 * @return
+	 */
+	public static boolean run(JSONArray stresses,AccessLog[] accessLogs,String chId){
+		int n=stresses.size();
+		Scenario topScenario=null;
+		Scenario lastScenario=null;
+		for(int i=0;i<n;i++){
+			Scenario scenario=(Scenario)PoolManager.getInstance(Scenario.class);
+			scenario.scenarioCount=n;
+			scenario.scenarioIndex=i;
+			if(lastScenario!=null){
+				lastScenario.nextScenario=scenario;
+			}else{
+				topScenario=scenario;
+			}
+			JSONObject stress=stresses.getJSONObject(i);
+			String name=stress.getString("name");
+			int browserCount=stress.getInt("browserCount");
+			int loopCount=stress.getInt("loopCount");
+			boolean isCallerKeepAlive=stress.optBoolean("isCallerKeepAlive",false);
+			boolean isAccessLog=stress.optBoolean("isAccessLog",false);
+			boolean isResponseHeaderTrace=stress.optBoolean("isResponseHeaderTrace",false);
+			boolean isResponseBodyTrace=stress.optBoolean("isResponseBodyTrace",false);
+			if(scenario.setup(accessLogs,name,browserCount,loopCount,isCallerKeepAlive,isAccessLog,isResponseHeaderTrace,isResponseBodyTrace)==false){
+				scenario=topScenario;
+				while(scenario!=null){
+					lastScenario=scenario.nextScenario;
+					scenario.unref(true);
+					scenario=lastScenario;
+				}
+				return false;
+			}
+			lastScenario=scenario;
+		}
+		topScenario.start(chId);
+		return true;
+	}
+	
+	public static boolean run(AccessLog[] accessLogs,String name,int browserCount,int loopCount,
 			boolean isCallerKeepAlive,
 			boolean isAccessLog,boolean isResponseHeaderTrace,boolean isResponseBodyTrace,
 			String chId){
 		Scenario scenario=(Scenario)PoolManager.getInstance(Scenario.class);
-		if(scenario.setup(name,browserCount,loopCount,accessLogs,isCallerKeepAlive,isAccessLog,isResponseHeaderTrace,isResponseBodyTrace)){
+		if(scenario.setup(accessLogs,name,browserCount,loopCount,isCallerKeepAlive,isAccessLog,isResponseHeaderTrace,isResponseBodyTrace)){
 			scenario.start(chId);
 			return true;
 		}
@@ -52,7 +122,7 @@ public class Scenario extends PoolBase{
 	 * @param loopCount
 	 * @param requests リクエストAccessLog
 	 */
-	public boolean setup(String name,int browserCount,int loopCount,AccessLog[] accessLogs,
+	public boolean setup(AccessLog[] accessLogs,String name,int browserCount,int loopCount,
 			boolean isCallerkeepAlive,
 			boolean isAccessLog,boolean isResponseHeaderTrace,boolean isResponseBodyTrace){
 		this.name=name;
@@ -88,35 +158,43 @@ public class Scenario extends PoolBase{
 	 * @param requests リクエストURL
 	 * 
 	 */
-	public void setup(String name,int browserCount,int loopCount,URL[] urls){
+	public void setup(URL[] urls,String name,int browserCount,int loopCount){
 		this.name=name;
 		this.browserCount=browserCount;
 		this.loopCount=loopCount;
-		
 	}
 	
 	private synchronized boolean startBrowserIfNeed(Browser browser){
 		if(loopCount>loop){
+			broadcast(chId);
+			//TODO browser行方不明問題あり,"...favicon.ico HTTP/1.1" null 0 125#123,-,H,null,null,15,15,0,0,-1"こんな感じに記録される
 			loop++;
 			browser.start();
 			return true;
 		}
+		browsers.remove(browser);
+		browser.cleanup();
+		browser.unref();
 		runnningBrowserCount--;
+		broadcast(chId);
 		if(runnningBrowserCount==0){
 			endTime=System.currentTimeMillis();
 			isProcessing=false;
-			notify();
+			notify();//Scenarioを作成して終了をwaitで待っている可能性がある
 			logger.info("###Scenario end.name:" +name + " time:"+(endTime-startTime));
 			masterPerformance.insert();
 			for(Performance performance:requestPerformances.values()){
 				performance.insert();
 			}
-			if(chId!=null){
-				QueueManager queueManager=QueueManager.getInstance();
-				queueManager.publish(chId, "Scenario name:"+name +" end.time:"+(endTime-startTime));
-			}
-			browsers.clear();
+//			if(chId!=null){
+//				QueueManager queueManager=QueueManager.getInstance();
+//				queueManager.publish(chId, "Scenario name:"+name +" end.time:"+(endTime-startTime));
+//			}
 			unref();//このSceinarioは終了
+//			browsers.clear();
+			if(nextScenario!=null){
+				nextScenario.start(chId);
+			}
 		}
 		return false;
 	}
@@ -130,13 +208,18 @@ public class Scenario extends PoolBase{
 		loop=0;
 		this.chId=chId;
 		startTime=System.currentTimeMillis();
+		stat.element("name", name);
+		stat.element("startTime", startTime);
+		stat.element("scenarioCount", scenarioCount);
+		stat.element("scenarioIndex", scenarioIndex);
+		stat.element("loopCount", loopCount);
+		stat.element("browserCount", browserCount);
 		isProcessing=true;
 		runnningBrowserCount=browsers.size();
+		
+		broadcast(chId);//開始時のbroadcast
 		for(Browser browser:browsers){
-			if(startBrowserIfNeed(browser)==false){
-				browser.cleanup();
-				browser.unref();
-			}
+			startBrowserIfNeed(browser);
 		}
 	}
 	
@@ -148,10 +231,7 @@ public class Scenario extends PoolBase{
 	
 	public void onBrowserEnd(Browser browser){
 		logger.debug("#onBrowserEnd runnningBrowserCount:"+runnningBrowserCount);
-		if(startBrowserIfNeed(browser)==false){
-			browser.cleanup();
-			browser.unref();
-		}
+		startBrowserIfNeed(browser);
 	}
 	
 	public void onRequest(AccessLog accessLog){
@@ -189,7 +269,8 @@ public class Scenario extends PoolBase{
 
 	@Override
 	public void recycle() {
+		nextScenario=null;
+		scenarioCount=1;
+		scenarioIndex=0;
 	}
-	
-
 }

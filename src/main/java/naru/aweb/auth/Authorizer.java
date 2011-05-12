@@ -78,11 +78,24 @@ public class Authorizer implements Timer{
 		TimerManager.clearInterval(timerContext);
 		int count=0;
 //		count=freeIds(primaryIds);//Ç±ÇÃíÜÇ≈ÅAsecondaryIdsÇ‡ÉNÉäÉAÇ≥ÇÍÇÈ.Ç±Ç±Ç≈ConcurrentModificationExceptionî≠ê∂
-		for(SessionId primaryId:primaryIds.values()){
-			AuthSession authSession=primaryId.getAuthSession();
-			if(authSession!=null){
-				count++;
-				authSession.logout();
+//		for(SessionId primaryId:primaryIds.values()){
+//			AuthSession authSession=primaryId.getAuthSession();
+//			if(authSession!=null){
+//				count++;
+//				authSession.logout();
+//			}
+//		}
+		while(true){
+			if(primaryIds.isEmpty()){
+				break;
+			}
+			for(SessionId primaryId:primaryIds.values()){
+				AuthSession authSession=primaryId.getAuthSession();
+				if(authSession!=null){
+					count++;
+					authSession.logout();//Ç±ÇÃêÊÇ≈primaryIdsÇçÌèúÇ∑ÇÈ
+					break;
+				}
 			}
 		}
 		logger.info("Term free primaryIds:"+count);
