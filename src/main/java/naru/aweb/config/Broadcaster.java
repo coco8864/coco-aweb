@@ -29,7 +29,7 @@ public class Broadcaster implements Timer {
 	
 	Broadcaster(Config config){
 		this.config=config;
-		chId=queueManager.createQueueByName("PhStastics", "admin", true, "phantom proxy stastics broadcast",true);
+		chId=queueManager.createQueueByName("PhStastics", "admin", true, "phantom proxy stastics broadcast");
 		long interval=config.getLong("broardcastInterval", BROADCAST_INTERVAL);
 		Stastics stastics=new Stastics();
 		config.setStasticsObject(stastics);
@@ -152,9 +152,9 @@ public class Broadcaster implements Timer {
 		Stastics stastics=(Stastics)userContext;
 		stastics.update();
 		logWatch(stastics);
-		if(queueManager.publish(chId, stastics, false)==false){
+		if(queueManager.publish(chId, stastics, false,false)==false){
 			queueManager.unsubscribe(chId);
-			chId=queueManager.createQueueByName("PhStastics", "admin", true, "phantom proxy stastics broadcast",true);
+			chId=queueManager.createQueueByName("PhStastics", "admin", true, "phantom proxy stastics broadcast");
 		}
 		long interval=config.getLong("broardcastInterval", BROADCAST_INTERVAL);
 		timerId=TimerManager.setTimeout(interval, this, stastics);

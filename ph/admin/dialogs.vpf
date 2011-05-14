@@ -21,27 +21,38 @@ function editSave(){
 
 ##stressダイアログから呼ばれる
 var stressData={
-	chId:-1,
+	isComplete:true,
+	time:0,
 	msg:null
 };
-var doStressCb={
-	update:function(data){
-		var msg=data.message;
-		if(msg!=null && msg.runnningBrowserCount==0 && msg.scenarioCount==(msg.scenarioIndex+1)){
-			ph.queue.unsubscribe(stressData.chId);
-			stressData.chId=-1;
+ph.jQuery(function(){
+	if(ph.isUseSessionStorage){
+		var json=sessionStorage['stressData'];
+		if(json){
+			stressData=ph.JSON.parse(json)
 		}
+	}
+});
+
+var doStressCb={
+	update:function(msg,time,isComplete){
 		stressData.msg=msg;
-		if(perfProgress){perfProgress(msg);}
+		stressData.time=time;
+		stressData.isComplete=isComplete;
+		if(ph.isUseSessionStorage){
+			var json=ph.JSON.stringify(stressData);
+			sessionStorage['stressData']=json;
+		}
+		if(typeof perfProgress!='undefined'){perfProgress();}
 		},
-	onComplete:function(msg){ph.log('doStress onComplete');doStressCb.update(msg);},
+	onComplete:function(msg){ph.log('doStress onComplete');doStressCb.update(msg.message,msg.time,true);},
 	onError:function(msg){ph.log('doStress onError:');ph.dump(msg);},
-	onMessage:function(msg){ph.log('doStress onMessage');doStressCb.update(msg);}
+	onMessage:function(msg){ph.log('doStress onMessage');doStressCb.update(msg.message,msg.time,false);}
 };
 function doStress(){
-	if(doStressCb.chId>=0){
-		alert("実行中");
-	}
+//	if(!doStressCb.isComplete){
+//		alert("実行中");
+//	}
 	ph.admin.doCommand('stress',{
 		name:ph.jQuery('#stressName').val(),
 		list:ph.jQuery('#stressAccessLogList').text(),
@@ -54,7 +65,10 @@ function doStress(){
 		tesponseHeaderTrace:ph.jQuery('#stressTesponseHeaderTrace').attr('checked'),
 		tesponseBodyTrace:ph.jQuery('#stressTesponseBodyTrace').attr('checked')
 		},
-		function(chId){doStressCb.chId=chId;ph.queue.subscribeById(chId,doStressCb)});
+		function(chId){
+			jQuery("#tabs").tabs("select",5);
+			ph.queue.subscribeById(chId,doStressCb)
+			});
 	ph.jQuery(".logIdCheck").attr("checked",false);
 	jQuery('#stress').dialog('close');
 }

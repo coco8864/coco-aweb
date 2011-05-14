@@ -46,17 +46,23 @@ public class AdminPerfHandler extends WebServerHandler{
 	}
 	
 	public void startResponseReqBody(){
-		ParameterParser parameter=getParameterParser();
-		String command=parameter.getParameter("command");
-		if(command!=null){
-			doCommand(command,parameter);
-			return;
-		}
-		JSONObject json=(JSONObject)parameter.getJsonObject();
-		if(json!=null){
-			command=json.optString("command");
-			Object paramObj=json.opt("param");
-			doObjCommand(command,paramObj);
+		try{
+			ParameterParser parameter=getParameterParser();
+			String command=parameter.getParameter("command");
+			if(command!=null){
+				doCommand(command,parameter);
+				return;
+			}
+			JSONObject json=(JSONObject)parameter.getJsonObject();
+			if(json!=null){
+				command=json.optString("command");
+				Object paramObj=json.opt("param");
+				doObjCommand(command,paramObj);
+				return;
+			}
+		}catch(RuntimeException e){
+			logger.warn("fail to AdminPerfHandler.",e);
+			completeResponse("500");
 			return;
 		}
 		completeResponse("404");

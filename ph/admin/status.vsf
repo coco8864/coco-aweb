@@ -74,9 +74,13 @@ function setWatchCheck(checked){
 function onWatchCheck(){
 	if(isWatchCheck()){
 		watchStastics();
-		sessionStorage['broardcastWatch']='true';
+		if(ph.isUseSessionStorage){
+			sessionStorage['broardcastWatch']='true';
+		}
 	}else{
-		sessionStorage['broardcastWatch']='false';
+		if(ph.isUseSessionStorage){
+			sessionStorage['broardcastWatch']='false';
+		}
 	}
 }
 

@@ -171,10 +171,10 @@ public class Performance {
 	@Column(name="RESPONSE_BODY_TIME_SUMSQ")
 	private long responseBodyTimeSumsq;
 	@Persistent
-	@Column(name="MAX_MEMORY_SUM")
+	@Column(name="MAX_MEMORY_SUM",defaultValue="0")
 	private long maxMemorySum;
 	@Persistent
-	@Column(name="FREE_MEMORY_SUM")
+	@Column(name="FREE_MEMORY_SUM",defaultValue="0")
 	private long freeMemorySum;
 	
 	

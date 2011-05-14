@@ -84,7 +84,7 @@ public class LogPersister implements Timer {
 			pm.makeTransient(accessLog);// オブジェクトを再利用するために必要
 		}
 		if (chId != null) {
-			queueManager.publish(chId, accessLog.getId());
+			queueManager.complete(chId, accessLog.getId());
 		}
 		accessLog.unref(true);
 	}
@@ -279,7 +279,7 @@ public class LogPersister implements Timer {
 			break;
 		}
 		if (requestInfo.chId != null) {
-			queueManager.publish(requestInfo.chId, message);
+			queueManager.complete(requestInfo.chId, message);
 		}
 
 	}
