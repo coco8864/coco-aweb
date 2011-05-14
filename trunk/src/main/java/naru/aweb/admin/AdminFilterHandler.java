@@ -116,7 +116,7 @@ public class AdminFilterHandler extends WebServerHandler{
 			} catch (IOException e) {
 				logger.error("fail to listGetter.source:"+source,e);
 			}
-			queueManger.publish(chId, "fail to listGetter");
+			queueManger.complete(chId, "fail to listGetter");
 			return;
 		}
 		completeResponse("404");

@@ -102,22 +102,19 @@ public class QueueManager implements Timer{
 	 * @return
 	 */
 	public String createQueue(){
-		return createQueue(true,true);
+		return createQueue(true);
 	}
 	
-	public String createQueue(boolean isOneshot,boolean isTimeout){
+	public String createQueue(boolean isTimeout){
 		String anonName="$AnonQueue"+createId();
-		return createQueueByName(anonName,null,true,null,isOneshot,isTimeout);
+		return createQueueByName(anonName,null,true,null,isTimeout);
 	}
 	
 	public String createQueueByName(String name,String user,boolean isNew,String comment){
-		return createQueueByName(name,user,isNew,comment,false,true);
-	}
-	public String createQueueByName(String name,String user,boolean isNew,String comment,boolean isTimeout){
-		return createQueueByName(name,user,isNew,comment,false,isTimeout);
+		return createQueueByName(name,user,isNew,comment,true);
 	}
 
-	private String createQueueByName(String name,String user,boolean isNew,String comment,boolean isOneshot,boolean isTimeout){
+	private String createQueueByName(String name,String user,boolean isNew,String comment,boolean isTimeout){
 		Queue queue=null;
 		synchronized(nameQueueMap){
 			queue=nameQueueMap.get(name);
@@ -125,7 +122,7 @@ public class QueueManager implements Timer{
 				if(!isNew){
 					return null;
 				}
-				queue=Queue.create(name,comment,isOneshot,isTimeout);
+				queue=Queue.create(name,comment,isTimeout);
 				nameQueueMap.put(name, queue);
 				logger.debug("create queue."+name);
 			}
@@ -139,16 +136,20 @@ public class QueueManager implements Timer{
 		return chId;
 	}
 	
-	public void publish(String chId,Object message){
-		publish(chId,message,true);
+	//completeは、最終publishの事
+	public void complete(String chId,Object message){
+		publish(chId,message,true,true);
 	}
-	public boolean publish(String chId,Object message,boolean echoback){
+	public void publish(String chId,Object message){
+		publish(chId,message,true,false);
+	}
+	public boolean publish(String chId,Object message,boolean echoback,boolean isComplete){
 		Queue queue=idQueueMap.get(chId);//getbyid
 		if(queue==null){
 			logger.warn("publish not found queue.chId:"+chId);
 			return false;
 		}
-		return queue.publish(chId,message,echoback);
+		return queue.publish(chId,message,echoback,isComplete);
 	}
 	
 	//リクエスト受付時

@@ -406,7 +406,7 @@ public class Browser extends PoolBase {
 			}
 			if(chId!=null){//accessLogに設定する前に終わった...異常ルート
 				QueueManager queueManager=QueueManager.getInstance();
-				queueManager.publish(chId, "browser end.time:"+(System.currentTimeMillis()-startTime));
+				queueManager.complete(chId, "browser end.time:"+(System.currentTimeMillis()-startTime));
 			}
 		}
 	}

@@ -44,11 +44,14 @@ public class Scenario extends PoolBase{
 	private JSONObject stat=new JSONObject();
 	
 	//chidに通知,100単位 or 時間単位 ,scenarioIndex/scenarioCount,loop/loopCount,runnningBrowserCount/browserCount,メモリ使用量,
-	private void broadcast(String chId){
+	private void broadcast(String chId,boolean isComplete){
 		if(chId==null){
 			return;
 		}
 		if(loop!=0 && loop!=loopCount && (loop%100)!=0){//TODO 100を動的に変更
+			return;
+		}
+		if(loop==loopCount && runnningBrowserCount!=0 && (runnningBrowserCount&10)!=0 ){
 			return;
 		}
 		Runtime runtime=Runtime.getRuntime();
@@ -58,7 +61,11 @@ public class Scenario extends PoolBase{
 		stat.element("runnningBrowserCount", runnningBrowserCount);
 		
 		QueueManager queueManager=QueueManager.getInstance();
-		queueManager.publish(chId, stat);
+		if(isComplete){
+			queueManager.complete(chId, stat);
+		}else{
+			queueManager.publish(chId, stat);
+		}
 	}
 	
 	/**
@@ -166,7 +173,7 @@ public class Scenario extends PoolBase{
 	
 	private synchronized boolean startBrowserIfNeed(Browser browser){
 		if(loopCount>loop){
-			broadcast(chId);
+			broadcast(chId,false);
 			//TODO browser行方不明問題あり,"...favicon.ico HTTP/1.1" null 0 125#123,-,H,null,null,15,15,0,0,-1"こんな感じに記録される
 			loop++;
 			browser.start();
@@ -176,7 +183,6 @@ public class Scenario extends PoolBase{
 		browser.cleanup();
 		browser.unref();
 		runnningBrowserCount--;
-		broadcast(chId);
 		if(runnningBrowserCount==0){
 			endTime=System.currentTimeMillis();
 			isProcessing=false;
@@ -192,9 +198,14 @@ public class Scenario extends PoolBase{
 //			}
 			unref();//このSceinarioは終了
 //			browsers.clear();
-			if(nextScenario!=null){
+			if(nextScenario!=null){//次のSceinarioを実行
+				broadcast(chId,false);
 				nextScenario.start(chId);
+			}else{
+				broadcast(chId,true);
 			}
+		}else{
+			broadcast(chId,false);
 		}
 		return false;
 	}
@@ -217,7 +228,7 @@ public class Scenario extends PoolBase{
 		isProcessing=true;
 		runnningBrowserCount=browsers.size();
 		
-		broadcast(chId);//開始時のbroadcast
+		broadcast(chId,false);//開始時のbroadcast
 		for(Browser browser:browsers){
 			startBrowserIfNeed(browser);
 		}

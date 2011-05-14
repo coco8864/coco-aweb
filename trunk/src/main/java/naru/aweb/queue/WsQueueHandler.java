@@ -123,7 +123,8 @@ public class WsQueueHandler extends WebSocketHandler {
 		String chId=msg.optString("id");
 		Object message=msg.opt("message");
 		boolean echoback=msg.optBoolean("echoback",true);
-		if(queueManager.publish(chId, message,echoback)==false){//serverÄ‹N“®‚Åid‚ªŒÃ‚­‚È‚èpublish‚É¸”s‚·‚éê‡‚ª‚ ‚é
+		boolean complete=msg.optBoolean("complete",false);
+		if(queueManager.publish(chId, message,echoback,complete)==false){//serverÄ‹N“®‚Åid‚ªŒÃ‚­‚È‚èpublish‚É¸”s‚·‚éê‡‚ª‚ ‚é
 			responseMsg.add(QueueManager.publishMessage(chId, "error", "fail to publish","self"));
 		}
 	}

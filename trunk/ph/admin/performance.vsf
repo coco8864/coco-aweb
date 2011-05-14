@@ -23,6 +23,7 @@ function perfTableRefresh(param){
 		if(logQuery!=""){
 			queryString+="WHERE "+logQuery;
 		}
+		queryString+=" ORDER BY id DESC";
 		param={query:queryString}
 	}
 	ph.admin.doPramCommand('perf','list',param,function(json){
@@ -148,22 +149,26 @@ function perfLine(trTag,perf){
 		stdev(perf.responseBodyTimeSum,perf.responseBodyTimeSumsq,count) +')');
 	trTag.appendChild(tdTag);
 }
-function perfProgress(st){
+function perfProgress(){
 	var bar=jQuery("#progressbar");
-	if(!st){
+	if(!stressData.msg){
 		ph.jQuery("#stTestStatus").text("未実行");
 		bar.progressbar({value:0});
 		return;
 	}
-	if(st.runnningBrowserCount==0 && st.scenarioCount==(st.scenarioIndex+1)){
+	if(stressData.isComplete){
 		ph.jQuery("#stTestStatus").text("完了");
 	}else{
 		ph.jQuery("#stTestStatus").text("実行中");
 	}
+	var st=stressData.msg;
+	var totalTime=stressData.time-st.startTime;
 	var ratio=((st.maxMemory-st.freeMemory)/st.maxMemory)*100.0;
 	ph.jQuery("#stTestMemory").text(ratio.toFixed(2));
 	ph.jQuery("#stTestName").text(st.name);
 	ph.jQuery("#stTestScenario").text((st.scenarioIndex+1)+"/"+st.scenarioCount);
+	ph.jQuery("#stTestStartTime").text(ph.admin.formatHms(st.startTime));
+	ph.jQuery("#stTestTotalTime").text(totalTime);
 	ph.jQuery("#stTestBrowser").text((st.runnningBrowserCount)+"/"+st.browserCount);
 	ph.jQuery("#stTestLoop").text((st.loop)+"/"+st.loopCount);
 	bar.progressbar({value:(st.loop/st.loopCount)*100});
@@ -174,14 +179,14 @@ perfProgress(stressData.msg);
 
 <h1>Performance list</h1>
 <hr/>
-<div><span id="stTestStatus"></span>
+<div>stress進捗:<span id="stTestStatus"></span>
 scenario:<span id="stTestScenario"></span>
 name:<span id="stTestName"></span>
 start:<span id="stTestStartTime"></span>
-time:<span id="stTestScenario"></span>
+totalTime:<span id="stTestTotalTime"></span>
 browser:<span id="stTestBrowser"></span>
-loop:<span id="stTestLoop"></span></div>
-memory:<span id="stTestMemory"></span>%
+loop:<span id="stTestLoop"></span>
+memory:<span id="stTestMemory"></span>%</div>
 <div id="progressbar"></div> 
 <hr/>
 条件入力<input type="text" id="perfQuery" value="" size="64" />

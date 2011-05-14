@@ -31,24 +31,25 @@ public class Queue extends PoolBase {
 	}
 	private Map<String,SubscribeInfo> idMap=new HashMap<String,SubscribeInfo>();
 //	private Map<Long,SubscribeInfo> handlerMap=new HashMap<Long,SubscribeInfo>();
-	private boolean isOneshot;
+//	private boolean isOneshot;
+	private boolean isComplete;//新規subscribeを拒否,現状の参加者に"complete"を通知すればiFinへ
 	private boolean isFin;
 	private boolean lastAccess;
 	private boolean isTimeout;//timeoutするか否か
 	
 	public static Queue create(){
 		Queue queue=(Queue)PoolManager.getInstance(Queue.class);
-		queue.isOneshot=true;
+		queue.isComplete=false;
 		queue.isFin=false;
 		queue.isTimeout=true;
 		return queue;
 	}
 	
-	public static Queue create(String name,String comment,boolean isOneshot,boolean isTimeout){
+	public static Queue create(String name,String comment,boolean isTimeout){
 		Queue queue=(Queue)PoolManager.getInstance(Queue.class);
 		queue.name=name;
 		queue.comment=comment;
-		queue.isOneshot=isOneshot;
+//		queue.isOneshot=isOneshot;
 		queue.isTimeout=isTimeout;
 		queue.isFin=false;
 		return queue;
@@ -57,7 +58,7 @@ public class Queue extends PoolBase {
 	@Override
 	public void recycle() {
 		name=null;
-		isOneshot=false;
+		isComplete=false;
 		isFin=false;
 		Iterator<String> itr=idMap.keySet().iterator();
 		while(itr.hasNext()){
@@ -117,10 +118,13 @@ public class Queue extends PoolBase {
 		if(info.msgs!=null){
 			handler.publish(JSONSerializer.toJSON(info.msgs));
 			info.msgs.clear();
-			if(isOneshot){
-				unsubscribe(chId);
-				isFin=true;
-				return true;
+			if(isComplete){
+				idMap.remove(chId);
+				if(idMap.isEmpty()){
+					unsubscribe(chId);
+					isFin=true;
+					return true;
+				}
 			}
 		}
 		handler.ref();
@@ -196,29 +200,46 @@ public class Queue extends PoolBase {
 		while(itr.hasNext()){
 			JSON json=itr.next();
 			itr.remove();
-			if(isOneshot){
-				result.add(json);
-				break;
-			}
 			result.add(json);
 		}
-		if(isOneshot){
-			unsubscribe(chId);
-			isFin=true;
+		if(isComplete){
+			idMap.remove(chId);
+			if(idMap.isEmpty()){
+				unsubscribe(chId);
+				isFin=true;
+			}
 		}
 		return true;
 	}
+	
+	//completeは、最終publishの事
+	public boolean complete(String fromChid,Object msg,boolean echoback){
+		return publish(fromChid,msg,echoback,null,true);
+	}
+	public boolean publish(String fromChid,Object msg,boolean echoback,boolean isComplete){
+		return publish(fromChid,msg,echoback,null,isComplete);
+	}
 	public boolean publish(String fromChid,Object msg,boolean echoback){
-		return publish(fromChid,msg,echoback,null);
+		return publish(fromChid,msg,echoback,null,false);
 	}
 	
-	public synchronized boolean publish(String fromChid,Object msg,boolean echoback,Set dest){
+	private synchronized boolean publish(String fromChid,Object msg,boolean echoback,Set dest,boolean isComplete){
+//		isComplete
 		if(isFin){
 			return false;//終了している
+		}
+		if(!this.isComplete){
+			this.isComplete=isComplete;
 		}
 		SubscribeInfo fromInfo=idMap.get(fromChid);
 		if(fromInfo==null){
 			return false;//不明な人からのメッセージ
+		}
+		String action;
+		if(isComplete){
+			action="complete";
+		}else{
+			action="message";
 		}
 		fromInfo.lastAccess=System.currentTimeMillis();
 		Iterator<String> itr=idMap.keySet().iterator();
@@ -233,24 +254,29 @@ public class Queue extends PoolBase {
 				continue;
 			}
 			//メッセージの組み立て
-			String action="message";
-			if(isOneshot){
-				action="complete";
-			}
 			JSON json= QueueManager.publishMessage(chId, action, msg,fromInfo.user);
 			if(info.handler!=null){
 				info.handler.publish(json);
+				if(this.isComplete){
+					itr.remove();
+					unsubscribe(chId);
+				}
+				/*
 				if(isOneshot){//onshotの場合１つみつけたらおしまい
 					unsubscribe(chId);
 					isFin=true;
 					return true;
 				}
+				*/
 			}else{
 				if(info.msgs==null){
 					info.msgs=new JSONArray();
 				}
 				info.msgs.add(json);
 			}
+		}
+		if(this.isComplete && idMap.isEmpty()){
+			isFin=true;
 		}
 		return true;
 	}
@@ -303,9 +329,9 @@ public class Queue extends PoolBase {
 		this.name = name;
 	}
 
-	public boolean isOneshot() {
-		return isOneshot;
-	}
+//	public boolean isOneshot() {
+//		return isOneshot;
+//	}
 	public boolean isFin() {
 		return isFin;
 	}
