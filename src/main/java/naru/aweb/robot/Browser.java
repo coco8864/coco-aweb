@@ -11,9 +11,11 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import naru.async.Timer;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
+import naru.async.timer.TimerManager;
 import naru.aweb.config.AccessLog;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.WebClientConnection;
@@ -21,7 +23,7 @@ import naru.aweb.http.WebClientHandler;
 import naru.aweb.queue.QueueManager;
 import naru.aweb.util.ServerParser;
 
-public class Browser extends PoolBase {
+public class Browser extends PoolBase implements Timer{
 	private static Logger logger = Logger.getLogger(Browser.class);
 	private final int MAX_DOMAIN_CONNECTION=2;
 	
@@ -69,6 +71,7 @@ public class Browser extends PoolBase {
 		processingClientHandler.clear();
 		isAsyncStop=true;
 		isProcessing=false;
+		thinkingTime=0;
 	}
 	
 	public Browser dup(){
@@ -413,6 +416,8 @@ public class Browser extends PoolBase {
 	
 	public void onRequestEnd(Caller caller,AccessLog accessLog){
 		logger.debug("#onRequestEnd");
+		accessLog.setThinkingTime(thinkingTime);
+		thinkingTime=0;
 		if(scenario!=null){
 			scenario.onRequest(accessLog);
 		}else{
@@ -470,4 +475,15 @@ public class Browser extends PoolBase {
 		return scenario;
 	}
 
+	private long thinkingTime; 
+	//thnking time ‘Î‰ž
+	public void startDelay(long delay){
+		thinkingTime=System.currentTimeMillis();
+		TimerManager.setTimeout(delay, this, null);
+	}
+	
+	public void onTimer(Object userContext) {
+		thinkingTime=System.currentTimeMillis()-thinkingTime;
+		start();
+	}
 }

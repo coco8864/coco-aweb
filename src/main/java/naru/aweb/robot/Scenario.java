@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import org.apache.log4j.Logger;
 
@@ -30,6 +31,8 @@ public class Scenario extends PoolBase{
 	private int requestCount;
 	private int loopCount;
 	private int loop;
+	private long thinkingTime=0;
+	
 	private int runnningBrowserCount;
 	private List<Browser> browsers=new ArrayList<Browser>();
 	private boolean isAccesslog=false;//TODO 外からもらう必要あり
@@ -43,6 +46,14 @@ public class Scenario extends PoolBase{
 	private Map<String,Performance> requestStatusCodePerformances;
 	private JSONObject stat=new JSONObject();
 	
+	private Random random=new Random();
+	
+	private long calcThinkingtime(){
+		double rand=random.nextDouble()-0.5;
+		rand*=1000;//前後1秒の幅を作る
+		return thinkingTime+(long)rand;
+	}
+	
 	//chidに通知,100単位 or 時間単位 ,scenarioIndex/scenarioCount,loop/loopCount,runnningBrowserCount/browserCount,メモリ使用量,
 	private void broadcast(String chId,boolean isComplete){
 		if(chId==null){
@@ -51,7 +62,7 @@ public class Scenario extends PoolBase{
 		if(loop!=0 && loop!=loopCount && (loop%100)!=0){//TODO 100を動的に変更
 			return;
 		}
-		if(loop==loopCount && runnningBrowserCount!=0 && (runnningBrowserCount&10)!=0 ){
+		if(loop==loopCount && runnningBrowserCount!=0 && (runnningBrowserCount%10)!=0 ){
 			return;
 		}
 		Runtime runtime=Runtime.getRuntime();
@@ -70,12 +81,12 @@ public class Scenario extends PoolBase{
 	
 	/**
 	 * 複数のScenarioを連続的に動作させるためのrun
-	 * @param stresses
 	 * @param accessLogs
+	 * @param stresses
 	 * @param chId
 	 * @return
 	 */
-	public static boolean run(JSONArray stresses,AccessLog[] accessLogs,String chId){
+	public static boolean run(AccessLog[] accessLogs,JSONArray stresses,String chId){
 		int n=stresses.size();
 		Scenario topScenario=null;
 		Scenario lastScenario=null;
@@ -93,10 +104,11 @@ public class Scenario extends PoolBase{
 			int browserCount=stress.getInt("browserCount");
 			int loopCount=stress.getInt("loopCount");
 			boolean isCallerKeepAlive=stress.optBoolean("isCallerKeepAlive",false);
+			long thinkingTime=stress.optLong("thinkingTime",0);
 			boolean isAccessLog=stress.optBoolean("isAccessLog",false);
 			boolean isResponseHeaderTrace=stress.optBoolean("isResponseHeaderTrace",false);
 			boolean isResponseBodyTrace=stress.optBoolean("isResponseBodyTrace",false);
-			if(scenario.setup(accessLogs,name,browserCount,loopCount,isCallerKeepAlive,isAccessLog,isResponseHeaderTrace,isResponseBodyTrace)==false){
+			if(scenario.setup(accessLogs,name,browserCount,loopCount,isCallerKeepAlive,thinkingTime,isAccessLog,isResponseHeaderTrace,isResponseBodyTrace)==false){
 				scenario=topScenario;
 				while(scenario!=null){
 					lastScenario=scenario.nextScenario;
@@ -113,10 +125,11 @@ public class Scenario extends PoolBase{
 	
 	public static boolean run(AccessLog[] accessLogs,String name,int browserCount,int loopCount,
 			boolean isCallerKeepAlive,
+			long thinkingTime,
 			boolean isAccessLog,boolean isResponseHeaderTrace,boolean isResponseBodyTrace,
 			String chId){
 		Scenario scenario=(Scenario)PoolManager.getInstance(Scenario.class);
-		if(scenario.setup(accessLogs,name,browserCount,loopCount,isCallerKeepAlive,isAccessLog,isResponseHeaderTrace,isResponseBodyTrace)){
+		if(scenario.setup(accessLogs,name,browserCount,loopCount,isCallerKeepAlive,thinkingTime,isAccessLog,isResponseHeaderTrace,isResponseBodyTrace)){
 			scenario.start(chId);
 			return true;
 		}
@@ -131,10 +144,12 @@ public class Scenario extends PoolBase{
 	 */
 	public boolean setup(AccessLog[] accessLogs,String name,int browserCount,int loopCount,
 			boolean isCallerkeepAlive,
+			long thinkingTime,
 			boolean isAccessLog,boolean isResponseHeaderTrace,boolean isResponseBodyTrace){
 		this.name=name;
 		this.browserCount=browserCount;
 		this.requestCount=accessLogs.length;
+		this.thinkingTime=thinkingTime;
 		this.loopCount=loopCount;
 		this.isAccesslog=isAccessLog;
 		if(!isAccessLog){//accessLogを採取しないのであればtraceは無意味
@@ -151,6 +166,7 @@ public class Scenario extends PoolBase{
 		}
 		masterPerformance=null;
 		requestPerformances.clear();
+		random.setSeed((long)this.loopCount);//同一stress定義から同じ乱数を生成するため
 		return true;
 	}
 	
@@ -176,7 +192,12 @@ public class Scenario extends PoolBase{
 			broadcast(chId,false);
 			//TODO browser行方不明問題あり,"...favicon.ico HTTP/1.1" null 0 125#123,-,H,null,null,15,15,0,0,-1"こんな感じに記録される
 			loop++;
-			browser.start();
+			if(thinkingTime==0){
+				browser.start();
+			}else{
+				long delay=calcThinkingtime();
+				browser.startDelay(delay);
+			}
 			return true;
 		}
 		browsers.remove(browser);
@@ -192,18 +213,13 @@ public class Scenario extends PoolBase{
 			for(Performance performance:requestPerformances.values()){
 				performance.insert();
 			}
-//			if(chId!=null){
-//				QueueManager queueManager=QueueManager.getInstance();
-//				queueManager.publish(chId, "Scenario name:"+name +" end.time:"+(endTime-startTime));
-//			}
-			unref();//このSceinarioは終了
-//			browsers.clear();
 			if(nextScenario!=null){//次のSceinarioを実行
 				broadcast(chId,false);
 				nextScenario.start(chId);
 			}else{
 				broadcast(chId,true);
 			}
+			unref();//このSceinarioは終了
 		}else{
 			broadcast(chId,false);
 		}
@@ -252,18 +268,16 @@ public class Scenario extends PoolBase{
 		synchronized(requestPerformances){
 			if(masterPerformance==null){
 				masterPerformance=new Performance();
-				masterPerformance.init(true,name,browserCount,requestCount,loopCount, accessLog);
-			}else{
-				masterPerformance.add(accessLog);
+				masterPerformance.init(true,name,browserCount,requestCount,loopCount,thinkingTime,accessLog);
 			}
+			masterPerformance.add(accessLog);
 			requestPerformance=requestPerformances.get(requestKey);
 			if(requestPerformance==null){
 				requestPerformance=new Performance();
-				requestPerformance.init(false,name,browserCount,requestCount,loopCount,accessLog);
+				requestPerformance.init(false,name,browserCount,requestCount,loopCount,thinkingTime,accessLog);
 				requestPerformances.put(requestKey, requestPerformance);
-			}else{
-				requestPerformance.add(accessLog);
 			}
+			requestPerformance.add(accessLog);
 		}
 		
 		//記録する場合
