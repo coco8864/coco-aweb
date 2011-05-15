@@ -1,0 +1,6 @@
+[
+{"name":"test10","browserCount":"10","loopCount":"100","isCallerKeepAlive":"true",thinkingTime:1000},
+{"name":"test20","browserCount":"20","loopCount":"100","isCallerKeepAlive":"true",thinkingTime:1000},
+{"name":"test30","browserCount":"30","loopCount":"100","isCallerKeepAlive":"true",thinkingTime:1000},
+{"name":"test40","browserCount":"40","loopCount":"100","isCallerKeepAlive":"true",thinkingTime:1000}
+]
