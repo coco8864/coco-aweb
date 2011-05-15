@@ -2,7 +2,7 @@
 
 function perfDelete(){
 	ph.log("perfDelete");
-	var logQuery=jQuery("#perfQuery").val();
+	var logQuery=ph.jQuery("#perfQuery").val();
 	var queryString="";
 	if(logQuery!=""){
 		queryString+="WHERE "+logQuery;
@@ -18,7 +18,7 @@ function perfDelete(){
 function perfTableRefresh(param){
 	ph.log("perfTableRefresh");
 	if(!param){
-		var logQuery=jQuery("#perfQuery").val();
+		var logQuery=ph.jQuery("#perfQuery").val();
 		var queryString="";
 		if(logQuery!=""){
 			queryString+="WHERE "+logQuery;
@@ -34,17 +34,14 @@ function perfTableRefresh(param){
 
 function perfToCsv(){
 	ph.log("perfToCsv");
-	var logQuery=jQuery("#perfQuery").val();
+	var logQuery=ph.jQuery("#perfQuery").val();
 	var queryString="";
 	if(logQuery!=""){
 		queryString+="WHERE "+logQuery;
 	}
-	var param={query:queryString}
-	ph.admin.doPramCommand('perf','csv',param,function(json){
-		alert(json);
-	});
+	ph.jQuery("#stressCsvQuery").val(queryString);
+	ph.jQuery("#stressCsvDownloadForm").submit();
 }
-
 
 function perfTable(lines){
 	ph.jQuery("#perfData").empty();
