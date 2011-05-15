@@ -117,6 +117,13 @@ ph.log("tabs ajaxOptions success");
 <input type="hidden" name="token" value="$esc.html(${session.token})"/>
 </form>
 
+##stress csvダウンロード用フォーム
+<form id="stressCsvDownloadForm" action="perf" style="display:none" target="uploadFrame" method="post">
+<input type="hidden" name="command" value="csv"/>
+<input type="hidden" name="query" id="stressCsvQuery"/>
+<input type="hidden" name="token" value="$esc.html(${session.token})"/>
+</form>
+
 ##uploadリクエストを送信するためのダミーフレーム
 <iframe name="uploadFrame" width="0" height="0" frameborder="no"></iframe>
 </body> 
