@@ -53,22 +53,29 @@ function doStress(){
 //	if(!doStressCb.isComplete){
 //		alert("実行中");
 //	}
-	ph.admin.doCommand('stress',{
-		name:ph.jQuery('#stressName').val(),
-		list:ph.jQuery('#stressAccessLogList').text(),
-		browserCount:ph.jQuery('#stressBrowserCount').val(),
-		loopCount:ph.jQuery('#loopCount').val(),
-		thinkingTime:ph.jQuery('#thinkingTime').val(),
-		time:ph.jQuery('#stressTime').val(),//未使用
-		keepAlive:ph.jQuery('#stressKeepAlive').attr('checked'),
-		accessLog:ph.jQuery('#stressAccessLog').attr('checked'),
-		tesponseHeaderTrace:ph.jQuery('#stressTesponseHeaderTrace').attr('checked'),
-		tesponseBodyTrace:ph.jQuery('#stressTesponseBodyTrace').attr('checked')
-		},
-		function(chId){
-			jQuery("#tabs").tabs("select",5);
-			ph.queue.subscribeById(chId,doStressCb)
-			});
+	if(ph.jQuery('#isStressFile').attr('checked')){
+		ph.jQuery('#fileStressAccessLogList').val( ph.jQuery('#stressAccessLogList').text() );
+		ph.jQuery('#stressFileForm').submit();
+	}else{
+		ph.admin.doPramCommand('perf','stress',{
+			name:ph.jQuery('#stressName').val(),
+			list:ph.jQuery('#stressAccessLogList').text(),
+			browserCount:ph.jQuery('#stressBrowserCount').val(),
+			loopCount:ph.jQuery('#loopCount').val(),
+			thinkingTime:ph.jQuery('#thinkingTime').val(),
+			time:ph.jQuery('#stressTime').val(),//未使用
+			keepAlive:ph.jQuery('#stressKeepAlive').attr('checked'),
+			accessLog:ph.jQuery('#stressAccessLog').attr('checked'),
+			tesponseHeaderTrace:ph.jQuery('#stressTesponseHeaderTrace').attr('checked'),
+			tesponseBodyTrace:ph.jQuery('#stressTesponseBodyTrace').attr('checked')
+			},
+			function(chId){
+				jQuery("#tabs").tabs("select",5);
+				ph.queue.subscribeById(chId,doStressCb);
+				},
+			function(){}//errorCB
+			);
+	}
 	ph.jQuery(".logIdCheck").attr("checked",false);
 	jQuery('#stress').dialog('close');
 }
@@ -189,10 +196,11 @@ headerTrace:<input class="stressTrace" disabled='disabled' id="stressTesponseHea
 bodyTrace:<input class="stressTrace" disabled='disabled' id="stressTesponseBodyTrace" type="checkBox">
 </div>
 <div class="stressFile" style="display:none">
-<form method="post" enctype="multipart/form-data" action="admin" target="uploadFrame">
+<form method="post" enctype="multipart/form-data" action="perf" target="uploadFrame" id="stressFileForm">
 json file:<input type="file" name="stressFile" id="stressFile"/>
 <input type="hidden" name="list" id="fileStressAccessLogList"/>
-<input type="hidden" name="cmd" id="stress"/>
+<input type="hidden" name="command" value="stressFile"/>
+<input type="hidden" name="token" value="$esc.html($!{session.token})"/>
 </form>
 </div>
 <input type="button" value="ok" onClick='doStress()'>

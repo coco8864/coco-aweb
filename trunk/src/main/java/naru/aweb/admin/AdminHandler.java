@@ -97,16 +97,6 @@ public class AdminHandler extends WebServerHandler{
 		redirectAdmin();
 	}
 	
-	private String doStress(String name,int browserCount,int callCount,AccessLog[] accessLogs,
-			boolean isCallerKeepAlive,boolean isAccessLog,boolean isResponseHeaderTrace,boolean isResponseBodyTrace){
-		QueueManager queueManager=QueueManager.getInstance();
-		String chId=queueManager.createQueue(true);
-		if( Scenario.run(accessLogs, name, browserCount, callCount, isCallerKeepAlive, isAccessLog, isResponseHeaderTrace, isResponseBodyTrace,chId)){
-			return chId;
-		}
-		return null;
-	}
-
 	private byte[] bytes(String text,String encode) throws UnsupportedEncodingException{
 		if(encode==null||"".equals(encode)){
 			encode="utf8";
@@ -384,32 +374,6 @@ public class AdminHandler extends WebServerHandler{
 				logger.error("getEditedAccessLog error.",e);
 				completeResponse("500");
 			}
-		}else if("stress".equals(cmd)){
-			String list=parameter.getParameter("list");
-//			Set<Long> accessLogIds=new HashSet<Long>();
-			String[] ids=list.split(",");
-			AccessLog[] accessLogs=new AccessLog[ids.length];
-			for(int i=0;i<ids.length;i++){
-				long accessLogId=Long.parseLong(ids[i]);
-				accessLogs[i]=AccessLog.getById(accessLogId);
-//				accessLogIds.add(accessLogId);
-			}
-			String name=parameter.getParameter("name");
-			String browserCount=parameter.getParameter("browserCount");
-			String call=parameter.getParameter("loopCount");
-			String time=parameter.getParameter("time");
-//			String trace=parameter.getParameter("trace");
-			String keepAlive=parameter.getParameter("keepAlive");
-			String accessLog=parameter.getParameter("accessLog");
-			String tesponseHeaderTrace=parameter.getParameter("tesponseHeaderTrace");
-			String tesponseBodyTrace=parameter.getParameter("tesponseBodyTrace");
-			String chId=doStress(name,Integer.parseInt(browserCount),Integer.parseInt(call),
-					accessLogs,
-			"true".equalsIgnoreCase(keepAlive),
-			"true".equalsIgnoreCase(accessLog),
-			"true".equalsIgnoreCase(tesponseHeaderTrace),
-			"true".equalsIgnoreCase(tesponseBodyTrace));
-			responseJson(chId,callback);
 //		}else if("notify".equals(cmd)){
 //			QueueManager queueManager=QueueManager.getInstance();
 //			String chId=queueManager.createQueue();

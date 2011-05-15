@@ -384,6 +384,10 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	@Index(name="RESOLVE_DIGEST_IDX")	
 	@Column(name="RESOLVE_DIGEST",jdbcType="VARCHAR", length=32)
 	private String resolveDigest;//destinationType+method+resolve+resolvePath?query
+
+	@Persistent
+	@Column(name="THINKING_TIME",defaultValue="0")
+	private long thinkingTime;//リクエストする前に待った時間,stressテストのため
 	
 	public AccessLog(){
 	}
@@ -409,10 +413,12 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		traceCount=1;//ReqestContextからの参照分
 		chId=null;
 		isSkipPhlog=isShortFormat=false;
+		thinkingTime=0;
 //		requestHeaderStore=requestBodyStore=responseHeaderStore=responseBodyStore;
 	}
-	
+	@NotPersistent
 	private boolean isSkipPhlog=false;
+	@NotPersistent
 	private boolean isShortFormat=false;//TODO apache見たいに動的に組み立てる
 	
 	public void log(boolean debug){
@@ -881,6 +887,14 @@ public class AccessLog extends PoolBase implements BufferGetter{
 
 	public void setShortFormat(boolean isShortFormat) {
 		this.isShortFormat = isShortFormat;
+	}
+
+	public long getThinkingTime() {
+		return thinkingTime;
+	}
+
+	public void setThinkingTime(long thinkingTime) {
+		this.thinkingTime = thinkingTime;
 	}
 	
 }

@@ -73,6 +73,112 @@ public class Performance {
 		return count;
 	}
 	
+	private double ave(long sum){
+		if(count==0){
+			return Double.NaN;
+		}
+		return (double)sum/(double)count;
+	}
+	
+//	private double stdev(long sum,long sumsq){
+//	}
+	
+	public static String csvTitle(){
+		StringBuilder sb=new StringBuilder();
+		sb.append("id");
+		sb.append(',');
+		sb.append("isMaster");
+		sb.append(',');
+		sb.append("testBrowserCount");
+		sb.append(',');
+		sb.append("testRequestCount");
+		sb.append(',');
+		sb.append("testLoopCount");
+		sb.append(',');
+		sb.append("testThinkingTime");
+		sb.append(',');
+		sb.append("requestLine");
+		sb.append(',');
+		sb.append("statusCode");
+		sb.append(',');
+		
+		sb.append("startTime");
+		sb.append(',');
+		sb.append("lastTime");
+		sb.append(',');
+		
+		sb.append("count");
+		sb.append(',');
+		sb.append("responseLengthSum");
+		sb.append(',');
+		sb.append("maxMemorySum");
+		sb.append(',');
+		sb.append("freeMemorySum");
+		sb.append(',');
+		sb.append("thinkingTimeSum");
+		sb.append(',');
+		
+		sb.append("processTimeSum");
+		sb.append(',');
+		sb.append("requestHeaderTimeSum");
+		sb.append(',');
+		sb.append("requestBodyTimeSum");
+		sb.append(',');
+		sb.append("responseHeaderTimeSum");
+		sb.append(',');
+		sb.append("responseBodyTimeSum");
+		sb.append("\r\n");
+		return sb.toString();
+	}
+	
+	public String toCsv(){
+		StringBuilder sb=new StringBuilder();
+		sb.append(id);
+		sb.append(',');
+		sb.append(isMaster);
+		sb.append(',');
+		sb.append(testBrowserCount);
+		sb.append(',');
+		sb.append(testRequestCount);
+		sb.append(',');
+		sb.append(testLoopCount);
+		sb.append(',');
+		sb.append(testThinkingTime);
+		sb.append(',');
+		sb.append(requestLine);
+		sb.append(',');
+		sb.append(statusCode);
+		sb.append(',');
+		
+		sb.append(startTime);
+		sb.append(',');
+		sb.append(lastTime);
+		sb.append(',');
+		
+		sb.append(count);
+		sb.append(',');
+		sb.append(responseLengthSum);
+		sb.append(',');
+		sb.append(maxMemorySum);
+		sb.append(',');
+		sb.append(freeMemorySum);
+		sb.append(',');
+		sb.append(thinkingTimeSum);
+		sb.append(',');
+		
+		sb.append(processTimeSum);
+		sb.append(',');
+		sb.append(requestHeaderTimeSum);
+		sb.append(',');
+		sb.append(requestBodyTimeSum);
+		sb.append(',');
+		sb.append(responseHeaderTimeSum);
+		sb.append(',');
+		sb.append(responseBodyTimeSum);
+		sb.append("\r\n");
+		return sb.toString();
+	}
+	
 	public void insert(){
 		PersistenceManager pm=JdoUtil.getPersistenceManager();
 		Transaction tx=pm.currentTransaction();
@@ -176,9 +282,15 @@ public class Performance {
 	@Persistent
 	@Column(name="FREE_MEMORY_SUM",defaultValue="0")
 	private long freeMemorySum;
-	
+	@Persistent
+	@Column(name="THINKING_TIME_SUM",defaultValue="0")
+	private long thinkingTimeSum;
 	
 	//テストの実行環境
+	@Persistent
+	@Column(name="TEST_THINKING_TIME",defaultValue="0")
+	private long testThinkingTime;
+	
 	@Persistent
 	@Column(name="TEST_BROWSER_COUNT")
 	private int testBrowserCount;
@@ -191,12 +303,13 @@ public class Performance {
 	@Column(name="TEST_LOOP_COUNT")
 	private int testLoopCount;
 	
-	public void init(boolean isMaster,String name,int browserCount,int requestCount,int loopCount,AccessLog accessLog){
+	public void init(boolean isMaster,String name,int browserCount,int requestCount,int loopCount,long thinkingTime,AccessLog accessLog){
 		this.isMaster=isMaster;
 		this.name=name;
 		this.testBrowserCount=browserCount;
 		this.testRequestCount=requestCount;
 		this.testLoopCount=loopCount;
+		this.testThinkingTime=thinkingTime;
 		this.requestLine=accessLog.getRequestLine();
 		this.requestHeaderDigest=accessLog.getRequestHeaderDigest();
 		this.requestBodyDigest=accessLog.getRequestBodyDigest();
@@ -256,6 +369,7 @@ public class Performance {
 		t=accessLog.getResponseBodyTime();
 		responseBodyTimeSum+=t;
 		responseBodyTimeSumsq+=(t*t);
+		thinkingTimeSum+=accessLog.getThinkingTime();
 		Runtime runtime=Runtime.getRuntime();
 		maxMemorySum+=runtime.maxMemory();
 		freeMemorySum+=runtime.freeMemory();
@@ -479,6 +593,22 @@ public class Performance {
 
 	public void setFreeMemorySum(long freeMemorySum) {
 		this.freeMemorySum = freeMemorySum;
+	}
+
+	public long getThinkingTimeSum() {
+		return thinkingTimeSum;
+	}
+
+	public long getTestThinkingTime() {
+		return testThinkingTime;
+	}
+
+	public void setThinkingTimeSum(long thinkingTimeSum) {
+		this.thinkingTimeSum = thinkingTimeSum;
+	}
+
+	public void setTestThinkingTime(long testThinkingTime) {
+		this.testThinkingTime = testThinkingTime;
 	}
 	
 }
