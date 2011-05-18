@@ -87,6 +87,8 @@ public class Performance {
 		StringBuilder sb=new StringBuilder();
 		sb.append("id");
 		sb.append(',');
+		sb.append("name");
+		sb.append(',');
 		sb.append("isMaster");
 		sb.append(',');
 		sb.append("testBrowserCount");
@@ -127,6 +129,17 @@ public class Performance {
 		sb.append("responseHeaderTimeSum");
 		sb.append(',');
 		sb.append("responseBodyTimeSum");
+		sb.append(',');
+		
+		sb.append("processTimeSumsq");
+		sb.append(',');
+		sb.append("requestHeaderTimeSumsq");
+		sb.append(',');
+		sb.append("requestBodyTimeSumsq");
+		sb.append(',');
+		sb.append("responseHeaderTimeSumsq");
+		sb.append(',');
+		sb.append("responseBodyTimeSumsq");
 		sb.append("\r\n");
 		return sb.toString();
 	}
@@ -134,6 +147,8 @@ public class Performance {
 	public String toCsv(){
 		StringBuilder sb=new StringBuilder();
 		sb.append(id);
+		sb.append(',');
+		sb.append(name);
 		sb.append(',');
 		sb.append(isMaster);
 		sb.append(',');
@@ -175,6 +190,17 @@ public class Performance {
 		sb.append(responseHeaderTimeSum);
 		sb.append(',');
 		sb.append(responseBodyTimeSum);
+		sb.append(',');
+		
+		sb.append(processTimeSumsq);
+		sb.append(',');
+		sb.append(requestHeaderTimeSumsq);
+		sb.append(',');
+		sb.append(requestBodyTimeSumsq);
+		sb.append(',');
+		sb.append(responseHeaderTimeSumsq);
+		sb.append(',');
+		sb.append(responseBodyTimeSumsq);
 		sb.append("\r\n");
 		return sb.toString();
 	}
