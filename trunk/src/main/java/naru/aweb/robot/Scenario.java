@@ -231,6 +231,7 @@ public class Scenario extends PoolBase{
 	private String chId;
 	
 	public synchronized void start(String chId){
+		System.gc();
 		logger.debug("#start");
 		loop=0;
 		this.chId=chId;
@@ -268,16 +269,20 @@ public class Scenario extends PoolBase{
 		synchronized(requestPerformances){
 			if(masterPerformance==null){
 				masterPerformance=new Performance();
+				//init‚ÉaccessLog‚Ì‰‰ñ‰ÁZ(add‘Š“–)‚ğÀ{‚·‚é
 				masterPerformance.init(true,name,browserCount,requestCount,loopCount,thinkingTime,accessLog);
+			}else{
+				masterPerformance.add(accessLog);
 			}
-			masterPerformance.add(accessLog);
 			requestPerformance=requestPerformances.get(requestKey);
 			if(requestPerformance==null){
 				requestPerformance=new Performance();
 				requestPerformance.init(false,name,browserCount,requestCount,loopCount,thinkingTime,accessLog);
 				requestPerformances.put(requestKey, requestPerformance);
+			}else{
+				//init‚ÉaccessLog‚Ì‰‰ñ‰ÁZ(add‘Š“–)‚ğÀ{‚·‚é
+				requestPerformance.add(accessLog);
 			}
-			requestPerformance.add(accessLog);
 		}
 		
 		//‹L˜^‚·‚éê‡
