@@ -114,7 +114,7 @@ public class QueueManager implements Timer{
 		return createQueueByName(name,user,isNew,comment,true);
 	}
 
-	private String createQueueByName(String name,String user,boolean isNew,String comment,boolean isTimeout){
+	public String createQueueByName(String name,String user,boolean isNew,String comment,boolean isTimeout){
 		Queue queue=null;
 		synchronized(nameQueueMap){
 			queue=nameQueueMap.get(name);
