@@ -99,6 +99,8 @@ public class Performance {
 		sb.append(',');
 		sb.append("testThinkingTime");
 		sb.append(',');
+		sb.append("isSsl");
+		sb.append(',');
 		sb.append("requestLine");
 		sb.append(',');
 		sb.append("statusCode");
@@ -159,6 +161,8 @@ public class Performance {
 		sb.append(testLoopCount);
 		sb.append(',');
 		sb.append(testThinkingTime);
+		sb.append(',');
+		sb.append(isSsl);
 		sb.append(',');
 		sb.append(requestLine);
 		sb.append(',');
@@ -246,6 +250,10 @@ public class Performance {
 	@Persistent
 	@Column(name="IS_MASTER")
 	private boolean isMaster;
+	
+	@Persistent
+	@Column(name="IS_Ssl",defaultValue="false")
+	private boolean isSsl;
 	
 	@Persistent
 	@Column(name="REQUEST_LINE",jdbcType="VARCHAR", length=8192)
@@ -337,6 +345,10 @@ public class Performance {
 		this.testLoopCount=loopCount;
 		this.testThinkingTime=thinkingTime;
 		this.requestLine=accessLog.getRequestLine();
+		this.isSsl=false;//Caller#startRequestÇ≈http/httpsÇDestinationTypeÇ…ê›íËÇµÇƒÇ¢ÇÈ
+		if(accessLog.getDestinationType()==AccessLog.DESTINATION_TYPE_HTTPS){
+			this.isSsl=true;
+		}
 		this.requestHeaderDigest=accessLog.getRequestHeaderDigest();
 		this.requestBodyDigest=accessLog.getRequestBodyDigest();
 		this.statusCode=accessLog.getStatusCode();
@@ -635,6 +647,14 @@ public class Performance {
 
 	public void setTestThinkingTime(long testThinkingTime) {
 		this.testThinkingTime = testThinkingTime;
+	}
+
+	public boolean isSsl() {
+		return isSsl;
+	}
+
+	public void setSsl(boolean isSsl) {
+		this.isSsl = isSsl;
 	}
 	
 }
