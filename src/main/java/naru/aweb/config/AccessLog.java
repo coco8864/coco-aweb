@@ -254,7 +254,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	@Index(name="REQUEST_LINE_IDX")	
 	@Column(name="REQUEST_LINE",jdbcType="VARCHAR", length=8192)
 	private String requestLine;
-	
+
 	@Persistent
 	@Column(name="REQUEST_HEADER_LENGTH")
 	private long requestHeaderLength;//リクエストヘッダ長
@@ -896,5 +896,4 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	public void setThinkingTime(long thinkingTime) {
 		this.thinkingTime = thinkingTime;
 	}
-	
 }

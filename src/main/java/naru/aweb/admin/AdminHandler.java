@@ -196,7 +196,6 @@ public class AdminHandler extends WebServerHandler{
 			requestHeaderParser.setHost(accessLog.getResolveOrigin());
 			//header‚ğ‚¢‚¶‚Á‚½ê‡‚ÍAresolveDigest‚àXV‚·‚é
 			updateResolveDigest(accessLog,requestHeaderParser);
-			
 			accessLog.setRequestLine(requestHeaderParser.getRequestLine());
 			String requestHeaderDigest=digest(requestHeaderParser.getHeaderBuffer());
 			accessLog.setRequestHeaderDigest(requestHeaderDigest);//xx
