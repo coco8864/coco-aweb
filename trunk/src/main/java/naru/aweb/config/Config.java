@@ -628,8 +628,25 @@ public class Config {
 		injectionDir = new File(dir);
 		injectionHelper = new InjectionHelper(this);
 		
+		String pacUrl = configuration.getString("pacUrl");
+		if("".equals(pacUrl)){
+			pacUrl=null;
+		}
+		String proxyServer = configuration.getString("proxyServer");
+		if("".equals(proxyServer)){
+			proxyServer=null;
+		}
+		String sslProxyServer = configuration.getString("sslProxyServer");
+		if("".equals(sslProxyServer)){
+			sslProxyServer=null;
+		}
+		String exceptProxyDomains = configuration.getString("exceptProxyDomains");
+		if("".equals(exceptProxyDomains)){
+			exceptProxyDomains=null;
+		}
+		
 		// proxyèúäOÉäÉXÉgÇÃèâä˙âª
-		updateProxyFinder();
+		updateProxyFinder(pacUrl,proxyServer,sslProxyServer,exceptProxyDomains);
 		broadcaster=new Broadcaster(this);
 		return true;
 	}
@@ -656,35 +673,28 @@ public class Config {
 	private ProxyFinder proxyFinder;
 
 	// private String[] exceptProxyDomainsList;
-	public boolean updateProxyFinder() {
-		if (proxyFinder != null) {
-			proxyFinder.term();
-			proxyFinder = null;
-		}
-		String pacUrl = configuration.getString("pacUrl");
-		if("".equals(pacUrl)){
-			pacUrl=null;
-		}
-		String proxyServer = configuration.getString("proxyServer");
-		if("".equals(proxyServer)){
-			proxyServer=null;
-		}
-		String sslProxyServer = configuration.getString("sslProxyServer");
-		if("".equals(sslProxyServer)){
-			sslProxyServer=null;
-		}
-		String exceptProxyDomains = configuration.getString("exceptProxyDomains");
-		if("".equals(exceptProxyDomains)){
-			exceptProxyDomains=null;
-		}
+	public boolean updateProxyFinder(String pacUrl,String proxyServer,String sslProxyServer,String exceptProxyDomains) {
 		try {
-			proxyFinder = ProxyFinder.create(pacUrl, proxyServer,sslProxyServer, exceptProxyDomains,getSelfDomain(),getPacProxyPort());
-			proxyFinder.updatePac(phantomHome,mapper.getHttpPhantomDomians(), mapper.getSecurePhantomDomians());
+			ProxyFinder workProxyFinder = ProxyFinder.create(pacUrl, proxyServer,sslProxyServer, exceptProxyDomains,getSelfDomain(),getPacProxyPort());
+			if(workProxyFinder==null){
+				return false;
+			}
+			if( workProxyFinder.updatePac(phantomHome,mapper.getHttpPhantomDomians(), mapper.getSecurePhantomDomians())==false){
+				return false;
+			}
+			if (proxyFinder != null) {
+				proxyFinder.term();
+			}
+			config.setProperty("pacUrl", pacUrl);
+			config.setProperty("proxyServer", proxyServer);
+			config.setProperty("sslProxyServer", sslProxyServer);
+			config.setProperty("exceptProxyDomains", exceptProxyDomains);
+			proxyFinder = workProxyFinder;
+			return true;
 		} catch (IOException e) {
 			logger.error("fail to create ProxyFinder.", e);
 			return false;
 		}
-		return true;
 	}
 
 	private String[] welcomFiles;

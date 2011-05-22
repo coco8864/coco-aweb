@@ -299,12 +299,17 @@ public class AdminHandler extends WebServerHandler{
 			String proxyServer=parameter.getParameter("proxyServer");
 			String sslProxyServer=parameter.getParameter("sslProxyServer");
 			String exceptProxyDomains=parameter.getParameter("exceptProxyDomains");
+			/*
 			config.setProperty("pacUrl", pacUrl);
 			config.setProperty("proxyServer", proxyServer);
 			config.setProperty("sslProxyServer", sslProxyServer);
 			config.setProperty("exceptProxyDomains", exceptProxyDomains);
-			config.updateProxyFinder();
-			responseJson(true);
+			*/
+			if( config.updateProxyFinder(pacUrl,proxyServer,sslProxyServer,exceptProxyDomains) ){
+				responseJson(true);
+			}else{
+				responseJson(false);
+			}
 		}else if("setKeepAlive".equals(cmd)){
 			String isWebKeepAlive=parameter.getParameter("isWebKeepAlive");
 			String isProxyKeepAlive=parameter.getParameter("isProxyKeepAlive");

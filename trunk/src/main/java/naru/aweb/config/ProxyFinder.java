@@ -177,7 +177,7 @@ public class ProxyFinder {
 	/*
 	 * 自身が使用するproxyを計算するためのPacを作成
 	 */
-	private void loadPac(String pac) {
+	private boolean loadPac(String pac) {
 		this.pac = pac;
 		try {
 			ScriptEngineManager factory = new ScriptEngineManager(null);
@@ -205,7 +205,7 @@ public class ProxyFinder {
 					Object o=configs.nextElement();
 					logger.error("SystemClassLoader loaderScriptEngineFactory resouce:" + o);
 				}
-				throw new IllegalStateException("fail to getEngineByName(JavaScript)");
+				return false;
 			}else{
 				logger.info("pacScriptEngine:" + pacScriptEngine.getClass().getName());
 			}
@@ -217,12 +217,13 @@ public class ProxyFinder {
 			// evaluate script
 			pacScriptEngine.eval(pac);
 			pacScriptInvoker = (Invocable) pacScriptEngine;
+			return true;
 		} catch (ScriptException e) {
-			e.printStackTrace();
-			throw new RuntimeException(e);
+			logger.error("loadPac ScriptException",e);
+			return false;
 		} catch (IOException e) {
-			e.printStackTrace();
-			throw new RuntimeException(e);
+			logger.error("loadPac IOException",e);
+			return false;
 		}
 	}
 	
@@ -240,11 +241,15 @@ public class ProxyFinder {
 			pacUrl=new URL(pac);
 		}
 		ProxyFinder finder=new ProxyFinder();
-		finder.init(pacUrl,ServerParser.parse(httpProxyServer), ServerParser.parse(secureProxyServer), exceptDomiansSet,selfDomain,proxyPort);
-		return finder;
+		if( finder.init(pacUrl,ServerParser.parse(httpProxyServer), ServerParser.parse(secureProxyServer), exceptDomiansSet,selfDomain,proxyPort) ){
+			return finder;
+		}else{
+			finder.term();
+			return null;
+		}
 	}
 	
-	public void updatePac(File phantomHome,Set<String> httpPhantomDomians, Set<String> securePhantomDomians){
+	public boolean updatePac(File phantomHome,Set<String> httpPhantomDomians, Set<String> securePhantomDomians){
 		phantomPacCash.clear();//PhantomDomiansが変更されるとpacが変わる
 		this.httpPhantomDomians = httpPhantomDomians;
 		this.securePhantomDomians = securePhantomDomians;
@@ -254,8 +259,10 @@ public class ProxyFinder {
 		try {
 			localPacOs=new FileOutputStream(new File(phantomHome,"proxy.pac"));
 			localPacOs.write(localPac.getBytes("utf-8"));
+			return true;
 		} catch (IOException e) {
 			logger.error("fail to cleate local pac",e);
+			return false;
 		}finally{
 			if(localPacOs!=null){
 				try {
@@ -298,7 +305,7 @@ public class ProxyFinder {
 	 * @return
 	 * @throws IOException
 	 */
-	public void init(URL pacUrl, 
+	public boolean init(URL pacUrl, 
 			ServerParser httpProxyServer,ServerParser secureProxyServer, Set<String> exceptDomians,
 			String selfDomain,int proxyPort)
 			throws IOException {
@@ -314,7 +321,9 @@ public class ProxyFinder {
 		this.selfDomain=selfDomain;
 		this.proxyPort=proxyPort;
 		if (pacUrl != null) {// pacでproxyを決める設定
-			loadPac(contents(pacUrl));
+			if( loadPac(contents(pacUrl))==false){
+				return false;
+			}
 			this.nextPac = pac.replaceAll("FindProxyForURL",NEXT_FIND_PROXY_FOR_URL_FUNC_NAME);
 			if(this.httpProxyServer!=null){
 				this.httpProxyServer.unref();
@@ -325,18 +334,20 @@ public class ProxyFinder {
 				this.secureProxyServer=null;
 			}
 			this.exceptDomians = null;
-			return;
+			return true;
 		}
 		if (httpProxyServer != null) {// 固定のproxyを使う設定
 			assert (secureProxyServer != null);
 			if (exceptDomians != null) {// 除外対象が設定されている
-				loadPac(merge("self.pac", null));//内部的にpacを作成する
+				if( loadPac(merge("self.pac", null))==false){//内部的にpacを作成する
+					return false;
+				}
 			}
 		} else {// proxyを使わない設定
 			assert (secureProxyServer == null);
 			this.isUseProxy = false;
 		}
-		
+		return true;
 	}
 
 	/*
