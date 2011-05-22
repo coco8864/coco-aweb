@@ -6,8 +6,12 @@ function setProxy(){
    sslProxyServer:ph.jQuery("#sslProxyServer").val(),
    exceptProxyDomains:ph.jQuery("#exceptProxyDomains").val()
   },
-  function(x){
-##setProxy完了
+  function(ret){
+	if(ret){
+		alert('proxy設定完了');
+	}else{
+		alert('proxy設定失敗');
+	}
   });
 }
 function setKeepAlive(){

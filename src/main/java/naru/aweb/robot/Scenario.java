@@ -33,6 +33,8 @@ public class Scenario extends PoolBase{
 	private int loop;
 	private long thinkingTime=0;
 	
+	private int loopUnit;
+	
 	private int runnningBrowserCount;
 	private List<Browser> browsers=new ArrayList<Browser>();
 	private boolean isAccesslog=false;//TODO 外からもらう必要あり
@@ -59,7 +61,7 @@ public class Scenario extends PoolBase{
 		if(chId==null){
 			return;
 		}
-		if(loop!=0 && loop!=loopCount && (loop%100)!=0){//TODO 100を動的に変更
+		if(loop!=0 && loop!=loopCount && (loop%loopUnit)!=0){
 			return;
 		}
 		if(loop==loopCount && runnningBrowserCount!=0 && (runnningBrowserCount%10)!=0 ){
@@ -150,7 +152,7 @@ public class Scenario extends PoolBase{
 		this.browserCount=browserCount;
 		this.requestCount=accessLogs.length;
 		this.thinkingTime=thinkingTime;
-		this.loopCount=loopCount;
+		setLoopCont(loopCount);
 		this.isAccesslog=isAccessLog;
 		if(!isAccessLog){//accessLogを採取しないのであればtraceは無意味
 			isResponseHeaderTrace=isResponseBodyTrace=false;
@@ -184,7 +186,18 @@ public class Scenario extends PoolBase{
 	public void setup(URL[] urls,String name,int browserCount,int loopCount){
 		this.name=name;
 		this.browserCount=browserCount;
+		setLoopCont(loopCount);
+	}
+	
+	public void setLoopCont(int loopCount){
+		int loopUnit=loopCount/10;
+		if(loopUnit<0){
+			loopUnit=1;
+		}else if(loopUnit>100){
+			loopUnit=100;
+		}
 		this.loopCount=loopCount;
+		this.loopUnit=loopUnit;
 	}
 	
 	private synchronized boolean startBrowserIfNeed(Browser browser){
