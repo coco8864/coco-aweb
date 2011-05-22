@@ -7,7 +7,7 @@ function setProxy(){
    exceptProxyDomains:ph.jQuery("#exceptProxyDomains").val()
   },
   function(ret){
-	if(ret){
+	if(ph.JSON.parse(ret)){
 		alert('proxy設定完了');
 	}else{
 		alert('proxy設定失敗');

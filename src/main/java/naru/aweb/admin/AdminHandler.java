@@ -296,9 +296,21 @@ public class AdminHandler extends WebServerHandler{
 			responseJson(true);
 		}else if("setProxy".equals(cmd)){
 			String pacUrl=parameter.getParameter("pacUrl");
+			if("".equals(pacUrl)){
+				pacUrl=null;
+			}
 			String proxyServer=parameter.getParameter("proxyServer");
+			if("".equals(proxyServer)){
+				proxyServer=null;
+			}
 			String sslProxyServer=parameter.getParameter("sslProxyServer");
+			if("".equals(sslProxyServer)){
+				sslProxyServer=null;
+			}
 			String exceptProxyDomains=parameter.getParameter("exceptProxyDomains");
+			if("".equals(exceptProxyDomains)){
+				exceptProxyDomains=null;
+			}
 			/*
 			config.setProperty("pacUrl", pacUrl);
 			config.setProperty("proxyServer", proxyServer);
