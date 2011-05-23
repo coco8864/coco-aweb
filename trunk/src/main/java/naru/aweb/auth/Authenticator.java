@@ -39,6 +39,7 @@ public class Authenticator {
 	private static final String ADMIN_ID = "adminId";
 	private static final String DIGEST_AUTHENTICATE_RANDOM_ENTOROPY = "digestAuthenticateRandomEntoropy";
 	private static final String TOKEN_RANDOM_ENTOROPY = "tokenRandomEntoropy";
+	public static final String NONE="None";//認証なし
 	public static final String BASIC="Basic";//Basic認証
 	public static final String DIGEST="Digest";//Digest認証
 	public static final String BASIC_FORM="BasicForm";//Form認証
@@ -64,7 +65,7 @@ public class Authenticator {
 	}
 	
 	private User admin;
-	private String logoutUrl;
+//	private String logoutUrl;
 //	private User dummyUser;//digest認証に使う
 //	private AuthSession adminSession;
 	private String scheme=null;//nullの場合、認証なし
@@ -139,18 +140,20 @@ public class Authenticator {
 		}else if(DIGEST_FORM.equalsIgnoreCase(scheme)){
 			this.scheme=DIGEST_FORM;
 		}else{
-			this.scheme=null;
+			this.scheme=NONE;
 		}
 		configuration.setProperty(AUTHENTICATE_SCHEME, this.scheme);
 	}
 	
+	private Config config;
 	private Configuration configuration;
 	
 	public Authenticator(Config config,boolean isCleanup){
+		this.config=config;
 		this.configuration=config.getConfiguration(null);
 		setScheme(configuration.getString(AUTHENTICATE_SCHEME,null));
 		realm=configuration.getString(AUTHENTICATE_REALM,"phantomProxyRealm");
-		logoutUrl=configuration.getString(AUTHENTICATE_LOGOUT_URL);
+//		logoutUrl=configuration.getString(AUTHENTICATE_LOGOUT_URL);
 //		Config config = Config.getConfig();
 		nonceRandom=config.getRandom(DIGEST_AUTHENTICATE_RANDOM_ENTOROPY);
 		tokenRandom=config.getRandom(TOKEN_RANDOM_ENTOROPY);
@@ -352,7 +355,7 @@ public class Authenticator {
 	 */
 	public User webAuthenticate(AuthHandler authHandler) {
 		//認証が必要なpathかどうかをチェック
-		if(scheme==null){
+		if(scheme==null || NONE.equalsIgnoreCase(scheme)){
 			return admin;//認証なしモード
 		}
 		User user=null;
@@ -647,7 +650,6 @@ public class Authenticator {
 		return authParam;
 	}
 	
-	
 	//Digest username="hoge", realm="Secret Zone",
 	//   nonce="RMH1usDrAwA=6dc290ea3304de42a7347e0a94089ff5912ce0de",
 	//   uri="/~68user/net/sample/http-auth-digest/secret.html", algorithm=MD5,
@@ -684,11 +686,15 @@ public class Authenticator {
 	}
 
 	public String getLogoutUrl() {
+		String logoutUrl=config.getString(AUTHENTICATE_LOGOUT_URL, null);
+		if(logoutUrl==null){
+			logoutUrl=config.getString(Config.SELF_URL);
+		}
 		return logoutUrl;
 	}
 
 	public void setLogoutUrl(String logoutUrl) {
 		configuration.setProperty(AUTHENTICATE_LOGOUT_URL,logoutUrl);
-		this.logoutUrl = logoutUrl;
+//		this.logoutUrl = logoutUrl;
 	}
 }

@@ -77,6 +77,8 @@ public class Config {
 	public static String CONF_FILENAME = "phantom.properties";
 	public static final String DEBUG_TRACE="debugTrace";
 	public static final String SELF_DOMAIN = "selfDomain";
+	public static final String SELF_PORT = "selfPort";
+	public static final String SELF_URL = "selfUrl";
 	private static final String REAL_HOSTS = "realHosts";
 	private static final String REAL_HOST = "realHost";
 
