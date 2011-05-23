@@ -21,14 +21,12 @@ import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
 import naru.aweb.core.Main;
 import naru.aweb.http.HeaderParser;
-import naru.aweb.http.KeepAliveContext;
 import naru.aweb.http.ParameterParser;
 import naru.aweb.http.RequestContext;
 import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.queue.QueueManager;
 import naru.aweb.robot.Browser;
-import naru.aweb.robot.Scenario;
 import naru.aweb.util.ServerParser;
 import net.sf.json.JSON;
 import net.sf.json.JSONObject;
@@ -317,11 +315,14 @@ public class AdminHandler extends WebServerHandler{
 			config.setProperty("sslProxyServer", sslProxyServer);
 			config.setProperty("exceptProxyDomains", exceptProxyDomains);
 			*/
-			if( config.updateProxyFinder(pacUrl,proxyServer,sslProxyServer,exceptProxyDomains) ){
-				responseJson(true);
-			}else{
-				responseJson(false);
-			}
+			boolean result=config.updateProxyFinder(pacUrl,proxyServer,sslProxyServer,exceptProxyDomains);
+			JSONObject json=new JSONObject();
+			json.put("pacUrl", config.getProperty("pacUrl"));
+			json.put("proxyServer", config.getProperty("proxyServer"));
+			json.put("sslProxyServer", config.getProperty("sslProxyServer"));
+			json.put("exceptProxyDomains", config.getProperty("exceptProxyDomains"));
+			json.put("result", result);
+			responseJson(json);
 		}else if("setKeepAlive".equals(cmd)){
 			String isWebKeepAlive=parameter.getParameter("isWebKeepAlive");
 			String isProxyKeepAlive=parameter.getParameter("isProxyKeepAlive");
@@ -346,10 +347,10 @@ public class AdminHandler extends WebServerHandler{
 			responseJson(true);
 		}else if("setAuth".equals(cmd)){
 			String scheme=parameter.getParameter("scheme");
-			String logoutUrl=parameter.getParameter("logoutUrl");
+			//String logoutUrl=parameter.getParameter("logoutUrl");
 			Authenticator authenticator=config.getAuthenticator();
 			authenticator.setScheme(scheme);
-			authenticator.setLogoutUrl(logoutUrl);
+			//authenticator.setLogoutUrl(logoutUrl);
 			String sessionTimeout=parameter.getParameter("sessionTimeout");
 			Authorizer authorizer=config.getAuthorizer();
 			authorizer.setSessionTimeout(Long.parseLong(sessionTimeout));
@@ -363,6 +364,8 @@ public class AdminHandler extends WebServerHandler{
 		}else if("setSelfDomain".equals(cmd)){
 			String domain=parameter.getParameter("domain");
 			config.setProperty(Config.SELF_DOMAIN, domain);
+			String port=config.getString(Config.SELF_PORT);
+			config.setProperty(Config.SELF_URL, "http://" + domain +":"+port);
 			responseJson(true);
 		}else if("getStastics".equals(cmd)){
 			responseJson(JSONObject.fromObject(config.getStasticsObject()));

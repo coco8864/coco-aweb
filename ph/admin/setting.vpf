@@ -7,11 +7,16 @@ function setProxy(){
    exceptProxyDomains:ph.jQuery("#exceptProxyDomains").val()
   },
   function(ret){
-	if(ph.JSON.parse(ret)){
+	var retObj=ph.JSON.parse(ret);
+	if(retObj.result){
 		alert('proxy設定完了');
-	}else{
-		alert('proxy設定失敗');
+		return;
 	}
+	ph.jQuery("#proxyPacUrl").val(retObj.pacUrl);
+	ph.jQuery("#proxyServer").val(retObj.proxyServer);
+	ph.jQuery("#sslProxyServer").val(retObj.sslProxyServer);
+	ph.jQuery("#exceptProxyDomains").val(retObj.exceptProxyDomains);
+	alert('proxy設定失敗');
   });
 }
 function setKeepAlive(){
@@ -44,7 +49,10 @@ function setAuth(){
  ph.jQuery("#curSchme").text(scheme);
  ph.admin.doCommand('setAuth',{
    scheme:scheme,
-   logoutUrl:ph.jQuery("#authLogoutUrl").val(),
+## logoutUrlは、デフォルトで自サーバの情報を参照している。
+## 自サーバの情報を変更した場合追従した方がよいが、既に覚えている情報を上書きすることができない
+## 変更できない設定値とする
+##   logoutUrl:ph.jQuery("#authLogoutUrl").val(),
    sessionTimeout:ph.jQuery("#authSessionTimeout").val()
   },
   function(x){
@@ -186,6 +194,8 @@ ph.jQuery(function(){
   ph.jQuery(".settingItem").hide();
   ##realHost一覧を表示
   ph.admin.doPramCommand('realHost','realHostList',null,realHostList);
+  var scheme=ph.jQuery("#curSchme").text();
+  ph.jQuery("#authScheme option[value='" +scheme+ "']").attr("selected","selected");
 });
 </script> 
 <H1>設定</H1>
@@ -227,7 +237,7 @@ writeTimeout:<input type="text" id="writeTimeout" size="8" value="$!esc.html($!{
 <option value="DigestForm">DigestForm</option>
 </select>現在:<span id="curSchme">$!esc.html($!{config.getString('authenticateScheme')})</span><br/>
 sessionTimeout:<input type="text" id="authSessionTimeout" size="12" value="$!esc.html($!{config.getString('sessionTimeout')})"/>ms<br/>
-logoutUrl:<input type="text" id="authLogoutUrl" size="64" value="$!esc.html($!{config.getString('logoutUrl')})"/><br/>
+##logoutUrl:<input type="text" id="authLogoutUrl" size="64" value="$!esc.html($!{config.getString('logoutUrl')})"/><br/>
 <input type="button" value="設定"  onclick="setAuth();"/><br/>
 </div>
 

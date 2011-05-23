@@ -15,6 +15,7 @@ import org.apache.log4j.Logger;
 
 import naru.async.ChannelHandler;
 import naru.async.ChannelHandler.IpBlockType;
+import naru.aweb.config.Config;
 import naru.aweb.util.ServerParser;
 /*
 以下のような感じで定義
@@ -35,9 +36,9 @@ import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
 import net.sf.json.JsonConfig;
 
-
 public class RealHost {
 	private static Logger logger=Logger.getLogger(RealHost.class);
+	public static final String MAIN_HOST_NAME="mainHost";
 	/*以下２つは同期して更新する検索性、順序性のために２重管理する*/
 	private static Map<String,RealHost> realHosts=new HashMap<String,RealHost>();
 	private static List<RealHost> realHostsList=new ArrayList<RealHost>();
@@ -191,6 +192,13 @@ public class RealHost {
 		logger.info(name + " listen start address:"+address);
 		System.out.println(name + " listen start address:"+address);
 		realHost.setBinding(true);
+		if(name.equals(MAIN_HOST_NAME)){
+			Config config=Config.getConfig();
+			int port=realHost.getBindPort();
+			config.setProperty(Config.SELF_PORT,port);
+			String slefDomain=config.getString(Config.SELF_DOMAIN);
+			config.setProperty(Config.SELF_URL, "http://" + slefDomain +":"+port);
+		}
 		return true;
 	}
 	
