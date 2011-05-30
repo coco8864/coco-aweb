@@ -76,6 +76,7 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 				useText="使用しません"
 			}
 			ph.jQuery("#useCrossDocument").text(useText);
+			setInterval("check()",5000);
 		});
 	});
 	function goAdmin(){
@@ -85,7 +86,17 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 			location.reload();
 		}
 	}
-	</script> 
+	function check(){
+		var status=ph.jQuery("#status");
+		ph.jQuery.ajax({
+			type: 'GET',
+			url: '/',
+			success: function(){status.text('running');},
+			error: function(){status.text('stop');}
+		});
+		
+	}
+	</script>
 
 </head> 
 <body> 
@@ -96,6 +107,7 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 <hr/>
 <div><a href="#" onclick="goAdmin()">Phantom Proxy Console</a></div>
 <hr/>
+<div>status:<span id="status">running</span></div>
 <div>Browser support function</div>
 <table>
 <tr><td>WebSocket API</td><td id="websocket"></td><td id="useWebsocket"></td></tr>
