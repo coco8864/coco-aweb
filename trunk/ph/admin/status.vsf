@@ -94,6 +94,7 @@ ph.jQuery(function() {
 });
 
 function terminate(){
+ if(!confirm('Phantom Proxyを停止します.よろしいですか?'))return;
  ph.admin.doCommand('terminate',{
    isRestart:false
   },
@@ -103,9 +104,13 @@ function terminate(){
 }
 
 function restart(){
+ var isCleanup=ph.jQuery("#restartCleanup").attr('checked');
+ if(isCleanup){
+   if(!confirm('再起動時にデータを初期化します.よろしいですか?'))return;
+ }
  ph.admin.doCommand('terminate',{
    isRestart:true,
-   isCleanup:ph.jQuery("#restartCleanup").attr('checked'),
+   isCleanup:isCleanup,
    javaHeapSize:ph.jQuery("#restartHeapSize").val()
   },
   function(x){
