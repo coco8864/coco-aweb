@@ -415,9 +415,17 @@ public class AdminHandler extends WebServerHandler{
 			PoolManager.dump();
 			completeResponse("205");
 		}else if("terminate".equals(cmd)){
-			Main.terminate();
+			String isRestartValue=parameter.getParameter("isRestart");
+			String isCleanupValue=parameter.getParameter("isCleanup");
+			String javaHeapSizeValue=parameter.getParameter("javaHeapSize");
+			if(!"true".equals(isRestartValue)){
+				Main.terminate();
+			}else{
+				boolean isCleanup="true".equals(isCleanupValue);
+				int javaHeapSize=Integer.parseInt(javaHeapSizeValue);
+				Main.terminate(true,isCleanup,javaHeapSize);
+			}
 			responseJson(true);
-//			doneResponse("205");
 		}else if("replayDelete".equals(cmd)){
 			replayDelete();
 			completeResponse("205");
