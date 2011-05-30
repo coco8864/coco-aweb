@@ -858,7 +858,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		return requestHeaderTime;
 	}
 
-	private void setRequestHeaderTime(long requestHeaderTime) {
+	public void setRequestHeaderTime(long requestHeaderTime) {
 		this.requestHeaderTime = requestHeaderTime;
 	}
 
@@ -866,7 +866,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		return requestBodyTime;
 	}
 
-	private void setRequestBodyTime(long requestBodyTime) {
+	public void setRequestBodyTime(long requestBodyTime) {
 		this.requestBodyTime = requestBodyTime;
 	}
 
@@ -874,7 +874,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		return responseHeaderTime;
 	}
 
-	private void setResponseHeaderTime(long responseHeaderTime) {
+	public void setResponseHeaderTime(long responseHeaderTime) {
 		this.responseHeaderTime = responseHeaderTime;
 	}
 
@@ -882,7 +882,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		return responseBodyTime;
 	}
 
-	private void setResponseBodyTime(long responseBodyTime) {
+	public void setResponseBodyTime(long responseBodyTime) {
 		this.responseBodyTime = responseBodyTime;
 	}
 
