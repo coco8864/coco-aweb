@@ -3,6 +3,7 @@ package naru.aweb.util;
 import java.util.Map;
 
 import javax.jdo.Extent;
+import javax.jdo.JDOFatalDataStoreException;
 import javax.jdo.JDOHelper;
 import javax.jdo.PersistenceManager;
 import javax.jdo.PersistenceManagerFactory;
@@ -18,11 +19,41 @@ public class JdoUtil {
 	private static ThreadLocal<PersistenceManager> persistenceManagers=new ThreadLocal<PersistenceManager>();
 	
 	public static void initPersistenceManagerFactory(Map properties){
-        pmf = JDOHelper.getPersistenceManagerFactory(properties);
+		JDOFatalDataStoreException lastException=null;
+		for(int i=0;i<8;i++){
+			try{
+		        pmf = JDOHelper.getPersistenceManagerFactory(properties);
+		        break;
+			}catch(JDOFatalDataStoreException e){
+				lastException=e;
+				try {
+					Thread.sleep(500);
+				} catch (InterruptedException e1) {
+				}
+			}
+		}
+		if(pmf==null){
+			throw lastException;
+		}
 	}
 	
 	public static void initPersistenceManagerFactory(String resource){
-        pmf = JDOHelper.getPersistenceManagerFactory(resource);
+		JDOFatalDataStoreException lastException=null;
+		for(int i=0;i<16;i++){
+			try{
+		        pmf = JDOHelper.getPersistenceManagerFactory(resource);
+		        break;
+			}catch(JDOFatalDataStoreException e){
+				lastException=e;
+				try {
+					Thread.sleep(500);
+				} catch (InterruptedException e1) {
+				}
+			}
+		}
+		if(pmf==null){
+			throw lastException;
+		}
 	}
 	
 	private static PersistenceManagerFactory getPersistenceManagerFactory(){

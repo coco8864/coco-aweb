@@ -43,7 +43,7 @@ public class ScenarioTest extends TestBase{
 		Scenario scenario=new Scenario();
 		AccessLog accessLog1=AccessLog.getById(722L);
 		AccessLog accessLog2=AccessLog.getById(734L);
-		scenario.setup("test",1,10,new AccessLog[]{accessLog1,accessLog2},
+		scenario.setup(new AccessLog[]{accessLog1,accessLog2},"test",1,10,
 				false,true,true,true);
 		synchronized(scenario){
 			scenario.start();
@@ -63,7 +63,7 @@ public class ScenarioTest extends TestBase{
 		Scenario scenario=new Scenario();
 		AccessLog accessLog1=AccessLog.getById(722L);
 		AccessLog accessLog2=AccessLog.getById(734L);
-		scenario.setup("test",2,4,new AccessLog[]{accessLog1,accessLog2},
+		scenario.setup(new AccessLog[]{accessLog1,accessLog2},"test",2,4,
 				false,true,true,true);
 		synchronized(scenario){
 			scenario.start();
@@ -83,7 +83,7 @@ public class ScenarioTest extends TestBase{
 		Scenario scenario=new Scenario();
 		AccessLog accessLog1=AccessLog.getById(3L);
 //		AccessLog accessLog2=AccessLog.getById(734L);
-		scenario.setup("test",8,100,new AccessLog[]{accessLog1},
+		scenario.setup(new AccessLog[]{accessLog1},"test",8,100,
 				true,true,true,true);
 		long start;
 		synchronized(scenario){

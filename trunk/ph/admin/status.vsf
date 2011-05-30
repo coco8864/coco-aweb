@@ -85,7 +85,6 @@ function onWatchCheck(){
 }
 
 ph.jQuery(function() {
-	ph.jQuery('#terminateBt').bind('click',terminate);
 	watchStastics();//起動後一回は必ず取得する
 	if(ph.isUseSessionStorage && sessionStorage['broardcastWatch']=='true'){
 		ph.jQuery('#broardcastWatchCheck').attr('checked','checked');
@@ -95,12 +94,23 @@ ph.jQuery(function() {
 });
 
 function terminate(){
-	ph.queue.end();
-	ph.jQuery('#terminateH2').text('停止処理中... 再起動後リロードしてください');
-	ph.jQuery('#terminateBt').val('reload');
-	ph.jQuery('#terminateBt').unbind();
-	ph.jQuery('#terminateBt').bind('click',function(){location.reload();});
-	ph.admin.doCommand('terminate');//terminalするとレスポンスも途切れてしまう。
+ ph.admin.doCommand('terminate',{
+   isRestart:false
+  },
+  function(x){
+   location="$!esc.html(${config.config.authUrl})/logout";
+  });
+}
+
+function restart(){
+ ph.admin.doCommand('terminate',{
+   isRestart:true,
+   isCleanup:ph.jQuery("#restartCleanup").attr('checked'),
+   javaHeapSize:ph.jQuery("#restartHeapSize").val()
+  },
+  function(x){
+   location="$!esc.html(${config.config.authUrl})/logout";
+  });
 }
 
 function phlog(){
@@ -112,7 +122,13 @@ function phlog(){
 
 <Hr/>
 <H2>状態:<span id='terminateH2'>起動</span></H2>
-<input id='terminateBt' type="button" value="Phantom Proxy 停止" />
+#if( ${config.heapSize}<0)
+ <input id='terminateBt' type="button" value="Phantom Proxy 停止" />
+#else
+restartCount:${config.restartCount} heapSize:${config.javaHeapSize}m<br>
+初期化:<input type="checkBox" id="restartCleanup"/> heapSize:<input type="text" size="4" id="restartHeapSize" value="${config.javaHeapSize}"/>m<input type="button" value="再起動"  onclick="restart();"/>
+<input type="button" value="停止" onclick="terminate();"/>
+#end
 
 <Hr/>
 <H2>統計情報</H2>

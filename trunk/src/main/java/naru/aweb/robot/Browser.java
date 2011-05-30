@@ -204,6 +204,7 @@ public class Browser extends PoolBase implements Timer{
 	private Caller createCaller(AccessLog accessLog,WebClientConnection connection,Caller nextCaller,boolean isCallerkeepAlive){
 		HeaderParser requestHeader=HeaderParser.createByStore(accessLog.getRequestHeaderDigest());
 		if(requestHeader==null){
+			logger.warn("fail to createByStore.id:"+accessLog.getId());
 			return null;
 		}
 		if(HeaderParser.CONNECT_METHOD.equalsIgnoreCase(requestHeader.getMethod())){
@@ -215,6 +216,7 @@ public class Browser extends PoolBase implements Timer{
 			}
 			PoolManager.poolArrayInstance(realHeader);
 			if(!requestHeader.isParseEnd()){
+				logger.warn("ssl header parse error.id:"+accessLog.getId());
 				return null;
 			}
 		}

@@ -125,6 +125,7 @@
 									<include name="self.pac" />
 								</fileset>
 							</copy>
+							<mkdir dir="pack/phantom/watch"/>
 							<mkdir dir="pack/phantom/log"/>
 							<mkdir dir="pack/phantom/ph/log"/>
 							<mkdir dir="pack/phantom/ph/db"/>
@@ -175,7 +176,7 @@
 		<dependency>
 			<groupId>naru.async</groupId>
 			<artifactId>async</artifactId>
-			<version>1.0.0</version>
+			<version>1.1.0</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-fileupload</groupId>
@@ -235,7 +236,7 @@
 		<dependency>
 			<groupId>queuelet</groupId>
 			<artifactId>queuelet-boot</artifactId>
-			<version>1.1.0</version>
+			<version>1.2.0</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

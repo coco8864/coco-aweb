@@ -798,6 +798,11 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		traceCount--;
 		if(traceCount==0){
 			LogPersister logPersister=config.getLogPersister();
+			if(logPersister==null){
+				logger.debug("logPersister is null");
+				log(true);
+				return;//’â~’†‚Ìê‡
+			}
 			logPersister.insertAccessLog(this);
 		}
 	}

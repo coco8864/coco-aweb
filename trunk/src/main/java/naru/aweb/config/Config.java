@@ -275,8 +275,24 @@ public class Config {
 	private boolean checkAndCreateDb(BasicDataSource dataSource,
 			boolean isCleanup) throws SQLException {
 		Connection con = null;
+		SQLException lastException=null;
+		//Windowsの場合、停止直後にhsqldbをオープンするとファイル共有エラーとなる。
+		for(int i=0;i<16;i++){
+			try {
+				con = dataSource.getConnection();
+				break;
+			} catch (SQLException e1) {
+				lastException=e1;
+				try {
+					Thread.sleep(500);
+				} catch (InterruptedException e) {
+				}
+			}
+		}
+		if(con==null){
+			throw lastException;
+		}
 		try {
-			con = dataSource.getConnection();
 			Statement st = con.createStatement();
 			st.execute("SELECT count(*) FROM CONFIGURATION");
 			if (isCleanup) {
@@ -301,6 +317,8 @@ public class Config {
 		return false;
 	}
 
+	private BasicDataSource confDataSource = new BasicDataSource();
+
 	private Configuration crateConfiguration(QueueletContext context,
 			boolean isCleanup) {
 		InputStream is = Config.class.getClassLoader().getResourceAsStream(CONF_FILENAME);
@@ -317,20 +335,20 @@ public class Config {
 		String keyColumn = context.resolveProperty(fileConfig.getString("config.key"), null);
 		String valueColumn = context.resolveProperty(fileConfig.getString("config.value"), null);
 
-		BasicDataSource dataSource = new BasicDataSource();
-		dataSource.setDriverClassName(driver);
-		dataSource.setUrl(url);
-		dataSource.setUsername(user);
-		dataSource.setPassword(pass);
-		dataSource.setDefaultAutoCommit(true);
+		//BasicDataSource dataSource = new BasicDataSource();
+		confDataSource.setDriverClassName(driver);
+		confDataSource.setUrl(url);
+		confDataSource.setUsername(user);
+		confDataSource.setPassword(pass);
+		confDataSource.setDefaultAutoCommit(true);
 		boolean isCreate;
 		try {
-			isCreate = checkAndCreateDb(dataSource, isCleanup);
+			isCreate = checkAndCreateDb(confDataSource, isCleanup);
 		} catch (SQLException e) {
 			logger.error("fail to checkAndCreateDb.", e);
 			throw new RuntimeException("fail to checkAndCreateDb.", e);
 		}
-		DatabaseConfiguration dbConfig = new DatabaseConfiguration(dataSource,
+		DatabaseConfiguration dbConfig = new DatabaseConfiguration(confDataSource,
 				table, keyColumn, valueColumn);
 		// DBには、","区切で格納しアプリで分解する
 		dbConfig.setDelimiterParsingDisabled(true);
@@ -488,10 +506,29 @@ public class Config {
 			broadcaster.term();
 			broadcaster=null;
 		}
-		queueManager.term();
-		logPersister.term();
-		authenticator.term();
-		authorizer.term();
+		if(queueManager!=null){
+			queueManager.term();
+			queueManager=null;
+		}
+		if(logPersister!=null ){
+			logPersister.term();
+			logPersister=null;
+		}
+		if(authenticator!=null){
+			authenticator.term();
+			authenticator=null;
+		}
+		if(authorizer!=null){
+			authorizer.term();
+			authorizer=null;
+		}
+		if(confDataSource!=null){
+			try {
+				confDataSource.close();
+			} catch (SQLException ignore) {
+			}
+			confDataSource=null;
+		}
 	}
 	
 	public void addRealHost(RealHost realHost){
@@ -1040,5 +1077,21 @@ public class Config {
 
 	public void setStasticsObject(Object stasticsObject) {
 		this.stasticsObject = stasticsObject;
+	}
+	
+	/* Deamon配下で動作している場合、起動情報を格納 Deamon配下でない場合は、両者負の数を設定する */
+	private int javaHeapSize;
+	private int restartCount;
+	public void setJavaHeapSize(int javaHeapSize){
+		this.javaHeapSize=javaHeapSize;
+	}
+	public void setRestartCount(int restartCount){
+		this.restartCount=restartCount;
+	}
+	public int getJavaHeapSize(){
+		return javaHeapSize;
+	}
+	public int getRestartCount(){
+		return restartCount;
 	}
 }

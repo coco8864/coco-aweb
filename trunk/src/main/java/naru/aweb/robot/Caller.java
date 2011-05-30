@@ -296,7 +296,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		WebClientHandler webClientHandler=(WebClientHandler)userContext;
 		if(accessLog.getStatusCode()==null){
 			//connect‚É¸”s‚µ‚½ê‡Ahandshake‚É¸”s‚µ‚½ê‡A‚»‚Ì‘¼‰ñü‚ªØ‚ê‚½ê‡
-			logger.error("Caller.onRequestEnd.no status code:"+webClientHandler.getChannelId()+":"+accessLog.getChannelId(), new Exception());
+			logger.debug("Caller.onRequestEnd.no status code:"+webClientHandler.getChannelId()+":"+accessLog.getChannelId());
 			accessLog.setChannelId(webClientHandler.getChannelId());
 		}
 		if(scheduler!=null){

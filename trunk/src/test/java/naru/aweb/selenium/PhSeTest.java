@@ -10,7 +10,8 @@ public class PhSeTest {
 	
 	@Test
 	public void test1() throws InterruptedException{
-    	WebDriver driver=SeleniumUtil.firefox(PROXY_PAC);
+//    	WebDriver driver=SeleniumUtil.ie(null);
+    	WebDriver driver=SeleniumUtil.htmlunit(PROXY_PAC);
     	driver.get("https://ph.ph-sample.appspot.com");
         WebElement elm=SeleniumUtil.waitForTagText(driver, "h1", "Phatom Proxy Login(digest)");
     	SeleniumUtil.executeScript(driver,"jQuery('#username').val('admin');jQuery('#password').val('admin');jQuery('#dummyForm').submit();");
