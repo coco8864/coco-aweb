@@ -231,7 +231,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		if( webClientHandler.startRequest(this, webClientHandler,3000,PoolManager.duplicateBuffers(requestHeader),requestContentLength, true, 15000)==false){
 			logger.error("fail to webClientHandler.startRequest.scenario.getName:"+scenario.getName());
 			//connectすらできなかったため、イベント通知が期待できない。自力でイベント発行
-			onRequestFailure("webClientHandler.startRequest faile to connect", new Exception("webClientHandler.startRequest faile to connect"));
+			onRequestFailure(webClientHandler, new Exception("webClientHandler.startRequest faile to connect"));
 			return;
 		}
 		if(requestBody!=null){
