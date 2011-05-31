@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<queueApp checkInterval="check">
+  <loader name="main" delegate="false">
+  </loader>
+  <queuelet loaderName="main" type="watch">
+    <param name="watch.dir" value="watch"/>
+    <param name="watch.dinamic" value="false"/><!-- default:false true:watch.dirにファイルを発見したら動的に追�?-->
+    <param name="watch.heartBeatLimit" value="30000"/>
+    <param name="watch.restartLimit" value="3"/>
+    <param name="watch.type" value="queuelet"/><!--java,watch-->
+
+    <param name="java.vmOption" value="-DPH_HOME=${PH_HOME}"/>
+    <param name="java.heapSize" value="128"/>
+    <!--param name="java.classpath" value="${xxx}"/-->
+    <!--param name="java.mainClass" value="aaa.bbb.ccc.ddd"/-->
+    <param name="queuelet.conf" value="phantom.xml"/>
+    <param name="queuelet.arg.0" value="cleanup"/>
+
+    <param name="watch.currentDir" value="."/>
+    <param name="watch.environment.0" value="aaa=bbb"/>
+    <param name="watch.environment.1" value="ccc=ddd"/>
+  </queuelet>
+</queueApp>
+
+<!--queueletの場合�?プログラ�?��ら変更できるのは、java.vmOption,java.heapSize,queuelet.arg.0,...>
+<!--javaの場合�?プログラ�?��ら変更できるのは、java.vmOption,java.heapSize,java.arg.0,...>
+<!--watchの場合�?プログラ�?��ら�?変更はできな�?
+
