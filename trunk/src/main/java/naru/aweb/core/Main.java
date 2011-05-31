@@ -1,5 +1,6 @@
 package naru.aweb.core;
 
+import java.net.BindException;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -67,9 +68,9 @@ datanucleus.autoCreateSchema=true
 datanucleus.validateTables=false
 datanucleus.validateConstraints=false
 
+	 *@init’†‚Ì¸”s‚ÍÄ‹N“®‚ğ‚İ‚é
 	 * @return
 	 */
-	
 	public void init(QueueletContext context, Map param) {
 		startupInfo=(StartupInfo)param.get(PARAM_KEY_STARTUPINFO);
 		if(startupInfo!=null){
@@ -91,19 +92,23 @@ datanucleus.validateConstraints=false
 		}
 		try{
 			if( !config.init(context,isCleanup) ){
-				logger.error("fail to config init.");
-				context.finish();
+				logger.error("config init return false.");
+				context.finish(false,true,startupInfo);
 				return;
 			}
 		}catch(Throwable t){
 			t.printStackTrace();
 			logger.error("fail to config init.",t);
-			context.finish();
+			context.finish(false,true,startupInfo);
 			return;
 		}
 		mainInstance=this;
 		Main.context=context;
-		RealHost.bindAll(true);
+		if( !RealHost.bindAll(true) ){
+			/* Šù‚Éport‚ªg‚í‚ê‚Ä‚¢‚½ê‡‚±‚±‚ğ’Ê‚é */
+			logger.error("fail to bindAll.");
+			context.finish(false,true,startupInfo);
+		}
 	}
 
 	public boolean service(Object arg0) {

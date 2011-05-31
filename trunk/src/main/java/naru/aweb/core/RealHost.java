@@ -230,14 +230,18 @@ public class RealHost {
 		}
 	}
 	
-	public static  void bindAll(boolean isInit){
+	public static  boolean bindAll(boolean isInit){
 		Object[] names=null;
 		synchronized(realHosts){
 			names=realHosts.keySet().toArray();
 		}
 		for(int i=0;i<names.length;i++){
-			bind((String)names[i],isInit);
+			if(!bind((String)names[i],isInit)){
+				unbindAll();
+				return false;
+			}
 		}
+		return true;
 	}
 	
 //	private Configuration configuration;
