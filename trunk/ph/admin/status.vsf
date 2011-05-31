@@ -127,7 +127,7 @@ function phlog(){
 
 <Hr/>
 <H2>状態:<span id='terminateH2'>起動</span></H2>
-#if( ${config.heapSize}<0)
+#if( ${config.javaHeapSize}<0)
  <input id='terminateBt' type="button" value="Phantom Proxy 停止" />
 #else
 restartCount:${config.restartCount} heapSize:${config.javaHeapSize}m<br>
