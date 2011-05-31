@@ -1,4 +1,4 @@
-Phantom Proxy 1.0.0
+Phantom Proxy 1.1.0
 
 Phantom Proxy は、javaで動作するWeb調査ツールです。
 詳細は以下を参照してください。
