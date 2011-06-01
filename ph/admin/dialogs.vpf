@@ -28,8 +28,10 @@ var stressData={
 ph.jQuery(function(){
 	if(ph.isUseSessionStorage){
 		var json=sessionStorage['stressData'];
-		if(json){
-			stressData=ph.JSON.parse(json)
+		if(json!=null){
+			stressData=ph.JSON.parse(json);
+		}else{
+			stressData={isComplete:true,time:0,msg:null};
 		}
 	}
 });

@@ -22,6 +22,8 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 </style>
 	<script type="text/javascript"> 
 	ph.jQuery(function() {
+		ph.jQuery("#version").text(ph.version);
+		ph.jQuery("#status").text('running');
 		ph.auth.getUser(function(user){
 			var inout=ph.jQuery("#loginout");
 			if(user){
@@ -88,9 +90,10 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 	}
 	function check(){
 		var status=ph.jQuery("#status");
+		var now = new Date();
 		ph.jQuery.ajax({
 			type: 'GET',
-			url: '/',
+			url: '/check.html?'+now.getTime(),
 			success: function(){status.text('running');},
 			error: function(){status.text('stop');}
 		});
@@ -107,7 +110,8 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 <hr/>
 <div><a href="#" onclick="goAdmin()">Phantom Proxy Console</a></div>
 <hr/>
-<div>status:<span id="status">running</span></div>
+<div>version:<span id="version">checking...</span></div>
+<div>status:<span id="status">checking...</span></div>
 <div>Browser support function</div>
 <table>
 <tr><td>WebSocket API</td><td id="websocket"></td><td id="useWebsocket"></td></tr>

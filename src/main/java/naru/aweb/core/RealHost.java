@@ -169,7 +169,7 @@ public class RealHost {
 			return false;
 		}
 		if(isInit && realHost.isInitBind==false){
-			return false;
+			return true;//初期起動の必要のないrealHostは未起動でOK
 		}
 		InetSocketAddress address =null;
 		try {
