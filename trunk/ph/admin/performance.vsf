@@ -9,8 +9,6 @@ function perfDelete(){
 	}
 	param={query:queryString}
 	ph.admin.doPramCommand('perf','delete',param,function(json){
-		var mappings=ph.JSON.parse(json);
-		jQuery("#perfQuery").val('isMaster');
 		perfTableRefresh();
 	});
 }
@@ -161,16 +159,14 @@ function perfLine(trTag,perf){
 	trTag.appendChild(tdTag);
 }
 function perfProgress(){
+	if(!stressData){
+		stressData={isComplete:true,time:0,msg:null};
+	}
 	var bar=jQuery("#progressbar");
 	if(!stressData.msg){
 		ph.jQuery("#stTestStatus").text("未実行");
 		bar.progressbar({value:0});
 		return;
-	}
-	if(stressData.isComplete){
-		ph.jQuery("#stTestStatus").text("完了");
-	}else{
-		ph.jQuery("#stTestStatus").text("実行中");
 	}
 	var st=stressData.msg;
 	var totalTime=stressData.time-st.startTime;
@@ -182,10 +178,16 @@ function perfProgress(){
 	ph.jQuery("#stTestTotalTime").text(totalTime);
 	ph.jQuery("#stTestBrowser").text((st.runnningBrowserCount)+"/"+st.browserCount);
 	ph.jQuery("#stTestLoop").text((st.loop)+"/"+st.loopCount);
-	bar.progressbar({value:(st.loop/st.loopCount)*100});
+	if(stressData.isComplete){
+		ph.jQuery("#stTestStatus").text("完了");
+		bar.progressbar({value:0});
+	}else{
+		ph.jQuery("#stTestStatus").text("実行中");
+		bar.progressbar({value:(st.loop/st.loopCount)*100});
+	}
 }
 perfTableRefresh();
-perfProgress(stressData.msg);
+perfProgress();
 </script>
 
 <h1>Performance list</h1>
@@ -212,7 +214,7 @@ memory:<span id="stTestMemory"></span>%</div>
 </select>
 <input type="button" value="検索" onClick="perfTableRefresh();">
 <input type="button" value="csv" onClick="perfToCsv();">
-<input type="button" value="削除" onClick="if(confirm('削除します.よろしいですか?'))perfDelete();">
+<input type="button" value="削除" onClick="if(confirm('stressデータを削除します.よろしいですか?'))perfDelete();">
 <div style="margin: 0.4em 0.0em; padding: 0.0em 0.0em;background: #fff none; border: solid 0pt #000;">
 <table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
 <thead>
