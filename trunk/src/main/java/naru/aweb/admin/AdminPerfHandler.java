@@ -133,8 +133,7 @@ public class AdminPerfHandler extends WebServerHandler{
 				String chId=doStressFile(accessLogs,json);
 				setContentType("text/html");
 				completeResponse("200",//TODO vsfにfowardするのがスマート
-					"<script>parent.jQuery('#tabs').tabs('select',5);parent.ph.queue.subscribeById('" +
-					chId+ "',parent.doStressCb);</script>");
+					"<script>parent.streeCommandCb('"+chId+"');</script>");
 				return;
 			} catch (UnsupportedEncodingException e) {
 			} catch (RuntimeException e) {
