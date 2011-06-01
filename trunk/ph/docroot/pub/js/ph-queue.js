@@ -16,6 +16,7 @@ if(typeof ph == "undefined"){
 		ws:null,
 		url:null,
 		isAuth:false,
+		appId:null,
 		isXhrCall:false,
 		isWebSocketOpen:false,
 		_errorCb:null,
@@ -117,6 +118,10 @@ if(typeof ph == "undefined"){
 				}
 				this._send({type:'list',action:'user',id:chId});
 			},
+		checkChId:function(chId){//有効なchIdか否かを判定
+				if(ph.queue.idCbs[chId]){return true;}
+				return false;
+			},
 		init:function(){
 			},
 		start:function(path,errorCb){//起動時に一回呼ぶ,queueを受け付けるパスを指定,例'/queue'
@@ -134,16 +139,18 @@ if(typeof ph == "undefined"){
 					this.url=window.location.protocol + "//";
 				}
 				this.url+=window.location.host + path;
-				if(ph.isUseSessionStorage){
-					this._restoreFromLoacalStorage();
-				}
-				ph.auth.setAuth(path,function(isAuth){
+				ph.auth.setAuth(path,function(isAuth,appId){
 //alert("queue auth:"+isAuth);
 					if(isAuth){
+						ph.log('1:appId'+appId):
 						ph.queue.isAuth=true;
+						ph.queue.appId=appId;
 						ph.queue.onTimer();
 						ph.queue._path=path;
 						ph.queue._errorCb=errorCb;
+						if(ph.isUseSessionStorage){
+							this._restoreFromSessionStorage();
+						}
 					}else{
 						errorCb();
 					}
@@ -152,6 +159,7 @@ if(typeof ph == "undefined"){
 		end:function(path,errorCb){
 				ph.queue._errorCb=null;
 				ph.queue.isAuth=false;
+				ph.queue.appId=null;
 				if(ph.isUseWebSocket){
 					if(ph.queue.ws!=null){
 						ph.queue.ws.close();
@@ -182,7 +190,7 @@ if(typeof ph == "undefined"){
 				if(!isPermanent){
 					return;
 				}
-				var cbStr='{onComplete:'+cb.onComplete+',onMessage:'+cb.onMessage+',onError:'+cb.onError;
+				var cbStr='{onComplete:'+cb.onComplete+',onMessage:'+cb.onMessage+',onError:'+cb.onError+',appId:'+ph.queue.appId;
 				if(queueName){
 					cbStr+=',_queueName:"'+queueName +'"';
 					cb._queueName=queueName;
@@ -198,7 +206,7 @@ if(typeof ph == "undefined"){
 				ph.queue._unregChId(chId);
 				delete ph.queue.idCbs[chId];
 			},
-		_restoreFromLoacalStorage:function(){
+		_restoreFromSessionStorage:function(){
 				//sessionStrorageからcbを復活
 				var n=sessionStorage.length;
 				for(var i=0;i<n;i++){
@@ -210,6 +218,9 @@ if(typeof ph == "undefined"){
 					var cbString=sessionStorage[key];
 					var chId=token[1];
 					eval('var cb='+cbString+';');
+					if(cb.appId==ph.queuelet.appId){
+						continue;//異なるセションのcallbackは復活させない
+					}
 					if(cb._queueName){
 						var oldChId=ph.queue.nameIds[cb._queueName];
 						if(oldChId){
@@ -265,11 +276,14 @@ if(typeof ph == "undefined"){
 					data: sendText,
 					success: this.onCallback,
 					error: function(){
-						ph.auth.setAuth(ph.queue._path,function(isAuth){
+						ph.auth.setAuth(ph.queue._path,function(isAuth,appId){
 							if(isAuth){
+								ph.log('2:appId'+appId):
 								ph.queue.isAuth=true;
+								ph.queue.appId=appId;
 							}else{
 								ph.queue.isAuth=false;
+								ph.queue.appId=null;
 								if(ph.queue._errorCb){
 									ph.queue._errorCb();
 									ph.queue._errorCb=null;
@@ -396,12 +410,15 @@ if(typeof ph == "undefined"){
 					ph.queue.url=window.location.protocol + "//" + window.location.host + ph.queue._path;
 					ph.log("change to Polling:"+ ph.queue.url);
 				}
-				ph.auth.setAuth(ph.queue._path,function(isAuth){
+				ph.auth.setAuth(ph.queue._path,function(isAuth,appId){
 					if(isAuth){
+						ph.log('3:appId'+appId):
 						ph.queue.isAuth=true;
+						ph.queue.appId=appId;
 						setTimeout(ph.queue.onTimer,ph.queue.interval);
 					}else{
 						ph.queue.isAuth=false;
+						ph.queue.appId=null;
 						if(ph.queue._errorCb){
 							ph.queue._errorCb();
 							ph.queue._errorCb=null;

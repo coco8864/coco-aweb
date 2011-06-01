@@ -29,7 +29,7 @@ window.ph.auth={
 			var msg=ph.JSON.parse(data);
 			if(msg.result){
 				ph.log("setAuth direct true:"+path);
-				cb(true);
+				cb(true,msg.appId);
 				return;
 			}
 			ph.auth._authCb=cb;
@@ -55,7 +55,7 @@ window.ph.auth={
 		ph.log("_setAuth:"+pathOnceId);
 		var setAuthCb=function(data){
 			var msg=ph.JSON.parse(data);
-			ph.auth._authCb(msg.result);
+			ph.auth._authCb(msg.result,msg.appId);
 			ph.log("_setAuth:"+msg.result+":"+ph.auth._authPath);
 			ph.auth._authPath=null;
 			ph.auth._authCb=null;
