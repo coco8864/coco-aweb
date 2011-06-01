@@ -416,7 +416,7 @@ public class Authorizer implements Timer{
 	 * @param url
 	 * @return pathOnceIdからPrimaryIdの可能性がある、SessionIdを返却する。(ロックをはずすため、開放される可能性あり）
 	 */
-	public String createSecondaryCookieFromPathOnceId(String pathId,String url,Mapping mapping,String cookiePath,boolean isSecure){
+	public String createSecondaryIdFromPathOnceId(String pathId,String url,Mapping mapping){
 		SessionId pathOnceId = getSessionId(Type.PATH_ONCE,pathId);
 		if (pathOnceId == null) {
 			return null;
@@ -428,9 +428,9 @@ public class Authorizer implements Timer{
 		
 		//SecondaryIdは、create時と、内容設定時の２回lockする
 		SessionId secondaryId = SessionId.createSecondaryId();//1回目
-		String cookieString=secondaryId.getSetCookieString(cookiePath, isSecure);
+//		String cookieString=secondaryId.getSetCookieString(cookiePath, isSecure);
 		if( setupSecondaryId(secondaryId, primaryId, pathId, pathOnceId, url, mapping) ){//2回目
-			return cookieString;
+			return secondaryId.getId();
 		}
 		secondaryId.remove();
 		return null;

@@ -1,10 +1,10 @@
 package naru.aweb.auth;
 
-import java.util.Map;
-
+import naru.async.store.DataUtil;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
 import naru.aweb.config.User;
+import naru.aweb.http.Cookie;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.KeepAliveContext;
 import naru.aweb.http.ParameterParser;
@@ -26,6 +26,7 @@ public class AuthHandler extends WebServerHandler {
 	private static Config config = Config.getConfig();
 	private static Authenticator authenticator = config.getAuthenticator();
 	private static Authorizer authorizer=config.getAuthorizer();
+	public static String APP_ID="appId";//javascript側でセションを識別するID,setAuthメソッド復帰情報、jsonのキーとして使用
 	public static String AUTHORIZE_MARK="ahthorizeMark";//authorize目的で呼び出された場合に付加される。
 	public static String AUTHENTICATE_PATH="/authenticate";//必要があれば認証処理も行うパス
 	public static String AJAX_USER_PATH="/ajaxUser";//ajaxからloginユーザを問い合わせるAPI
@@ -253,13 +254,14 @@ public class AuthHandler extends WebServerHandler {
 		}
 		
 		//有効なPathOnceIdが付加されているか、権限はあるか？
-		String setCookieString = authorizer.createSecondaryCookieFromPathOnceId(pathId,url,m,cookiePath,isSsl());
-		if(setCookieString==null){
+		String secondaryId=authorizer.createSecondaryIdFromPathOnceId(pathId,url,m);
+		if(secondaryId==null){
 			forbidden("fail to authorize.");
 			return;
 		}
 		// redirect self
 		// keepAliveContext.setAuthSession(secondaryId.getAuthSessionFromPrimary());
+		String setCookieString = Cookie.formatSetCookieHeader(SessionId.SESSION_ID,secondaryId,null, cookiePath,-1, isSsl());
 		redirect(url, setCookieString);
 	}
 	
@@ -322,11 +324,13 @@ public class AuthHandler extends WebServerHandler {
 			}else if(AJAX_SETAUTH_PATH.equals(path)){//WEB && POST
 				url=url.substring(0, url.length()-AJAX_SETAUTH_PATH.length());
 				String pathId=parameter.getParameter("pathOnceId");
-				String setCookieString = authorizer.createSecondaryCookieFromPathOnceId(pathId,url,mapping.getMapping(),cookiePath,isSsl());
+				String secondaryId = authorizer.createSecondaryIdFromPathOnceId(pathId,url,mapping.getMapping());
 				JSONObject json=new JSONObject();
-				if(setCookieString!=null){
+				if(secondaryId!=null){
+					String setCookieString = Cookie.formatSetCookieHeader(SessionId.SESSION_ID,secondaryId,null, cookiePath,-1, isSsl());
 					setCookie(setCookieString);
 					json.put("result", true);
+					json.put(APP_ID,DataUtil.digestHex(secondaryId.getBytes()));//javascript側でセションを識別するID
 				}else{
 					json.put("result", false);
 				}

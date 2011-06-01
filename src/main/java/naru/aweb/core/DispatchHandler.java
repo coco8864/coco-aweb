@@ -11,6 +11,7 @@ import org.apache.log4j.Logger;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.async.ssl.SslAdapter;
+import naru.async.store.DataUtil;
 import naru.async.store.Page;
 import naru.async.store.Store;
 import naru.aweb.auth.AuthHandler;
@@ -437,7 +438,8 @@ public class DispatchHandler extends ServerBaseHandler {
 				requestContext.registerAuthSession(authSession);
 				if(isAuthId){
 					mapping.unref();
-					mapping = DispatchResponseHandler.ajaxAleadyAuth();
+					//javascript‘¤‚ÅƒZƒVƒ‡ƒ“‚ðŽ¯•Ê‚·‚éID
+					mapping = DispatchResponseHandler.ajaxAleadyAuth(DataUtil.digestHex(cookieId.getBytes()));
 				}
 				return mapping;
 			}

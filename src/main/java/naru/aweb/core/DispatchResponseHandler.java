@@ -1,16 +1,12 @@
 package naru.aweb.core;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 
 import naru.async.pool.PoolManager;
 import naru.aweb.auth.AuthHandler;
 import naru.aweb.config.Config;
 import naru.aweb.http.HeaderParser;
-import naru.aweb.http.ParameterParser;
 import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.MappingResult;
-import net.sf.json.JSON;
 import net.sf.json.JSONObject;
 
 import org.apache.log4j.Logger;
@@ -69,8 +65,9 @@ public class DispatchResponseHandler extends WebServerHandler {
 		return mapping;
 	}
 	
-	public static MappingResult ajaxAleadyAuth() {
+	public static MappingResult ajaxAleadyAuth(String appId) {
 		MappingResult mapping = createDispatchMapping(Type.AJAX_ALEADY_AUTH);
+		mapping.setAttribute(AuthHandler.APP_ID, appId);
 		return mapping;
 	}
 
@@ -115,6 +112,7 @@ public class DispatchResponseHandler extends WebServerHandler {
 		case AJAX_ALEADY_AUTH:
 			JSONObject json=new JSONObject();
 			json.put("result", true);
+			json.put(AuthHandler.APP_ID, mapping.getAttribute(AuthHandler.APP_ID));
 			responseJson(json);
 			break;
 		case AUTHENTICATE:
