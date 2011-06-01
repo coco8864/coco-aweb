@@ -4,6 +4,7 @@ if(window.ph){
 }
 window.ph={
 ##このjavascriptの取得経路を記録,proxy or web...
+ version:'$esc.javascript(${config.getString("phantomVersion")})',
  isProxy:$esc.javascript(${handler.getRequestHeader().isProxy()}),
  isSsl:$esc.javascript(${handler.isSsl()}),
  domain:'$esc.javascript(${handler.getLocalIp()}):$esc.javascript(${handler.getLocalPort()})',
