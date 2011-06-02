@@ -86,7 +86,7 @@ public class LogPersister implements Timer {
 		if (chId != null) {
 			queueManager.complete(chId, accessLog.getId());
 		}
-		accessLog.unref(true);
+		accessLog.unref();
 	}
 
 	/**
