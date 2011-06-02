@@ -4,7 +4,7 @@
   <loader name="main" callStack="true" delegate="false" home="ph">
   </loader>
 
-  <terminal name="timer" threadCount="2" priority="1">
+  <terminal name="timer" threadCount="2">
     <queuelet loaderName="main" className="naru.async.timer.TimerManager">
       <param name="timerInterval" value="100"/>
     </queuelet>
@@ -61,9 +61,7 @@
     <queuelet loaderName="main" className="naru.async.core.DispatchManager"/>
   </terminal>
   
-  <!-- terminal name="phmain" threadCount="1"-->
-    <queuelet loaderName="main" className="naru.aweb.core.Main">
-    </queuelet>
-  <!-- /terminal-->
+  <queuelet loaderName="main" className="naru.aweb.core.Main">
+  </queuelet>
 
 </queueApp>
