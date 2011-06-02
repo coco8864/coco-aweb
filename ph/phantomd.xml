@@ -7,13 +7,15 @@
     <param name="watch.heartBeatLimit" value="10000"/>
     <param name="watch.restartLimit" value="3"/>
     <param name="watch.type" value="queuelet"/><!--java,watch-->
-    <param name="java.vmOption.length" value="1"/>
+    <param name="java.vmOption.length" value="1"/><!--初期のvmOption、ダウン時は直近起動時のvmOption -->
     <param name="java.vmOption.0" value="-DPH_HOME=${PH_HOME}"/>
     <param name="java.vmOption.1" value="-Xdebug"/>
     <param name="java.vmOption.2" value="-Xrunjdwp:transport=dt_socket,server=y,address=1234"/>
     <param name="java.heapSize" value="128"/>
     <param name="queuelet.conf" value="${PH_HOME}/phantom.xml"/>
-    <param name="queuelet.arg.length" value="0"/>
+    <param name="queuelet.arg.length" value="0"/><!--初期の引数 -->
     <param name="queuelet.arg.0" value="cleanup"/>
+    <param name="queuelet.recoverArg.length" value="0"/><!--ダウンから再起動する場合の引数 -->
+    <param name="queuelet.recoverArg.0" value="cleanup"/>
   </queuelet>
 </queueApp>
