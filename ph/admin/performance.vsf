@@ -159,7 +159,7 @@ function perfLine(trTag,perf){
 	trTag.appendChild(tdTag);
 }
 function perfProgress(){
-	if(!stressData){
+	if(!stressData || stressData.appId!=ph.queue.getAppId()){
 		stressData={isComplete:true,time:0,msg:null};
 	}
 	var bar=jQuery("#progressbar");

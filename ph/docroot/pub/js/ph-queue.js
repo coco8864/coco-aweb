@@ -119,8 +119,11 @@ if(typeof ph == "undefined"){
 				this._send({type:'list',action:'user',id:chId});
 			},
 		checkChId:function(chId){//有効なchIdか否かを判定
-				if(ph.queue.idCbs[chId]){return true;}
+				if(this.idCbs[chId]){return true;}
 				return false;
+			},
+		getAppId:function(){//queueのappId,sessionStrageに保存しても安全なセションID
+				return this.appId;
 			},
 		init:function(){
 			},
@@ -142,14 +145,14 @@ if(typeof ph == "undefined"){
 				ph.auth.setAuth(path,function(isAuth,appId){
 //alert("queue auth:"+isAuth);
 					if(isAuth){
-						ph.log('1:appId'+appId):
+						ph.log('1:appId:'+appId);
 						ph.queue.isAuth=true;
 						ph.queue.appId=appId;
 						ph.queue.onTimer();
 						ph.queue._path=path;
 						ph.queue._errorCb=errorCb;
 						if(ph.isUseSessionStorage){
-							this._restoreFromSessionStorage();
+							ph.queue._restoreFromSessionStorage();
 						}
 					}else{
 						errorCb();
@@ -190,7 +193,7 @@ if(typeof ph == "undefined"){
 				if(!isPermanent){
 					return;
 				}
-				var cbStr='{onComplete:'+cb.onComplete+',onMessage:'+cb.onMessage+',onError:'+cb.onError+',appId:'+ph.queue.appId;
+				var cbStr='{onComplete:'+cb.onComplete+',onMessage:'+cb.onMessage+',onError:'+cb.onError+',appId:"'+ph.queue.appId +'"';
 				if(queueName){
 					cbStr+=',_queueName:"'+queueName +'"';
 					cb._queueName=queueName;
@@ -218,9 +221,12 @@ if(typeof ph == "undefined"){
 					var cbString=sessionStorage[key];
 					var chId=token[1];
 					eval('var cb='+cbString+';');
-					if(cb.appId==ph.queuelet.appId){
+					if(!cb.appId || cb.appId!=ph.queue.appId){
+						ph.log('skip chId:'+chId +':appId:'+ph.queue.appId);
+						this._removeCb(chId);
 						continue;//異なるセションのcallbackは復活させない
 					}
+					ph.log('load chId:'+chId +':appId:'+ph.queue.appId);
 					if(cb._queueName){
 						var oldChId=ph.queue.nameIds[cb._queueName];
 						if(oldChId){
@@ -233,6 +239,8 @@ if(typeof ph == "undefined"){
 			},
 		_regChId:function(chId,cbqtext){
 				if(ph.isUseSessionStorage){
+					ph.log('out chid:'+chId);
+					ph.log('out:'+cbqtext);
 					sessionStorage[this.CHANNEL_ID_PREFIX+chId]=cbqtext;
 				}
 			},
@@ -278,7 +286,7 @@ if(typeof ph == "undefined"){
 					error: function(){
 						ph.auth.setAuth(ph.queue._path,function(isAuth,appId){
 							if(isAuth){
-								ph.log('2:appId'+appId):
+								ph.log('2:appId'+appId);
 								ph.queue.isAuth=true;
 								ph.queue.appId=appId;
 							}else{
@@ -412,7 +420,7 @@ if(typeof ph == "undefined"){
 				}
 				ph.auth.setAuth(ph.queue._path,function(isAuth,appId){
 					if(isAuth){
-						ph.log('3:appId'+appId):
+						ph.log('3:appId'+appId);
 						ph.queue.isAuth=true;
 						ph.queue.appId=appId;
 						setTimeout(ph.queue.onTimer,ph.queue.interval);
