@@ -21,7 +21,7 @@ function editSave(){
 
 ##stressダイアログから呼ばれる
 var stressData={
-	chId:null,
+	appId:null,
 	isComplete:true,
 	time:0,
 	msg:null
@@ -31,14 +31,13 @@ ph.jQuery(function(){
 		var json=sessionStorage['stressData'];
 		if(json!=null){
 			stressData=ph.JSON.parse(json);
-		}else{
-			stressData={isComplete:true,time:0,msg:null};
 		}
 	}
 });
 
 var doStressCb={
 	update:function(msg,time,isComplete){
+		stressData.appId=ph.queue.getAppId();
 		stressData.msg=msg;
 		stressData.time=time;
 		stressData.isComplete=isComplete;
@@ -46,6 +45,7 @@ var doStressCb={
 			var json=ph.JSON.stringify(stressData);
 			sessionStorage['stressData']=json;
 		}
+		##stressタブを表示しているか否かを判定
 		if(typeof perfProgress!='undefined'){perfProgress();}
 		},
 	onComplete:function(msg){ph.log('doStress onComplete');doStressCb.update(msg.message,msg.time,true);},
@@ -53,6 +53,7 @@ var doStressCb={
 	onMessage:function(msg){ph.log('doStress onMessage');doStressCb.update(msg.message,msg.time,false);}
 };
 var streeCommandCb=function(chId){
+	ph.log("streeCommandCb chId:"+chId);
 	jQuery("#tabs").tabs("select",5);
 	stressData.chId=chId;
 	ph.queue.subscribeById(chId,doStressCb);
