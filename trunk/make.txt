@@ -1,3 +1,17 @@
+Phantom Proxy 1.1.0‚ÌˆË‘¶
+naru.aweb 1.1.0
+naru.async 1.1.0
+queuelet-boot 1.2.0
+queuelet-common 1.2.0
+queuelet-system 1.2.0
+
+Phantom Proxy 1.0.0‚ÌˆË‘¶
+naru.aweb 1.0.0
+naru.async 1.0.0
+queuelet-boot 1.1.0
+queuelet-common 1.1.0
+queuelet-system 1.1.0
+
 ŠÂ‹«‚Ìì¬•û–@
 
 •K—v‚È‚à‚Ì
