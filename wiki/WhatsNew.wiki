@@ -4,6 +4,7 @@
 
  Phatom Proxyの改版情報を提供します。
  ==  2011.6.04 Phatom Proxy1.1.0 公開 ==
+ * settingタブより、HTML5機能を使用選択
  * text表示、編集ダイアログのchunk,gzip,encodeを自動設定
  * stressダイアログにthinking timeを追加、リクエスト間隔を指定
  * stressダイアログにファイル指定を追加、複数テストの連続実施
