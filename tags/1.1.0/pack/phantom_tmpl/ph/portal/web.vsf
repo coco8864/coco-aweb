@@ -1,0 +1,21 @@
+#set($frameNo=${parameter.getParameter('frameNo')})
+<div id="web${frameNo}" style="padding:0">
+<div frameNo="${frameNo}">
+<span title="戻る" onclick="webAction(this,'back');"><</span>
+<span title="進む" onclick="webAction(this,'prev');">></span>
+<span title="リロード" onclick="webAction(this,'reload');">V</span>
+<span title="中断" onclick="webAction(this,'stop');">X</span>
+<span title="ホーム" onclick="webAction(this,'home');">H</span>
+<input type="text" class="addressBar" id="addressBar${frameNo}" value="" size="100"/><!--input type="button" value="go" onclick="ph.frameWebs[${frameNo}].go();"/-->
+<span id="share${frameNo}" onclick="ph.frameWebs[${frameNo}].share();">共有</span>
+</div>
+<iframe id="phFrameName${frameNo}" name="phFrameName${frameNo}" height="600" width="100%" frameborder='1' style='border:solid black 1px;'></iframe>
+</div><!-- end of win0-->
+<script type="text/javascript"><!--
+// ph.portalTopFrames[${frameNo}]=window.phFrameName${frameNo};
+// ph.frameWebs[${frameNo}].setFrameName('phFrameName${frameNo}');
+// ph.portalTopFrameNames[${frameNo}]="phFrameName${frameNo}";
+ ph.frameWebs[${frameNo}].onload();
+ ph.frameWebs[${frameNo}].action('reload');
+ ph.frameWebs[${frameNo}].updateShare();
+// --></script>

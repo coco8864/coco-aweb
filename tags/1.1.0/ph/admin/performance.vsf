@@ -1,0 +1,229 @@
+<script type="text/javascript"> 
+
+function perfDelete(){
+	ph.log("perfDelete");
+	var logQuery=ph.jQuery("#perfQuery").val();
+	var queryString="";
+	if(logQuery!=""){
+		queryString+="WHERE "+logQuery;
+	}
+	param={query:queryString}
+	ph.admin.doPramCommand('perf','delete',param,function(json){
+		perfTableRefresh();
+	});
+}
+
+function perfTableRefresh(param){
+	ph.log("perfTableRefresh");
+	if(!param){
+		var logQuery=ph.jQuery("#perfQuery").val();
+		var queryString="";
+		if(logQuery!=""){
+			queryString+="WHERE "+logQuery;
+		}
+		queryString+=" ORDER BY id DESC";
+		param={query:queryString}
+	}
+	ph.admin.doPramCommand('perf','list',param,function(json){
+		var mappings=ph.JSON.parse(json);
+		perfTable(mappings);
+	});
+}
+
+function perfToCsv(){
+	ph.log("perfToCsv");
+	var logQuery=ph.jQuery("#perfQuery").val();
+	var queryString="";
+	if(logQuery!=""){
+		queryString+="WHERE "+logQuery;
+	}
+	ph.jQuery("#stressCsvQuery").val(queryString);
+	ph.jQuery("#stressCsvDownloadForm").submit();
+}
+
+function perfTable(lines){
+	ph.jQuery("#perfData").empty();
+	var targetTag=document.getElementById("perfData");
+	for(i in lines){
+		var trTag=document.createElement("tr");
+		perfLine(trTag,lines[i]);
+		targetTag.appendChild(trTag);
+	}
+}
+
+function ave(sum,count){
+	if(count==0){
+		return 0;
+	}
+	return (sum/count).toFixed(1);
+}
+
+function stdev(sum,sq,count){
+	if(count==0){
+		return 0;
+	}
+	var ave=sum/count;
+	var sigseq=sq/count-(ave*ave);
+	if(sigseq<=0){
+		return 0;
+	}
+	return Math.sqrt(sigseq).toFixed(1);
+}
+
+function perfLine(trTag,perf){
+	var tdTag;
+	tdTag=ph.admin.mkTdTag(perf.id);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(perf.name);
+	trTag.appendChild(tdTag);
+
+	var count=perf.count;
+	tdTag=ph.admin.mkTdTag(ph.admin.formatHms(perf.startTime));
+	trTag.appendChild(tdTag);
+	var term=perf.lastTime-perf.startTime;
+	tdTag=ph.admin.mkTdTag(term +'('+ (term/count).toFixed(2) +')');
+	trTag.appendChild(tdTag);
+	
+	tdTag=ph.admin.mkTdTag(perf.testBrowserCount);
+	trTag.appendChild(tdTag);
+
+	if(perf.requestHeaderDigest){
+		tdTag=document.createElement("td");
+		tdTag.setAttribute("title","request詳細");
+		var textNode=document.createTextNode(perf.requestLine);
+		var aTag=document.createElement("a");
+		aTag.setAttribute("href","#");
+		aTag.appendChild(textNode);
+		tdTag.appendChild(aTag);
+		jQuery(aTag).bind("click",function(){
+			openEditDialog(
+				perf.requestHeaderDigest,
+				perf.id,
+				perf.requestLine,
+				'requestHeader',
+				true
+				);
+			return false;
+		});
+	}else{
+		tdTag=ph.admin.mkTdTag(perf.requestLine);
+	}
+	trTag.appendChild(tdTag);
+
+	if(perf.responseBodyDigest){
+		tdTag=document.createElement("td");
+		tdTag.setAttribute("title","response詳細");
+		var textNode=document.createTextNode(perf.statusCode);
+		var aTag=document.createElement("a");
+		aTag.setAttribute("href","#");
+		aTag.appendChild(textNode);
+		tdTag.appendChild(aTag);
+		jQuery(aTag).bind("click",function(){
+			openEditDialog(
+				perf.responseBodyDigest,
+				perf.id,
+				perf.requestLine,
+				'responseBody',
+				true
+				);
+			return false;
+		});
+	}else{
+		tdTag=ph.admin.mkTdTag(perf.statusCode);
+	}
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(perf.count);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag((perf.responseLengthSum/count).toFixed(1));
+	trTag.appendChild(tdTag);
+	
+	tdTag=ph.admin.mkTdTag(
+		ave(perf.processTimeSum,count) +'('+ 
+		stdev(perf.processTimeSum,perf.processTimeSumsq,count) +')');
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(
+		ave(perf.requestHeaderTimeSum,count) +'('+ 
+		stdev(perf.requestHeaderTimeSum,perf.requestHeaderTimeSumsq,count) +')');
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(
+		ave(perf.requestBodyTimeSum,count) +'('+ 
+		stdev(perf.requestBodyTimeSum,perf.requestBodyTimeSumsq,count) +')');
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(
+		ave(perf.responseHeaderTimeSum,count) +'('+ 
+		stdev(perf.responseHeaderTimeSum,perf.responseHeaderTimeSumsq,count) +')');
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(
+		ave(perf.responseBodyTimeSum,count) +'('+ 
+		stdev(perf.responseBodyTimeSum,perf.responseBodyTimeSumsq,count) +')');
+	trTag.appendChild(tdTag);
+}
+function perfProgress(){
+	if(!stressData || stressData.appId!=ph.queue.getAppId()){
+		stressData={isComplete:true,time:0,msg:null};
+	}
+	var bar=jQuery("#progressbar");
+	if(!stressData.msg){
+		ph.jQuery("#stTestStatus").text("未実行");
+		bar.progressbar({value:0});
+		return;
+	}
+	var st=stressData.msg;
+	var totalTime=stressData.time-st.startTime;
+	var ratio=((st.maxMemory-st.freeMemory)/st.maxMemory)*100.0;
+	ph.jQuery("#stTestMemory").text(ratio.toFixed(2));
+	ph.jQuery("#stTestName").text(st.name);
+	ph.jQuery("#stTestScenario").text((st.scenarioIndex+1)+"/"+st.scenarioCount);
+	ph.jQuery("#stTestStartTime").text(ph.admin.formatHms(st.startTime));
+	ph.jQuery("#stTestTotalTime").text(totalTime);
+	ph.jQuery("#stTestBrowser").text((st.runnningBrowserCount)+"/"+st.browserCount);
+	ph.jQuery("#stTestLoop").text((st.loop)+"/"+st.loopCount);
+	if(stressData.isComplete){
+		ph.jQuery("#stTestStatus").text("完了");
+		bar.progressbar({value:0});
+	}else{
+		ph.jQuery("#stTestStatus").text("実行中");
+		bar.progressbar({value:(st.loop/st.loopCount)*100});
+	}
+}
+perfTableRefresh();
+perfProgress();
+</script>
+
+<h1>Performance list</h1>
+<hr/>
+<div>stress進捗:<span id="stTestStatus"></span>
+scenario:<span id="stTestScenario"></span>
+name:<span id="stTestName"></span>
+start:<span id="stTestStartTime"></span>
+totalTime:<span id="stTestTotalTime"></span>
+browser:<span id="stTestBrowser"></span>
+loop:<span id="stTestLoop"></span>
+memory:<span id="stTestMemory"></span>%</div>
+<div id="progressbar"></div> 
+<hr/>
+条件入力<input type="text" id="perfQuery" value="" size="64" />
+検索サンプル:
+<select id="searchSample" size="1" onChange="ph.jQuery('#perfQuery').val(this.value);">
+<option value="">JDOQL例</option>
+<option value="isMaster">test master</option>
+<option value="name.equals('name')">name指定</option>
+<option value="name.indexOf('name')>=0">nameに'name'を含む</option>
+<option value="testBrowserCount>=10">browser数が10以上</option>
+<option value="count>=10">実行回数が10以上</option>
+</select>
+<input type="button" value="検索" onClick="perfTableRefresh();">
+<input type="button" value="csv" onClick="perfToCsv();">
+<input type="button" value="削除" onClick="if(confirm('stressデータを削除します.よろしいですか?'))perfDelete();">
+<div style="margin: 0.4em 0.0em; padding: 0.0em 0.0em;background: #fff none; border: solid 0pt #000;">
+<table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
+<thead>
+<tr><th>ID</th><th>name</th><th>start</th><th>total(ave)</th><th>browser</th><!--th>testRequestCount</th><th>testLoopCount</th-->
+<th>requestLine</th><th>status</th>
+<th>count</th><th>len</th><th>processTime</th><th>requestHeaderTime</th><th>requestBodyTime</th><th>responseHeaderTime</th><th>responseBodyTime</th>
+</tr>
+</thead>
+<tbody id="perfData"></tbody>
+</table>
+</div>
+

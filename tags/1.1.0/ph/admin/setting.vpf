@@ -1,0 +1,336 @@
+<script type="text/javascript"> 
+function setProxy(){
+ ph.admin.doCommand('setProxy',{
+   pacUrl:ph.jQuery("#proxyPacUrl").val(),
+   proxyServer:ph.jQuery("#proxyServer").val(),
+   sslProxyServer:ph.jQuery("#sslProxyServer").val(),
+   exceptProxyDomains:ph.jQuery("#exceptProxyDomains").val()
+  },
+  function(ret){
+	var retObj=ph.JSON.parse(ret);
+	if(retObj.result){
+		alert('proxy設定完了');
+		return;
+	}
+	ph.jQuery("#proxyPacUrl").val(retObj.pacUrl);
+	ph.jQuery("#proxyServer").val(retObj.proxyServer);
+	ph.jQuery("#sslProxyServer").val(retObj.sslProxyServer);
+	ph.jQuery("#exceptProxyDomains").val(retObj.exceptProxyDomains);
+	alert('proxy設定失敗');
+  });
+}
+function setKeepAlive(){
+ ph.admin.doCommand('setKeepAlive',{
+   isWebKeepAlive:ph.jQuery("#isWebKeepAlive").attr('checked'),
+   isProxyKeepAlive:ph.jQuery("#isProxyKeepAlive").attr('checked'),
+   maxKeepAliveRequests:ph.jQuery("#maxKeepAliveRequests").val(),
+   keepAliveTimeout:ph.jQuery("#keepAliveTimeout").val(),
+   contentEncoding:ph.jQuery("#contentEncoding").val(),
+   allowChunked:ph.jQuery("#allowChunked").attr('checked')
+  },
+  function(x){
+##setKeepAlive完了
+  });
+}
+
+function setHtml5(){
+ ph.admin.doCommand('setHtml5',{
+   isUseWebSocket:ph.jQuery("#isUseWebSocket").attr('checked'),
+   isUseSessionStorage:ph.jQuery("#isUseSessionStorage").attr('checked'),
+   isUseCrossDomain:ph.jQuery("#isUseCrossDomain").attr('checked')
+  },
+  function(x){
+##setKeepAlive完了
+  });
+}
+
+function setAuth(){
+ var scheme=ph.jQuery("#authScheme").val();
+ ph.jQuery("#curSchme").text(scheme);
+ ph.admin.doCommand('setAuth',{
+   scheme:scheme,
+## logoutUrlは、デフォルトで自サーバの情報を参照している。
+## 自サーバの情報を変更した場合追従した方がよいが、既に覚えている情報を上書きすることができない
+## 変更できない設定値とする
+##   logoutUrl:ph.jQuery("#authLogoutUrl").val(),
+   sessionTimeout:ph.jQuery("#authSessionTimeout").val()
+  },
+  function(x){
+##setAuth完了
+  });
+}
+
+function accessLogDeleteQuery(query){
+	var deleteAccessLogCb={
+		onComplete:function(msg){searchPage();},
+		onError:function(msg){ph.log('runTrace onError:');ph.dump(msg);}
+	};
+	ph.admin.doPramCommand('accessLog','deleteQuery',{query:query},function(chId){
+			ph.queue.subscribeById(chId,deleteAccessLogCb);
+		});
+}
+
+function accessLogExportQuery(query){
+	var exportAccessLogCb={
+		onComplete:function(msg){
+			ph.jQuery("#exportFileId").val(msg.message);
+			ph.jQuery("#exportDownloadForm").submit();},
+		onError:function(msg){ph.log('runTrace onError:');ph.dump(msg);}
+	};
+	ph.admin.doPramCommand('accessLog','exportQuery',{query:query},function(chId){
+			ph.queue.subscribeById(chId,exportAccessLogCb);
+		});
+}
+
+##realHostの一行(tr)を作成
+function realHostLine(realHost){
+	var trTag=document.createElement("tr");
+	var name=realHost.name;
+	var tdTag;
+	var aInput=document.createElement("input");
+	aInput.setAttribute("type","button");
+	aInput.setAttribute("value","設定");
+	ph.jQuery(aInput).bind("click",function(){
+			realHostDialog(realHost);
+			return false;
+		});
+	tdTag=ph.admin.mkTdTag(name,aInput);
+	trTag.appendChild(tdTag);
+	if(realHost.binding){
+		tdTag=ph.admin.mkTdTag("起動");
+	}else{
+		tdTag=ph.admin.mkTdTag("停止");
+	}
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(realHost.initBind);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(realHost.bindHost);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(realHost.bindPort);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(realHost.backlog);
+	trTag.appendChild(tdTag);
+//	var tdTag=ph.admin.mkTdTag(realHost.virtualHosts);
+//	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(realHost.whitePattern);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(realHost.blackPattern);
+	trTag.appendChild(tdTag);
+	return trTag;
+}
+
+function realHostDialog(realHost){
+	ph.jQuery('#realHostName').val(realHost.name);
+	ph.jQuery('#realHostInitBind').attr("checked",realHost.initBind);
+	ph.jQuery('#realHostBindHost').val(realHost.bindHost);
+	ph.jQuery('#realHostBindPort').val(realHost.bindPort);
+	ph.jQuery('#realHostBacklog').val(realHost.backlog);
+	ph.jQuery('#realHostBlackPattern').val(realHost.blackPattern);
+	ph.jQuery('#realHostWhitePattern').val(realHost.whitePattern);
+	if(realHost.name=='mainHost'){//mainHostはunbind不可
+		ph.jQuery('#realHostDelete').hide();
+		ph.jQuery('#realHostBindButton').hide();
+		ph.jQuery('#realHostUnbindButton').hide();
+	}else if(realHost.name==''){//新規
+		ph.jQuery('#realHostDelete').hide();
+		ph.jQuery('#realHostBindButton').hide();
+		ph.jQuery('#realHostUnbindButton').hide();
+	}else if(realHost.binding){
+		ph.jQuery('#realHostDelete').show();
+		ph.jQuery('#realHostBindButton').hide();
+		ph.jQuery('#realHostUnbindButton').show();
+	}else{
+		ph.jQuery('#realHostDelete').show();
+		ph.jQuery('#realHostBindButton').show();
+		ph.jQuery('#realHostUnbindButton').hide();
+	}
+	jQuery('#realHostDialog').dialog('open');
+}
+
+
+##realHosts tableを作成
+function realHostList(realHostsStr){
+	ph.log("realHostList");
+	var realHosts=ph.JSON.parse(realHostsStr);
+	ph.jQuery("#realHostData").empty();
+	var targetTag=document.getElementById("realHostData");
+	for(var i=0;i<realHosts.length;i++){
+		var trTag=realHostLine(realHosts[i]);
+		targetTag.appendChild(trTag);
+	}
+	jQuery('#realHostDialog').dialog('close');
+}
+
+##realHostを作成
+function realHostCreate(){
+ var realHost={
+  name:ph.jQuery("#realHostName").val(),
+  initBind:ph.jQuery("#realHostInitBind").attr("checked"),
+  bindHost:ph.jQuery("#realHostBindHost").val(),
+  bindPort:ph.jQuery("#realHostBindPort").val(),
+  backlog:ph.jQuery("#realHostBacklog").val(),
+//  virtualHosts:ph.jQuery("#realHostVirtualHosts").val().split(",")
+  virtualHosts:[],
+  blackPattern:ph.jQuery("#realHostBlackPattern").val(),
+  whitePattern:ph.jQuery("#realHostWhitePattern").val()
+ };
+// alert(ph.JSON.stringify(realHost));
+ ph.admin.doObjCommand('realHost','realHostInsert',realHost,realHostList);
+}
+
+function setTimeouts(){
+ ph.admin.doCommand('setTimeouts',{
+  acceptTimeout:ph.jQuery("#acceptTimeout").val(),
+  connectTimeout:ph.jQuery("#connectTimeout").val(),
+  readTimeout:ph.jQuery("#readTimeout").val(),
+  writeTimeout:ph.jQuery("#writeTimeout").val()
+  },
+  function(x){
+##setTimeouts完了
+  });
+}
+
+ph.jQuery(function(){
+  ph.jQuery(".settingItem").hide();
+  ##realHost一覧を表示
+  ph.admin.doPramCommand('realHost','realHostList',null,realHostList);
+  var scheme=ph.jQuery("#curSchme").text();
+  ph.jQuery("#authScheme option[value='" +scheme+ "']").attr("selected","selected");
+});
+</script> 
+<H1>設定</H1>
+
+<Hr/>
+<H2 onclick="ph.jQuery('#realHostDiv').toggle();">+RealHost設定</H2>
+<div class="settingItem" id="realHostDiv">
+<p>サービスするサーバ情報を設定します</p>
+selfDomain:<input type="text" id="selfDomain" size="64" value="$!esc.html($!{config.selfDomain})"/><input type="button" value="設定" onClick="ph.admin.doCommand('setSelfDomain',{domain:ph.jQuery('#selfDomain').val()},null);"><br>
+<input type="button" value="real host作成" onClick="realHostDialog({name:'',realHostInitBind:false,bindHost:'*',bindPort:'',backlog:'100',binding:false});">
+<table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
+<thead>
+<tr><th>name</th><th>状態</th><th>init</th><th>bindHost</th><th>bindPort</th><th>backlog</th><th>whiteIpPattern</th><th>blackIpPattern</th></tr>
+</thead>
+<tbody id="realHostData"></tbody>
+</table>
+</div>
+
+<Hr/>
+<H2 onclick="ph.jQuery('#timeoutDiv').toggle();">+Timeout設定</H2>
+<div class="settingItem" id="timeoutDiv">
+<p>通信タイムアウトを設定します</p>
+acceptTimeout:<input type="text" id="acceptTimeout" size="8" value="$!esc.html($!{config.acceptTimeout})"/>ms<br>
+connectTimeout:<input type="text" id="connectTimeout" size="8" value="$!esc.html($!{config.connectTimeout})"/>ms<br>
+readTimeout:<input type="text" id="readTimeout" size="8" value="$!esc.html($!{config.readTimeout})"/>ms<br>
+writeTimeout:<input type="text" id="writeTimeout" size="8" value="$!esc.html($!{config.writeTimeout})"/>ms<br>
+<input type="button" value="設定" onclick="setTimeouts();" /><br/>
+</div>
+
+<Hr/>
+<H2 onclick="ph.jQuery('#authDiv').toggle();">+認証設定</H2>
+<div class="settingItem" id="authDiv">
+<p>ph認証:mappingとuserのrolesで認可します</p>
+認証方法<select id="authScheme" size="1">
+<option value="None">None</option>
+<option value="Basic">Basic</option>
+<option value="Digest">Digest</option>
+<option value="BasicForm">BasicForm</option>
+<option value="DigestForm">DigestForm</option>
+</select>現在:<span id="curSchme">$!esc.html($!{config.getString('authenticateScheme')})</span><br/>
+sessionTimeout:<input type="text" id="authSessionTimeout" size="12" value="$!esc.html($!{config.getString('sessionTimeout')})"/>ms<br/>
+##logoutUrl:<input type="text" id="authLogoutUrl" size="64" value="$!esc.html($!{config.getString('logoutUrl')})"/><br/>
+<input type="button" value="設定"  onclick="setAuth();"/><br/>
+</div>
+
+<Hr/>
+<H2 onclick="ph.jQuery('#accesslogDiv').toggle();">+AccessLogs操作</H2>
+<div class="settingItem" id="accesslogDiv">
+<p>ログ、トレースデータを移出、移入することで別環境で採取した資料を取り扱うことができます</p>
+<form method="post" enctype="multipart/form-data" action="accessLog" target="uploadFrame">
+<input type="hidden" name="command" value="import" />
+<input type="hidden" name="token" value="$esc.html(${session.token})"/>
+移入ファイル指定:<input type="file" name="importsFile" id="importsFile" />
+<input type="submit" value="移入"/><br/>
+</form>
+全AccessLog削除:<input type="button" onclick="accessLogDeleteQuery('');" value="削除" /><br/>
+全AccessLog移出:<input type="button" onclick="accessLogExportQuery('');" value="移出" /><br/>
+</div>
+
+<Hr/>
+<H2 onclick="ph.jQuery('#replayDiv').toggle();">+Replay File登録</H2>
+<div class="settingItem" id="replayDiv">
+<p>Replay機能で返却するコンテンツを登録することができます</p>
+<form method="post" enctype="multipart/form-data" action="replayUpload" target="uploadFrame">
+<input type="hidden" name="token" value="$esc.html(${session.token})"/>
+path:<input type="text" name="replaypath" id="replaypath" size="64"/>
+file:<input type="file" name="replayFile" id="replayFile" />
+<input type="submit" value="登録"/><br/>
+</form>
+全ReplayFile削除:<input type="button" onclick="ph.admin.doCommand('replayDelete');" value="削除" />
+</div>
+
+<Hr/>
+<H2 onclick="ph.jQuery('#proxyDiv').toggle();">+Proxy設定</H2>
+<div class="settingItem" id="proxyDiv">
+<p>http/httpsのネットワーク環境を設定してください</p>
+pacUrl:<input type="text" name="proxyPacUrl" id="proxyPacUrl" size="64" value="$!esc.html($!{config.getString('pacUrl')})"/><br>
+proxyServer:<input type="text" name="proxyServer" id="proxyServer" size="32" value="$!esc.html($!{config.getString('proxyServer')})"/><br>
+sslProxyServer:<input type="text" name="sslProxyServer" id="sslProxyServer" size="32" value="$!esc.html($!{config.getString('sslProxyServer')})"/><br>
+exceptProxyDomains:<input type="text" name="exceptProxyDomains" id="exceptProxyDomains" size="64" value="$!esc.html($!{config.getString('exceptProxyDomains')})"/><br/>
+<input type="button" value="設定" onclick="setProxy();" /><br/>
+</div>
+
+<Hr/>
+<H2 onclick="ph.jQuery('#keepAliveDiv').toggle();">+KeepAlive設定</H2>
+<div class="settingItem" id="keepAliveDiv">
+<p>httpプロトコルに関する設定を行います</p>
+isWebKeepAlive:<input type="checkBox" name="isWebKeepAlive" id="isWebKeepAlive"
+#if(${config.getBoolean('isWebKeepAlive')})
+checked="checked"
+#end
+/><br/>
+isProxyKeepAlive:<input type="checkBox" name="isProxyKeepAlive" id="isProxyKeepAlive"
+#if(${config.getBoolean('isProxyKeepAlive')})
+checked="checked"
+#end
+/><br/>
+maxKeepAliveRequests:<input type="text" name="maxKeepAliveRequests" id="maxKeepAliveRequests" size="4" value="$!esc.html($!{config.getString('maxKeepAliveRequests')})"/><br/>
+keepAliveTimeout:<input type="text" name="keepAliveTimeout" id="keepAliveTimeout" size="8" value="$!esc.html($!{config.getString('keepAliveTimeout')})"/>ms<br/>
+contentEncoding:<select id="contentEncoding" size="1">
+<option value="non">non</option>
+<option value="gzip"
+#if($config.getString('contentEncoding') && "gzip"==$config.getString('contentEncoding'))
+selected="selected"
+#end
+>gzip</option>
+</select><br/>
+allowChunked:<input type="checkBox" name="allowChunked" id="allowChunked"
+#if(${config.getBoolean('allowChunked')})
+checked="checked"
+#end
+/><br/>
+<input type="button" value="設定"  onclick="setKeepAlive();"/><br/>
+</div>
+
+<Hr/>
+<H2 onclick="ph.jQuery('#html5Div').toggle();">+HTML5設定</H2>
+<div class="settingItem" id="html5Div">
+<p>利用可能なブラウザでHTML5機能を使用するか否かを設定してください</p>
+WebSocket API:<input type="checkBox" name="isUseWebSocket" id="isUseWebSocket"
+#if(${config.getBoolean('isUseWebSocket',true)})
+checked="checked"
+#end
+/><br>
+Web Storage sessionStorage:<input type="checkBox" name="isUseSessionStorage" id="isUseSessionStorage"
+#if(${config.getBoolean('isUseSessionStorage',true)})
+checked="checked"
+#end
+/><br>
+Cross-document messaging:<input type="checkBox" name="isUseCrossDomain" id="isUseCrossDomain"
+#if(${config.getBoolean('isUseCrossDomain',true)})
+checked="checked"
+#end
+/><br>
+<input type="button" value="設定" onclick="setHtml5();" /><br/>
+</div>
+
+

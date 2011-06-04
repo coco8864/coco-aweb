@@ -1,0 +1,290 @@
+##このタブは、外部データとのインタフェースがあるため、静的にmainページに取り込む
+<script type="text/javascript"> 
+
+##traceタブに表示するaccessLog情報、編集中の情報を保持
+var PARTS=["requestHeader","requestBody","responseHeader","responseBody"];
+var trace={
+	isEdit:false,
+	accessLogId:-1,
+	accessLog:null,
+	requestHeader:null,
+	requestHeaderEncode:null,
+	requestBody:null,
+	requestBodyEncode:null,
+	responseHeader:null,
+	responseHeaderEncode:null,
+	responseBody:null,
+	responseBodyEncode:null,
+	clear:function(){
+		this.accessLogId=-1;
+		this.isEdit=false;
+		this.accessLog=null;
+		for(var i=0;i<PARTS.length;i++){
+			var part=PARTS[i];
+			this[part]=this[part+'Encode']=null;
+		}
+	}
+};
+
+var runTraceCb={
+	onComplete:function(msg){changeEntry(msg.message);},
+	onError:function(msg){ph.log('runTrace onError:');ph.dump(msg);},
+	onMessage:function(msg){ph.log('runTrace onMessage:');ph.dump(msg);}
+};
+function runTrace(){
+	var param={accessLogId:trace.accessLogId};
+	for(var i=0;i<PARTS.length;i++){
+		var part=PARTS[i];
+		if(trace[part]!=null){
+			param[part+'Encode']=trace[part+'Encode'];
+			param[part]=trace[part];
+		}
+	}
+	ph.admin.doCommand("runAccessLog",param,function(chId){ph.queue.subscribeById(chId,runTraceCb)});
+}
+
+function saveTrace(){
+	if(trace.isEdit==false){
+		alert('not change');
+		return;
+	}
+	var param={accessLogId:trace.accessLogId};
+	for(var i=0;i<PARTS.length;i++){
+		var part=PARTS[i];
+		if(trace[part]!=null){
+			param[part+'Encode']=trace[part+'Encode'];
+			param[part]=trace[part];
+		}
+	}
+	ph.admin.doCommand("saveAccessLog",param,function(accessLogId){changeEntry(accessLogId);});
+}
+
+function requestHeaderEdit(){
+	if(!trace.accessLog||!trace.accessLog.requestHeaderDigest){
+		alert("対象がありません");
+		return;
+	}
+	openEditDialog(
+		trace.accessLog.requestHeaderDigest,
+		trace.accessLog.id,
+		trace.accessLog.requestLine,
+		PARTS[0],
+		false,false,false
+		);
+}
+
+function requestBodyEdit(){
+	if(!trace.accessLog||!trace.accessLog.requestBodyDigest){
+		alert("対象がありません");
+		return;
+	}
+	openEditDialog(
+		trace.accessLog.requestBodyDigest,
+		trace.accessLog.id,
+		trace.accessLog.requestLine,
+		PARTS[1],
+		false,false,false
+		);
+}
+
+function responseHeaderEdit(){
+	if(!trace.accessLog||!trace.accessLog.responseHeaderDigest){
+		alert("対象がありません");
+		return;
+	}
+	openEditDialog(
+		trace.accessLog.responseHeaderDigest,
+		trace.accessLog.id,
+		trace.accessLog.requestLine,
+		PARTS[2],
+		false,false,false
+		);
+}
+
+function responseBodyEdit(){
+	if(!trace.accessLog||!trace.accessLog.responseBodyDigest){
+		alert("対象がありません");
+		return;
+	}
+	if(trace.accessLog.contentType.indexOf('image')>=0){
+		var dialog=jQuery("#imageBox");
+		var contentHeaders=getContentHeaders(trace.accessLog);
+		ph.jQuery("#imageBoxId").text(trace.accessLog.id);
+		ph.jQuery("#imageBoxRequestLine").text(trace.accessLog.requestLine);
+//		ph.jQuery("#imageBoxImage").attr('src','/admin/storeDownload?'+
+		ph.jQuery("#imageBoxImage").attr('src','storeDownload?'+
+			contentHeaders+
+			'&storeDigest='+encodeURIComponent(trace.accessLog.responseBodyDigest));
+		dialog.dialog("option", "position", 'center');
+		dialog.dialog("open");
+	}else{//テキストとは限らないが開けてみる
+##trace.accessLog.transferEncoding ...?'chunked'
+##trace.accessLog.contentEncoding ...?'gzip'
+##/charset=(.*)/i
+		var charset='utf-8';
+		if( trace.accessLog.contentType.match(/charset=(.*)/i) ){
+			charset=RegExp.$1;
+		}
+		openEditDialog(
+			trace.accessLog.responseBodyDigest,
+			trace.accessLog.id,
+			trace.accessLog.requestLine,
+			PARTS[3],
+			false,
+			trace.accessLog.transferEncoding=='chunked',
+			trace.accessLog.contentEncoding=='gzip',
+			charset
+		);
+	}
+}
+
+####
+function changeEntry(newLogId){
+	ph.jQuery("#traceSaveButton").attr("disabled","disabed");
+	trace.clear();
+	trace.accessLogId=newLogId;
+	entryTable();
+}
+
+function entryTable(){
+	var queryJsonObj={query:"WHERE id=="+trace.accessLogId,from:-1};
+	ph.admin.doPramCommand('accessLog','list',queryJsonObj, function(jsonStr){
+		var accessLogs=ph.JSON.parse(jsonStr);
+		updateEntry(accessLogs);
+	});
+}
+
+function jumpTrace(){
+	changeEntry(ph.jQuery("#inputLogId").val());
+}
+function jumpParent(){
+	if(trace.accessLog.originalLogId<0){
+		alert('No originalLogId.');
+		return;
+	}
+	changeEntry(trace.accessLog.originalLogId);
+}
+
+var sourceTypeDef={w:'PLAIN_WEB',W:'SSL_WEB',p:'PLAIN_PROXY',P:'SSL_PROXY',s:'SIMULATE',E:'EDIT'};
+var destinationTypeDef={H:'HTTP',S:'HTTPS',F:'FILE',A:'HANDLER',R:'REPLAY',E:'EDIT'};
+
+function updateEntry(accessLogs){
+	if(accessLogs.length==0){
+		alert("無効なIDです");
+		return;
+	}
+	ph.jQuery("#logId").text(trace.accessLogId);
+	ph.jQuery("#inputLogId").val(trace.accessLogId);
+	var accessLog=accessLogs[0];
+	trace.accessLog=accessLog;
+
+	ph.jQuery("#realHost").text(accessLog.realHost);
+	ph.jQuery("#userId").text(accessLog.userId);
+	ph.jQuery("#sourceType").text(sourceTypeDef[accessLog.sourceType]);
+	ph.jQuery("#destinationType").text(destinationTypeDef[accessLog.destinationType]);
+
+
+//	var serverType;
+//	serverType=accessLog.sourceType +'->'+accessLog.destinationType;// + accessLog.;
+//	ph.jQuery("#serverType").text(serverType);
+	ph.jQuery("#ip").text(accessLog.ip);
+
+	var startTime=new Date(accessLog.startTime.time);
+	ph.jQuery("#startTime").text(ph.admin.formatYmdhms(startTime));
+
+	ph.jQuery("#requestLine").text(accessLog.requestLine);
+	ph.jQuery("#statusCode").text(accessLog.statusCode);
+	ph.jQuery("#responseLength").text(accessLog.responseLength);
+	ph.jQuery("#contentType").text(accessLog.contentType);
+	ph.jQuery("#resolveOrigin").text(accessLog.resolveOrigin);
+	ph.jQuery("#channelId").text(accessLog.channelId);
+
+	var processTime=accessLog.processTime +'(' +
+				accessLog.requestHeaderTime +',' +
+				accessLog.requestBodyTime +',' +
+				accessLog.responseHeaderTime +',' +
+				accessLog.responseBodyTime +')';
+//	ph.jQuery("#requestHeaderTime").text(accessLog.requestHeaderTime);
+//	ph.jQuery("#requestBodyTime").text(accessLog.requestBodyTime);
+//	ph.jQuery("#responseHeaderTime").text(accessLog.responseHeaderTime);
+//	ph.jQuery("#responseBodyTime").text(accessLog.responseBodyTime);
+//	ph.jQuery("#processTime").text(accessLog.processTime);
+	ph.jQuery("#processTime").text(processTime);
+
+	ph.jQuery("#requestBody").text("");
+    ph.jQuery("#requestHeaderDigest").text(accessLog.requestHeaderDigest);
+	if(accessLog.requestHeaderDigest){
+        ph.jQuery("#requestHeader").text("");
+		ph.jQuery.get("storeDownload?storeDigest=" + encodeURIComponent(accessLog.requestHeaderDigest),null, function(text){
+			ph.jQuery("#requestHeader").text(text.replace(/[^\s\r\n\x20-\x7E]/g , "%"));
+		},"html");
+	}else{
+		ph.jQuery("#requestHeader").text("[トレースデータなし]");
+	}
+    ph.jQuery("#responseHeaderDigest").text(accessLog.responseHeaderDigest);
+	if(accessLog.responseHeaderDigest){
+        ph.jQuery("#responseHeader").text("");
+		ph.jQuery.get("storeDownload?storeDigest=" + encodeURIComponent(accessLog.responseHeaderDigest),null, function(text){
+			var headerOnly=text.split('\r\n\r\n')[0];
+			ph.jQuery("#responseHeader").text(headerOnly.replace(/[^\s\r\n\x20-\x7E]/g , "%"));
+
+		},"html");
+	}else{
+		ph.jQuery("#requestHeader").text("[トレースデータなし]");
+	}
+	if( accessLog.requestBodyDigest){
+		ph.jQuery("#requestBody").html("<a target='_blank'  href='storeDownload?storeDigest=" + encodeURIComponent(accessLog.requestBodyDigest)+"'>"+accessLog.requestBodyDigest + "</a>");
+	}else{
+		ph.jQuery("#requestBody").text("[なし]");
+	}
+	if(accessLog.responseBodyDigest){
+		ph.jQuery("#responseBody").html("<a target='_blank'  href='storeDownload?storeDigest=" + encodeURIComponent(accessLog.responseBodyDigest)+"'>"+accessLog.responseBodyDigest + "("+accessLog.responseLength+"byte)</a>");
+	}else{
+		ph.jQuery("#responseBody").text("[なし]");
+	}
+}
+</script>
+<H1>AccessLog 詳細</H1>
+<hr/>
+ID:<input type="text" name="logId" id="inputLogId" size="8"/>
+<input type="button" onclick="jumpTrace();" value="id指定"/>
+<input type="button" onclick="jumpParent();" value="parent"/>
+
+<input type="button" value="request" onClick="runTrace();" />
+##最初は無効状態で表示
+<input type="button" value="save new" onClick="saveTrace();" disabled="disabled" id="traceSaveButton"/>
+<div style="float:right;text-align:right">
+<input type="button" onclick="changeEntry(trace.accessLogId-1);" value="prev"/>
+<input type="button" onclick="changeEntry(trace.accessLogId+1);" value="next"/>
+</div>
+
+<!--div style="margin: 0.8em 0.0em; padding: 0.5em 1.0em;background: #fff none; border: solid 0pt #000"-->
+<div style="margin: 0.4em 0.0em; padding: 0.0em 0.0em;background: #fff none; border: solid 0pt #000;">
+<table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
+<thead>
+<tr><th width="15%">項目</th><th width="85%">値</th>
+</thead>
+<tbody>
+<tr><td><b>ID</b></td><td id="logId"></td></tr>
+<tr><td><b>realHost</b></td><td id="realHost"></td></tr>
+<tr><td><b>userId</b></td><td id="userId"></td></tr>
+<tr><td><b>souceType</b></td><td id="sourceType"></td></tr>
+<tr><td><b>destinationType</b></td><td id="destinationType"></td></tr>
+<tr><td><b>クライアントIP</b></td><td id="ip"></td></tr>
+<tr><td><b>開始時刻</b></td><td id="startTime"></td></tr>
+<tr><td><b>Request Line</b></td><td id="requestLine"></td></tr>
+<tr><td><b>Status Code</b></td><td id="statusCode"></td></tr>
+<tr><td><b>Response Length</b></td><td id="responseLength"></td></tr>
+<tr><td><b>contentType</b></td><td id="contentType"></td></tr>
+<tr><td><b>resolveOrigin</b></td><td id="resolveOrigin"></td></tr>
+<tr><td><b>channelId</b></td><td id="channelId"></td></tr>
+<tr><td><b>処理時間(ms)(reqHeader,reqBody,resHeader,resBody)</b></td><td id="processTime"></td></tr>
+<tr><td title="requestHeader編集画面"><input type="button" onClick="requestHeaderEdit();" value="Request Header"/></td><td id="requestHeaderDigest"></td></tr>
+<tr><td colspan="2" width="100%" nowrap><pre width="100%" id="requestHeader"></pre></td></tr>
+<tr><td title="requestBody編集画面"><input type="button" onClick="requestBodyEdit();" value="Request Body"/></td><td title="requestBodyダウンロード" id="requestBody"></td></tr>
+<tr><td title="responseHeader編集画面"><input type="button" onClick="responseHeaderEdit();" value="Response Header"/></td><td id="responseHeaderDigest"></td></tr>
+<tr><td colspan="2" width="100%" nowrap><pre width="100%" id="responseHeader"></pre></td></tr>
+<tr><td title="responseBody編集画面"><input type="button" onClick="responseBodyEdit();" value="Response Body"/></td><td title="responseBodyダウンロード" id="responseBody"></td></tr>
+</tbody>
+</table>
+</div>
