@@ -4,7 +4,7 @@
   </loader>
   <queuelet loaderName="main" type="watchDeamon">
     <param name="watch.name" value="phantom"/>
-    <param name="watch.heartBeatLimit" value="10000"/>
+    <param name="watch.heartBeatLimit" value="20000"/>
     <param name="watch.restartLimit" value="3"/>
     <param name="watch.type" value="queuelet"/><!--java,watch-->
     <param name="java.vmOption.length" value="1"/><!--初期のvmOption、ダウン時は直近起動時のvmOption -->
