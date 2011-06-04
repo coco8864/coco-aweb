@@ -267,9 +267,10 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		accessLog.setStatusCode(responseHeader.getStatusCode());
 		accessLog.setContentType(responseHeader.getContentType());
 		accessLog.setContentEncoding(responseHeader.getHeader(HeaderParser.CONTENT_ENCODING_HEADER));
-//		accessLog.setTransferEncoding(responseHeader.getHeader(HeaderParser.TRANSFER_ENCODING_HEADER));
+		accessLog.setTransferEncoding(responseHeader.getHeader(HeaderParser.TRANSFER_ENCODING_HEADER));
 		//chunkされていたとしても、onResponseBodyにはデコードして通知される。記録されるstoreがchunkされる事はない。
-		accessLog.setTransferEncoding(null);
+		//上記はうそ、WebClientHandlerにisReadableCallbackというオプションがあり、これが立っていない場合、生データがcallbackされる
+//		accessLog.setTransferEncoding(null);
 	}
 
 	public void onResponseBody(Object userContext, ByteBuffer[] buffers) {

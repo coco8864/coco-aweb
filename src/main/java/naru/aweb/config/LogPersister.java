@@ -76,7 +76,7 @@ public class LogPersister implements Timer {
 		// ÉçÉOÇ…èoóÕ
 //		logger.info("###"+accessLog,new Exception());
 		accessLog.log(false);
-		String chId = accessLog.getChid();
+		String chId = accessLog.getChId();
 		if (accessLog.isPersist()) {
 			pm.currentTransaction().begin();
 			pm.makePersistent(accessLog);

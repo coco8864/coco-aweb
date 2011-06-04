@@ -91,7 +91,8 @@ public class DispatchHandler extends ServerBaseHandler {
 	}
 
 	public void onFailure(Object userContext, Throwable t) {
-		logger.warn("Dispatcher failure.poolId:" + getPoolId(), t);
+		//•‰‰×‚ª‚‚¢ê‡A‚©‚È‚è‚Ì•p“x‚Å‚±‚±‚É—ˆ‚é
+		logger.debug("Dispatcher failure.poolId:" + getPoolId(), t);
 		asyncClose(null);
 	}
 

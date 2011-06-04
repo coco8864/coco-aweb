@@ -9,13 +9,11 @@ import java.util.Random;
 
 import org.apache.log4j.Logger;
 
-import naru.async.pool.Pool;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Performance;
 import naru.aweb.queue.QueueManager;
-import net.sf.json.JSON;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -64,7 +62,7 @@ public class Scenario extends PoolBase{
 		if(loop!=0 && loop!=loopCount && (loop%loopUnit)!=0){
 			return;
 		}
-		if(loop==loopCount && runnningBrowserCount!=0 && (runnningBrowserCount%10)!=0 ){
+		if(loop==loopCount && runnningBrowserCount!=0 && (runnningBrowserCount%10)!=0 && runnningBrowserCount>10){
 			return;
 		}
 		Runtime runtime=Runtime.getRuntime();

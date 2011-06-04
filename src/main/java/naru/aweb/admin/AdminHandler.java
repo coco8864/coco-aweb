@@ -437,6 +437,25 @@ public class AdminHandler extends WebServerHandler{
 				logger.warn("fail to dumpStore",e);
 				completeResponse("500");
 			}
+		}else if("forceDown".equals(cmd)){
+			//System.exit(777);
+		}else if("outOfMemory".equals(cmd)){
+			/*
+			byte[][] dummy=new byte[4096][];
+			int i=0;
+			try {
+				for(i=0;i<dummy.length;i++){
+					dummy[i]=new byte[1024*1024];
+				}
+			} catch (OutOfMemoryError e) {
+				System.out.println("outOfMemoryError. size="+i +"m");
+				try {
+					Thread.sleep(10000000);
+				} catch (InterruptedException e1) {
+					e1.printStackTrace();
+				}
+			}
+			*/
 		}
 	}
 	

@@ -52,7 +52,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		DatePropertyFilter dpf=new DatePropertyFilter();
 		jsonConfig.setJavaPropertyFilter(dpf);
 		jsonConfig.setJsonPropertyFilter(dpf);
-		jsonConfig.setExcludes(new String[]{"chId","persist","timeCheckPint","life","shortFormat","skipPhlog"});
+		jsonConfig.setExcludes(new String[]{"poolId","chId","persist","timeCheckPint","life","shortFormat","skipPhlog"});
 	}
 	private static SimpleDateFormat logDateFormat=null; 
 	static{
@@ -214,7 +214,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	public void setChId(String chId){
 		this.chId=chId;
 	}
-	public String getChid(){
+	public String getChId(){
 		return chId;
 	}
 	
