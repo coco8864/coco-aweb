@@ -3,5 +3,17 @@
 = 新着情報=
 
  Phatom Proxyの改版情報を提供します。
-
+ ==  2011.6.04 Phatom Proxy1.1.0 公開 ==
+ * text表示、編集ダイアログのchunk,gzip,encodeを自動設定
+ * stressダイアログにthinking timeを追加、リクエスト間隔を指定
+ * stressダイアログにファイル指定を追加、複数テストの連続実施
+{{{
+ファイル形式:
+[
+{"name":"test1","browserCount":"10","loopCount":"1000","isCallerKeepAlive":"true",thinkingTime:1000},
+...
+]
+}}}
+ * statusタブから再起動指定、再起動時にjavaHeapSize,データ初期化を選択可
+ * プロセス監視機能、異常終了時,ハングアップ時に自動で再起動
  ==  2011.4.23 Phatom Proxy1.0.0 初公開 ==
