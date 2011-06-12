@@ -231,7 +231,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		if( webClientHandler.startRequest(this, webClientHandler,3000,PoolManager.duplicateBuffers(requestHeader),requestContentLength, true, 15000)==false){
 			logger.error("fail to webClientHandler.startRequest.scenario.getName:"+scenario.getName());
 			//connectすらできなかったため、イベント通知が期待できない。自力でイベント発行
-			onRequestFailure(webClientHandler, new Exception("webClientHandler.startRequest faile to connect"));
+			onRequestFailure(webClientHandler,0, new Exception("webClientHandler.startRequest faile to connect"));
 			return;
 		}
 		if(requestBody!=null){
@@ -255,7 +255,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	public void onResponseHeader(Object userContext, HeaderParser responseHeader) {
 		logger.debug("#onResponseHeader:"+browser.getName());
 		WebClientHandler webClientHandler=(WebClientHandler)userContext;
-		accessLog.setChannelId(webClientHandler.getChannelId());
+//		accessLog.setChannelId(webClientHandler.getChannelId());
 		Store responseHeaderStore=webClientHandler.popReadPeekStore();
 		if(responseHeaderStore!=null){
 			accessLog.incTrace();
@@ -292,14 +292,18 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		}
 	}
 	
-	public void onRequestEnd(Object userContext) {
+	public void onRequestEnd(Object userContext,int stat) {
 		logger.debug("#onRequestEnd:"+browser.getName());
-		WebClientHandler webClientHandler=(WebClientHandler)userContext;
 		if(accessLog.getStatusCode()==null){
-			//connectに失敗した場合、handshakeに失敗した場合、その他回線が切れた場合
-			logger.debug("Caller.onRequestEnd.no status code:"+webClientHandler.getChannelId()+":"+accessLog.getChannelId());
-			accessLog.setChannelId(webClientHandler.getChannelId());
+			accessLog.setStatusCode("%" +Integer.toHexString(stat));
 		}
+		
+		WebClientHandler webClientHandler=(WebClientHandler)userContext;
+		accessLog.setChannelId(webClientHandler.getChannelId());
+//		if(accessLog.getStatusCode()==null){
+//			//connectに失敗した場合、handshakeに失敗した場合、その他回線が切れた場合
+//			logger.debug("Caller.onRequestEnd.no status code:"+webClientHandler.getChannelId()+":"+accessLog.getChannelId());
+//		}
 		if(scheduler!=null){
 			scheduler.unref();
 			scheduler=null;
@@ -322,9 +326,18 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		browser.onRequestEnd(this,wkAccessLog);
 	}
 
-	public void onRequestFailure(Object userContext, Throwable t) {
-		logger.warn("#onRequestFailure:"+browser.getName(),t);
-		onRequestEnd(userContext);
+	public void onRequestFailure(Object userContext,int stat,Throwable t) {
+		logger.warn("#onRequestFailure:"+browser.getName()+":"+stat,t);
+		//statをaccessLogに記録
+		String statusCode=accessLog.getStatusCode();
+		if(statusCode!=null){
+			//response　header受信後にエラーになった,accesslogにはstatだけを記録
+			logger.warn("fail after response header.statusCode:"+statusCode+":"+stat);
+			accessLog.setStatusCode("#" +Integer.toHexString(stat));
+		}else{
+			accessLog.setStatusCode("$" +Integer.toHexString(stat));
+		}
+		onRequestEnd(userContext,stat);
 	}
 	
 	public List<Caller> getNextCallers(){
