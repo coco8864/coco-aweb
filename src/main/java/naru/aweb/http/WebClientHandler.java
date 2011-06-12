@@ -15,14 +15,16 @@ import naru.aweb.handler.ProxyHandler;
 import naru.aweb.robot.CallScheduler;
 
 public class WebClientHandler extends SslHandler {
-	private static final int STAT_INIT = 1;
-	private static final int STAT_CONNECT = 2;
-	private static final int STAT_REQUEST_HEADER = 3;
-	private static final int STAT_REQUEST_BODY = 4;
-	private static final int STAT_RESPONSE_HEADER = 5;
-	private static final int STAT_RESPONSE_BODY = 6;
-	private static final int STAT_KEEP_ALIVE = 7;
-	private static final int STAT_END = 8;
+	private static final int STAT_INIT = 0;
+	private static final int STAT_CONNECT = 1;
+	private static final int STAT_SSL_PROXY=2;
+	private static final int STAT_SSL_HANDSHAKE=3;
+	private static final int STAT_REQUEST_HEADER = 4;
+	private static final int STAT_REQUEST_BODY = 5;
+	private static final int STAT_RESPONSE_HEADER = 6;
+	private static final int STAT_RESPONSE_BODY = 7;
+	private static final int STAT_KEEP_ALIVE = 8;
+	private static final int STAT_END = 9;
 
 	public static final String CONTEXT_HEADER = "contextHeader";
 	public static final String CONTEXT_BODY = "contextBody";
@@ -30,10 +32,7 @@ public class WebClientHandler extends SslHandler {
 
 	private static Logger logger = Logger.getLogger(WebClientHandler.class);
 	private static Config config=Config.getConfig();
-//	private static Setting setting = Setting.getAdminSetting();
-//	private static Configuration configuration = config.getConfiguration();
 
-	private Object lock = new Object();
 	private int stat;
 	private boolean isKeepAlive;//keepAlive中か否か
 	private boolean isCallerKeepAlive;//keepAliveを希望するか否か
@@ -59,7 +58,6 @@ public class WebClientHandler extends SslHandler {
 	
 	private WebClient webClient;
 	private Object userContext;
-
 	
 	public static WebClientHandler create(WebClientConnection webClientConnection){
 		WebClientHandler webClientHandler=(WebClientHandler)PoolManager.getInstance(WebClientHandler.class);
@@ -137,7 +135,7 @@ public class WebClientHandler extends SslHandler {
 	}
 	
 	private void internalStartRequest() {
-		synchronized (lock) {
+		synchronized (this) {
 			stat = STAT_REQUEST_HEADER;
 			logger.debug("startRequest requestHeaderBuffer length:"+BuffersUtil.remaining(requestHeaderBuffer)+":"+getPoolId()+":cid:"+getChannelId());
 			//for sceduler ヘッダの送信
@@ -171,6 +169,7 @@ public class WebClientHandler extends SslHandler {
 		logger.debug("#connected.id:" + getChannelId());
 		if (webClientConnection.isHttps()) {
 			if (webClientConnection.isUseProxy()) {
+				stat=STAT_SSL_PROXY;
 				// SSLのproxy接続
 				//TODO proxy認証
 				StringBuffer sb = new StringBuffer(512);
@@ -188,6 +187,7 @@ public class WebClientHandler extends SslHandler {
 				asyncRead(CONTEXT_SSL_PROXY_CONNECT);
 				return;
 			} else {
+				stat=STAT_SSL_HANDSHAKE;
 				// proxyなしのSSL接続
 				sslOpen(true);
 				return;
@@ -238,12 +238,9 @@ public class WebClientHandler extends SslHandler {
 				asyncClose(null);
 				return;
 			}
-			ByteBuffer[] body = responseHeader.getBodyBuffer();
 			responseHeader.recycle();// 本物のヘッダー用に再利用
+			stat=STAT_SSL_HANDSHAKE;
 			sslOpen(true);
-			// if(body!=null){
-			// super.onRead(userContext, body);//ここが使われる事はない
-			// }
 			return;
 		}
 		super.onRead(userContext, buffers);
@@ -265,7 +262,6 @@ public class WebClientHandler extends SslHandler {
 				isLast=responseChunk.isEndOfData(buffers);
 			}
 			
-//			boolean isLast=responseChunk.isEndOfData(buffers);
 			onResponseBody(buffers);
 			if (isLast) {
 				endOfResponse();
@@ -372,8 +368,7 @@ public class WebClientHandler extends SslHandler {
 			asyncClose(null);//keepAliveしない場合は、回線が切断された事をみてリクエスト終了とする
 			return;
 		}
-		stat = STAT_KEEP_ALIVE;
-		onRequestEnd();
+		onRequestEnd(STAT_KEEP_ALIVE);
 		requestHeaderBuffer = requestBodyBuffer = null;
 		responseHeaderLength=requestHeaderLength=requestContentLength = requestContentWriteLength = 0;
 		responseHeader.recycle();
@@ -386,15 +381,15 @@ public class WebClientHandler extends SslHandler {
 		logger.debug("#failure.cid:" + getChannelId(), t);
 		isKeepAlive = false;
 		asyncClose(userContext);
-		onRequestFailure(t);
+		onRequestFailure(stat,t);
 		super.onFailure(userContext, t);
 	}
-
+	
 	public void onTimeout(Object userContext) {
 		logger.debug("#timeout.cid:" + getChannelId());
 		asyncClose(userContext);
 		if(isKeepAlive==false){//keepAlive中にtimeoutが来るのは問題ない
-			onRequestFailure(new Exception("WebClientHandler timeout"));
+			onRequestFailure(stat,new Exception("WebClientHandler timeout"));
 		}
 		isKeepAlive = false;
 		super.onTimeout(userContext);
@@ -403,15 +398,14 @@ public class WebClientHandler extends SslHandler {
 	public void onClosed(Object userContext) {
 		logger.debug("#closed.cid:" + getChannelId());
 		isKeepAlive = false;
-		stat = STAT_END;
+		onRequestEnd(STAT_END);
 		super.onClosed(userContext);
 	}
 
 	public void onFinished() {
 		logger.debug("#finished.cid:" + getChannelId());
 		isKeepAlive = false;
-		stat = STAT_END;
-		onRequestEnd();
+		onRequestEnd(STAT_END);
 		super.onFinished();
 	}
 	
@@ -439,7 +433,7 @@ public class WebClientHandler extends SslHandler {
 	 * @return
 	 */
 	public final boolean startRequest(WebClient webClient,Object userContext,long connectTimeout,ByteBuffer[] requestHeaderBuffer,long requestContentLength, boolean isCallerkeepAlive, long keepAliveTimeout) {
-		synchronized (lock) {
+		synchronized (this) {
 			if (this.webClient != null) {
 				throw new IllegalStateException("aleardy had webClient:"+((ProxyHandler)this.webClient).getChannelId());
 			}
@@ -490,7 +484,7 @@ public class WebClientHandler extends SslHandler {
 	
 	public final void requestBody(ByteBuffer[] buffers) {
 		//connect完了前にbodyBufferを受け付けた場合
-		synchronized (lock) {
+		synchronized (this) {
 			requestBodyBuffer = BuffersUtil.concatenate(requestBodyBuffer,buffers);
 			if (stat == STAT_CONNECT) {
 				return;
@@ -547,20 +541,20 @@ public class WebClientHandler extends SslHandler {
 		}
 	}
 
-	private void onRequestEnd() {
-		synchronized (this) {
-			if (webClient == null) {
-				return;
-			}
-			WebClient wkWebClient=webClient;
-			Object wkUserContext=userContext;
-			setWebClient(null);
-			userContext=null;
-			wkWebClient.onRequestEnd(wkUserContext);
+	private synchronized void onRequestEnd(int stat) {
+		int lastStat=this.stat;
+		this.stat=stat;
+		if (webClient == null) {
+			return;
 		}
+		WebClient wkWebClient=webClient;
+		Object wkUserContext=userContext;
+		setWebClient(null);
+		userContext=null;
+		wkWebClient.onRequestEnd(wkUserContext,lastStat);
 	}
 
-	private void onRequestFailure(Throwable t) {
+	private void onRequestFailure(int stat,Throwable t) {
 		synchronized (this) {
 			if (webClient == null) {
 				return;
@@ -569,7 +563,7 @@ public class WebClientHandler extends SslHandler {
 			Object wkUserContext=userContext;
 			setWebClient(null);
 			userContext=null;
-			wkWebClient.onRequestFailure(wkUserContext,t);
+			wkWebClient.onRequestFailure(wkUserContext,stat,t);
 		}
 		logger.warn("#requestFailure.",t);
 	}

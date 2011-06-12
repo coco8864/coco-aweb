@@ -37,10 +37,11 @@ public interface WebClient {
 	/**
 	 * 全レスポンスを受信しきった事を通知
 	 */
-	public void onRequestEnd(Object userContext);
+	public void onRequestEnd(Object userContext,int stat);
 	
 	/**
 	 * リクエスト処理中にエラーが発生したことを通知
+	 * stat:直前の状態を
 	 */
-	public void onRequestFailure(Object userContext,Throwable t);
+	public void onRequestFailure(Object userContext,int stat,Throwable t);
 }

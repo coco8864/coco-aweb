@@ -46,7 +46,7 @@ public class User {
 				throws InstantiationException, IllegalAccessException,
 				SecurityException, NoSuchMethodException,
 				InvocationTargetException {
-			if(clazz==Mapping.class){
+			if(clazz==User.class){
 				Long id=json.optLong("id",-1);
 				if(id>=0){
 					return getById(id);

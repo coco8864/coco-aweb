@@ -310,7 +310,7 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 		}
 	}
 
-	public void onRequestEnd(Object userContext) {
+	public void onRequestEnd(Object userContext,int stat) {
 		logger.debug("#webClientEnd.cid:"+getChannelId());
 		if(isTryAgain){
 			isTryAgain=false;
@@ -334,8 +334,8 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 		responseEnd();
 	}
 
-	public void onRequestFailure(Object userContext,Throwable t) {
-		logger.debug("#webClientFailure.cid:"+getChannelId(),t);
+	public void onRequestFailure(Object userContext,int stat,Throwable t) {
+		logger.debug("#webClientFailure.cid:"+getChannelId()+":"+stat,t);
 		responseEnd();
 	}
 	
