@@ -14,7 +14,7 @@ public class CallScheduler extends PoolBase{
 	
 	private WebClientHandler handler;
 	//異常のシミュレート,時間は絶対時間で設定する
-	//1)connectして送信開始するまでの時間 (0)将来検討
+	//1)connectして送信開始するまでの時間 (0)
 	//2)送信するrequestLine長 0-実requestLine長(実requestLine長)将来検討
 	//3)requestLine送信後、header送信を開始するまでの時間(0)
 	//4)送信するheader長 0-実header長(実header長)
@@ -63,6 +63,14 @@ public class CallScheduler extends PoolBase{
 		super.recycle();
 	}
 	
+	public void cancel(){
+		if(prevScheduler!=null){
+			prevScheduler.cancel();
+			setPrevScheduler(null);
+		}
+		setHandler(null);
+	}
+	
 	public void scheduleWrite(String userContext,ByteBuffer[] buffer){
 		long writeTime=0;
 		long writeLength=0;
@@ -76,7 +84,7 @@ public class CallScheduler extends PoolBase{
 			throw new IllegalArgumentException("unknown userContext."+userContext);
 		}
 		WriteScheduler scheduler=(WriteScheduler) PoolManager.getInstance(WriteScheduler.class);
-		scheduler.scheduleWrite(writeTime, handler, WebClientHandler.CONTEXT_HEADER, buffer, prevScheduler, writeLength);
+		scheduler.scheduleWrite(handler,userContext, buffer, writeTime, writeLength,  prevScheduler);
 		setPrevScheduler(scheduler);
 	}
 }

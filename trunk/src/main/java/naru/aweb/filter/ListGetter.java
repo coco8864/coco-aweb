@@ -83,7 +83,7 @@ public class ListGetter implements WebClient,Timer {
 			return;
 		}
 	}
-	public void onRequestEnd(Object userContext) {
+	public void onRequestEnd(Object userContext,int stat) {
 		try {
 			writeChannel.close();
 			Maintenance.addCategorys(source, listFile);
@@ -92,7 +92,7 @@ public class ListGetter implements WebClient,Timer {
 		}
 	}
 
-	public void onRequestFailure(Object userContext, Throwable t) {
+	public void onRequestFailure(Object userContext,int stat, Throwable t) {
 	}
 	public void onTimer(Object userContext) {
 		try {

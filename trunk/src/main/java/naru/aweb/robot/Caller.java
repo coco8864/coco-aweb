@@ -146,6 +146,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		return store.getDigest();
 	}
 	
+	/* nextCaller以外の初期化 */
 	private void setupExceptNextCaller(Browser browser,WebClientConnection connection,
 			String requestLine,ByteBuffer[] requestHeader,ByteBuffer[] requestBody){
 		this.browser=browser;
@@ -186,7 +187,6 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	//5)header送信後、body送信を開始するまでの時間(0)
 	//6)送信するbody長　0-実body長(実body長)
 	//7)レスポンス待ち時間 0-レスポンス到着時間(readTimeout)
-	
 	public void startRequest(WebClientHandler webClientHandler){
 		logger.debug("#startRequest:"+browser.getName());
 		//TODO
@@ -236,6 +236,13 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		}
 		if(requestBody!=null){
 			webClientHandler.requestBody(PoolManager.duplicateBuffers(requestBody));
+		}
+	}
+	
+	public void cancel(){
+		if(scheduler!=null){
+			scheduler.unref();
+			scheduler=null;
 		}
 	}
 	

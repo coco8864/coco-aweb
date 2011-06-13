@@ -56,6 +56,10 @@ public class WebClientHandler extends SslHandler {
 	private long requestHeaderLength;//リクエストヘッダ長
 	private long responseHeaderLength;//レスポンスヘッダ長
 	
+	private long realReadLength=0;//
+	private long realWriteLength=0;
+	
+	
 	private WebClient webClient;
 	private Object userContext;
 	
