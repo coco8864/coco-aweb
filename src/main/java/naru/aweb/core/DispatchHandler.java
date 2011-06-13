@@ -71,7 +71,7 @@ public class DispatchHandler extends ServerBaseHandler {
 	}
 
 	public void onAccepted(Object userContext) {
-		setReadTimeout(config.getAcceptTimeout());// synUŒ‚‘Î‰‚Å”äŠr“I’Z‚­İ’è
+		setReadTimeout(config.getAcceptTimeout());// Connection Flood UŒ‚‘Î‰‚Å”äŠr“I’Z‚­İ’è
 		logger.debug("#accepted.cid:" + getChannelId());
 		isFirstRead = true;
 		getKeepAliveContext(true);// keepAliveContext‚ğ—pˆÓ‚·‚é
