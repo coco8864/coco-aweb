@@ -241,6 +241,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	
 	public void cancel(){
 		if(scheduler!=null){
+			scheduler.cancel();
 			scheduler.unref();
 			scheduler=null;
 		}
