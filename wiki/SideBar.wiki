@@ -14,6 +14,7 @@
   * [Replay replay機能]
   * [Chat chat]
   * [SecureSetting セキュア設定]
+  * [DownWatch ダウン監視]
  * [Customize カスタマイズ]
  * [UerCase 利用シーン]
   * [SampleTrace トレース採取]
