@@ -16,7 +16,7 @@ ${phantom}/conf/phantomd.xml
   javaVMオプションの数を指定します。0は、javaVMオプションが無いことを現します。
 
  *java.vmOption.${数値}
-　javaVMオプションを指定します。java.vmOption.lengthで指定した数分が利用されます。
+  javaVMオプションを指定します。java.vmOption.lengthで指定した数分が利用されます。
 
  *java.heapSize
   初回起動時のjavaヒープサイズを指定します。異常再起動時には直近のサイズが採られます。（手動で再起動していた場合、必ずしもこの値になりません）
