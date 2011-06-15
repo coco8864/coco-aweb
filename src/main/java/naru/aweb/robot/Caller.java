@@ -346,6 +346,8 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 			//response　header受信後にエラーになった,accesslogにはstatだけを記録
 			logger.warn("fail after response header.statusCode:"+statusCode+":"+stat);
 			accessLog.setStatusCode("#" +Integer.toHexString(stat));
+		}else if(t==WebClientHandler.FAILURE_TIMEOUT){
+			accessLog.setStatusCode("&" +Integer.toHexString(stat));
 		}else{
 			accessLog.setStatusCode("$" +Integer.toHexString(stat));
 		}

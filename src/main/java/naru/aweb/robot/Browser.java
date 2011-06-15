@@ -45,7 +45,10 @@ public class Browser extends PoolBase implements Timer{
 			boolean isCallerkeepAlive,boolean isResponseHeaderTrace,boolean isResponseBodyTrace){
 		Browser browser=(Browser)PoolManager.getInstance(Browser.class);
 		browser.scenario=scenario;
-		browser.setup(accessLogs, isCallerkeepAlive,isResponseHeaderTrace,isResponseBodyTrace);
+		if( !browser.setup(accessLogs, isCallerkeepAlive,isResponseHeaderTrace,isResponseBodyTrace) ){
+			browser.unref(true);
+			return null;
+		}
 		return browser;
 	}
 	
@@ -265,12 +268,13 @@ public class Browser extends PoolBase implements Timer{
 	/**
 	 * @param urls
 	 */
-	public void setup(AccessLog[] accessLogs,boolean isCallerkeepAlive,boolean isResponseHeaderTrace,boolean isResponseBodyTrace){
+	public boolean setup(AccessLog[] accessLogs,boolean isCallerkeepAlive,boolean isResponseHeaderTrace,boolean isResponseBodyTrace){
 		Caller nextCaller=null;
 		for(int i=accessLogs.length-1;i>=0;i--){
 			AccessLog accessLog=accessLogs[i];
-			if(accessLog.getRequestHeaderDigest()==null || accessLog.getRequestLine()==null){
-				throw new RuntimeException("no request header or requestLine");
+			if(accessLog==null || accessLog.getRequestHeaderDigest()==null || accessLog.getRequestLine()==null){
+				logger.warn("no request header or requestLine");
+				return false;
 			}
 			String resolveOrigin=accessLog.getResolveOrigin();
 			char destinationType = accessLog.getDestinationType();
@@ -286,19 +290,22 @@ public class Browser extends PoolBase implements Timer{
 				isHttps=true;
 				break;
 			default:
-				throw new RuntimeException("destinationType error."+destinationType);
+				logger.warn("destinationType error."+destinationType);
+				return false;
 			}
 			WebClientConnection connection=setupConnection(isHttps,server.getHost(),server.getPort());
 			server.unref(true);
 			Caller caller=createCaller(accessLog, connection, nextCaller, isCallerkeepAlive);
 			if(caller==null){
-				throw new RuntimeException("fail to createCaller.");
+				logger.warn("fail to createCaller.");
+				return false;
 			}
 			caller.setResponseHeaderTrace(isResponseHeaderTrace);
 			caller.setResponseBodyTrace(isResponseBodyTrace);
 			nextCaller=caller;
 		}
 		startCallers.add(nextCaller);
+		return true;
 	}
 	
 	/**
