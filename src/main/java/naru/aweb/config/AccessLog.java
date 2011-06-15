@@ -276,6 +276,20 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	private long processTime;
 	
 	/**
+	 * connect処理にかかった時間。
+	 */
+	@Persistent
+	@Column(name="CONNECT_TIME")
+	private long connectTime;
+	
+	/**
+	 * ssl handshake処理にかかった時間。
+	 */
+	@Persistent
+	@Column(name="HANDSHAKE_TIME")
+	private long handshakeTime;
+	
+	/**
 	 * requestHeaderを処理し終わった時間。startTimeからの差分
 	 */
 	@Persistent
@@ -595,6 +609,8 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	}
 	
 	public enum TimePoint{
+		connect,
+		handshake,
 		requestHeader,
 		requestBody,
 		responseHeader,
