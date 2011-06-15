@@ -41,7 +41,6 @@ public class Browser extends PoolBase implements Timer{
 	//ˆ—’†‚Ìcaller‚Æconnection‚Ì‘g
 	private Map<Caller,WebClientHandler> processingClientHandler=new HashMap<Caller,WebClientHandler>();
 	
-	
 	public static Browser cleate(Scenario scenario,AccessLog[] accessLogs,
 			boolean isCallerkeepAlive,boolean isResponseHeaderTrace,boolean isResponseBodyTrace){
 		Browser browser=(Browser)PoolManager.getInstance(Browser.class);
@@ -360,6 +359,12 @@ public class Browser extends PoolBase implements Timer{
 				return;
 			}
 			isAsyncStop=true;
+			//Às’†‚Ìcaller‚Écancel‚ğ’Ê’m
+			for(Caller caller:processingClientHandler.keySet()){
+				WebClientHandler handler=processingClientHandler.get(caller);
+				caller.cancel();
+				handler.asyncClose("Browser.asyncStop");
+			}
 		}
 	}
 	

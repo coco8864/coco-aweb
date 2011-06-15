@@ -165,6 +165,7 @@ function perfProgress(){
 	var bar=jQuery("#progressbar");
 	if(!stressData.msg){
 		ph.jQuery("#stTestStatus").text("未実行");
+		ph.jQuery("#stCancelBtn").hide();
 		bar.progressbar({value:0});
 		return;
 	}
@@ -180,9 +181,11 @@ function perfProgress(){
 	ph.jQuery("#stTestLoop").text((st.loop)+"/"+st.loopCount);
 	if(stressData.isComplete){
 		ph.jQuery("#stTestStatus").text("完了");
+		ph.jQuery("#stCancelBtn").hide();
 		bar.progressbar({value:0});
 	}else{
 		ph.jQuery("#stTestStatus").text("実行中");
+		ph.jQuery("#stCancelBtn").show();
 		bar.progressbar({value:(st.loop/st.loopCount)*100});
 	}
 }
@@ -192,7 +195,7 @@ perfProgress();
 
 <h1>Performance list</h1>
 <hr/>
-<div>stress進捗:<span id="stTestStatus"></span>
+<div>stress進捗:<span id="stTestStatus"></span><input type="button" value="stop" onclick="ph.admin.doPramCommand('perf','cancel',{chId:stressData.chId});" id="stCancelBtn" style="display: none">
 scenario:<span id="stTestScenario"></span>
 name:<span id="stTestName"></span>
 start:<span id="stTestStartTime"></span>

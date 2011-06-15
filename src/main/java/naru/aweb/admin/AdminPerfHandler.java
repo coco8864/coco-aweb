@@ -100,6 +100,15 @@ public class AdminPerfHandler extends WebServerHandler{
 			}
 			completeResponse("500");
 			return;
+		}else if("cancel".equals(command)){//Scenario‚Ì“r’†’†Ž~
+			String chId=parameter.getParameter("chId");
+			String name=Scenario.cancelScenario(chId);
+			if(name==null){
+				completeResponse("404");//Scenario‚ªŒ©‚Â‚©‚ç‚È‚©‚Á‚½
+			}else{
+				responseJson(name);
+			}
+			return;
 		}else if("stress".equals(command)){
 			String list=parameter.getParameter("list");
 			AccessLog[] accessLogs=listToAccessLogs(list);
@@ -114,13 +123,24 @@ public class AdminPerfHandler extends WebServerHandler{
 			String tesponseHeaderTrace=parameter.getParameter("tesponseHeaderTrace");
 			String tesponseBodyTrace=parameter.getParameter("tesponseBodyTrace");
 			String thinkingTime=parameter.getParameter("thinkingTime");
-			String chId=doStress(accessLogs,name,Integer.parseInt(browserCount),
-					Integer.parseInt(call),
-			"true".equalsIgnoreCase(keepAlive),
-			Long.parseLong(thinkingTime),
-			"true".equalsIgnoreCase(accessLog),
-			"true".equalsIgnoreCase(tesponseHeaderTrace),
-			"true".equalsIgnoreCase(tesponseBodyTrace));
+			String chId=null;
+			try {
+				chId = doStress(accessLogs,name,
+						Integer.parseInt(browserCount),
+						Integer.parseInt(call),
+						"true".equalsIgnoreCase(keepAlive),
+						Long.parseLong(thinkingTime),
+						"true".equalsIgnoreCase(accessLog),
+						"true".equalsIgnoreCase(tesponseHeaderTrace),
+						"true".equalsIgnoreCase(tesponseBodyTrace));
+			} catch (NumberFormatException e) {
+				completeResponse("500", "Number error");
+				return;
+			}
+			if(chId==null){
+				completeResponse("500", "AccessLog error");
+				return;
+			}
 			responseJson(chId);
 			return;
 		}else if("stressFile".equals(command)){

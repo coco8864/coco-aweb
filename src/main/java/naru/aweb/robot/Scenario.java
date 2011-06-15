@@ -17,12 +17,13 @@ import naru.aweb.queue.QueueManager;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
-
 public class Scenario extends PoolBase{
 	private static Logger logger = Logger.getLogger(Scenario.class);
+	private static Map<String,Scenario> chIdScenarioMap=new HashMap<String,Scenario>();//現状走行中のScenarioを保持　cancel対応
 	
 	private String name;
 	private boolean isProcessing;
+	private boolean isReceiveStop;//stopリクエストを受け付けたか否か?
 	private long startTime;
 	private long endTime;
 	private int browserCount;
@@ -43,14 +44,31 @@ public class Scenario extends PoolBase{
 	
 	private Performance masterPerformance;
 	private Map<String,Performance> requestPerformances=new HashMap<String,Performance>();
-	private Map<String,Performance> requestStatusCodePerformances;
+//	private Map<String,Performance> requestStatusCodePerformances;
 	private JSONObject stat=new JSONObject();
 	
 	private Random random=new Random();
 	
+	public static String cancelScenario(String chId){
+		String name=null;
+		synchronized(chIdScenarioMap){
+			Scenario scenario=chIdScenarioMap.get(chId);
+			if(scenario!=null){
+				name=scenario.getName();
+				logger.info("cancelScenario:"+name);
+				scenario.stop();
+			}else{
+				logger.info("cancelScenario notFound Scenario.chId:"+chId);
+			}
+		}
+		return name;
+	}
+	
+	//TODO 幅を指定可能にする,主にconnectが集中しないようにするため
+	private double dispersion=1000;
 	private long calcThinkingtime(){
 		double rand=random.nextDouble()-0.5;
-		rand*=1000;//前後1秒の幅を作る
+		rand*=dispersion;//前後dispersion msの幅を作る
 		return thinkingTime+(long)rand;
 	}
 	
@@ -59,10 +77,10 @@ public class Scenario extends PoolBase{
 		if(chId==null){
 			return;
 		}
-		if(loop!=0 && loop!=loopCount && (loop%loopUnit)!=0){
+		if(loop!=0 && loop!=loopCount && (loop%loopUnit)!=0 && !isComplete){
 			return;
 		}
-		if(loop==loopCount && runnningBrowserCount!=0 && (runnningBrowserCount%10)!=0 && runnningBrowserCount>10){
+		if(loop==loopCount && runnningBrowserCount!=0 && (runnningBrowserCount%10)!=0 && runnningBrowserCount>10 && !isComplete){
 			return;
 		}
 		Runtime runtime=Runtime.getRuntime();
@@ -133,6 +151,7 @@ public class Scenario extends PoolBase{
 			scenario.start(chId);
 			return true;
 		}
+		scenario.unref(true);
 		return false;
 	}
 	
@@ -199,7 +218,7 @@ public class Scenario extends PoolBase{
 	}
 	
 	private synchronized boolean startBrowserIfNeed(Browser browser){
-		if(loopCount>loop){
+		if(!isReceiveStop && loopCount>loop){
 			broadcast(chId,false);
 			//TODO browser行方不明問題あり,"...favicon.ico HTTP/1.1" null 0 125#123,-,H,null,null,15,15,0,0,-1"こんな感じに記録される
 			loop++;
@@ -220,15 +239,20 @@ public class Scenario extends PoolBase{
 			isProcessing=false;
 			notify();//Scenarioを作成して終了をwaitで待っている可能性がある
 			logger.info("###Scenario end.name:" +name + " time:"+(endTime-startTime));
-			masterPerformance.insert();
+			if(masterPerformance!=null){
+				masterPerformance.insert();
+			}
 			for(Performance performance:requestPerformances.values()){
 				performance.insert();
 			}
-			if(nextScenario!=null){//次のSceinarioを実行
+			if(!isReceiveStop && nextScenario!=null){//次のSceinarioを実行
 				broadcast(chId,false);
 				nextScenario.start(chId);
 			}else{
 				broadcast(chId,true);
+				synchronized(chIdScenarioMap){
+					chIdScenarioMap.remove(chId);
+				}
 			}
 			unref();//このSceinarioは終了
 		}else{
@@ -243,7 +267,9 @@ public class Scenario extends PoolBase{
 	
 	public synchronized void start(String chId){
 		System.gc();
-		logger.debug("#start");
+		synchronized(chIdScenarioMap){
+			chIdScenarioMap.put(chId,this);
+		}
 		loop=0;
 		this.chId=chId;
 		startTime=System.currentTimeMillis();
@@ -256,13 +282,16 @@ public class Scenario extends PoolBase{
 		isProcessing=true;
 		runnningBrowserCount=browsers.size();
 		
+		logger.info("###Scenario start.name:" +name);
 		broadcast(chId,false);//開始時のbroadcast
-		for(Browser browser:browsers){
-			startBrowserIfNeed(browser);
+		Object[] browserArray=browsers.toArray();//ConcurrentModificationException対策
+		for(Object browser:browserArray){
+			startBrowserIfNeed((Browser)browser);
 		}
 	}
 	
 	public void stop(){
+		isReceiveStop=true;
 		for(Browser browser:browsers){
 			browser.asyncStop();
 		}
@@ -311,6 +340,8 @@ public class Scenario extends PoolBase{
 	@Override
 	public void recycle() {
 		nextScenario=null;
+		isReceiveStop=false;
+		isProcessing=false;
 		scenarioCount=1;
 		scenarioIndex=0;
 	}
