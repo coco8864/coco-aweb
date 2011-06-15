@@ -124,7 +124,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 		}
 		requestContentLength = requestContentWriteLength = 0;
 		requestHeaderLength=responseHeaderLength=0;
-		scheduler=null;
+		setScheduler(null);
 		responseHeader.recycle();
 		gzipContext.recycle();
 		isReadableCallback=false;
