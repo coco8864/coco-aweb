@@ -6,15 +6,17 @@ import javax.net.ssl.SSLEngine;
 
 import org.apache.log4j.Logger;
 
+import naru.async.Timer;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.async.ssl.SslHandler;
+import naru.async.timer.TimerManager;
 import naru.aweb.config.Config;
 import naru.aweb.handler.ProxyHandler;
 import naru.aweb.robot.CallScheduler;
 
-public class WebClientHandler extends SslHandler {
+public class WebClientHandler extends SslHandler implements Timer {
 	private static final int STAT_INIT = 0;
 	private static final int STAT_CONNECT = 1;
 	private static final int STAT_SSL_PROXY=2;
@@ -427,6 +429,8 @@ public class WebClientHandler extends SslHandler {
 	
 	/**
 	 * Callerからは直接呼び出される
+	 * errorが発生した場合、timer経由（別スレッド）でイベントにエラーを通知する
+	 * 
 	 * @param webClient
 	 * @param userContext
 	 * @param connectTimeout
@@ -450,17 +454,24 @@ public class WebClientHandler extends SslHandler {
 		this.isKeepAlive = isCallerKeepAlive;
 		this.requestHeaderBuffer = requestHeaderBuffer;
 		this.requestContentLength = requestContentLength;
+		Throwable error;
 		if(stat==STAT_KEEP_ALIVE){
 			internalStartRequest();
 			return true;
 		}if(stat==STAT_INIT){
-			stat = STAT_CONNECT;
-			return asyncConnect(this, webClientConnection.getRemoteServer(), webClientConnection.getRemotePort(), connectTimeout);
+			if(asyncConnect(this, webClientConnection.getRemoteServer(), webClientConnection.getRemotePort(), connectTimeout)){
+				stat = STAT_CONNECT;
+				return true;
+			}
+			logger.error("fail to asyncConnect.");
+			error=new Throwable("fail to asyncConnect.");
+		}else{
+			logger.error("fail to doRequest.cid="+getChannelId() +":stat:"+stat);
+			error=new Throwable("fail to doRequest.cid="+getChannelId() +":stat:"+stat);
 		}
-		logger.error("fail to doRequest.cid="+getChannelId() +":stat:"+stat);
+		TimerManager.setTimeout(0L, this,error);
 		return false;
 	}
-	
 
 	/**
 	 * リクエスト終端は、methodやcontent-lengthで判断する 終端認識後、レスポンス系callbackハンドラが順次呼び出される。
@@ -598,15 +609,20 @@ public class WebClientHandler extends SslHandler {
 	}
 	
 	public boolean unref() {
-		if(stat==STAT_INIT){//接続前に参照をやめる場合は、core分も減算
+		if(stat==STAT_INIT){//接続前に参照をやめる場合は、chanelContext分も減算
 			logger.debug("stat INIT unref");
+			stat=STAT_END;//もう接続できない,もう一度unrefされても、減算しない
 			super.unref();
-			stat=STAT_END;//もう接続する事はできない
 		}
 		return super.unref();
 	}
+	
 	public void setReadableCallback(boolean isReadableCallback) {
 		this.isReadableCallback = isReadableCallback;
 	}
 	
+	//startRequestに失敗した場合、timer経由（別スレッドから）でエラーを通知する
+	public void onTimer(Object userContext) {
+		onRequestFailure(stat,(Throwable)userContext);
+	}
 }

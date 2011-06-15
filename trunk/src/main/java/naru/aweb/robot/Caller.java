@@ -228,15 +228,19 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 			Store responseHeaderStore=Store.open(true);
 			webClientHandler.pushReadPeekStore(responseHeaderStore);
 		}
+		//TODO connectTimeout
 		if( webClientHandler.startRequest(this, webClientHandler,3000,PoolManager.duplicateBuffers(requestHeader),requestContentLength, true, 15000)==false){
 			logger.error("fail to webClientHandler.startRequest.scenario.getName:"+scenario.getName());
 			//connectすらできなかったため、イベント通知が期待できない。自力でイベント発行
-			onRequestFailure(webClientHandler,0, new Exception("webClientHandler.startRequest faile to connect"));
+			//onRequestFailure(webClientHandler,0, new Exception("webClientHandler.startRequest faile to connect"));
+			//ループ上記だと再帰しちゃう,webClientHandlerから遅延してエラーを投げてもらう
+//			TimerManager.setTimeout(0L, this,null);
 			return;
 		}
 		if(requestBody!=null){
 			webClientHandler.requestBody(PoolManager.duplicateBuffers(requestBody));
 		}
+		return;
 	}
 	
 	public void cancel(){

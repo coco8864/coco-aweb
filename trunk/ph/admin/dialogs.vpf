@@ -22,6 +22,7 @@ function editSave(){
 ##stressダイアログから呼ばれる
 var stressData={
 	appId:null,
+	chId:null,
 	isComplete:true,
 	time:0,
 	msg:null
@@ -41,6 +42,9 @@ var doStressCb={
 		stressData.msg=msg;
 		stressData.time=time;
 		stressData.isComplete=isComplete;
+		if(isComplete){
+			stressData.chId=null;
+		}
 		if(ph.isUseSessionStorage){
 			var json=ph.JSON.stringify(stressData);
 			sessionStorage['stressData']=json;
@@ -55,6 +59,9 @@ var doStressCb={
 var streeCommandCb=function(chId){
 	ph.log("streeCommandCb chId:"+chId);
 	jQuery("#tabs").tabs("select",5);
+	if(stressData.chId){//先行しているstressがあった.cancelする
+		ph.admin.doPramCommand('perf','cancel',{chId:stressData.chId});
+	}
 	stressData.chId=chId;
 	ph.queue.subscribeById(chId,doStressCb);
 };
@@ -80,7 +87,7 @@ function doStress(){
 			tesponseBodyTrace:ph.jQuery('#stressTesponseBodyTrace').attr('checked')
 			},
 			streeCommandCb,
-			function(){}//errorCB
+			function(x){alert('faild to stress test.'+x.responseText)}//errorCB
 			);
 	}
 	ph.jQuery(".logIdCheck").attr("checked",false);
