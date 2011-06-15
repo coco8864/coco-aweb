@@ -145,6 +145,7 @@ public class Browser extends PoolBase implements Timer{
 			webClientQueue.put(connection, clients);
 			for(int i=0;i<MAX_DOMAIN_CONNECTION;i++){
 				WebClientHandler clientHandler=WebClientHandler.create(connection);
+				//TODO ‚±‚±‚Åsheduler‚ðÝ’è‚·‚é
 				clientHandler.ref();//Ø’fŒã‚É‰ñŽû‚³‚ê‚é‚Ì‚ð–h‚®
 				clients.add(clientHandler);
 			}
