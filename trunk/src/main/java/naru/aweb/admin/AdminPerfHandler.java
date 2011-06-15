@@ -151,12 +151,13 @@ public class AdminPerfHandler extends WebServerHandler{
 				String s = item.getString("utf-8");
 				JSONArray json=JSONArray.fromObject(s);
 				String chId=doStressFile(accessLogs,json);
-				setContentType("text/html");
-				completeResponse("200",//TODO vsfにfowardするのがスマート
-					"<script>parent.streeCommandCb('"+chId+"');</script>");
-				return;
-			} catch (UnsupportedEncodingException e) {
-			} catch (RuntimeException e) {
+				if(chId!=null){
+					setContentType("text/html");
+					completeResponse("200",//TODO vsfにfowardするのがスマート
+						"<script>parent.streeCommandCb('"+chId+"');</script>");
+					return;
+				}
+			} catch (UnsupportedEncodingException e){
 			}
 			setContentType("text/html");
 			completeResponse("200",

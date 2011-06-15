@@ -127,6 +127,7 @@ public class Scenario extends PoolBase{
 			boolean isResponseHeaderTrace=stress.optBoolean("isResponseHeaderTrace",false);
 			boolean isResponseBodyTrace=stress.optBoolean("isResponseBodyTrace",false);
 			if(scenario.setup(accessLogs,name,browserCount,loopCount,isCallerKeepAlive,thinkingTime,isAccessLog,isResponseHeaderTrace,isResponseBodyTrace)==false){
+				//rollbackèàóù
 				scenario=topScenario;
 				while(scenario!=null){
 					lastScenario=scenario.nextScenario;
@@ -176,6 +177,9 @@ public class Scenario extends PoolBase{
 		}
 		Browser browser=Browser.cleate(this,accessLogs, 
 				isCallerkeepAlive,isResponseHeaderTrace,isResponseBodyTrace);
+		if(browser==null){
+			return false;
+		}
 		browser.setName(name+":0");
 		browsers.add(browser);
 		for(int i=1;i<browserCount;i++){

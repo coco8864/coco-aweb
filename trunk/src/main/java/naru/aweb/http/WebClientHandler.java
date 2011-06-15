@@ -31,6 +31,9 @@ public class WebClientHandler extends SslHandler implements Timer {
 	public static final String CONTEXT_HEADER = "contextHeader";
 	public static final String CONTEXT_BODY = "contextBody";
 	public static final String CONTEXT_SSL_PROXY_CONNECT = "contextSslProxyConnect";
+	
+	public static final Throwable FAILURE_CONNECT=new Throwable("WebClientHandler connect");
+	public static final Throwable FAILURE_TIMEOUT=new Throwable("WebClientHandler timeout");
 
 	private static Logger logger = Logger.getLogger(WebClientHandler.class);
 	private static Config config=Config.getConfig();
@@ -395,7 +398,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 		logger.debug("#timeout.cid:" + getChannelId());
 		asyncClose(userContext);
 		if(isKeepAlive==false){//keepAlive’†‚Étimeout‚ª—ˆ‚é‚Ì‚Í–â‘è‚È‚¢
-			onRequestFailure(stat,new Exception("WebClientHandler timeout"));
+			onRequestFailure(stat,FAILURE_TIMEOUT);
 		}
 		isKeepAlive = false;
 		super.onTimeout(userContext);
@@ -463,8 +466,8 @@ public class WebClientHandler extends SslHandler implements Timer {
 				stat = STAT_CONNECT;
 				return true;
 			}
-			logger.error("fail to asyncConnect.");
-			error=new Throwable("fail to asyncConnect.");
+			logger.warn("fail to asyncConnect.");
+			error=FAILURE_CONNECT;
 		}else{
 			logger.error("fail to doRequest.cid="+getChannelId() +":stat:"+stat);
 			error=new Throwable("fail to doRequest.cid="+getChannelId() +":stat:"+stat);
