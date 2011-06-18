@@ -279,14 +279,14 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	 * connectˆ—‚É‚©‚©‚Á‚½ŠÔB
 	 */
 	@Persistent
-	@Column(name="CONNECT_TIME")
+	@Column(name="CONNECT_TIME",defaultValue="0")
 	private long connectTime;
 	
 	/**
 	 * ssl handshakeˆ—‚É‚©‚©‚Á‚½ŠÔB
 	 */
 	@Persistent
-	@Column(name="HANDSHAKE_TIME")
+	@Column(name="HANDSHAKE_TIME",defaultValue="0")
 	private long handshakeTime;
 	
 	/**
