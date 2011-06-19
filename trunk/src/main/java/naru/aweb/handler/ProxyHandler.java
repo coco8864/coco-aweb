@@ -352,5 +352,10 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 	public void setReplace(boolean isReplace) {
 		this.isReplace = isReplace;
 	}
+	
+	public void onWebConnected(Object userContext){
+	}
+	public void onWebHandshaked(Object userContext){
+	}
 
 }

@@ -101,5 +101,9 @@ public class ListGetter implements WebClient,Timer {
 			e.printStackTrace();
 		}
 	}
+	public void onWebConnected(Object userContext){
+	}
+	public void onWebHandshaked(Object userContext){
+	}
 
 }
