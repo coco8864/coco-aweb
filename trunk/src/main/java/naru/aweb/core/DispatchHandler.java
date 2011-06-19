@@ -49,6 +49,7 @@ public class DispatchHandler extends ServerBaseHandler {
 	private static int limitRequestFieldSize = config.getInt("limitRequestFieldSize", 8192);
 
 	private Date startTime;
+	private long handshakeTime=-1;
 	private boolean isFirstRead;
 	private long connectHeaderLength;
 	// Dispatch先が確定しバッファを取得するか否かが決定するまで通信データをheaderPageに蓄える
@@ -57,6 +58,7 @@ public class DispatchHandler extends ServerBaseHandler {
 	public void recycle() {
 		connectHeaderLength = 0;
 		startTime = null;
+		handshakeTime=-1;
 		headerPage.recycle();
 		super.recycle();
 	}
@@ -97,10 +99,11 @@ public class DispatchHandler extends ServerBaseHandler {
 	}
 
 	/**
-	 * ssl確立後、次データを要求する。
+	 * ssl確立後、次データを要求する。(return true)
 	 */
 	public boolean onHandshaked() {
 		logger.debug("#handshaked.cid:" + getChannelId());
+		handshakeTime=System.currentTimeMillis()-startTime.getTime();
 		return true;
 	}
 
@@ -163,6 +166,9 @@ public class DispatchHandler extends ServerBaseHandler {
 		// http(s)://xxxx:xx/xxx/xxx
 		AccessLog accessLog = getAccessLog();
 		accessLog.setStartTime(startTime);
+		accessLog.setHandshakeTime(handshakeTime);
+		accessLog.setRawRead(this.getTotalReadLength());
+		accessLog.setRawWrite(this.getTotalWriteLength());
 		accessLog.setTimeCheckPint(AccessLog.TimePoint.requestHeader);
 		accessLog.setIp(getRemoteIp());
 		if (user != null) {
