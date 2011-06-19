@@ -391,4 +391,12 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	public void setResolveDigest(String resolveDigest) {
 		this.resolveDigest = resolveDigest;
 	}
+	
+	//TODO ‚ğæ“¾
+	public void onWebConnected(Object userContext){
+	}
+	
+	//TODO ‚ğæ“¾
+	public void onWebHandshaked(Object userContext){
+	}
 }

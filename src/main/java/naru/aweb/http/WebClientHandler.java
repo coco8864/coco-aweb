@@ -61,10 +61,6 @@ public class WebClientHandler extends SslHandler implements Timer {
 	private long requestHeaderLength;//リクエストヘッダ長
 	private long responseHeaderLength;//レスポンスヘッダ長
 	
-	private long realReadLength=0;//
-	private long realWriteLength=0;
-	
-	
 	private WebClient webClient;
 	private Object userContext;
 	
@@ -176,6 +172,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 
 	public void onConnected(Object userContext) {
 		logger.debug("#connected.id:" + getChannelId());
+		onWebConnected();
 		if (webClientConnection.isHttps()) {
 			if (webClientConnection.isUseProxy()) {
 				stat=STAT_SSL_PROXY;
@@ -209,6 +206,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 
 	public boolean onHandshaked() {
 		logger.debug("#handshaked.cid:" + getChannelId());
+		onWebHandshaked();
 		// 直接SSL接続する場合もproxy経由の接続の場合もここに来る
 		asyncRead(CONTEXT_HEADER);//リクエストしていないが、先行してレスポンスヘッダ要求を行う
 		internalStartRequest();
@@ -535,6 +533,18 @@ public class WebClientHandler extends SslHandler implements Timer {
 	/*
 	 * 以降callbackメソッド
 	 */
+	private void onWebConnected() {
+		if (webClient != null) {
+			webClient.onWebConnected(userContext);
+		}
+	}
+	
+	private void onWebHandshaked() {
+		if (webClient != null) {
+			webClient.onWebHandshaked(userContext);
+		}
+	}
+	
 	private void onWrittenRequestHeader() {
 		if (webClient != null) {
 			webClient.onWrittenRequestHeader(userContext);

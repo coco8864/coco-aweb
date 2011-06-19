@@ -11,6 +11,10 @@ import java.nio.ByteBuffer;
  *
  */
 public interface WebClient {
+	public void onWebConnected(Object userContext);
+	
+	public void onWebHandshaked(Object userContext);
+	
 	/**
 	 *  requestHeader‚ğ‘‚«‚ñ‚¾–‚ğ’Ê’m WebClientHandler#startRequest‚É‘Î‰
 	 */
