@@ -44,7 +44,6 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	
 	private static Logger logger=Logger.getLogger(AccessLog.class);	
 	private static Config config=Config.getConfig();
-//	private static LogPersister logPersister;
 	private static JsonConfig jsonConfig;
 	static{
 		jsonConfig=new JsonConfig();
@@ -274,6 +273,13 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	@Persistent
 	@Column(name="PROCESS_TIME")
 	private long processTime;
+	
+	/**
+	 * ssl handshake処理にかかった時間。startTimeからの差分
+	 */
+	@Persistent
+	@Column(name="CONNECT_TIME",defaultValue="0")
+	private long connectTime;
 
 	/**
 	 * ssl handshake処理にかかった時間。startTimeからの差分
@@ -429,12 +435,22 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		chId=null;
 		isSkipPhlog=isShortFormat=false;
 		thinkingTime=0;
+		rawRead=rawWrite=0;
+		connectTime=handshakeTime=0;
+		if(webClientLog!=null){
+			webClientLog.unref();
+			webClientLog=null;
+		}
 //		requestHeaderStore=requestBodyStore=responseHeaderStore=responseBodyStore;
 	}
 	@NotPersistent
 	private boolean isSkipPhlog=false;
+	
 	@NotPersistent
 	private boolean isShortFormat=false;//TODO apache見たいに動的に組み立てる
+	
+	@NotPersistent
+	private WebClientLog webClientLog;
 	
 	public void log(boolean debug){
 		if(!debug&&isSkipPhlog){//'/queue'のように大量に出力されるlogは出力を抑止する
@@ -941,6 +957,22 @@ public class AccessLog extends PoolBase implements BufferGetter{
 
 	public void setRawWrite(long rawWrite) {
 		this.rawWrite = rawWrite;
+	}
+
+	public long getConnectTime() {
+		return connectTime;
+	}
+
+	public void setConnectTime(long connectTime) {
+		this.connectTime = connectTime;
+	}
+
+	public WebClientLog getWebClientLog() {
+		return webClientLog;
+	}
+
+	public void setWebClientLog(WebClientLog webClientLog) {
+		this.webClientLog = webClientLog;
 	}
 
 }

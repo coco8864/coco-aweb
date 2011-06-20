@@ -50,6 +50,7 @@ public class DispatchHandler extends ServerBaseHandler {
 
 	private Date startTime;
 	private long handshakeTime=-1;
+	private long connectTime=-1;
 	private boolean isFirstRead;
 	private long connectHeaderLength;
 	// Dispatch先が確定しバッファを取得するか否かが決定するまで通信データをheaderPageに蓄える
@@ -58,17 +59,22 @@ public class DispatchHandler extends ServerBaseHandler {
 	public void recycle() {
 		connectHeaderLength = 0;
 		startTime = null;
-		handshakeTime=-1;
+		handshakeTime=connectTime=-1;
 		headerPage.recycle();
 		super.recycle();
 	}
 
+	private long startTotalReadLength;
+	private long startTotalWriteLength;
+	
 	/*
 	 * 初回connection開設時および、KeepAlive時に呼び出される
 	 */
 	public void onStartRequest() {
 		logger.debug("#startRequest.cid:" + getChannelId());
 		headerPage.recycle();
+		startTotalReadLength=getTotalReadLength();
+		startTotalWriteLength=getTotalWriteLength();
 		asyncRead(null);
 	}
 
@@ -111,6 +117,7 @@ public class DispatchHandler extends ServerBaseHandler {
 		logger.debug("#onRead.cid:" + getChannelId() + ":buffers.hashCode:"
 				+ buffers.hashCode());
 		if (isFirstRead) {
+			connectTime=System.currentTimeMillis()-startTime.getTime();
 			// 最初の通信データでSSLか否かを判定する。
 			isFirstRead = false;
 			if (SslAdapter.isSsl(buffers[0])) {
@@ -166,9 +173,10 @@ public class DispatchHandler extends ServerBaseHandler {
 		// http(s)://xxxx:xx/xxx/xxx
 		AccessLog accessLog = getAccessLog();
 		accessLog.setStartTime(startTime);
+		accessLog.setConnectTime(connectTime);
 		accessLog.setHandshakeTime(handshakeTime);
-		accessLog.setRawRead(this.getTotalReadLength());
-		accessLog.setRawWrite(this.getTotalWriteLength());
+		accessLog.setRawRead(startTotalReadLength);
+		accessLog.setRawWrite(startTotalWriteLength);
 		accessLog.setTimeCheckPint(AccessLog.TimePoint.requestHeader);
 		accessLog.setIp(getRemoteIp());
 		if (user != null) {
