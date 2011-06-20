@@ -15,6 +15,7 @@ import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
 import naru.async.store.Store;
 import naru.aweb.config.AccessLog;
+import naru.aweb.config.WebClientLog;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.WebClient;
 import naru.aweb.http.WebClientConnection;
@@ -29,6 +30,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	private static Logger logger = Logger.getLogger(Caller.class);
 	private Browser browser;
 	private List<Caller> nextCallers=new ArrayList<Caller>();
+	private long startTime=0;
 	
 	/**
 	 * http[s]://server:port形式の文字列
@@ -78,6 +80,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		setConnection(null);
 		nextCallers.clear();
 		resolveDigest=null;
+		startTime=0;
 		super.recycle();
 	}
 	
@@ -134,15 +137,6 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		Store store=Store.open(true);
 		store.putBuffer(dupBuffers);
 		store.close();
-/*		
-		BuffersUtil.mark(buffers);
-		for(ByteBuffer buffer:buffers){
-			messageDigest.update(buffer);
-		}
-		String digest=DataUtil.digest(messageDigest);
-		BuffersUtil.reset(buffers);
-		messageDigest.reset();
-*/
 		return store.getDigest();
 	}
 	
@@ -189,16 +183,10 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	//7)レスポンス待ち時間 0-レスポンス到着時間(readTimeout)
 	public void startRequest(WebClientHandler webClientHandler){
 		logger.debug("#startRequest:"+browser.getName());
-		//TODO
-		/*
-		scheduler=(CallScheduler)PoolManager.getInstance(CallScheduler.class);
-		long now=System.currentTimeMillis();
-		logger.debug("now:"+now);
-		scheduler.setup(webClientHandler, now, 0, now, 0);
-		webClientHandler.setScheduler(scheduler);
-		*/
+		accessLog=(AccessLog)PoolManager.getInstance(AccessLog.class);
+		WebClientLog webClientLog=(WebClientLog)PoolManager.getInstance(WebClientLog.class);
+		accessLog.setWebClientLog(webClientLog);
 		
-		accessLog=(AccessLog) PoolManager.getInstance(AccessLog.class);
 		//simulateからの作成された事をマーク
 		accessLog.setIp(browser.getName());//browser情報
 		Scenario scenario=browser.getScenario();
@@ -218,10 +206,14 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		
 		accessLog.setRequestLine(requestLine);
 		accessLog.setRequestHeaderLength(BuffersUtil.remaining(requestHeader));
-		accessLog.setStartTime(new Date(System.currentTimeMillis()));
+		startTime=System.currentTimeMillis();
+		accessLog.setStartTime(new Date(startTime));
 		accessLog.setRequestHeaderDigest(requestHeaderDigest);
 		accessLog.setRequestBodyDigest(requestBodyDigest);
 		accessLog.setResolveDigest(resolveDigest);
+		//accessLogは、サーバとしての情報を格納している、そのため、client基準ではread/writeがひっくりかえる
+		accessLog.setRawRead(webClientHandler.getTotalWriteLength());
+		accessLog.setRawWrite(webClientHandler.getTotalReadLength());
 		
 		responseLength=0;
 		if(isResponseHeaderTrace){
@@ -231,10 +223,6 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		//TODO connectTimeout
 		if( webClientHandler.startRequest(this, webClientHandler,3000,PoolManager.duplicateBuffers(requestHeader),requestContentLength, true, 15000)==false){
 			logger.error("fail to webClientHandler.startRequest.scenario.getName:"+scenario.getName());
-			//connectすらできなかったため、イベント通知が期待できない。自力でイベント発行
-			//onRequestFailure(webClientHandler,0, new Exception("webClientHandler.startRequest faile to connect"));
-			//ループ上記だと再帰しちゃう,webClientHandlerから遅延してエラーを投げてもらう
-//			TimerManager.setTimeout(0L, this,null);
 			return;
 		}
 		if(requestBody!=null){
@@ -267,14 +255,12 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	public void onResponseHeader(Object userContext, HeaderParser responseHeader) {
 		logger.debug("#onResponseHeader:"+browser.getName());
 		WebClientHandler webClientHandler=(WebClientHandler)userContext;
-//		accessLog.setChannelId(webClientHandler.getChannelId());
 		Store responseHeaderStore=webClientHandler.popReadPeekStore();
 		if(responseHeaderStore!=null){
 			accessLog.incTrace();
 			responseHeaderStore.close(accessLog,responseHeaderStore);
 			accessLog.setResponseHeaderDigest(responseHeaderStore.getDigest());
 		}
-//		responseHeader.getHeaderBuffer();
 		accessLog.setTimeCheckPint(AccessLog.TimePoint.responseHeader);
 		accessLog.setStatusCode(responseHeader.getStatusCode());
 		accessLog.setContentType(responseHeader.getContentType());
@@ -309,8 +295,10 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		if(accessLog.getStatusCode()==null){
 			accessLog.setStatusCode("%" +Integer.toHexString(stat));
 		}
-		
 		WebClientHandler webClientHandler=(WebClientHandler)userContext;
+		//accessLogは、サーバとしての情報を格納している、そのため、client基準ではread/writeがひっくりかえる
+		accessLog.setRawRead(webClientHandler.getTotalWriteLength()-accessLog.getRawRead());
+		accessLog.setRawWrite(webClientHandler.getTotalReadLength()-accessLog.getRawWrite());
 		accessLog.setChannelId(webClientHandler.getChannelId());
 //		if(accessLog.getStatusCode()==null){
 //			//connectに失敗した場合、handshakeに失敗した場合、その他回線が切れた場合
@@ -394,9 +382,11 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	
 	//TODO 時刻を取得
 	public void onWebConnected(Object userContext){
+		accessLog.setConnectTime(System.currentTimeMillis()-startTime);
 	}
 	
 	//TODO 時刻を取得
 	public void onWebHandshaked(Object userContext){
+		accessLog.setHandshakeTime(System.currentTimeMillis()-startTime);
 	}
 }

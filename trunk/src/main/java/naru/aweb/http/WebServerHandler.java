@@ -376,6 +376,7 @@ public class WebServerHandler extends ServerBaseHandler {
 			isReadWrite = internalWriteBody(true, false, null);
 		}
 
+		
 		KeepAliveContext keepAliveContext = getKeepAliveContext();
 		AccessLog accessLog = getAccessLog();
 		accessLog.endProcess();
@@ -386,6 +387,10 @@ public class WebServerHandler extends ServerBaseHandler {
 		accessLog.setPlainResponseLength(responseWriteBodyApl);
 		accessLog.setResponseLength(responseWriteBodyApl);
 		accessLog.setContentEncoding(responseHeader.getHeader(HeaderParser.CONTENT_ENCODING_HEADER));
+
+		//当該リクエストでの実read長、warite長(sslの場合を考慮)
+		accessLog.setRawRead(getTotalReadLength()-accessLog.getRawRead());
+		accessLog.setRawWrite(getTotalWriteLength()-accessLog.getRawWrite());
 		
 		Store readPeek = popReadPeekStore();
 		if (readPeek != null && readPeek.getPutLength() > 0) {
@@ -394,7 +399,6 @@ public class WebServerHandler extends ServerBaseHandler {
 			accessLog.incTrace();
 			readPeek.close(accessLog,readPeek);
 			accessLog.setRequestBodyDigest(readPeek.getDigest());
-			
 		} else {
 //			accessLog.setRequestBodyTrace(Store.FREE_ID);
 			if (readPeek != null) {
