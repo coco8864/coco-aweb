@@ -50,7 +50,7 @@ public class WebClientTest extends TestBase{
 		@Override
 		public void onResponseHeader(Object userContext,
 				HeaderParser responseHeader) {
-			System.out.println("onResponseHeader."+(System.currentTimeMillis()%10000));
+			System.out.println("onResponseHeader."+(System.currentTimeMillis()%10000) +":statusCode:"+responseHeader.getStatusCode());
 		}
 
 		@Override
@@ -87,8 +87,7 @@ public class WebClientTest extends TestBase{
 	}
 	public void qtest0() throws Throwable{
 		WebClientHandler handler=WebClientHandler.create(false,"www.asahi.com", 80);
-		
-		CallScheduler cs=CallScheduler.create(handler, 1000,0, 0, 0);
+		handler.setHeaderSchedule(1000,0);
 		
 		HeaderParser requestHeader=new HeaderParser();
 		requestHeader.setMethod("GET");
@@ -103,8 +102,8 @@ public class WebClientTest extends TestBase{
 				break;
 			}
 		}
-		System.out.println("headerWrite:"+(cs.getHeaderActualWriteTime()%10000));
-		System.out.println("bodyWrite:"+(cs.getBodyActualWriteTime()%10000));
+		System.out.println("headerWrite:"+(handler.getHeaderActualWriteTime()%10000));
+		System.out.println("bodyWrite:"+(handler.getBodyActualWriteTime()%10000));
 	}
 	
 	@Test
@@ -113,7 +112,8 @@ public class WebClientTest extends TestBase{
 	}
 	public void qtest1() throws Throwable{
 		WebClientHandler handler=WebClientHandler.create(false,"ph-sample.appspot.com", 80);
-		CallScheduler cs=CallScheduler.create(handler, 100000,Long.MIN_VALUE, 0, 0);
+//		CallScheduler cs=CallScheduler.create(handler, 100000,Long.MIN_VALUE, 0, 0);
+		handler.setHeaderSchedule(10000,Long.MIN_VALUE);
 		
 		HeaderParser requestHeader=new HeaderParser();
 		requestHeader.setMethod("GET");
@@ -129,8 +129,8 @@ public class WebClientTest extends TestBase{
 			}
 		}
 		System.out.println((System.currentTimeMillis()));
-		System.out.println("headerWrite:"+(cs.getHeaderActualWriteTime()%10000));
-		System.out.println("bodyWrite:"+(cs.getBodyActualWriteTime()%10000));
+		System.out.println("headerWrite:"+(handler.getHeaderActualWriteTime()%10000));
+		System.out.println("bodyWrite:"+(handler.getBodyActualWriteTime()%10000));
 	}
 	
 	@Test
@@ -139,7 +139,7 @@ public class WebClientTest extends TestBase{
 	}
 	public void qtest2() throws Throwable{
 		WebClientHandler handler=WebClientHandler.create(false,"ph-sample.appspot.com", 80);
-		CallScheduler cs=CallScheduler.create(handler, 0,0, 0, 0);
+		CallScheduler cs=CallScheduler.create(handler);
 		
 		HeaderParser requestHeader=new HeaderParser();
 		requestHeader.setMethod("GET");
@@ -170,15 +170,17 @@ public class WebClientTest extends TestBase{
 		callTest("qtest3",Long.MAX_VALUE);
 	}
 	public void qtest3() throws Throwable{
-		WebClientHandler handler=WebClientHandler.create(true,"ph-sample.appspot.com", 443);
-		CallScheduler cs=CallScheduler.create(handler, 0,0, 0, 0);
+//		WebClientHandler handler=WebClientHandler.create(true,"ph-sample.appspot.com", 443);
+		WebClientHandler handler=WebClientHandler.create(false,"ph-sample.appspot.com", 80);
+		handler.ref();
+		handler.setHeaderSchedule(1000,0);
 		
 		HeaderParser requestHeader=new HeaderParser();
 		requestHeader.setMethod("GET");
 		requestHeader.setReqHttpVersion("/");
 		requestHeader.setReqHttpVersion(HeaderParser.HTTP_VESION_10);
 		TestWebClient testWebClient=new TestWebClient();
-		handler.startRequest(testWebClient, handler, 1000, requestHeader, true, 5000);
+		handler.startRequest(testWebClient, handler, 10000, requestHeader, true, 5000);
 		System.out.println((System.currentTimeMillis()));
 		System.out.println("getTotalReadLength:"+handler.getTotalReadLength());
 		System.out.println("getTotalWriteLength:"+handler.getTotalWriteLength());
@@ -191,10 +193,12 @@ public class WebClientTest extends TestBase{
 			}
 		}
 		System.out.println((System.currentTimeMillis()));
-		System.out.println("headerWrite:"+(cs.getHeaderActualWriteTime()%10000));
-		System.out.println("bodyWrite:"+(cs.getBodyActualWriteTime()%10000));
+		System.out.println("sslProxy:"+(handler.getSslProxyActualWriteTime()%10000));
+		System.out.println("headerWrite:"+(handler.getHeaderActualWriteTime()%10000));
+		System.out.println("bodyWrite:"+(handler.getBodyActualWriteTime()%10000));
 		System.out.println("getTotalReadLength:"+handler.getTotalReadLength());
 		System.out.println("getTotalWriteLength:"+handler.getTotalWriteLength());
+		handler.unref();
 	}
 	
 }

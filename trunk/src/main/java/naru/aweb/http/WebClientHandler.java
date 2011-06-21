@@ -189,10 +189,15 @@ public class WebClientHandler extends SslHandler implements Timer {
 				sb.append(webClientConnection.getTargetPort());
 				sb.append("\r\nContent-Length: 0\r\n\r\n");
 				ByteBuffer buf = ByteBuffer.wrap(sb.toString().getBytes());
-				asyncWrite(CONTEXT_SSL_PROXY_CONNECT, BuffersUtil.toByteBufferArray(buf));
+				if(scheduler!=null){
+					scheduler.scheduleWrite(CONTEXT_SSL_PROXY_CONNECT, BuffersUtil.toByteBufferArray(buf));
+				}else{
+					asyncWrite(CONTEXT_SSL_PROXY_CONNECT, BuffersUtil.toByteBufferArray(buf));
+				}
 				asyncRead(CONTEXT_SSL_PROXY_CONNECT);
 				return;
 			} else {
+				//ssl handshakeの前に時間を置くことはできない。
 				stat=STAT_SSL_HANDSHAKE;
 				// proxyなしのSSL接続
 				sslOpen(true);
@@ -632,6 +637,44 @@ public class WebClientHandler extends SslHandler implements Timer {
 	
 	public void setReadableCallback(boolean isReadableCallback) {
 		this.isReadableCallback = isReadableCallback;
+	}
+	
+	public void setSslProxySchedule(long sslProxyTime,long sslProxyLength){
+		if(scheduler==null){
+			scheduler=CallScheduler.create(this);
+		}
+		scheduler.setSslProxySchedule(sslProxyTime, sslProxyLength);
+	}
+	public void setHeaderSchedule(long headerTime,long headerLength){
+		if(scheduler==null){
+			scheduler=CallScheduler.create(this);
+		}
+		scheduler.setHeaderSchedule(headerTime, headerLength);
+	}
+	public void setBodySchedule(long bodyTime,long bodyLength){
+		if(scheduler==null){
+			scheduler=CallScheduler.create(this);
+		}
+		scheduler.setBodySchedule(bodyTime, bodyLength);
+	}
+	
+	public long getSslProxyActualWriteTime(){
+		if(scheduler!=null){
+			return scheduler.getSslProxyActualWriteTime();
+		}
+		return -1;
+	}
+	public long getHeaderActualWriteTime(){
+		if(scheduler!=null){
+			return scheduler.getHeaderActualWriteTime();
+		}
+		return -1;
+	}
+	public long getBodyActualWriteTime(){
+		if(scheduler!=null){
+			return scheduler.getBodyActualWriteTime();
+		}
+		return -1;
 	}
 	
 	//startRequestに失敗した場合、timer経由（別スレッドから）でエラーを通知する

@@ -392,6 +392,10 @@ public class WebServerHandler extends ServerBaseHandler {
 		accessLog.setRawRead(getTotalReadLength()-accessLog.getRawRead());
 		accessLog.setRawWrite(getTotalWriteLength()-accessLog.getRawWrite());
 		
+		//当該リクエストでの実read長、warite長(sslの場合を考慮)
+		accessLog.setRawRead(getTotalReadLength()-accessLog.getRawRead());
+		accessLog.setRawWrite(getTotalReadLength()-accessLog.getRawWrite());
+		
 		Store readPeek = popReadPeekStore();
 		if (readPeek != null && readPeek.getPutLength() > 0) {
 //			accessLog.setRequestBodyTrace(readPeek.getStoreId());

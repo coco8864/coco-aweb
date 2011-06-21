@@ -17,27 +17,27 @@ public class WebClientLog extends PoolBase {
 	
 	@Persistent
 	@Column(name="HANDSHAKE_RAW_READ",defaultValue="-1")
-	private int handshakeRawRead;
+	private long handshakeRawRead;
 	
 	@Persistent
 	@Column(name="HANDSHAKE_RAW_WRITE",defaultValue="-1")
-	private int handshakeRawWrite;
+	private long handshakeRawWrite;
 	
 	@Persistent
 	@Column(name="REQUEST_HEADER_RAW",defaultValue="-1")
-	private int requestHeaderRaw;
+	private long requestHeaderRaw;
 	
 	@Persistent
 	@Column(name="REQUEST_BODY_RAW",defaultValue="-1")
-	private int requestBodyRaw;
+	private long requestBodyRaw;
 	
 	@Persistent
 	@Column(name="RESPONSE_HEADER_RAW",defaultValue="-1")
-	private int responseHeaderRaw;
+	private long responseHeaderRaw;
 	
 	@Persistent
 	@Column(name="RESPONSE_BODY_RAW",defaultValue="-1")
-	private int responseBodyRaw;
+	private long responseBodyRaw;
 
 	@Persistent
 	@Column(name="START_TIME",defaultValue="-1")
@@ -45,46 +45,46 @@ public class WebClientLog extends PoolBase {
 	
 	@Persistent
 	@Column(name="CONNECT_END_TIME",defaultValue="-1")
-	private int connectEndTime;
+	private long connectEndTime;
 	
 	@Persistent
 	@Column(name="HANDSHAKE_START_TIME",defaultValue="-1")
-	private int handshakeStartTime;
+	private long handshakeStartTime;
 	
 	@Persistent
 	@Column(name="HANDSHAKE_END_TIME",defaultValue="-1")
-	private int handshakeEndTime;
+	private long handshakeEndTime;
 	
 	@Persistent
 	@Column(name="REQUEST_HEADER_START_TIME",defaultValue="-1")
-	private int requestHeaderStartTime;
+	private long requestHeaderStartTime;
 	
 	@Persistent
 	@Column(name="REQUEST_HEADER_END_TIME",defaultValue="-1")
-	private int requestHeaderEndTime;
+	private long requestHeaderEndTime;
 	
 	@Persistent
 	@Column(name="REQUEST_BODY_START_TIME",defaultValue="-1")
-	private int requestBodyStartTime;
+	private long requestBodyStartTime;
 	
 	@Persistent
 	@Column(name="REQUEST_BODY_END_TIME",defaultValue="-1")
-	private int requestBodyEndTime;
+	private long requestBodyEndTime;
 	
 	@Persistent
 	@Column(name="RESPONSE_HEADER_START_TIME",defaultValue="-1")
-	private int responseHeaderStartTime;
+	private long responseHeaderStartTime;
 	
 	@Persistent
 	@Column(name="RESPONSE_HEADER_END_TIME",defaultValue="-1")
-	private int responseHeaderEndTime;
+	private long responseHeaderEndTime;
 	
 	@Persistent
 	@Column(name="RESPONSE_BODY_START_TIME",defaultValue="-1")
-	private int responseBodyStartTime;
+	private long responseBodyStartTime;
 	
 	@Persistent
 	@Column(name="RESPONSE_BODY_END_TIME",defaultValue="-1")
-	private int responseBodyEndTime;
+	private long responseBodyEndTime;
 	
 }
