@@ -214,6 +214,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		//accessLogは、サーバとしての情報を格納している、そのため、client基準ではread/writeがひっくりかえる
 		accessLog.setRawRead(webClientHandler.getTotalWriteLength());
 		accessLog.setRawWrite(webClientHandler.getTotalReadLength());
+		//時刻、通信長の初期化
 		
 		responseLength=0;
 		if(isResponseHeaderTrace){

@@ -23,30 +23,29 @@ public class CallScheduler extends PoolBase{
 	//7)レスポンス待ち時間 0-レスポンス到着時間(readTimeout)
 //	private long requestLineTime;
 //	private long requestLineLength;
+	private long sslProxyTime;
+	private long sslProxyLength;
 	private long headerTime;
 	private long headerLength;
 	private long bodyTime;
 	private long bodyLength;
+	private WriteScheduler sslProxyScheduler;
 	private WriteScheduler headerScheduler;
 	private WriteScheduler bodyScheduler;
 	
-	public static CallScheduler create(WebClientHandler handler,long headerTime,long headerLength,long bodyTime,long bodyLength){
+	public static CallScheduler create(WebClientHandler handler){
 		CallScheduler scheduler=(CallScheduler) PoolManager.getInstance(CallScheduler.class);
-		scheduler.setup(handler, headerTime, headerLength, bodyTime, bodyLength);
+		scheduler.handler=handler;
+		handler.setScheduler(scheduler);
 		return scheduler;
-	}
-	
-	private void setup(WebClientHandler handler,long headerTime,long headerLength,long bodyTime,long bodyLength){
-		handler.setScheduler(this);
-		this.handler=handler;
-		this.headerTime=headerTime;
-		this.headerLength=headerLength;
-		this.bodyTime=bodyTime;
-		this.bodyLength=bodyLength;
 	}
 	
 	public void recycle() {
 		handler=null;
+		if(sslProxyScheduler!=null){
+			sslProxyScheduler.unref();
+			sslProxyScheduler=null;
+		}
 		if(headerScheduler!=null){
 			headerScheduler.unref();
 			headerScheduler=null;
@@ -55,10 +54,28 @@ public class CallScheduler extends PoolBase{
 			bodyScheduler.unref();
 			bodyScheduler=null;
 		}
+		sslProxyTime=headerTime=bodyTime=0;
+		sslProxyLength=headerLength=bodyLength=0;
 		super.recycle();
 	}
 	
+	public void setSslProxySchedule(long sslProxyTime,long sslProxyLength){
+		this.sslProxyTime=sslProxyTime;
+		this.sslProxyLength=sslProxyLength;
+	}
+	public void setHeaderSchedule(long headerTime,long headerLength){
+		this.headerTime=headerTime;
+		this.headerLength=headerLength;
+	}
+	public void setBodySchedule(long bodyTime,long bodyLength){
+		this.bodyTime=bodyTime;
+		this.bodyLength=bodyLength;
+	}
+	
 	public void cancel(){
+		if(sslProxyScheduler!=null){
+			sslProxyScheduler.cancel();
+		}
 		if(headerScheduler!=null){
 			headerScheduler.cancel();
 		}
@@ -68,11 +85,16 @@ public class CallScheduler extends PoolBase{
 	}
 	
 	public void scheduleWrite(String userContext,ByteBuffer[] buffer){
-		if(userContext==WebClientHandler.CONTEXT_HEADER){
+		if(userContext==WebClientHandler.CONTEXT_SSL_PROXY_CONNECT){
+			if(sslProxyScheduler!=null){
+				throw new UnsupportedOperationException("CallScheduler not support ssl proxy multi write ");
+			}
+			sslProxyScheduler=WriteScheduler.create(handler,userContext, buffer,sslProxyTime, sslProxyLength, null);
+		}else if(userContext==WebClientHandler.CONTEXT_HEADER){
 			if(headerScheduler!=null){
 				throw new UnsupportedOperationException("CallScheduler not support header multi write ");
 			}
-			headerScheduler=WriteScheduler.create(handler,userContext, buffer,headerTime, headerLength, null);
+			headerScheduler=WriteScheduler.create(handler,userContext, buffer,headerTime, headerLength, sslProxyScheduler);
 		}else if(userContext==WebClientHandler.CONTEXT_BODY){
 			if(bodyScheduler!=null){
 				throw new UnsupportedOperationException("CallScheduler not support body multi write ");
@@ -83,6 +105,12 @@ public class CallScheduler extends PoolBase{
 		}
 	}
 	
+	public long getSslProxyActualWriteTime(){
+		if(sslProxyScheduler==null){
+			return -1;
+		}
+		return sslProxyScheduler.getActualWriteTime();
+	}
 	public long getHeaderActualWriteTime(){
 		if(headerScheduler==null){
 			return -1;
