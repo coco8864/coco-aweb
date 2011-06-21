@@ -200,16 +200,14 @@ function updateEntry(accessLogs){
 	ph.jQuery("#channelId").text(accessLog.channelId);
 
 	var processTime=accessLog.processTime +'(' +
+				accessLog.connectTime +',' +
+				accessLog.handshakeTime +',' +
 				accessLog.requestHeaderTime +',' +
 				accessLog.requestBodyTime +',' +
 				accessLog.responseHeaderTime +',' +
 				accessLog.responseBodyTime +')';
-//	ph.jQuery("#requestHeaderTime").text(accessLog.requestHeaderTime);
-//	ph.jQuery("#requestBodyTime").text(accessLog.requestBodyTime);
-//	ph.jQuery("#responseHeaderTime").text(accessLog.responseHeaderTime);
-//	ph.jQuery("#responseBodyTime").text(accessLog.responseBodyTime);
-//	ph.jQuery("#processTime").text(accessLog.processTime);
 	ph.jQuery("#processTime").text(processTime);
+	ph.jQuery("#rawLength").text(accessLog.rawRead +":" +accessLog.rawWrite);
 
 	ph.jQuery("#requestBody").text("");
     ph.jQuery("#requestHeaderDigest").text(accessLog.requestHeaderDigest);
@@ -278,7 +276,8 @@ ID:<input type="text" name="logId" id="inputLogId" size="8"/>
 <tr><td><b>contentType</b></td><td id="contentType"></td></tr>
 <tr><td><b>resolveOrigin</b></td><td id="resolveOrigin"></td></tr>
 <tr><td><b>channelId</b></td><td id="channelId"></td></tr>
-<tr><td><b>処理時間(ms)(reqHeader,reqBody,resHeader,resBody)</b></td><td id="processTime"></td></tr>
+<tr><td><b title="connect,handshake,requestHeader,requestBody,responseHeader,responseBody" >処理時間(ms)(con,hand,reqH,reqB,resH,resB)</b></td><td id="processTime"></td></tr>
+<tr><td><b>データ長(rawRead,rawWrite)</b></td><td id="rawLength"></td></tr>
 <tr><td title="requestHeader編集画面"><input type="button" onClick="requestHeaderEdit();" value="Request Header"/></td><td id="requestHeaderDigest"></td></tr>
 <tr><td colspan="2" width="100%" nowrap><pre width="100%" id="requestHeader"></pre></td></tr>
 <tr><td title="requestBody編集画面"><input type="button" onClick="requestBodyEdit();" value="Request Body"/></td><td title="requestBodyダウンロード" id="requestBody"></td></tr>
