@@ -105,5 +105,7 @@ public class ListGetter implements WebClient,Timer {
 	}
 	public void onWebHandshaked(Object userContext){
 	}
+	public void onWebProxyConnected(Object userContext) {
+	}
 
 }

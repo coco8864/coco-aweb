@@ -357,5 +357,7 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 	}
 	public void onWebHandshaked(Object userContext){
 	}
+	public void onWebProxyConnected(Object userContext) {
+	}
 
 }

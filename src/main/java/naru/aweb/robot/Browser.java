@@ -190,7 +190,7 @@ public class Browser extends PoolBase implements Timer{
 		startCallers.clear();
 	}
 	
-	private Caller createCaller(URL url,WebClientConnection connection,Caller nextCaller,boolean isCallerkeepAlive){
+	private Caller createCaller(URL url,WebClientConnection connection,boolean isCallerkeepAlive,Caller nextCaller){
 		HeaderParser requestHeader=(HeaderParser) PoolManager.getInstance(HeaderParser.class);
 		requestHeader.setMethod("GET");
 		requestHeader.setPath(url.getFile());
@@ -200,11 +200,11 @@ public class Browser extends PoolBase implements Timer{
 		String requestLine=connection.getRequestLine(requestHeader);
 		ByteBuffer[] requestHeaderBuffer=connection.getRequestHeaderBuffer(requestLine,requestHeader, isCallerkeepAlive);
 		requestHeader.unref(true);
-		Caller caller=Caller.create(this, connection, nextCaller, requestHeaderBuffer, requestLine, null,null);
+		Caller caller=Caller.create(this, connection,isCallerkeepAlive, nextCaller, requestHeaderBuffer, requestLine, null,null);
 		return caller;
 	}
 	
-	private Caller createCaller(AccessLog accessLog,WebClientConnection connection,Caller nextCaller,boolean isCallerkeepAlive){
+	private Caller createCaller(AccessLog accessLog,WebClientConnection connection,boolean isCallerkeepAlive,Caller nextCaller){
 		HeaderParser requestHeader=HeaderParser.createByStore(accessLog.getRequestHeaderDigest());
 		if(requestHeader==null){
 			logger.warn("fail to createByStore.id:"+accessLog.getId());
@@ -231,7 +231,7 @@ public class Browser extends PoolBase implements Timer{
 		if(responseBodyDigest!=null){
 			requestBodyBuffer=DataUtil.toByteBuffers(responseBodyDigest);
 		}
-		Caller caller=Caller.create(this, connection, nextCaller, requestHeaderBuffer, requestLine, requestBodyBuffer,accessLog);
+		Caller caller=Caller.create(this, connection, isCallerkeepAlive, nextCaller,requestHeaderBuffer, requestLine, requestBodyBuffer,accessLog);
 		return caller;
 	}
 
@@ -239,7 +239,7 @@ public class Browser extends PoolBase implements Timer{
 		String requestLine=connection.getRequestLine(requestHeader);
 		ByteBuffer[] requestHeaderBuffer=connection.getRequestHeaderBuffer(requestLine,requestHeader, false);
 		requestHeader.unref(true);
-		Caller caller=Caller.create(this, connection, null, requestHeaderBuffer, requestLine, requestBodyBuffer,null);
+		Caller caller=Caller.create(this, connection, false,null, requestHeaderBuffer, requestLine, requestBodyBuffer,null);
 		return caller;
 	}
 	
@@ -260,7 +260,7 @@ public class Browser extends PoolBase implements Timer{
 				}
 			}
 			WebClientConnection connection=setupConnection(isHttps,server,port);
-			Caller caller=createCaller(urls[i], connection, nextCaller, isCallerkeepAlive);
+			Caller caller=createCaller(urls[i], connection, isCallerkeepAlive, nextCaller);
 			nextCaller=caller;
 		}
 		startCallers.add(nextCaller);
@@ -296,7 +296,7 @@ public class Browser extends PoolBase implements Timer{
 			}
 			WebClientConnection connection=setupConnection(isHttps,server.getHost(),server.getPort());
 			server.unref(true);
-			Caller caller=createCaller(accessLog, connection, nextCaller, isCallerkeepAlive);
+			Caller caller=createCaller(accessLog, connection, isCallerkeepAlive, nextCaller);
 			if(caller==null){
 				logger.warn("fail to createCaller.");
 				return false;

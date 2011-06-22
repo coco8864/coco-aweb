@@ -12,7 +12,9 @@ import java.nio.ByteBuffer;
  */
 public interface WebClient {
 	public void onWebConnected(Object userContext);
-	
+
+	public void onWebProxyConnected(Object userContext);
+
 	public void onWebHandshaked(Object userContext);
 	
 	/**
