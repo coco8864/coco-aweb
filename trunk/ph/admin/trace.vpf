@@ -210,18 +210,18 @@ function updateEntry(accessLogs){
 	ph.jQuery("#rawLength").text(accessLog.rawRead +":" +accessLog.rawWrite);
 
 	ph.jQuery("#requestBody").text("");
-    ph.jQuery("#requestHeaderDigest").text(accessLog.requestHeaderDigest);
+	ph.jQuery("#requestHeaderDigest").text(accessLog.requestHeaderDigest);
+	ph.jQuery("#requestHeader").text("");
 	if(accessLog.requestHeaderDigest){
-        ph.jQuery("#requestHeader").text("");
 		ph.jQuery.get("storeDownload?storeDigest=" + encodeURIComponent(accessLog.requestHeaderDigest),null, function(text){
 			ph.jQuery("#requestHeader").text(text.replace(/[^\s\r\n\x20-\x7E]/g , "%"));
 		},"html");
 	}else{
 		ph.jQuery("#requestHeader").text("[トレースデータなし]");
 	}
-    ph.jQuery("#responseHeaderDigest").text(accessLog.responseHeaderDigest);
+	ph.jQuery("#responseHeaderDigest").text(accessLog.responseHeaderDigest);
+	ph.jQuery("#responseHeader").text("");
 	if(accessLog.responseHeaderDigest){
-        ph.jQuery("#responseHeader").text("");
 		ph.jQuery.get("storeDownload?storeDigest=" + encodeURIComponent(accessLog.responseHeaderDigest),null, function(text){
 			var headerOnly=text.split('\r\n\r\n')[0];
 			ph.jQuery("#responseHeader").text(headerOnly.replace(/[^\s\r\n\x20-\x7E]/g , "%"));
