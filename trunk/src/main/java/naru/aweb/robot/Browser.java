@@ -41,7 +41,7 @@ public class Browser extends PoolBase implements Timer{
 	//èàóùíÜÇÃcallerÇ∆connectionÇÃëg
 	private Map<Caller,WebClientHandler> processingClientHandler=new HashMap<Caller,WebClientHandler>();
 	
-	public static Browser cleate(Scenario scenario,AccessLog[] accessLogs,
+	public static Browser create(Scenario scenario,AccessLog[] accessLogs,
 			boolean isCallerkeepAlive,boolean isResponseHeaderTrace,boolean isResponseBodyTrace){
 		Browser browser=(Browser)PoolManager.getInstance(Browser.class);
 		browser.scenario=scenario;
@@ -59,7 +59,7 @@ public class Browser extends PoolBase implements Timer{
 	 * @param requestBodyBuffer
 	 * @return
 	 */
-	public static Browser cleate(boolean isHttps,HeaderParser requestHeader,ByteBuffer[] requestBodyBuffer){
+	public static Browser create(boolean isHttps,HeaderParser requestHeader,ByteBuffer[] requestBodyBuffer){
 		Browser browser=(Browser)PoolManager.getInstance(Browser.class);
 		browser.setup(isHttps, requestHeader, requestBodyBuffer);
 		return browser;
