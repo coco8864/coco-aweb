@@ -270,7 +270,7 @@ public class AdminHandler extends WebServerHandler{
 		}
 		requestHeaderParser.setHost(accessLog.getResolveOrigin());
 		boolean isHttps=(accessLog.getDestinationType()==AccessLog.DESTINATION_TYPE_HTTPS);
-		Browser browser=Browser.cleate(isHttps, requestHeaderParser, requestBodyBuffer);
+		Browser browser=Browser.create(isHttps, requestHeaderParser, requestBodyBuffer);
 		browser.setName("run:"+accessLog.getId());
 		QueueManager queueManager=QueueManager.getInstance();
 		String chId=queueManager.createQueue();

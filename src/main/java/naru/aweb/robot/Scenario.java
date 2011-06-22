@@ -175,7 +175,7 @@ public class Scenario extends PoolBase{
 		if(!isAccessLog){//accessLog‚ğÌæ‚µ‚È‚¢‚Ì‚Å‚ ‚ê‚Îtrace‚Í–³ˆÓ–¡
 			isResponseHeaderTrace=isResponseBodyTrace=false;
 		}
-		Browser browser=Browser.cleate(this,accessLogs, 
+		Browser browser=Browser.create(this,accessLogs, 
 				isCallerkeepAlive,isResponseHeaderTrace,isResponseBodyTrace);
 		if(browser==null){
 			return false;
