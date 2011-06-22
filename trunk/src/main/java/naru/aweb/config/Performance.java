@@ -8,6 +8,7 @@ import javax.jdo.Transaction;
 import javax.jdo.annotations.Column;
 import javax.jdo.annotations.IdGeneratorStrategy;
 import javax.jdo.annotations.IdentityType;
+import javax.jdo.annotations.NotPersistent;
 import javax.jdo.annotations.PersistenceCapable;
 import javax.jdo.annotations.Persistent;
 
@@ -337,6 +338,10 @@ public class Performance {
 	@Column(name="TEST_LOOP_COUNT")
 	private int testLoopCount;
 	
+	
+	@NotPersistent
+	private WebClientCollector webClientCollector=new WebClientCollector();
+	
 	public void init(boolean isMaster,String name,int browserCount,int requestCount,int loopCount,long thinkingTime,AccessLog accessLog){
 		this.isMaster=isMaster;
 		this.name=name;
@@ -374,6 +379,8 @@ public class Performance {
 		t=accessLog.getResponseBodyTime();
 		responseBodyTimeSum+=t;
 		responseBodyTimeSumsq+=(t*t);
+		
+		webClientCollector.add(accessLog.getWebClientLog());
 	}
 	
 	public synchronized void add(AccessLog accessLog){
@@ -411,6 +418,8 @@ public class Performance {
 		Runtime runtime=Runtime.getRuntime();
 		maxMemorySum+=runtime.maxMemory();
 		freeMemorySum+=runtime.freeMemory();
+		
+		webClientCollector.add(accessLog.getWebClientLog());
 	}
 	
 	/**

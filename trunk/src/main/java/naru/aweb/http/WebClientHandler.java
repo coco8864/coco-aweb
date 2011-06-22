@@ -44,6 +44,9 @@ public class WebClientHandler extends SslHandler implements Timer {
 	private long keepAliveTimeout=15000;//keepAliveする場合、keepAliveタイム
 	private WebClientConnection webClientConnection=new WebClientConnection();
 	private CallScheduler scheduler=null;
+	private long sslProxyActualWriteTime;
+	private long headerActualWriteTime;
+	private long bodyActualWriteTime;
 
 	private ByteBuffer[] requestHeaderBuffer;// リクエストヘッダ
 	private ByteBuffer[] requestBodyBuffer;// リクエストボディ
@@ -126,6 +129,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 		isReadableCallback=false;
 //		responseChunk=new ChunkContext();
 		setWebClientConnection(null);
+		sslProxyActualWriteTime=headerActualWriteTime=bodyActualWriteTime=-1;
 		super.recycle();
 	}
 
@@ -148,6 +152,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 			if(scheduler!=null){
 				scheduler.scheduleWrite(CONTEXT_HEADER, requestHeaderBuffer);
 			}else{
+				headerActualWriteTime=System.currentTimeMillis();
 				asyncWrite(CONTEXT_HEADER, requestHeaderBuffer);
 			}
 			requestHeaderBuffer=null;
@@ -159,6 +164,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 				if(scheduler!=null){
 					scheduler.scheduleWrite(CONTEXT_BODY, requestBodyBuffer);
 				}else{
+					bodyActualWriteTime=System.currentTimeMillis();
 					asyncWrite(CONTEXT_BODY, requestBodyBuffer);
 				}
 				requestBodyBuffer=null;
@@ -192,6 +198,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 				if(scheduler!=null){
 					scheduler.scheduleWrite(CONTEXT_SSL_PROXY_CONNECT, BuffersUtil.toByteBufferArray(buf));
 				}else{
+					sslProxyActualWriteTime=System.currentTimeMillis();
 					asyncWrite(CONTEXT_SSL_PROXY_CONNECT, BuffersUtil.toByteBufferArray(buf));
 				}
 				asyncRead(CONTEXT_SSL_PROXY_CONNECT);
@@ -518,6 +525,9 @@ public class WebClientHandler extends SslHandler implements Timer {
 		if(scheduler!=null){
 			scheduler.scheduleWrite(CONTEXT_BODY, requestBodyBuffer);
 		}else{
+			if(bodyActualWriteTime<=0){
+				bodyActualWriteTime=System.currentTimeMillis();
+			}
 			asyncWrite(CONTEXT_BODY, requestBodyBuffer);
 		}
 		requestBodyBuffer=null;
@@ -639,18 +649,33 @@ public class WebClientHandler extends SslHandler implements Timer {
 		this.isReadableCallback = isReadableCallback;
 	}
 	
+	/**
+	 * startRequestの前に設定すること
+	 * @param sslProxyTime
+	 * @param sslProxyLength
+	 */
 	public void setSslProxySchedule(long sslProxyTime,long sslProxyLength){
 		if(scheduler==null){
 			scheduler=CallScheduler.create(this);
 		}
 		scheduler.setSslProxySchedule(sslProxyTime, sslProxyLength);
 	}
+	/**
+	 * startRequestの前に設定すること
+	 * @param headerTime
+	 * @param headerLength
+	 */
 	public void setHeaderSchedule(long headerTime,long headerLength){
 		if(scheduler==null){
 			scheduler=CallScheduler.create(this);
 		}
 		scheduler.setHeaderSchedule(headerTime, headerLength);
 	}
+	/**
+	 * startRequestの前に設定すること
+	 * @param bodyTime
+	 * @param bodyLength
+	 */
 	public void setBodySchedule(long bodyTime,long bodyLength){
 		if(scheduler==null){
 			scheduler=CallScheduler.create(this);
@@ -662,19 +687,19 @@ public class WebClientHandler extends SslHandler implements Timer {
 		if(scheduler!=null){
 			return scheduler.getSslProxyActualWriteTime();
 		}
-		return -1;
+		return sslProxyActualWriteTime;
 	}
 	public long getHeaderActualWriteTime(){
 		if(scheduler!=null){
 			return scheduler.getHeaderActualWriteTime();
 		}
-		return -1;
+		return headerActualWriteTime;
 	}
 	public long getBodyActualWriteTime(){
 		if(scheduler!=null){
 			return scheduler.getBodyActualWriteTime();
 		}
-		return -1;
+		return bodyActualWriteTime;
 	}
 	
 	//startRequestに失敗した場合、timer経由（別スレッドから）でエラーを通知する

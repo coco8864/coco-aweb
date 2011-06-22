@@ -1,90 +1,69 @@
 package naru.aweb.config;
 
-import javax.jdo.annotations.Column;
-import javax.jdo.annotations.Persistent;
+import java.util.Arrays;
 
 import naru.async.pool.PoolBase;
 
 public class WebClientLog extends PoolBase {
-	//webClientとしての性能情報
-	@Persistent
-	@Column(name="START_RAW_READ",defaultValue="-1")
-	private long startRawRead;//基準
+	public static final int CHECK_POINT_START=0;
+	public static final int CHECK_POINT_CONNECT=1;//startからconnect完了まで
+	public static final int CHECK_POINT_SSL_PROXY=2;//sslProxy送信開始から、response受信まで
+	public static final int CHECK_POINT_HANDSHAKE=3;//handshake開始からhandshake完了まで
+	public static final int CHECK_POINT_REQUEST_HEADER=4;//requestHeader送信開始から、requestHeader送信完了通知まで
+	public static final int CHECK_POINT_REQUEST_BODY=5;//requestBody送信開始から、requestBody送信完了通知まで
+	public static final int CHECK_POINT_RESPONSE_HEADER=6;//requestBodyを送信完了から,responseHeaderを受信完了まで
+	public static final int CHECK_POINT_RESPONSE_BODY=7;//responseHeaderを受信完了から、responseBodyを受信完了まで
+	public static final int CHECK_POINT_END=8;//responseHeaderを受信完了から、responseBodyを受信完了まで
+	public static final int CHECK_POINT_NUM=9;
 	
-	@Persistent
-	@Column(name="START_RAW_WRITE",defaultValue="-1")
-	private long startRawWrite;//基準
-	
-	@Persistent
-	@Column(name="HANDSHAKE_RAW_READ",defaultValue="-1")
-	private long handshakeRawRead;
-	
-	@Persistent
-	@Column(name="HANDSHAKE_RAW_WRITE",defaultValue="-1")
-	private long handshakeRawWrite;
-	
-	@Persistent
-	@Column(name="REQUEST_HEADER_RAW",defaultValue="-1")
-	private long requestHeaderRaw;
-	
-	@Persistent
-	@Column(name="REQUEST_BODY_RAW",defaultValue="-1")
-	private long requestBodyRaw;
-	
-	@Persistent
-	@Column(name="RESPONSE_HEADER_RAW",defaultValue="-1")
-	private long responseHeaderRaw;
-	
-	@Persistent
-	@Column(name="RESPONSE_BODY_RAW",defaultValue="-1")
-	private long responseBodyRaw;
+	private long readLengths[]=new long[CHECK_POINT_NUM];
+	private long writeLengths[]=new long[CHECK_POINT_NUM];
+	private long processTimes[]=new long[CHECK_POINT_NUM];
 
-	@Persistent
-	@Column(name="START_TIME",defaultValue="-1")
-	private long startTime;//基準
+	@Override
+	public void recycle() {
+		Arrays.fill(readLengths, -1L);
+		Arrays.fill(writeLengths, -1L);
+		Arrays.fill(processTimes, -1L);
+	}
+
+	private long lastData(long[] datas,int index){
+		for(int i=index;i>=CHECK_POINT_START;i++){
+			if(datas[i]>=0){
+				return datas[i];
+			}
+		}
+		return 0;
+	}
 	
-	@Persistent
-	@Column(name="CONNECT_END_TIME",defaultValue="-1")
-	private long connectEndTime;
+	public void checkPoing(int checkPoint,long readLength,long writeLength){
+		long now=System.currentTimeMillis();
+		if(checkPoint==CHECK_POINT_START){
+			processTimes[checkPoint]=now;
+			readLengths[checkPoint]=readLength;
+			writeLengths[checkPoint]=writeLength;
+		}else{
+			readLengths[checkPoint]=readLength-lastData(readLengths,checkPoint-1);
+			writeLengths[checkPoint]=writeLength-lastData(writeLengths,checkPoint-1);
+			if(processTimes[checkPoint]>=0){
+				processTimes[checkPoint]=now-processTimes[checkPoint];
+			}else{
+				processTimes[checkPoint]=now-lastData(processTimes,checkPoint-1);
+			}
+		}
+		processTimes[checkPoint+1]=now;//CHECK_POINT_ENDで呼ばれる事はない
+	}
+	public void setInTime(int checkPoint,long time){
+		processTimes[checkPoint]=time;
+	}
 	
-	@Persistent
-	@Column(name="HANDSHAKE_START_TIME",defaultValue="-1")
-	private long handshakeStartTime;
-	
-	@Persistent
-	@Column(name="HANDSHAKE_END_TIME",defaultValue="-1")
-	private long handshakeEndTime;
-	
-	@Persistent
-	@Column(name="REQUEST_HEADER_START_TIME",defaultValue="-1")
-	private long requestHeaderStartTime;
-	
-	@Persistent
-	@Column(name="REQUEST_HEADER_END_TIME",defaultValue="-1")
-	private long requestHeaderEndTime;
-	
-	@Persistent
-	@Column(name="REQUEST_BODY_START_TIME",defaultValue="-1")
-	private long requestBodyStartTime;
-	
-	@Persistent
-	@Column(name="REQUEST_BODY_END_TIME",defaultValue="-1")
-	private long requestBodyEndTime;
-	
-	@Persistent
-	@Column(name="RESPONSE_HEADER_START_TIME",defaultValue="-1")
-	private long responseHeaderStartTime;
-	
-	@Persistent
-	@Column(name="RESPONSE_HEADER_END_TIME",defaultValue="-1")
-	private long responseHeaderEndTime;
-	
-	@Persistent
-	@Column(name="RESPONSE_BODY_START_TIME",defaultValue="-1")
-	private long responseBodyStartTime;
-	
-	@Persistent
-	@Column(name="RESPONSE_BODY_END_TIME",defaultValue="-1")
-	private long responseBodyEndTime;
-	
+	public long getReadLength(int checkPoing){
+		return readLengths[checkPoing];
+	}
+	public long getWriteLength(int checkPoing){
+		return writeLengths[checkPoing];
+	}
+	public long getProcessTime(int checkPoing){
+		return processTimes[checkPoing];
+	}
 }

@@ -15,6 +15,7 @@ import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
 import naru.async.store.Store;
 import naru.aweb.config.AccessLog;
+import naru.aweb.config.Config;
 import naru.aweb.config.WebClientLog;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.WebClient;
@@ -28,6 +29,7 @@ import naru.aweb.http.WebClientHandler;
  */
 public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	private static Logger logger = Logger.getLogger(Caller.class);
+	private static Config config=Config.getConfig();
 	private Browser browser;
 	private List<Caller> nextCallers=new ArrayList<Caller>();
 	private long startTime=0;
@@ -36,6 +38,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	 * http[s]://server:port形式の文字列
 	 */
 	private WebClientConnection connection;
+	private boolean isCallerkeepAlive;
 	
 //	private HeaderParser requestHeader;//初回呼び出し時にrequestHeaderBufferに変換して使う
 	private ByteBuffer[] requestHeader;
@@ -84,49 +87,49 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		super.recycle();
 	}
 	
-	public static Caller create(Browser browser,WebClientConnection connection,Caller nextCaller,
+	public static Caller create(Browser browser,WebClientConnection connection,boolean isCallerKeepAlive,Caller nextCaller,
 			ByteBuffer[] requestHeaderBuffer,String requestLine,
 			ByteBuffer[] requestBody,AccessLog orgAccessLog){
 		Caller caller=(Caller)PoolManager.getInstance(Caller.class);
-		caller.setup(browser, connection, nextCaller,requestLine,requestHeaderBuffer,requestBody);
+		caller.setup(browser, connection, isCallerKeepAlive,nextCaller,requestLine,requestHeaderBuffer,requestBody);
 		caller.orgAccessLog=orgAccessLog;
 		return caller;
 	}
 	
-	public static Caller create(Browser browser,WebClientConnection connection,Caller[] nextCallers,
+	public static Caller create(Browser browser,WebClientConnection connection,boolean isCallerKeepAlive,Caller[] nextCallers,
 			ByteBuffer[] requestHeaderBuffer,String requestLine,ByteBuffer[] requestBody){
 		Caller caller=(Caller)PoolManager.getInstance(Caller.class);
-		caller.setup(browser, connection, nextCallers,requestLine,requestHeaderBuffer,requestBody);
+		caller.setup(browser, connection,isCallerKeepAlive,nextCallers,requestLine,requestHeaderBuffer,requestBody);
 		return caller;
 	}
 	
-	public static Caller create(Browser browser,WebClientConnection connection,List<Caller> nextCallers,
+	public static Caller create(Browser browser,WebClientConnection connection,boolean isCallerKeepAlive,List<Caller> nextCallers,
 			ByteBuffer[] requestHeaderBuffer,String requestLine,ByteBuffer[] requestBody){
 		Caller caller=(Caller)PoolManager.getInstance(Caller.class);
-		caller.setup(browser, connection, nextCallers,requestLine,requestHeaderBuffer,requestBody);
+		caller.setup(browser, connection,isCallerKeepAlive,nextCallers,requestLine,requestHeaderBuffer,requestBody);
 		return caller;
 	}
 	
-	private void setup(Browser browser,WebClientConnection connection,Caller[] nextCallers,
+	private void setup(Browser browser,WebClientConnection connection,boolean isCallerKeepAlive,Caller[] nextCallers,
 			String requestLine,ByteBuffer[] requestHeaderBuffer,ByteBuffer[] requestBody){
 		for(Caller nextCaller:nextCallers){
 			this.nextCallers.add(nextCaller);
 		}
-		setupExceptNextCaller(browser, connection, requestLine, requestHeaderBuffer, requestBody);
+		setupExceptNextCaller(browser, connection,isCallerKeepAlive,requestLine, requestHeaderBuffer, requestBody);
 	}
 	
-	private void setup(Browser browser,WebClientConnection connection,Caller nextCaller,
+	private void setup(Browser browser,WebClientConnection connection,boolean isCallerKeepAlive,Caller nextCaller,
 			String requestLine,ByteBuffer[] requestHeaderBuffer,ByteBuffer[] requestBody){
 		if(nextCaller!=null){
 			this.nextCallers.add(nextCaller);
 		}
-		setupExceptNextCaller(browser, connection, requestLine, requestHeaderBuffer, requestBody);
+		setupExceptNextCaller(browser, connection,isCallerKeepAlive,requestLine, requestHeaderBuffer, requestBody);
 	}
 	
-	private void setup(Browser browser,WebClientConnection connection,List<Caller> nextCallers,
+	private void setup(Browser browser,WebClientConnection connection,boolean isCallerKeepAlive,List<Caller> nextCallers,
 			String requestLine,ByteBuffer[] requestHeaderBuffer,ByteBuffer[] requestBody){
 		this.nextCallers.addAll(nextCallers);
-		setupExceptNextCaller(browser, connection, requestLine, requestHeaderBuffer, requestBody);
+		setupExceptNextCaller(browser, connection, isCallerKeepAlive,requestLine, requestHeaderBuffer, requestBody);
 	}
 	
 	private String digest(ByteBuffer[] buffers){
@@ -141,10 +144,11 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	}
 	
 	/* nextCaller以外の初期化 */
-	private void setupExceptNextCaller(Browser browser,WebClientConnection connection,
+	private void setupExceptNextCaller(Browser browser,WebClientConnection connection,boolean isCallerKeepAlive,
 			String requestLine,ByteBuffer[] requestHeader,ByteBuffer[] requestBody){
 		this.browser=browser;
 		setConnection(connection);
+		this.isCallerkeepAlive=isCallerKeepAlive;
 		this.requestHeader=requestHeader;
 		this.requestLine=requestLine;
 		this.requestBody=requestBody;
@@ -160,7 +164,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		if(requestBody!=null){
 			dupRequestBody=PoolManager.duplicateBuffers(requestBody);
 		}
-		caller.setupExceptNextCaller(browser, connection, requestLine, dupRequestHeader, dupRequestBody);
+		caller.setupExceptNextCaller(browser, connection,isCallerkeepAlive,requestLine, dupRequestHeader, dupRequestBody);
 		for(Caller nextCaller:nextCallers){
 			caller.nextCallers.add(nextCaller.dup(browser));
 		}
@@ -211,18 +215,19 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		accessLog.setRequestHeaderDigest(requestHeaderDigest);
 		accessLog.setRequestBodyDigest(requestBodyDigest);
 		accessLog.setResolveDigest(resolveDigest);
+		
 		//accessLogは、サーバとしての情報を格納している、そのため、client基準ではread/writeがひっくりかえる
 		accessLog.setRawRead(webClientHandler.getTotalWriteLength());
 		accessLog.setRawWrite(webClientHandler.getTotalReadLength());
 		//時刻、通信長の初期化
+		webClientLog.checkPoing(WebClientLog.CHECK_POINT_START, webClientHandler.getTotalReadLength(), webClientHandler.getTotalWriteLength());
 		
 		responseLength=0;
 		if(isResponseHeaderTrace){
 			Store responseHeaderStore=Store.open(true);
 			webClientHandler.pushReadPeekStore(responseHeaderStore);
 		}
-		//TODO connectTimeout
-		if( webClientHandler.startRequest(this, webClientHandler,3000,PoolManager.duplicateBuffers(requestHeader),requestContentLength, true, 15000)==false){
+		if( webClientHandler.startRequest(this, webClientHandler,config.getConnectTimeout(),PoolManager.duplicateBuffers(requestHeader),requestContentLength, isCallerkeepAlive, config.getKeepAliveTimeout())==false){
 			logger.error("fail to webClientHandler.startRequest.scenario.getName:"+scenario.getName());
 			return;
 		}
@@ -246,11 +251,23 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		if(requestBody==null){
 			accessLog.setTimeCheckPint(AccessLog.TimePoint.requestBody);
 		}
+		WebClientLog webClientLog=accessLog.getWebClientLog();
+		if(webClientLog!=null){
+			WebClientHandler webClientHandler=(WebClientHandler)userContext;
+			webClientLog.setInTime(WebClientLog.CHECK_POINT_REQUEST_HEADER,webClientHandler.getHeaderActualWriteTime());
+			webClientLog.checkPoing(WebClientLog.CHECK_POINT_REQUEST_HEADER, webClientHandler.getTotalReadLength(), webClientHandler.getTotalWriteLength());
+		}
 	}
 	
 	public void onWrittenRequestBody(Object userContext) {
 		logger.debug("#onWrittenRequestBody:"+browser.getName());
 		accessLog.setTimeCheckPint(AccessLog.TimePoint.requestBody);
+		WebClientLog webClientLog=accessLog.getWebClientLog();
+		if(webClientLog!=null){
+			WebClientHandler webClientHandler=(WebClientHandler)userContext;
+			webClientLog.setInTime(WebClientLog.CHECK_POINT_REQUEST_BODY,webClientHandler.getBodyActualWriteTime());
+			webClientLog.checkPoing(WebClientLog.CHECK_POINT_REQUEST_BODY, webClientHandler.getTotalReadLength(), webClientHandler.getTotalWriteLength());
+		}
 	}
 	
 	public void onResponseHeader(Object userContext, HeaderParser responseHeader) {
@@ -270,6 +287,11 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		//chunkされていたとしても、onResponseBodyにはデコードして通知される。記録されるstoreがchunkされる事はない。
 		//上記はうそ、WebClientHandlerにisReadableCallbackというオプションがあり、これが立っていない場合、生データがcallbackされる
 //		accessLog.setTransferEncoding(null);
+		WebClientLog webClientLog=accessLog.getWebClientLog();
+		if(webClientLog!=null){
+			webClientLog.setInTime(WebClientLog.CHECK_POINT_RESPONSE_HEADER,webClientHandler.getBodyActualWriteTime());
+			webClientLog.checkPoing(WebClientLog.CHECK_POINT_RESPONSE_HEADER, webClientHandler.getTotalReadLength(), webClientHandler.getTotalWriteLength());
+		}
 	}
 
 	public void onResponseBody(Object userContext, ByteBuffer[] buffers) {
@@ -297,6 +319,11 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 			accessLog.setStatusCode("%" +Integer.toHexString(stat));
 		}
 		WebClientHandler webClientHandler=(WebClientHandler)userContext;
+		WebClientLog webClientLog=accessLog.getWebClientLog();
+		if(webClientLog!=null){
+			webClientLog.setInTime(WebClientLog.CHECK_POINT_RESPONSE_BODY,webClientHandler.getBodyActualWriteTime());
+			webClientLog.checkPoing(WebClientLog.CHECK_POINT_RESPONSE_BODY, webClientHandler.getTotalReadLength(), webClientHandler.getTotalWriteLength());
+		}
 		//accessLogは、サーバとしての情報を格納している、そのため、client基準ではread/writeがひっくりかえる
 		accessLog.setRawRead(webClientHandler.getTotalWriteLength()-accessLog.getRawRead());
 		accessLog.setRawWrite(webClientHandler.getTotalReadLength()-accessLog.getRawWrite());
@@ -384,10 +411,30 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	//TODO 時刻を取得
 	public void onWebConnected(Object userContext){
 		accessLog.setConnectTime(System.currentTimeMillis()-startTime);
+		WebClientLog webClientLog=accessLog.getWebClientLog();
+		if(webClientLog!=null){
+			WebClientHandler webClientHandler=(WebClientHandler)userContext;
+			webClientLog.checkPoing(WebClientLog.CHECK_POINT_CONNECT, webClientHandler.getTotalReadLength(), webClientHandler.getTotalWriteLength());
+		}
 	}
 	
 	//TODO 時刻を取得
 	public void onWebHandshaked(Object userContext){
 		accessLog.setHandshakeTime(System.currentTimeMillis()-startTime);
+		WebClientLog webClientLog=accessLog.getWebClientLog();
+		if(webClientLog!=null){
+			WebClientHandler webClientHandler=(WebClientHandler)userContext;
+			webClientLog.checkPoing(WebClientLog.CHECK_POINT_HANDSHAKE, webClientHandler.getTotalReadLength(), webClientHandler.getTotalWriteLength());
+		}
+	}
+
+	@Override
+	public void onWebProxyConnected(Object userContext) {
+		WebClientLog webClientLog=accessLog.getWebClientLog();
+		if(webClientLog!=null){
+			WebClientHandler webClientHandler=(WebClientHandler)userContext;
+			webClientLog.setInTime(WebClientLog.CHECK_POINT_SSL_PROXY,webClientHandler.getSslProxyActualWriteTime());
+			webClientLog.checkPoing(WebClientLog.CHECK_POINT_SSL_PROXY, webClientHandler.getTotalReadLength(), webClientHandler.getTotalWriteLength());
+		}
 	}
 }
