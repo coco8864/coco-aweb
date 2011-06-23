@@ -340,7 +340,7 @@ public class Performance {
 	
 	
 	@NotPersistent
-	private WebClientCollector webClientCollector=new WebClientCollector();
+//	private WebClientCollector webClientCollector=new WebClientCollector();
 	
 	public void init(boolean isMaster,String name,int browserCount,int requestCount,int loopCount,long thinkingTime,AccessLog accessLog){
 		this.isMaster=isMaster;
@@ -380,7 +380,7 @@ public class Performance {
 		responseBodyTimeSum+=t;
 		responseBodyTimeSumsq+=(t*t);
 		
-		webClientCollector.add(accessLog.getWebClientLog());
+//		webClientCollector.add(accessLog.getWebClientLog());
 	}
 	
 	public synchronized void add(AccessLog accessLog){
@@ -419,7 +419,7 @@ public class Performance {
 		maxMemorySum+=runtime.maxMemory();
 		freeMemorySum+=runtime.freeMemory();
 		
-		webClientCollector.add(accessLog.getWebClientLog());
+//		webClientCollector.add(accessLog.getWebClientLog());
 	}
 	
 	/**

@@ -1,5 +1,6 @@
 package naru.aweb.robot;
 
+import java.net.URL;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -31,6 +32,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	private static Logger logger = Logger.getLogger(Caller.class);
 	private static Config config=Config.getConfig();
 	private Browser browser;
+	private String browserName;
 	private List<Caller> nextCallers=new ArrayList<Caller>();
 	private long startTime=0;
 	
@@ -53,7 +55,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	
 //	private WebClientHandler webClientHandler;
 	private AccessLog accessLog;
-	private CallScheduler scheduler;
+//	private CallScheduler scheduler;
 	private long responseLength;
 	
 	private boolean isResponseHeaderTrace=false;//TODO 外からもらう必要あり
@@ -85,6 +87,29 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		resolveDigest=null;
 		startTime=0;
 		super.recycle();
+	}
+	
+	/* Callerだけを単独で使用する場合のFactory */
+	public static Caller create(URL url,boolean isCallerKeepAlive){
+		Caller caller=(Caller)PoolManager.getInstance(Caller.class);
+		boolean isHttps="https".equals(url.getProtocol());
+		String server=url.getHost();
+		int port=url.getPort();
+		if(port<=0){
+			if(isHttps){
+				port=443;
+			}else{
+				port=80;
+			}
+		}
+		WebClientConnection connection=WebClientConnection.create(isHttps,server,port);
+		HeaderParser requestHeader=HeaderParser.createByUrl(url);
+		requestHeader.setHeader("User-Agent", "Mozilla/4.0");
+		String requestLine=connection.getRequestLine(requestHeader);
+		ByteBuffer[] requestHeaderBuffer=connection.getRequestHeaderBuffer(requestLine,requestHeader, isCallerKeepAlive);
+		requestHeader.unref(true);
+		caller.setup(null, connection, isCallerKeepAlive,(Caller)null,requestLine,requestHeaderBuffer,null);
+		return caller;
 	}
 	
 	public static Caller create(Browser browser,WebClientConnection connection,boolean isCallerKeepAlive,Caller nextCaller,
@@ -147,6 +172,11 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	private void setupExceptNextCaller(Browser browser,WebClientConnection connection,boolean isCallerKeepAlive,
 			String requestLine,ByteBuffer[] requestHeader,ByteBuffer[] requestBody){
 		this.browser=browser;
+		if(browser!=null){
+			this.browserName=browser.getName();
+		}else{
+			this.browserName="dummyBrowser";
+		}
 		setConnection(connection);
 		this.isCallerkeepAlive=isCallerKeepAlive;
 		this.requestHeader=requestHeader;
@@ -186,16 +216,23 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	//6)送信するbody長　0-実body長(実body長)
 	//7)レスポンス待ち時間 0-レスポンス到着時間(readTimeout)
 	public void startRequest(WebClientHandler webClientHandler){
-		logger.debug("#startRequest:"+browser.getName());
-		accessLog=(AccessLog)PoolManager.getInstance(AccessLog.class);
-		WebClientLog webClientLog=(WebClientLog)PoolManager.getInstance(WebClientLog.class);
-		accessLog.setWebClientLog(webClientLog);
+		startRequest(webClientHandler,(AccessLog)PoolManager.getInstance(AccessLog.class));
+	}
+	
+	public void startRequest(WebClientHandler webClientHandler,AccessLog accessLog){
+		logger.debug("#startRequest:"+browserName);
+		this.accessLog=accessLog;
+		WebClientLog webClientLog=accessLog.getWebClientLog();
 		
 		//simulateからの作成された事をマーク
-		accessLog.setIp(browser.getName());//browser情報
-		Scenario scenario=browser.getScenario();
-		if(scenario!=null){
-			accessLog.setRealHost(scenario.getName());//scenario情報
+		String scenarioName="dummyScenario";
+		accessLog.setIp(browserName);//browser情報
+		if(browser!=null){
+			Scenario scenario=browser.getScenario();
+			if(scenario!=null){
+				accessLog.setRealHost(scenario.getName());//scenario情報
+				scenarioName=scenario.getName();
+			}
 		}
 		if(orgAccessLog!=null){
 			accessLog.setOriginalLogId(orgAccessLog.getId());
@@ -220,7 +257,9 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		accessLog.setRawRead(webClientHandler.getTotalWriteLength());
 		accessLog.setRawWrite(webClientHandler.getTotalReadLength());
 		//時刻、通信長の初期化
-		webClientLog.checkPoing(WebClientLog.CHECK_POINT_START, webClientHandler.getTotalReadLength(), webClientHandler.getTotalWriteLength());
+		if(webClientLog!=null){
+			webClientLog.checkPoing(WebClientLog.CHECK_POINT_START, webClientHandler.getTotalReadLength(), webClientHandler.getTotalWriteLength());
+		}
 		
 		responseLength=0;
 		if(isResponseHeaderTrace){
@@ -228,7 +267,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 			webClientHandler.pushReadPeekStore(responseHeaderStore);
 		}
 		if( webClientHandler.startRequest(this, webClientHandler,config.getConnectTimeout(),PoolManager.duplicateBuffers(requestHeader),requestContentLength, isCallerkeepAlive, config.getKeepAliveTimeout())==false){
-			logger.error("fail to webClientHandler.startRequest.scenario.getName:"+scenario.getName());
+			logger.error("fail to webClientHandler.startRequest.scenario.getName:"+scenarioName);
 			return;
 		}
 		if(requestBody!=null){
@@ -238,15 +277,10 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	}
 	
 	public void cancel(){
-		if(scheduler!=null){
-			scheduler.cancel();
-			scheduler.unref();
-			scheduler=null;
-		}
 	}
 	
 	public void onWrittenRequestHeader(Object userContext) {
-		logger.debug("#onWrittenRequestHeader:"+browser.getName());
+		logger.debug("#onWrittenRequestHeader:"+browserName);
 		accessLog.setTimeCheckPint(AccessLog.TimePoint.requestHeader);
 		if(requestBody==null){
 			accessLog.setTimeCheckPint(AccessLog.TimePoint.requestBody);
@@ -254,24 +288,30 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		WebClientLog webClientLog=accessLog.getWebClientLog();
 		if(webClientLog!=null){
 			WebClientHandler webClientHandler=(WebClientHandler)userContext;
-			webClientLog.setInTime(WebClientLog.CHECK_POINT_REQUEST_HEADER,webClientHandler.getHeaderActualWriteTime());
-			webClientLog.checkPoing(WebClientLog.CHECK_POINT_REQUEST_HEADER, webClientHandler.getTotalReadLength(), webClientHandler.getTotalWriteLength());
+			webClientLog.checkPoing(WebClientLog.CHECK_POINT_REQUEST_HEADER, 
+					webClientHandler.getTotalReadLength(), 
+					webClientHandler.getTotalWriteLength(),
+					webClientHandler.getHeaderActualWriteTime()
+					);
 		}
 	}
 	
 	public void onWrittenRequestBody(Object userContext) {
-		logger.debug("#onWrittenRequestBody:"+browser.getName());
+		logger.debug("#onWrittenRequestBody:"+browserName);
 		accessLog.setTimeCheckPint(AccessLog.TimePoint.requestBody);
 		WebClientLog webClientLog=accessLog.getWebClientLog();
 		if(webClientLog!=null){
 			WebClientHandler webClientHandler=(WebClientHandler)userContext;
-			webClientLog.setInTime(WebClientLog.CHECK_POINT_REQUEST_BODY,webClientHandler.getBodyActualWriteTime());
-			webClientLog.checkPoing(WebClientLog.CHECK_POINT_REQUEST_BODY, webClientHandler.getTotalReadLength(), webClientHandler.getTotalWriteLength());
+			webClientLog.checkPoing(WebClientLog.CHECK_POINT_REQUEST_BODY, 
+					webClientHandler.getTotalReadLength(), 
+					webClientHandler.getTotalWriteLength(),
+					webClientHandler.getBodyActualWriteTime()
+			);
 		}
 	}
 	
 	public void onResponseHeader(Object userContext, HeaderParser responseHeader) {
-		logger.debug("#onResponseHeader:"+browser.getName());
+		logger.debug("#onResponseHeader:"+browserName);
 		WebClientHandler webClientHandler=(WebClientHandler)userContext;
 		Store responseHeaderStore=webClientHandler.popReadPeekStore();
 		if(responseHeaderStore!=null){
@@ -286,16 +326,18 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		accessLog.setTransferEncoding(responseHeader.getHeader(HeaderParser.TRANSFER_ENCODING_HEADER));
 		//chunkされていたとしても、onResponseBodyにはデコードして通知される。記録されるstoreがchunkされる事はない。
 		//上記はうそ、WebClientHandlerにisReadableCallbackというオプションがあり、これが立っていない場合、生データがcallbackされる
-//		accessLog.setTransferEncoding(null);
 		WebClientLog webClientLog=accessLog.getWebClientLog();
 		if(webClientLog!=null){
-			webClientLog.setInTime(WebClientLog.CHECK_POINT_RESPONSE_HEADER,webClientHandler.getBodyActualWriteTime());
-			webClientLog.checkPoing(WebClientLog.CHECK_POINT_RESPONSE_HEADER, webClientHandler.getTotalReadLength(), webClientHandler.getTotalWriteLength());
+			webClientLog.setResponseHeader(responseHeader);
+			webClientLog.checkPoing(WebClientLog.CHECK_POINT_RESPONSE_HEADER, 
+					webClientHandler.getTotalReadLength(), 
+					webClientHandler.getTotalWriteLength()
+					);
 		}
 	}
 
 	public void onResponseBody(Object userContext, ByteBuffer[] buffers) {
-		logger.debug("#onResponseBody:"+browser.getName());
+		logger.debug("#onResponseBody:"+browserName);
 		if(responseLength==0){
 			accessLog.setTimeCheckPint(AccessLog.TimePoint.responseBody);
 		}
@@ -314,15 +356,19 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	}
 	
 	public void onRequestEnd(Object userContext,int stat) {
-		logger.debug("#onRequestEnd:"+browser.getName());
+		logger.debug("#onRequestEnd:"+browserName);
 		if(accessLog.getStatusCode()==null){
 			accessLog.setStatusCode("%" +Integer.toHexString(stat));
 		}
 		WebClientHandler webClientHandler=(WebClientHandler)userContext;
 		WebClientLog webClientLog=accessLog.getWebClientLog();
 		if(webClientLog!=null){
-			webClientLog.setInTime(WebClientLog.CHECK_POINT_RESPONSE_BODY,webClientHandler.getBodyActualWriteTime());
-			webClientLog.checkPoing(WebClientLog.CHECK_POINT_RESPONSE_BODY, webClientHandler.getTotalReadLength(), webClientHandler.getTotalWriteLength());
+			webClientLog.checkPoing(WebClientLog.CHECK_POINT_RESPONSE_BODY, 
+					webClientHandler.getTotalReadLength(), 
+					webClientHandler.getTotalWriteLength()
+			);
+				
+			
 		}
 		//accessLogは、サーバとしての情報を格納している、そのため、client基準ではread/writeがひっくりかえる
 		accessLog.setRawRead(webClientHandler.getTotalWriteLength()-accessLog.getRawRead());
@@ -332,10 +378,6 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 //			//connectに失敗した場合、handshakeに失敗した場合、その他回線が切れた場合
 //			logger.debug("Caller.onRequestEnd.no status code:"+webClientHandler.getChannelId()+":"+accessLog.getChannelId());
 //		}
-		if(scheduler!=null){
-			scheduler.unref();
-			scheduler=null;
-		}
 		accessLog.setResponseLength(responseLength);
 		if(responseLength==0){
 		}else if(responseBodyStore==null){
@@ -351,7 +393,9 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		accessLog.endProcess();
 		AccessLog wkAccessLog=accessLog;
 		accessLog=null;
-		browser.onRequestEnd(this,wkAccessLog);
+		if(browser!=null){
+			browser.onRequestEnd(this,wkAccessLog);
+		}
 	}
 
 	public void onRequestFailure(Object userContext,int stat,Throwable t) {
@@ -433,8 +477,13 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		WebClientLog webClientLog=accessLog.getWebClientLog();
 		if(webClientLog!=null){
 			WebClientHandler webClientHandler=(WebClientHandler)userContext;
-			webClientLog.setInTime(WebClientLog.CHECK_POINT_SSL_PROXY,webClientHandler.getSslProxyActualWriteTime());
-			webClientLog.checkPoing(WebClientLog.CHECK_POINT_SSL_PROXY, webClientHandler.getTotalReadLength(), webClientHandler.getTotalWriteLength());
+			webClientLog.checkPoing(WebClientLog.CHECK_POINT_SSL_PROXY, 
+					webClientHandler.getTotalReadLength(), 
+					webClientHandler.getTotalWriteLength(),
+					webClientHandler.getSslProxyActualWriteTime()
+					);
+			
+			
 		}
 	}
 }

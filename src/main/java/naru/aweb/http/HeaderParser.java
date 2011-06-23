@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URL;
 import java.nio.ByteBuffer;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -79,6 +80,7 @@ public class HeaderParser extends PoolBase {
 	public static final String ACCESS_CONTROL_ALLOW_ORIGIN="Access-Control-Allow-Origin";
 	
 	public static final String CONNECTION_HEADER = "Connection";
+	public static final String SERVER_HEADER = "Server";
 	public static final String PROXY_CONNECTION_HEADER = "Proxy-Connection";
 	public static final String KEEP_ALIVE_HEADER = "Keep-Alive";
 	public static final String UPGRADE_HEADER = "Upgrade";
@@ -127,8 +129,7 @@ public class HeaderParser extends PoolBase {
 		if (store == null) {
 			return null;
 		}
-		HeaderParser headerParser = (HeaderParser) PoolManager
-				.getInstance(HeaderParser.class);
+		HeaderParser headerParser = (HeaderParser) PoolManager.getInstance(HeaderParser.class);
 		ByteBuffer[] buffers = DataUtil.toByteBuffers(store);
 		for (ByteBuffer buffer : buffers) {
 			headerParser.parse(buffer);
@@ -151,6 +152,25 @@ public class HeaderParser extends PoolBase {
 		Store store = Store.open(digest);
 		return createByStore(store);
 	}
+	
+	public static HeaderParser createByUrl(URL url) {
+		HeaderParser headerParser = (HeaderParser) PoolManager.getInstance(HeaderParser.class);
+		headerParser.setMethod(GET_METHOD);
+		String path=url.getPath();
+		if("".equals(path)){
+			path="/";
+		}
+		headerParser.setPath(path);
+		headerParser.setQuery(url.getQuery());
+		int defaultPort=80;
+		if("https".equalsIgnoreCase(url.getProtocol())){
+			defaultPort=443;
+		}
+		headerParser.server=ServerParser.parse(url.getHost(), defaultPort);
+		headerParser.setReqHttpVersion(HeaderParser.HTTP_VESION_10);
+		return headerParser;
+	}
+	
 
 	// 当該ヘッダ受信前にCONNECTメソッドで指定されていた情報
 	// private String sslPeekHost;
