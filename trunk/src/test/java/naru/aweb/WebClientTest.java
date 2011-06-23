@@ -445,7 +445,7 @@ public class WebClientTest extends TestBase{
 		boolean isCallerKeepAlive=true;
 		Caller caller=Caller.create(new URL("http://www.asahi.com/"),isCallerKeepAlive);
 		WebClientConnection connection=caller.getConnection();
-		WebClientHandler handler=WebClientHandler.create(false,connection.getTargetServer(), connection.getTargetPort());
+		WebClientHandler handler=WebClientHandler.create(connection);
 //		handler.setHeaderSchedule(1000, 0);
 		AccessLog accessLog=(AccessLog)PoolManager.getInstance(AccessLog.class);
 		WebClientLog webClientLog=(WebClientLog)PoolManager.getInstance(WebClientLog.class);
