@@ -437,10 +437,6 @@ public class WebClientHandler extends SslHandler implements Timer {
 		return webClientConnection.equalsConnection(isHttps,targetServer,targetPort);
 	}
 	
-//	public void setConnection(boolean isHttps, String targetServer,int targetPort){
-//		webClientConnection.init(isHttps, targetServer, targetPort);
-//	}
-	
 	/**
 	 * Callerからは直接呼び出される
 	 * errorが発生した場合、timer経由（別スレッド）でイベントにエラーを通知する
@@ -470,11 +466,13 @@ public class WebClientHandler extends SslHandler implements Timer {
 		this.requestContentLength = requestContentLength;
 		Throwable error;
 		if(stat==STAT_KEEP_ALIVE){
+			setReadTimeout(config.getReadTimeout());
 			internalStartRequest();
 			return true;
 		}if(stat==STAT_INIT){
 			if(asyncConnect(this, webClientConnection.getRemoteServer(), webClientConnection.getRemotePort(), connectTimeout)){
 				stat = STAT_CONNECT;
+				setReadTimeout(config.getReadTimeout());
 				return true;
 			}
 			logger.warn("fail to asyncConnect.");

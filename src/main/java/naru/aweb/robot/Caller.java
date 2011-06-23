@@ -328,7 +328,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		//上記はうそ、WebClientHandlerにisReadableCallbackというオプションがあり、これが立っていない場合、生データがcallbackされる
 		WebClientLog webClientLog=accessLog.getWebClientLog();
 		if(webClientLog!=null){
-			webClientLog.setResponseHeader(responseHeader);
+			webClientLog.responseHeader(responseHeader);
 			webClientLog.checkPoing(WebClientLog.CHECK_POINT_RESPONSE_HEADER, 
 					webClientHandler.getTotalReadLength(), 
 					webClientHandler.getTotalWriteLength()
@@ -399,7 +399,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	}
 
 	public void onRequestFailure(Object userContext,int stat,Throwable t) {
-		logger.warn("#onRequestFailure:"+browser.getName()+":"+stat,t);
+		logger.warn("#onRequestFailure:"+browserName+":"+stat,t);
 		//statをaccessLogに記録
 		String statusCode=accessLog.getStatusCode();
 		if(statusCode!=null){

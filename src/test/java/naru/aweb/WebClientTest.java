@@ -3,12 +3,19 @@ package naru.aweb;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.net.URL;
 import java.nio.ByteBuffer;
 
+import naru.async.pool.PoolManager;
+import naru.aweb.config.AccessLog;
+import naru.aweb.config.WebClientLog;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.WebClient;
+import naru.aweb.http.WebClientConnection;
 import naru.aweb.http.WebClientHandler;
+import naru.aweb.robot.Browser;
 import naru.aweb.robot.CallScheduler;
+import naru.aweb.robot.Caller;
 import naru.queuelet.test.TestBase;
 
 import org.junit.After;
@@ -324,9 +331,10 @@ public class WebClientTest extends TestBase{
 	public void qtest5() throws Throwable{
 		WebClientHandler[] handlers=new WebClientHandler[2000];
 		for(int i=0;i<handlers.length;i++){
-			WebClientHandler handler=handlers[i]=WebClientHandler.create(false,"ph-sample.appspot.com", 80);
+//			WebClientHandler handler=handlers[i]=WebClientHandler.create(false,"ph-sample.appspot.com", 80);
+			WebClientHandler handler=handlers[i]=WebClientHandler.create(false,"10.124.175.29", 80);
 			handler.ref();
-			handler.setHeaderSchedule(200000,Long.MIN_VALUE);
+			handler.setHeaderSchedule(10000,0);
 		}
 		HeaderParser requestHeader=new HeaderParser();
 		requestHeader.setMethod("GET");
@@ -346,7 +354,6 @@ public class WebClientTest extends TestBase{
 				}
 			}
 		}
-		
 		System.out.println("count:"+count);
 	}
 	
@@ -355,33 +362,108 @@ public class WebClientTest extends TestBase{
 		callTest("qtest6",Long.MAX_VALUE);
 	}
 	public void qtest6() throws Throwable{
-		WebClientHandler[] handlers=new WebClientHandler[2000];
-		for(int i=0;i<handlers.length;i++){
-			WebClientHandler handler=handlers[i]=WebClientHandler.create(false,"ph-sample.appspot.com", 80);
-			handler.ref();
-			handler.setHeaderSchedule(200000,Long.MIN_VALUE);
-		}
-		HeaderParser requestHeader=new HeaderParser();
-		requestHeader.setMethod("GET");
-		requestHeader.setPath("/");
-		requestHeader.setReqHttpVersion(HeaderParser.HTTP_VESION_10);
-		for(int i=0;i<handlers.length;i++){
-			System.out.println("i:"+i);
-			long startTime=System.currentTimeMillis();
-			Caller testWebClient=new TestWebConnectClient(startTime);
-			handlers[i].startRequest(testWebClient, handlers[i], 10000, requestHeader, false, 5000);
-			synchronized(testWebClient){
-				while(true){
-					if(testWebClient.connected){
-						break;
-					}
-					testWebClient.wait();
+		boolean isCallerKeepAlive=true;
+		Caller caller=Caller.create(new URL("http://ph-sample.appspot.com"),isCallerKeepAlive);
+		WebClientConnection connection=caller.getConnection();
+		WebClientHandler handler=WebClientHandler.create(false,connection.getTargetServer(), connection.getTargetPort());
+		handler.setHeaderSchedule(1000, 0);
+		AccessLog accessLog=(AccessLog)PoolManager.getInstance(AccessLog.class);
+		WebClientLog webClientLog=(WebClientLog)PoolManager.getInstance(WebClientLog.class);
+		accessLog.setWebClientLog(webClientLog);
+		synchronized(webClientLog){
+			caller.startRequest(handler, accessLog);
+			while(true){
+//				if(webClientLog.getCheckPoint()>=WebClientLog.CHECK_POINT_CONNECT){
+				if(webClientLog.getCheckPoint()>=WebClientLog.CHECK_POINT_RESPONSE_BODY){
+					break;
 				}
+				webClientLog.wait();
 			}
 		}
-		
-		System.out.println("count:"+count);
+		System.out.println("statusCode:"+accessLog.getStatusCode());
+		System.out.println(webClientLog);
 	}
+	
+	@Test
+	public void test7() throws Throwable{
+		callTest("qtest7",Long.MAX_VALUE);
+	}
+	public void qtest7() throws Throwable{
+		boolean isCallerKeepAlive=true;
+		Caller[] callers=new Caller[512];
+		Caller caller=Caller.create(new URL("http://ph-sample.appspot.com"),isCallerKeepAlive);
+		callers[0]=caller;
+		for(int i=1;i<callers.length;i++){
+			callers[i]=caller.dup(null);
+		}
+		WebClientHandler[] handlers=new WebClientHandler[callers.length];
+		AccessLog accessLogs[]=new AccessLog[callers.length];
+		WebClientConnection connection=caller.getConnection();
+		for(int i=0;i<handlers.length;i++){
+			handlers[i]=WebClientHandler.create(false,connection.getTargetServer(), connection.getTargetPort());
+			handlers[i].setHeaderSchedule(200000, Long.MIN_VALUE);
+			accessLogs[i]=(AccessLog)PoolManager.getInstance(AccessLog.class);
+			WebClientLog webClientLog=(WebClientLog)PoolManager.getInstance(WebClientLog.class);
+			accessLogs[i].setWebClientLog(webClientLog);
+		}
+		for(int i=0;i<handlers.length;i++){
+			WebClientLog webClientLog=accessLogs[i].getWebClientLog();
+			synchronized(webClientLog){
+				callers[i].startRequest(handlers[i], accessLogs[i]);
+				while(true){
+					if(webClientLog.getCheckPoint()>=WebClientLog.CHECK_POINT_CONNECT){
+//					if(webClientLog.getCheckPoint()>=WebClientLog.CHECK_POINT_RESPONSE_BODY){
+						break;
+					}
+					webClientLog.wait();
+				}
+			}
+			System.out.println(webClientLog);
+		}
+		for(int i=0;i<handlers.length;i++){
+			System.out.println("i:"+i +":checkPoint:" +accessLogs[i].getWebClientLog().getCheckPoint());
+			System.out.println(accessLogs[i].getWebClientLog().getProcessTime(WebClientLog.CHECK_POINT_CONNECT));
+		}
+		
+//		System.out.println("statusCode:"+accessLog.getStatusCode());
+	}
+	
+	/*
+	 * server情報
+	 * 0)http or https
+	 * 1)header情報の取得
+	 * 2)タイムアウト時間の測定:max:60s
+	 * 3)connect時間の測定,128回の平均
+	 * 4)同時接続数の測定,MAX:512
+	 */
+	
+	@Test
+	public void test8() throws Throwable{
+		callTest("qtest8",Long.MAX_VALUE);
+	}
+	public void qtest8() throws Throwable{
+		boolean isCallerKeepAlive=true;
+		Caller caller=Caller.create(new URL("http://www.asahi.com/"),isCallerKeepAlive);
+		WebClientConnection connection=caller.getConnection();
+		WebClientHandler handler=WebClientHandler.create(false,connection.getTargetServer(), connection.getTargetPort());
+//		handler.setHeaderSchedule(1000, 0);
+		AccessLog accessLog=(AccessLog)PoolManager.getInstance(AccessLog.class);
+		WebClientLog webClientLog=(WebClientLog)PoolManager.getInstance(WebClientLog.class);
+		accessLog.setWebClientLog(webClientLog);
+		synchronized(webClientLog){
+			caller.startRequest(handler, accessLog);
+			while(true){
+//				if(webClientLog.getCheckPoint()>=WebClientLog.CHECK_POINT_CONNECT){
+				if(webClientLog.getCheckPoint()>=WebClientLog.CHECK_POINT_RESPONSE_BODY){
+					break;
+				}
+				webClientLog.wait();
+			}
+		}
+		System.out.println("statusCode:"+accessLog.getStatusCode());
+		System.out.println(webClientLog);
+	}
+	
 	
 	
 }
