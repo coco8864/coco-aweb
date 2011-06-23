@@ -145,7 +145,6 @@ public class Browser extends PoolBase implements Timer{
 			webClientQueue.put(connection, clients);
 			for(int i=0;i<MAX_DOMAIN_CONNECTION;i++){
 				WebClientHandler clientHandler=WebClientHandler.create(connection);
-				//TODO ここでshedulerを設定する
 				clientHandler.ref();//切断後に回収されるのを防ぐ
 				clients.add(clientHandler);
 			}
@@ -326,9 +325,9 @@ public class Browser extends PoolBase implements Timer{
 				server.toString(),
 				requestHeader.getPath(),requestHeader.getQuery());
 		caller.setResolveDigest(resolveDigest);
-		
 		startCallers.add(caller);
 	}
+	
 	private String chId;//終了時に通知するQueueのchannelId
 	private long startTime;
 	
@@ -398,10 +397,12 @@ public class Browser extends PoolBase implements Timer{
 						clientHandler=WebClientHandler.create(caller.getConnection());
 						clientHandler.ref();
 					}
-//					int size1=processingClientHandler.size();
 					processingClientHandler.put(caller, clientHandler);
-//					int size2=processingClientHandler.size();
-//					System.out.println("dispatch+"+this.hashCode()+":size1:"+size1+":size2:"+size2+":caller:"+caller+":clientHandler:"+clientHandler);
+					
+					//TODO callerに応じて異常をシュミレート
+					//clientHandler.setSslProxySchedule(1000, 0);
+					//clientHandler.setHeaderSchedule(1000, 0);
+					//clientHandler.setBodySchedule(1000, 0);
 				}
 			}
 			if(clientHandler==null && caller!=null){
@@ -436,7 +437,7 @@ public class Browser extends PoolBase implements Timer{
 		if(scenario!=null){
 			scenario.onRequest(accessLog);
 		}else{
-			//Scenariなしでよびだされた場合は、AccessLogを記録する
+			//scenarioなしでよびだされた場合は、AccessLogを記録する
 			if(chId!=null){
 				accessLog.setChId(chId);
 				chId=null;
@@ -448,10 +449,7 @@ public class Browser extends PoolBase implements Timer{
 		List<Caller> nextCallers=caller.getNextCallers();
 		synchronized(this){
 			//clientHandlerの再利用
-//			int size1=processingClientHandler.size();
 			WebClientHandler clientHandler=processingClientHandler.remove(caller);
-//			int size2=processingClientHandler.size();
-//			System.out.println("onRequestEnd+"+this.hashCode()+":size1:"+size1+":size2:"+size2+":caller:"+caller+":clientHandler:"+clientHandler);
 			WebClientConnection connection=caller.getConnection();
 			pushClient(connection, clientHandler);
 			if(nextCallers!=null){

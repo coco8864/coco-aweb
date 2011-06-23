@@ -6,6 +6,7 @@ import javax.net.ssl.SSLEngine;
 
 import org.apache.log4j.Logger;
 
+import naru.async.ChannelHandler;
 import naru.async.Timer;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolBase;
@@ -456,7 +457,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 	public final boolean startRequest(WebClient webClient,Object userContext,long connectTimeout,ByteBuffer[] requestHeaderBuffer,long requestContentLength, boolean isCallerkeepAlive, long keepAliveTimeout) {
 		synchronized (this) {
 			if (this.webClient != null) {
-				throw new IllegalStateException("aleardy had webClient:"+((ProxyHandler)this.webClient).getChannelId());
+				throw new IllegalStateException("aleardy had webClient:"+this.webClient);
 			}
 			setWebClient(webClient);
 			this.userContext=userContext;
