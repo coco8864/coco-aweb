@@ -17,8 +17,12 @@ public class WebClientLog extends PoolBase {
 	public static final int CHECK_POINT_END=8;
 	public static final int CHECK_POINT_NUM=9;
 
-//	private HeaderParser responseHeader;
 	private int checkPoint;
+	private String httpVersion;
+	private String serverHeader;
+	private String connectionHeader;
+	private String proxyConnectionHeader;
+	private String keepAliveHeader;
 	
 	private long readLengths[]=new long[CHECK_POINT_NUM];
 	private long writeLengths[]=new long[CHECK_POINT_NUM];
@@ -26,6 +30,7 @@ public class WebClientLog extends PoolBase {
 
 	@Override
 	public void recycle() {
+		checkPoint=CHECK_POINT_START;
 		Arrays.fill(readLengths, -1L);
 		Arrays.fill(writeLengths, -1L);
 		Arrays.fill(processTimes, -1L);
@@ -76,12 +81,8 @@ public class WebClientLog extends PoolBase {
 		return processTimes[checkPoing];
 	}
 
-	private String serverHeader;
-	private String connectionHeader;
-	private String proxyConnectionHeader;
-	private String keepAliveHeader;
-	
-	public void setResponseHeader(HeaderParser responseHeader) {
+	public void responseHeader(HeaderParser responseHeader) {
+		httpVersion=responseHeader.getResHttpVersion();
 		serverHeader=responseHeader.getHeader(HeaderParser.SERVER_HEADER);
 		connectionHeader=responseHeader.getHeader(HeaderParser.CONNECTION_HEADER);
 		proxyConnectionHeader=responseHeader.getHeader(HeaderParser.PROXY_CONNECTION_HEADER);
@@ -94,6 +95,9 @@ public class WebClientLog extends PoolBase {
 	
 	public String toString(){
 		StringBuilder sb=new StringBuilder();
+		sb.append("httpVersion:");
+		sb.append(httpVersion);
+		sb.append("\n");
 		sb.append("serverHeader:");
 		sb.append(serverHeader);
 		sb.append("\n");
