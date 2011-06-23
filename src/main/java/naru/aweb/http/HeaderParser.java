@@ -167,7 +167,7 @@ public class HeaderParser extends PoolBase {
 			defaultPort=443;
 		}
 		headerParser.server=ServerParser.parse(url.getHost(), defaultPort);
-		headerParser.setReqHttpVersion(HeaderParser.HTTP_VESION_10);
+		headerParser.setReqHttpVersion(HeaderParser.HTTP_VESION_11);
 		return headerParser;
 	}
 	
