@@ -119,7 +119,9 @@ public class ServerChecker extends PoolBase implements Timer{
 		}
 		String statusCode=accessLog.getStatusCode();
 		readTimeout=-1;
-		if(statusCode.startsWith("%") || statusCode.startsWith("408")){//突然切れたServer側のtimeoutと推定
+		if(statusCode.startsWith("408")){//突然切れたServer側のtimeoutと推定
+			readTimeout=webClientLog.getProcessTime(WebClientLog.CHECK_POINT_RESPONSE_HEADER);
+		}else if(statusCode.startsWith("%")){//突然切れたServer側のtimeoutと推定
 			readTimeout=webClientLog.getProcessTime(WebClientLog.CHECK_POINT_RESPONSE_BODY);
 		}
 		accessLog.unref(true);
@@ -216,7 +218,7 @@ public class ServerChecker extends PoolBase implements Timer{
 			}
 			long requestHeaderTime=webClientLog.getProcessTime(WebClientLog.CHECK_POINT_REQUEST_HEADER);
 			//requestHeaderTimeが極端に大きいのはlisten back logに溜まったから
-			if(requestHeaderTime<(nomalResponseHeaderTime*2)){
+			if(requestHeaderTime<(nomalResponseHeaderTime*8)){
 				maxClients++;
 			}
 			accessLogs[i].unref();
@@ -293,6 +295,17 @@ public class ServerChecker extends PoolBase implements Timer{
 
 	public boolean isHttps() {
 		return isHttps;
+	}
+
+	@Override
+	public void recycle() {
+		chId=null;
+		url=null;
+		isUseProxy=isHttps=false;
+		proxyServer=httpVersion=serverHeader=
+		connectionHeader=proxyConnectionHeader=keepAliveHeader=null;
+		connectTime=sslProxyTime=handshakeTime=0;
+		readTimeout=maxClients=listenBacklog=0;
 	}
 	
 }
