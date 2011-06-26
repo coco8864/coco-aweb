@@ -108,6 +108,47 @@ function updateStressDialog(){
 	}
 }
 
+function checkServer(){
+//	var selectList=logCheckList();
+//	if(selectList.length==0){
+//		alert('選択されていません.');
+//		return;
+//	}
+	var url=ph.jQuery("#checkServerUrl").val();
+	var checkServerCb={
+		_serverInfo:function(msg){
+			var sv=msg.message;
+			ph.dump(sv);
+			ph.jQuery("#checkUrl").text(sv.url);
+			ph.jQuery("#checkIsUseProxy").text(sv.useProxy);
+			ph.jQuery("#checkProxyServer").text(sv.proxyServer);
+			ph.jQuery("#checkServer").text(sv.serverHeader);
+			ph.jQuery("#checkConnection").text(sv.connectionHeader);
+			ph.jQuery("#checkProxyConnection").text(sv.proxyConnectionHeader);
+			ph.jQuery("#checkKeepAlive").text(sv.keepAliveHeader);
+			ph.jQuery("#checkReadTimeout").text(sv.readTimeout);
+			ph.jQuery("#checkConnectTime").text(sv.connectTime);
+			ph.jQuery("#checkSslProxyTime").text(sv.sslProxyTime);
+			ph.jQuery("#checkHandshakeTime").text(sv.handshakeTime);
+			ph.jQuery("#checkMaxClients").text(sv.maxClients);
+			ph.jQuery("#checkListenBacklog").text(sv.listenBacklog);
+			},
+		onComplete:function(msg){this._serverInfo(msg);},
+		onMessage:function(msg){this._serverInfo(msg);},
+		onError:function(msg){
+			ph.log('checkServer onError:');
+			ph.dump(msg);
+			}
+	};
+	ph.admin.doPramCommand(
+		'perf',
+		'checkServer',
+		{url:url},
+		function(chId){ 
+			ph.queue.subscribeById(chId,checkServerCb)}
+	);
+}
+
 function reloadEditDialog(){
 //	var dialog=ph.jQuery("#textEdit");
 	var digest=ph.jQuery("#textEditDigest").val();
@@ -219,6 +260,29 @@ json file:<input type="file" name="stressFile" id="stressFile"/>
 </div>
 <input type="button" value="ok" onClick='doStress()'>
 <input type="button" value="cancel" onClick="jQuery('#stress').dialog('close')">
+</div> 
+
+##checkServer用ダイアログ
+<div id="checkServerDialog">
+url:<input id="checkServerUrl" type="text" size="64" value='http://ph.ph-sample.appspot.com/'><br/>
+<input type="button" value="check" onClick='checkServer();'>
+<input type="button" value="cancel" onClick="jQuery('#checkServerDialog').dialog('close');"><br/>
+<hr/>
+url:<span id="checkUrl"></span><br/>
+isUseProxy:<span id="checkIsUseProxy"></span><br/>
+proxyServer:<span id="checkProxyServer"></span><br/>
+<hr/>
+Server:<span id="checkServer"></span><br/>
+Connection:<span id="checkConnection"></span><br/>
+ProxyConnection:<span id="checkProxyConnection"></span><br/>
+KeepAlive:<span id="checkKeepAlive"></span><br/>
+<hr/>
+readTimeout:<span id="checkReadTimeout"></span><br/>
+connectTime:<span id="checkConnectTime"></span><br/>
+sslProxyTime:<span id="checkSslProxyTime"></span><br/>
+handshakeTime:<span id="checkHandshakeTime"></span><br/>
+maxClients:<span id="checkMaxClients"></span><br/>
+listenBacklog:<span id="checkListenBacklog"></span><br/>
 </div> 
 
 ##mapping入力用ダイアログ
