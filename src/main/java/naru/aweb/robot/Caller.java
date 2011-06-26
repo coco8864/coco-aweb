@@ -216,10 +216,10 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	//6)送信するbody長　0-実body長(実body長)
 	//7)レスポンス待ち時間 0-レスポンス到着時間(readTimeout)
 	public void startRequest(WebClientHandler webClientHandler){
-		startRequest(webClientHandler,(AccessLog)PoolManager.getInstance(AccessLog.class));
+		startRequest(webClientHandler,(AccessLog)PoolManager.getInstance(AccessLog.class),config.getConnectTimeout());
 	}
 	
-	public void startRequest(WebClientHandler webClientHandler,AccessLog accessLog){
+	public void startRequest(WebClientHandler webClientHandler,AccessLog accessLog,long connectTimeout){
 		logger.debug("#startRequest:"+browserName);
 		this.accessLog=accessLog;
 		WebClientLog webClientLog=accessLog.getWebClientLog();
@@ -266,7 +266,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 			Store responseHeaderStore=Store.open(true);
 			webClientHandler.pushReadPeekStore(responseHeaderStore);
 		}
-		if( webClientHandler.startRequest(this, webClientHandler,config.getConnectTimeout(),PoolManager.duplicateBuffers(requestHeader),requestContentLength, isCallerkeepAlive, config.getKeepAliveTimeout())==false){
+		if( webClientHandler.startRequest(this, webClientHandler,connectTimeout,PoolManager.duplicateBuffers(requestHeader),requestContentLength, isCallerkeepAlive, config.getKeepAliveTimeout())==false){
 			logger.error("fail to webClientHandler.startRequest.scenario.getName:"+scenarioName);
 			return;
 		}

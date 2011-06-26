@@ -49,7 +49,7 @@ public class WebClientLog extends PoolBase {
 	}
 	
 	public void checkPoing(int checkPoint,long readLength,long writeLength,long inTime){
-		System.out.println("checkPoint:"+checkPoint +":" +inTime);
+//		System.out.println("checkPoint:"+checkPoint +":" +inTime);
 		long now=System.currentTimeMillis();
 		if(checkPoint==CHECK_POINT_START){
 			processTimes[checkPoint]=now;
@@ -121,5 +121,25 @@ public class WebClientLog extends PoolBase {
 			sb.append("\n");
 		}
 		return sb.toString();
+	}
+
+	public String getHttpVersion() {
+		return httpVersion;
+	}
+
+	public String getServerHeader() {
+		return serverHeader;
+	}
+
+	public String getConnectionHeader() {
+		return connectionHeader;
+	}
+
+	public String getProxyConnectionHeader() {
+		return proxyConnectionHeader;
+	}
+
+	public String getKeepAliveHeader() {
+		return keepAliveHeader;
 	}
 }
