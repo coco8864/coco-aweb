@@ -12,6 +12,7 @@ import naru.aweb.http.ParameterParser;
 import naru.aweb.http.WebServerHandler;
 import naru.aweb.queue.QueueManager;
 import naru.aweb.robot.Scenario;
+import naru.aweb.robot.ServerChecker;
 import net.sf.json.JSON;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -50,6 +51,14 @@ public class AdminPerfHandler extends WebServerHandler{
 			accessLogs[i]=AccessLog.getById(accessLogId);
 		}
 		return accessLogs;
+	}
+	
+	//maxClients,listenBacklog,connection性能,handshake性能,Serverヘッダ
+	private String checkServer(String url){
+		QueueManager queueManager=QueueManager.getInstance();
+		String chId=queueManager.createQueue(true);
+		ServerChecker.start(url,chId);
+		return chId;
 	}
 	
 	void doCommand(String command,ParameterParser parameter){
@@ -109,6 +118,10 @@ public class AdminPerfHandler extends WebServerHandler{
 				responseJson(name);
 			}
 			return;
+		}else if("checkServer".equals(command)){
+			String url=parameter.getParameter("url");
+			String chId=checkServer(url);
+			responseJson(chId);
 		}else if("stress".equals(command)){
 			String list=parameter.getParameter("list");
 			AccessLog[] accessLogs=listToAccessLogs(list);
