@@ -173,10 +173,15 @@ function updateEntry(accessLogs){
 		alert("無効なIDです");
 		return;
 	}
+
+
 	ph.jQuery("#logId").text(trace.accessLogId);
 	ph.jQuery("#inputLogId").val(trace.accessLogId);
 	var accessLog=accessLogs[0];
 	trace.accessLog=accessLog;
+	if(accessLog.originalLogId>=0){
+		ph.jQuery("#traceParentButton").attr("disabled","");
+	}
 
 	ph.jQuery("#realHost").text(accessLog.realHost);
 	ph.jQuery("#userId").text(accessLog.userId);
@@ -241,14 +246,20 @@ function updateEntry(accessLogs){
 		ph.jQuery("#responseBody").text("[なし]");
 	}
 }
+
+function traceCheckServer(){
+	jQuery('#checkServerDialog').dialog('open');
+}
+
 </script>
 <H1>AccessLog 詳細</H1>
 <hr/>
 ID:<input type="text" name="logId" id="inputLogId" size="8"/>
 <input type="button" onclick="jumpTrace();" value="id指定"/>
-<input type="button" onclick="jumpParent();" value="parent"/>
+<input type="button" onclick="jumpParent();" value="parent" disabled="disabled" id="traceParentButton"/>
 
-<input type="button" value="request" onClick="runTrace();" />
+<input type="button" value="request" onClick="runTrace();"/>
+<input type="button" value="check" onClick="traceCheckServer();" title="check server performance"/>
 ##最初は無効状態で表示
 <input type="button" value="save new" onClick="saveTrace();" disabled="disabled" id="traceSaveButton"/>
 <div style="float:right;text-align:right">
