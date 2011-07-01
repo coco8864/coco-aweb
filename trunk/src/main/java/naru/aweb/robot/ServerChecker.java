@@ -96,6 +96,14 @@ public class ServerChecker extends PoolBase implements Timer{
 		proxyConnectionHeader=webClientLog.getProxyConnectionHeader();
 		keepAliveHeader=webClientLog.getKeepAliveHeader();
 		nomalResponseHeaderTime=webClientLog.getProcessTime(WebClientLog.CHECK_POINT_REQUEST_HEADER);
+		
+		connectTime=webClientLog.getProcessTime(WebClientLog.CHECK_POINT_CONNECT);
+		if(isHttps){
+			handshakeTime=webClientLog.getProcessTime(WebClientLog.CHECK_POINT_HANDSHAKE);
+			if(isUseProxy){
+				sslProxyTime=webClientLog.getProcessTime(WebClientLog.CHECK_POINT_SSL_PROXY);
+			}
+		}
 		accessLog.unref(true);
 	}
 	
@@ -208,7 +216,7 @@ public class ServerChecker extends PoolBase implements Timer{
 		sslProxyTime=(double)sslProxyTimeSum/(double)timeCount;
 		handshakeTime=(double)handshakeTimeSum/(double)timeCount;
 		try {
-			Thread.sleep(startTime+(CONNECT_TEST_TERM*2)+1000-System.currentTimeMillis());
+			Thread.sleep(System.currentTimeMillis()-startTime+(CONNECT_TEST_TERM*2)+1000);
 		} catch (InterruptedException e1) {
 		}
 		for(int i=0;i<handlers.length;i++){
