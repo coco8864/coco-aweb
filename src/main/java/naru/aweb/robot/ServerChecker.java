@@ -96,6 +96,9 @@ public class ServerChecker extends PoolBase implements Timer{
 		proxyConnectionHeader=webClientLog.getProxyConnectionHeader();
 		keepAliveHeader=webClientLog.getKeepAliveHeader();
 		nomalResponseHeaderTime=webClientLog.getProcessTime(WebClientLog.CHECK_POINT_REQUEST_HEADER);
+		if(nomalResponseHeaderTime==0){
+			nomalResponseHeaderTime++;
+		}
 		
 		connectTime=webClientLog.getProcessTime(WebClientLog.CHECK_POINT_CONNECT);
 		if(isHttps){
@@ -180,7 +183,6 @@ public class ServerChecker extends PoolBase implements Timer{
 			WebClientLog webClientLog=(WebClientLog)PoolManager.getInstance(WebClientLog.class);
 			accessLogs[i].setWebClientLog(webClientLog);
 		}
-		
 		long startTime=System.currentTimeMillis();
 		timeCount=0;
 		connectTimeSum=sslProxyTimeSum=handshakeTimeSum=0L;
@@ -226,7 +228,7 @@ public class ServerChecker extends PoolBase implements Timer{
 			}
 			long requestHeaderTime=webClientLog.getProcessTime(WebClientLog.CHECK_POINT_REQUEST_HEADER);
 			//requestHeaderTime‚ª‹É’[‚É‘å‚«‚¢‚Ì‚Ílisten back log‚É—­‚Ü‚Á‚½‚©‚ç
-			if(requestHeaderTime<(nomalResponseHeaderTime*8)){
+			if(requestHeaderTime<=(nomalResponseHeaderTime*8)){
 				maxClients++;
 			}
 			accessLogs[i].unref();

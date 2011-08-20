@@ -95,7 +95,7 @@ public class WebClientConnection extends PoolBase {
 		overloadHeaders.put(HeaderParser.HOST_HEADER,getTargetServer()+":"+getTargetPort());
 		KeepAliveContext.setConnectionHandler(overloadHeaders,(!isHttps() && isUseProxy()),isCallerkeepAlive);
 		ByteBuffer[] requestHeaderBuffer = requestHeader.getHeaderBuffer(requestLine,overloadHeaders,DELETE_HEADERS);
-		System.out.println(new String(requestHeaderBuffer[0].array(),requestHeaderBuffer[0].position(),requestHeaderBuffer[0].limit()));
+//		System.out.println(new String(requestHeaderBuffer[0].array(),requestHeaderBuffer[0].position(),requestHeaderBuffer[0].limit()));
 		
 		return requestHeaderBuffer;
 	}

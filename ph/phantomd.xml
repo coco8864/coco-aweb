@@ -7,7 +7,7 @@
     <param name="watch.heartBeatLimit" value="20000"/>
     <param name="watch.restartLimit" value="3"/>
     <param name="watch.type" value="queuelet"/><!--java,watch-->
-    <param name="java.vmOption.length" value="1"/><!--初期のvmOption、ダウン時は直近起動時のvmOption -->
+    <param name="java.vmOption.length" value="3"/><!--初期のvmOption、ダウン時は直近起動時のvmOption -->
     <param name="java.vmOption.0" value="-DPH_HOME=${PH_HOME}"/>
     <param name="java.vmOption.1" value="-Xdebug"/>
     <param name="java.vmOption.2" value="-Xrunjdwp:transport=dt_socket,server=y,address=1234"/>
