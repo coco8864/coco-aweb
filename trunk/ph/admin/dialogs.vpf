@@ -119,10 +119,12 @@ function checkServer(){
 		_serverInfo:function(msg){
 			var sv=msg.message;
 			ph.dump(sv);
+			ph.jQuery("#checkStatus").text(sv.status);
 			ph.jQuery("#checkUrl").text(sv.url);
 			ph.jQuery("#checkIsUseProxy").text(sv.useProxy);
 			ph.jQuery("#checkProxyServer").text(sv.proxyServer);
 			ph.jQuery("#checkServer").text(sv.serverHeader);
+			ph.jQuery("#checkHttpVersion").text(sv.httpVersion);
 			ph.jQuery("#checkConnection").text(sv.connectionHeader);
 			ph.jQuery("#checkProxyConnection").text(sv.proxyConnectionHeader);
 			ph.jQuery("#checkKeepAlive").text(sv.keepAliveHeader);
@@ -264,25 +266,28 @@ json file:<input type="file" name="stressFile" id="stressFile"/>
 
 ##checkServer用ダイアログ
 <div id="checkServerDialog">
-url:<input id="checkServerUrl" type="text" size="64" value='http://ph.ph-sample.appspot.com/'><br/>
-<input type="button" value="check" onClick='checkServer();'>
-<input type="button" value="cancel" onClick="jQuery('#checkServerDialog').dialog('close');"><br/>
+url:<input id="checkServerUrl" type="text" size="64" value=''><br/>
 <hr/>
+status:<span id="checkStatus"></span><br/>
 url:<span id="checkUrl"></span><br/>
 isUseProxy:<span id="checkIsUseProxy"></span><br/>
 proxyServer:<span id="checkProxyServer"></span><br/>
 <hr/>
-Server:<span id="checkServer"></span><br/>
-Connection:<span id="checkConnection"></span><br/>
-ProxyConnection:<span id="checkProxyConnection"></span><br/>
-KeepAlive:<span id="checkKeepAlive"></span><br/>
+Server:<b><span id="checkServer"></span></b><br/>
+httpVersion:<b><span id="checkHttpVersion"></span></b><br/>
+Connection:<b><span id="checkConnection"></span></b><br/>
+ProxyConnection:<b><span id="checkProxyConnection"></span></b><br/>
+KeepAlive:<b><span id="checkKeepAlive"></span></b><br/>
 <hr/>
-readTimeout:<span id="checkReadTimeout"></span><br/>
-connectTime:<span id="checkConnectTime"></span><br/>
-sslProxyTime:<span id="checkSslProxyTime"></span><br/>
-handshakeTime:<span id="checkHandshakeTime"></span><br/>
-maxClients:<span id="checkMaxClients"></span><br/>
-listenBacklog:<span id="checkListenBacklog"></span><br/>
+connectTime:<b><span id="checkConnectTime"></span></b><br/>
+sslProxyTime:<b><span id="checkSslProxyTime"></span></b><br/>
+handshakeTime:<b><span id="checkHandshakeTime"></span></b><br/>
+readTimeout:<b><span id="checkReadTimeout"></span></b><br/>
+##maxClients:<span id="checkMaxClients"></span><br/>
+##listenBacklog:<span id="checkListenBacklog"></span><br/>
+<hr/>
+<input type="button" value="check" onClick='checkServer();'>
+<input type="button" value="cancel" onClick="jQuery('#checkServerDialog').dialog('close');"><br/>
 </div> 
 
 ##mapping入力用ダイアログ

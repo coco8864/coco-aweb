@@ -203,6 +203,11 @@ function updateEntry(accessLogs){
 	ph.jQuery("#contentType").text(accessLog.contentType);
 	ph.jQuery("#resolveOrigin").text(accessLog.resolveOrigin);
 	ph.jQuery("#channelId").text(accessLog.channelId);
+	if(accessLog.destinationType=='S'){
+		checkServerUrl='https://' + accessLog.resolveOrigin;
+	}else{
+		checkServerUrl='http://' + accessLog.resolveOrigin;
+	}
 
 	var processTime=accessLog.processTime +'(' +
 				accessLog.connectTime +',' +
@@ -247,7 +252,10 @@ function updateEntry(accessLogs){
 	}
 }
 
+var checkServerUrl='';
+
 function traceCheckServer(){
+	ph.jQuery("#checkServerUrl").val(checkServerUrl);
 	jQuery('#checkServerDialog').dialog('open');
 }
 
