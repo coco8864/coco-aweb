@@ -287,7 +287,6 @@ public class WebClientTest extends TestBase{
 		@Override
 		public void onWebProxyConnected(Object userContext) {
 			// TODO Auto-generated method stub
-			
 		}
 	}
 	
@@ -371,7 +370,7 @@ public class WebClientTest extends TestBase{
 		WebClientLog webClientLog=(WebClientLog)PoolManager.getInstance(WebClientLog.class);
 		accessLog.setWebClientLog(webClientLog);
 		synchronized(webClientLog){
-			caller.startRequest(handler, accessLog);
+			caller.startRequest(handler, accessLog,10000);
 			while(true){
 //				if(webClientLog.getCheckPoint()>=WebClientLog.CHECK_POINT_CONNECT){
 				if(webClientLog.getCheckPoint()>=WebClientLog.CHECK_POINT_RESPONSE_BODY){
@@ -384,14 +383,31 @@ public class WebClientTest extends TestBase{
 		System.out.println(webClientLog);
 	}
 	
+	
+	/*
+	 * connect時間と同時接続の取得
+	 * 秒間何接続可能か？
+	 * 1connection接続するのにかかる時間
+	 * いくつ接続できたか？
+	 * 5秒間に256を上限にconnectionを連続
+	 * 1)connectにかかった平均時間をconnect時間とする
+	 * 
+	 * しばらく待って
+	 * 2)status:200かつ、responseがすぐに返却された数を同時接続数
+	 * 3)connect数-同時接続数をbacklogとする
+	 */
 	@Test
 	public void test7() throws Throwable{
 		callTest("qtest7",Long.MAX_VALUE);
 	}
 	public void qtest7() throws Throwable{
 		boolean isCallerKeepAlive=true;
-		Caller[] callers=new Caller[512];
-		Caller caller=Caller.create(new URL("http://ph-sample.appspot.com"),isCallerKeepAlive);
+//		Caller caller=Caller.create(new URL("http://10.124.175.29/"),isCallerKeepAlive);
+//		Caller caller=Caller.create(new URL("http://ph-sample.appspot.com/"),isCallerKeepAlive);
+//		Caller caller=Caller.create(new URL("http://www.google.co.jp/"),isCallerKeepAlive);
+//		Caller caller=Caller.create(new URL("http://www.google.com/"),isCallerKeepAlive);
+		Caller caller=Caller.create(new URL("http://www.google.co.jp/"),isCallerKeepAlive);
+		Caller[] callers=new Caller[256];
 		callers[0]=caller;
 		for(int i=1;i<callers.length;i++){
 			callers[i]=caller.dup(null);
@@ -400,29 +416,50 @@ public class WebClientTest extends TestBase{
 		AccessLog accessLogs[]=new AccessLog[callers.length];
 		WebClientConnection connection=caller.getConnection();
 		for(int i=0;i<handlers.length;i++){
-			handlers[i]=WebClientHandler.create(false,connection.getTargetServer(), connection.getTargetPort());
-			handlers[i].setHeaderSchedule(200000, Long.MIN_VALUE);
+			handlers[i]=WebClientHandler.create(connection);
 			accessLogs[i]=(AccessLog)PoolManager.getInstance(AccessLog.class);
 			WebClientLog webClientLog=(WebClientLog)PoolManager.getInstance(WebClientLog.class);
 			accessLogs[i].setWebClientLog(webClientLog);
 		}
+		long startTime=System.currentTimeMillis();
+		int count=0;
+		long sum=0;
 		for(int i=0;i<handlers.length;i++){
 			WebClientLog webClientLog=accessLogs[i].getWebClientLog();
+			long timeout=startTime+10000-(i*10)-System.currentTimeMillis();
 			synchronized(webClientLog){
-				callers[i].startRequest(handlers[i], accessLogs[i]);
+				handlers[i].setHeaderSchedule(timeout, 0);//connectしてから、10秒後に動き出す
+				callers[i].startRequest(handlers[i], accessLogs[i],1000);
 				while(true){
-					if(webClientLog.getCheckPoint()>=WebClientLog.CHECK_POINT_CONNECT){
-//					if(webClientLog.getCheckPoint()>=WebClientLog.CHECK_POINT_RESPONSE_BODY){
+					int checkPoint=webClientLog.getCheckPoint();
+					if(checkPoint==WebClientLog.CHECK_POINT_CONNECT){
+						long t=webClientLog.getProcessTime(WebClientLog.CHECK_POINT_CONNECT);
+						System.out.println("t:"+t);
+						count++;
+						sum+=t;
+						break;
+					}else if(checkPoint>WebClientLog.CHECK_POINT_CONNECT){
+						//connectTimeoutの可能性が高い
+						System.out.println("cannot connect."+webClientLog);
 						break;
 					}
 					webClientLog.wait();
 				}
 			}
-			System.out.println(webClientLog);
+//			System.out.println(webClientLog);
+			if( (System.currentTimeMillis()-startTime)>5000 ){
+				System.out.println("count of connection:" +i);
+				break;
+			}
 		}
+		long interval=System.currentTimeMillis()-startTime;
+		System.out.println("time:"+interval+":count:"+count +":persec:" +(count*1000)/interval +":sum:" +sum+":ave:" +(double)sum/(double)count);
+		
+		Thread.sleep(startTime+11000-System.currentTimeMillis());
 		for(int i=0;i<handlers.length;i++){
-			System.out.println("i:"+i +":checkPoint:" +accessLogs[i].getWebClientLog().getCheckPoint());
-			System.out.println(accessLogs[i].getWebClientLog().getProcessTime(WebClientLog.CHECK_POINT_CONNECT));
+			System.out.println("i:"+i +":checkPoint:" +accessLogs[i].getWebClientLog().getCheckPoint()+
+			":StatusCode:" +accessLogs[i].getStatusCode());
+			System.out.println(accessLogs[i].getWebClientLog());
 		}
 		
 //		System.out.println("statusCode:"+accessLog.getStatusCode());
@@ -436,14 +473,16 @@ public class WebClientTest extends TestBase{
 	 * 3)connect時間の測定,128回の平均
 	 * 4)同時接続数の測定,MAX:512
 	 */
-	
+	/*
+	 * header情報の取得
+	 */
 	@Test
 	public void test8() throws Throwable{
 		callTest("qtest8",Long.MAX_VALUE);
 	}
 	public void qtest8() throws Throwable{
 		boolean isCallerKeepAlive=true;
-		Caller caller=Caller.create(new URL("http://www.asahi.com/"),isCallerKeepAlive);
+		Caller caller=Caller.create(new URL("http://10.124.175.29/"),isCallerKeepAlive);
 		WebClientConnection connection=caller.getConnection();
 		WebClientHandler handler=WebClientHandler.create(connection);
 //		handler.setHeaderSchedule(1000, 0);
@@ -451,7 +490,7 @@ public class WebClientTest extends TestBase{
 		WebClientLog webClientLog=(WebClientLog)PoolManager.getInstance(WebClientLog.class);
 		accessLog.setWebClientLog(webClientLog);
 		synchronized(webClientLog){
-			caller.startRequest(handler, accessLog);
+			caller.startRequest(handler, accessLog,10000);
 			while(true){
 //				if(webClientLog.getCheckPoint()>=WebClientLog.CHECK_POINT_CONNECT){
 				if(webClientLog.getCheckPoint()>=WebClientLog.CHECK_POINT_RESPONSE_BODY){
@@ -464,6 +503,34 @@ public class WebClientTest extends TestBase{
 		System.out.println(webClientLog);
 	}
 	
-	
+	/*
+	 * timeout情報の取得
+	 */
+	@Test
+	public void test9() throws Throwable{
+		callTest("qtest9",Long.MAX_VALUE);
+	}
+	public void qtest9() throws Throwable{
+		boolean isCallerKeepAlive=true;
+		Caller caller=Caller.create(new URL("https://ph-sample.appspot.com/"),isCallerKeepAlive);
+		WebClientConnection connection=caller.getConnection();
+		WebClientHandler handler=WebClientHandler.create(connection);
+		handler.setHeaderSchedule(9000, 0);
+		AccessLog accessLog=(AccessLog)PoolManager.getInstance(AccessLog.class);
+		WebClientLog webClientLog=(WebClientLog)PoolManager.getInstance(WebClientLog.class);
+		accessLog.setWebClientLog(webClientLog);
+		synchronized(webClientLog){
+			caller.startRequest(handler, accessLog,10000);
+			while(true){
+//				if(webClientLog.getCheckPoint()>=WebClientLog.CHECK_POINT_CONNECT){
+				if(webClientLog.getCheckPoint()>=WebClientLog.CHECK_POINT_RESPONSE_BODY){
+					break;
+				}
+				webClientLog.wait();
+			}
+		}
+		System.out.println("statusCode:"+accessLog.getStatusCode());
+		System.out.println(webClientLog);
+	}
 	
 }
