@@ -16,10 +16,13 @@ import naru.aweb.queue.QueueManager;
 public class ServerChecker extends PoolBase implements Timer{
 	private static final long CONNECT_TEST_TERM=10000;
 	private static final int CONNECT_TEST_MAX=256;
-	private static final int READ_TIMEOUT_MAX=60000;
+	private static final int READ_TIMEOUT_MAX=31000;
 	
 	private String chId;
 	private String url;
+	
+	private String status;
+	
 	private boolean isHttps;
 	private boolean isUseProxy;
 	private String proxyServer;
@@ -239,10 +242,12 @@ public class ServerChecker extends PoolBase implements Timer{
 	public void onTimer(Object userContext) {
 		QueueManager queueManager=QueueManager.getInstance();
 		checkHeader();
+		status="readTimeout...";
 		queueManager.publish(chId, this);
 		checkReadTimeout();
-		queueManager.publish(chId, this);
-		checkMultipulConnect();
+//		queueManager.publish(chId, this);
+//		checkMultipulConnect();
+		status="done";
 		queueManager.publish(chId, this, true, true);
 		this.unref(true);
 	}
@@ -317,5 +322,8 @@ public class ServerChecker extends PoolBase implements Timer{
 		connectTime=sslProxyTime=handshakeTime=0;
 		readTimeout=maxClients=listenBacklog=0;
 	}
-	
+
+	public String getStatus() {
+		return status;
+	}
 }
