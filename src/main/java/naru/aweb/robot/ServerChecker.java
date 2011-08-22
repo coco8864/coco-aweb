@@ -14,8 +14,8 @@ import naru.aweb.http.WebClientHandler;
 import naru.aweb.queue.QueueManager;
 
 public class ServerChecker extends PoolBase implements Timer{
-	private static final long CONNECT_TEST_TERM=10000;
-	private static final int CONNECT_TEST_MAX=256;
+	private static final long CONNECT_TEST_TERM=100;
+	private static final int CONNECT_TEST_MAX=8;
 	private static final int READ_TIMEOUT_MAX=31000;
 	
 	private String chId;
@@ -241,12 +241,18 @@ public class ServerChecker extends PoolBase implements Timer{
 	
 	public void onTimer(Object userContext) {
 		QueueManager queueManager=QueueManager.getInstance();
+		status="checkHeader...";
+		queueManager.publish(chId, this);
 		checkHeader();
+		
+		status="checkMultipulConnect...";
+		queueManager.publish(chId, this);
+		checkMultipulConnect();
+		
 		status="readTimeout...";
 		queueManager.publish(chId, this);
 		checkReadTimeout();
-//		queueManager.publish(chId, this);
-//		checkMultipulConnect();
+		
 		status="done";
 		queueManager.publish(chId, this, true, true);
 		this.unref(true);

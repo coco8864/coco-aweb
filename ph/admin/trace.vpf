@@ -203,10 +203,14 @@ function updateEntry(accessLogs){
 	ph.jQuery("#contentType").text(accessLog.contentType);
 	ph.jQuery("#resolveOrigin").text(accessLog.resolveOrigin);
 	ph.jQuery("#channelId").text(accessLog.channelId);
+
+	//traceCheckServerの初期値を計算
 	if(accessLog.destinationType=='S'){
 		checkServerUrl='https://' + accessLog.resolveOrigin;
-	}else{
+	}else if(accessLog.destinationType=='H'){
 		checkServerUrl='http://' + accessLog.resolveOrigin;
+	}else{
+		checkServerUrl=ph.adminUrl;
 	}
 
 	var processTime=accessLog.processTime +'(' +
