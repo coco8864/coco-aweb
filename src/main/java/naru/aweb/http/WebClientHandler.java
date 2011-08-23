@@ -242,6 +242,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 			}
 			PoolManager.poolArrayInstance(buffers);
 			if (responseHeader.isParseEnd()) {
+				onWebProxyConnected();//ProxyConnectŠ®—¹
 				if (responseHeader.isParseError()) {
 					logger.warn("ssl proxy header error");
 					// client.doneResponse("500","fail to ssl proxy connect");
@@ -550,6 +551,11 @@ public class WebClientHandler extends SslHandler implements Timer {
 	private void onWebConnected() {
 		if (webClient != null) {
 			webClient.onWebConnected(userContext);
+		}
+	}
+	private void onWebProxyConnected() {
+		if (webClient != null) {
+			webClient.onWebProxyConnected(userContext);
 		}
 	}
 	
