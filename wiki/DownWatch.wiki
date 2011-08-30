@@ -6,17 +6,17 @@
 ${phantom}/conf/phantomd.xml
 }}}
 
- *watch.heartBeatLimit
+ * watch.heartBeatLimit
   ミリ秒を指定します。この時間ハートビート通知がない場合ハングアップしたとみなして強制的に再起動します。ハートビートはこの指定時間の半分の時間で行われます。
 
- *watch.restartLimit
+ * watch.restartLimit
   連続的に再起動に失敗した場合、再起動をあきらめる回数を指定します。
 
- *java.vmOption.length
+ * java.vmOption.length
   javaVMオプションの数を指定します。0は、javaVMオプションが無いことを現します。
 
- *java.vmOption.${数値}
+ * java.vmOption.${数値}
   javaVMオプションを指定します。java.vmOption.lengthで指定した数分が利用されます。
 
- *java.heapSize
+ * java.heapSize
   初回起動時のjavaヒープサイズを指定します。異常再起動時には直近のサイズが採られます。（手動で再起動していた場合、必ずしもこの値になりません）
