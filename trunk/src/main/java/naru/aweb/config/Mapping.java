@@ -664,7 +664,7 @@ public class Mapping{
 		if(Boolean.FALSE.equals(getOption("peek"))){//sslproxyÇÃìÆçÏÇçsÇ¢ÇΩÇ¢èÍçá
 			return false;
 		}
-		if(!"".equals(realHostName)&&this.realHostName!=null && !this.realHostName.equals(realHostName)){
+		if(!"".equals(this.realHostName)&&this.realHostName!=null && !this.realHostName.equals(realHostName)){
 			return false;
 		}
 		if(!SourceType.PROXY.equals(sourceType)){
@@ -776,7 +776,7 @@ public class Mapping{
 	}
 	
 	public MappingResult resolve(String realHostName,SourceType targetSourceType,SecureType targetSecureType,ServerParser targetServer,String targetPath){
-		if(this.realHostName!=null && !this.realHostName.equals(realHostName)){
+		if(!"".equals(this.realHostName) && this.realHostName!=null && !this.realHostName.equals(realHostName)){
 			return null;
 		}
 		if(!this.sourceType.equals(targetSourceType)){
