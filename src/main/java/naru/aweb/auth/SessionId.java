@@ -231,7 +231,14 @@ public class SessionId extends PoolBase{
 		}
 		if(mapping.getSourceType()!=Mapping.SourceType.WS){//WebSocketは直接認証していない
 			if(this.mapping!=mapping){
-				return false;
+				//mappingをreloadするとインスタンスが変わるのでこれが一致しなくなる
+				if(!this.mapping.getId().equals(mapping.getId())){
+					return false;
+				}
+				logger.debug("relaod mapping."+mapping.getId());
+				//古いmappingは忘れた方がよい
+				setMapping(mapping);
+//				this.mapping=mapping;
 			}
 		}
 		return true;
