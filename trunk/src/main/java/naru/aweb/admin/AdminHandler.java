@@ -535,7 +535,7 @@ public class AdminHandler extends WebServerHandler{
 			//tokenが合致しない。POSTならエラー、GETなら静的コンテンツとして処理
 			if(requestHeader.getMethod().equalsIgnoreCase(HeaderParser.POST_METHOD)){
 				logger.error("CSRF check error.path:"+path +":cid:"+getChannelId());
-				completeResponse("403");
+				completeResponse("403","token error.");
 			}else{
 				mapping.setOption(MappingResult.PARAMETER_VELOCITY_USE,"false");
 				mapping.setDesitinationFile(config.getPublicDocumentRoot());
