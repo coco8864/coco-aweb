@@ -229,8 +229,13 @@ public class SessionId extends PoolBase{
 		if(!isMatch(type,id)){
 			return false;
 		}
+		//TODO 認証時と同じmappingとは限らない。異なるmappingの場合は再度認証を求めた方がbetter
+		//しかし、mappingのreloadをするとPOSTの認証が通らなくなる。
+		//ph.auth.setAuthしても、tokenが合わなくなる。
+		/*
 		if(mapping.getSourceType()!=Mapping.SourceType.WS){//WebSocketは直接認証していない
 			if(this.mapping!=mapping){
+				return false;
 				//mappingをreloadするとインスタンスが変わるのでこれが一致しなくなる
 				if(!this.mapping.getId().equals(mapping.getId())){
 					return false;
@@ -238,9 +243,9 @@ public class SessionId extends PoolBase{
 				logger.debug("relaod mapping."+mapping.getId());
 				//古いmappingは忘れた方がよい
 				setMapping(mapping);
-//				this.mapping=mapping;
 			}
 		}
+		*/
 		return true;
 	}
 	
