@@ -13,8 +13,14 @@ function editSave(){
 	trace[part+"Encode"]=ph.jQuery("#textEditEncode").val();
 	if(part=="requestHeader"){
 		ph.jQuery("#requestHeader").text(trace[part]);
+		ph.jQuery("#requestHeaderDigest").text('[editting]');
+	}else if(part=="requestBody"){
+		ph.jQuery("#requestBody").text('[editting]');
 	}else if(part=="responseHeader"){
 		ph.jQuery("#responseHeader").text(trace[part]);
+		ph.jQuery("#responseHeaderDigest").text('[editting]');
+	}else if(part=="responseBody"){
+		ph.jQuery("#responseBody").text('[editting]');
 	}
 	jQuery('#textEdit').dialog('close');
 }
