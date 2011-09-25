@@ -74,10 +74,10 @@ function requestHeaderEdit(){
 }
 
 function requestBodyEdit(){
-	if(!trace.accessLog||!trace.accessLog.requestBodyDigest){
-		alert("対象がありません");
-		return;
-	}
+//	if(!trace.accessLog||!trace.accessLog.requestBodyDigest){
+//		alert("対象がありません");
+//		return;
+//	}
 	openEditDialog(
 		trace.accessLog.requestBodyDigest,
 		trace.accessLog.id,
