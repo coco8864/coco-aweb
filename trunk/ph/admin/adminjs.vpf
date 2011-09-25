@@ -7,6 +7,7 @@ ph.admin={
 	formatYmdhm:function(date){return this.dateFormat(this.df_ymdhm,date);},
 	formatYmdhms:function(date){return this.dateFormat(this.df_ymdhms,date);},
 	formatHms:function(date){return this.dateFormat(this.df_hms,date);},
+	token:'$esc.javascript($!{session.token})',
 	dateFormat:function(format,date){
 		if(!date){
 			return "";
@@ -25,7 +26,7 @@ ph.admin={
  		}
 		var sendText=ph.JSON.stringify({
 			command:command,
-			token:'$esc.javascript($!{session.token})',
+			token:ph.admin.token,
 			param:paramObj
  		});
 		ph.jQuery.ajax({
@@ -36,7 +37,16 @@ ph.admin={
 			dataType:'text',
 			data: sendText,
 			success: cb,
-			error: function(){ph.log('doObjCommand error.command:'+command);}
+			error: function(xhr){
+//				if(xhr.status=="403"){
+//					ph.auth.setAuth(ph.adminUrl,function(isAuth,id){
+//						if(isAuth){
+//							ph.admin.doObjCommand(path,command,paramObj,cb);
+//						}
+//					});
+//				}
+				ph.log('doObjCommand error.command:'+command +':'+ xhr.status);
+			}
 		});
  	},
 ##dataTypeに関する注意事項,http://docs.jquery.com/Specifying_the_Data_Type_for_AJAX_Requests
@@ -46,9 +56,18 @@ ph.admin={
 			cb=function(){ph.log('doPramCommand nomal end.command:'+command);};
 		}
 		if(!errcb){
-			errcb=function(){ph.log('doPramCommand error.command:'+command);};
+			errcb=function(xhr){
+//				if(xhr.status=="403"){
+//					ph.auth.setAuth(ph.adminUrl,function(isAuth,id){
+//						if(isAuth){
+//							ph.admin.doPramCommand(path,command,params,cb,errcb);
+//						}
+//					});
+//				}
+				ph.log('doPramCommand error.command:'+command+':'+ xhr.status);
+			};
 		}
-		var cmdObj={command:command,token:'$esc.javascript($!{session.token})'};
+		var cmdObj={command:command,token:ph.admin.token};
 		if(params){
 			for(var name in params){
 				cmdObj[name]=params[name];
