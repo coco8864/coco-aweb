@@ -198,6 +198,10 @@ function openEditDialog(digest,id,requestLine,part,readonly,chunk,gzip,charset){
 	if(trace[part]!=null){
 		_openEditDialog(digest,id,requestLine,part,readonly,trace[part],trace[part+'Encode'],chunk,gzip);
 	}else{
+		if(!digest){
+			_openEditDialog(null,id,requestLine,part,readonly,trace[part],trace[part+'Encode'],chunk,gzip);
+			return;
+		}
 		var url='storeDownload?storeDigest='+encodeURIComponent(digest);
 		if(chunk){
 			url+='&chunk=true'
