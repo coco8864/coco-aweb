@@ -283,6 +283,8 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 	}
 
 	public void onBufferEnd(Object userContext) {
+		//gzipContextに入っているバッファをフラッシュする
+//		onBuffer(userContext,null);
 		if(isCodeConvert){
 			try {
 				ByteBuffer buffers[]=codeConverter.close();

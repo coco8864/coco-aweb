@@ -36,6 +36,7 @@ public class AdminRealHostHandler extends WebServerHandler{
 					orgRealHost.setBacklog(realHost.getBacklog());
 					orgRealHost.setBlackPattern(realHost.getBlackPattern());
 					orgRealHost.setWhitePattern(realHost.getWhitePattern());
+					config.updateRealHosts();
 				}
 			} catch (UnknownHostException e) {
 				logger.warn("fail to create RealHost fromJson.json:"+paramObj.toString(),e);

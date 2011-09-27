@@ -541,7 +541,7 @@ public class Config {
 		updateRealHosts();
 	}
 	
-	private void updateRealHosts(){
+	public void updateRealHosts(){
 		Set<RealHost>realHosts=RealHost.getRealHosts();
 		StringBuilder names=new StringBuilder();
 		for(RealHost realHost:realHosts){

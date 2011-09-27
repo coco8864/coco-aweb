@@ -104,7 +104,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		}
 		WebClientConnection connection=WebClientConnection.create(isHttps,server,port);
 		HeaderParser requestHeader=HeaderParser.createByUrl(url);
-		requestHeader.setHeader("User-Agent", "Mozilla/5.0 (Windows NT 6.0) AppleWebKit/535.1 (KHTML, like Gecko) Chrome/14.0.794.0 Safari/535.1");
+//		requestHeader.setHeader("User-Agent", "Mozilla/5.0 (Windows NT 6.0) AppleWebKit/535.1 (KHTML, like Gecko) Chrome/14.0.794.0 Safari/535.1");
 		String requestLine=connection.getRequestLine(requestHeader);
 		ByteBuffer[] requestHeaderBuffer=connection.getRequestHeaderBuffer(requestLine,requestHeader, isCallerKeepAlive);
 		requestHeader.unref(true);

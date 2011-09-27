@@ -134,6 +134,9 @@ public class WebServerHandler extends ServerBaseHandler {
 	public final String getHeader(String name) {
 		return responseHeader.getHeader(name);
 	}
+	public final String getResponseStatusCode() {
+		return responseHeader.getStatusCode();
+	}
 
 	public final void setNoCacheResponseHeaders() {
 		responseHeader.setHeader("Pragma", "no-cache");
@@ -397,7 +400,7 @@ public class WebServerHandler extends ServerBaseHandler {
 		accessLog.setRawWrite(getTotalReadLength()-accessLog.getRawWrite());
 		
 		Store readPeek = popReadPeekStore();
-		if (readPeek != null && readPeek.getPutLength() > 0) {
+		if (readPeek != null && readPeek.getPutLength() >= 0) {
 //			accessLog.setRequestBodyTrace(readPeek.getStoreId());
 			logger.debug("#endOfResponse"+readPeek.getStoreId());
 			accessLog.incTrace();

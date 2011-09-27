@@ -133,10 +133,10 @@ public class GzipContext extends PoolBase{
 	private boolean fillBuffer(ByteBuffer buffer) throws IOException{
 		while(buffer.hasRemaining()){
 			//store側にbufferがあるのを確認してからread
-			if(zipedInputStream.isBuffer()==false){
-				buffer.flip();
-				return false;//バッファ不足
-			}
+			//if(zipedInputStream.isBuffer()==false){
+			//	buffer.flip();
+			//	return false;//バッファ不足
+			//}
 			synchronized(gzipInputStream){
 				int pos=buffer.position();
 				int len;
@@ -147,7 +147,9 @@ public class GzipContext extends PoolBase{
 				}
 				if(len<0){
 					if(zipedInputStream.isBuffer()==false){
-						len=0;
+						buffer.flip();
+						return false;//バッファ不足
+//						len=0;
 					}else{
 						logger.debug("##error gzipInputStream.gzipInputStream:"+gzipInputStream);
 						throw new IOException("zipedInputStream.isBuffer():"+zipedInputStream.isBuffer());
