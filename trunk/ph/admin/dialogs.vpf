@@ -219,7 +219,7 @@ function openEditDialog(digest,id,requestLine,part,readonly,chunk,gzip,charset){
 			charset='utf-8';
 		}
 		url+='&Content-Type=text/plain;%20charset=' + charset;
-		ph.jQuery.get(url,null, 
+		ph.jQuery.get(url,null,
 			function(text){
 				_openEditDialog(digest,id,requestLine,part,readonly,text,charset,chunk,gzip);
 		},"html");

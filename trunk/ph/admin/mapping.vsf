@@ -127,7 +127,7 @@ updateDebugTrace("$esc.javascript(${config.getBoolean('debugTrace')})");
 <hr/>
 <form method="post" enctype="multipart/form-data" action="mapping" target="uploadFrame">
 <input type="button" value="更新" onClick="mappingTableRefresh()">
-<input type="button" value="反映" onClick="ph.admin.doPramCommand('mapping','reloadMappings',null,null)">
+<input type="button" value="反映" onClick="ph.admin.doPramCommand('mapping','reloadMappings',null,function(){alert('反映完了');})">
 <input type="hidden" name="command" value="importsMappings" />
 <input type="hidden" name="token" value="$esc.html(${session.token})"/>
 移入ファイル指定:<input type="file" name="importsFile" id="importsFile" />

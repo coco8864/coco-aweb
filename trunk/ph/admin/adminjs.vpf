@@ -22,7 +22,9 @@ ph.admin={
 	doObjCommand:function(path,command,paramObj,cb){
 		ph.log('doObjCommand call.command:'+command);
 		if(!cb){
- 			cb=function(){ph.log('doObjCommand nomal end.command:'+command);};
+ 			cb=function(){
+				ph.log('doObjCommand nomal end.command:'+command);
+			};
  		}
 		var sendText=ph.JSON.stringify({
 			command:command,
@@ -46,6 +48,11 @@ ph.admin={
 //					});
 //				}
 				ph.log('doObjCommand error.command:'+command +':'+ xhr.status);
+				var isHome=window.confirm('fail to ' + command + '.status:'+xhr.status +
+					'\nDo you go to Phantom Proxy Home?');
+				if(isHome){
+					location="$!esc.html(${config.config.publicWebUrl})";
+				}
 			}
 		});
  	},
@@ -53,7 +60,9 @@ ph.admin={
  	doPramCommand:function(path,command,params,cb,errcb){
 		ph.log('doPramCommand call.command:'+command);
 		if(!cb){
-			cb=function(){ph.log('doPramCommand nomal end.command:'+command);};
+ 			cb=function(){
+				ph.log('doObjCommand nomal end.command:'+command);
+			};
 		}
 		if(!errcb){
 			errcb=function(xhr){
@@ -65,6 +74,11 @@ ph.admin={
 //					});
 //				}
 				ph.log('doPramCommand error.command:'+command+':'+ xhr.status);
+				var isHome=window.confirm('fail to ' + command + '.status:'+xhr.status +
+					'\nDo you go to Phantom Proxy Home?');
+				if(isHome){
+					location="$!esc.html(${config.config.publicWebUrl})";
+				}
 			};
 		}
 		var cmdObj={command:command,token:ph.admin.token};

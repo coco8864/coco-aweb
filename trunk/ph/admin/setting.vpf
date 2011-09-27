@@ -30,6 +30,7 @@ function setKeepAlive(){
   },
   function(x){
 ##setKeepAlive完了
+    alert('KeepAlive設定完了');
   });
 }
 
@@ -40,14 +41,14 @@ function setHtml5(){
    isUseCrossDomain:ph.jQuery("#isUseCrossDomain").attr('checked')
   },
   function(x){
-##setKeepAlive完了
+##setHtml5完了
+    alert('HTML5設定完了');
   });
 }
 
 function setAuth(){
- var scheme=ph.jQuery("#authScheme").val();
- ph.jQuery("#curSchme").text(scheme);
- ph.admin.doCommand('setAuth',{
+  var scheme=ph.jQuery("#authScheme").val();
+  ph.admin.doCommand('setAuth',{
    scheme:scheme,
 ## logoutUrlは、デフォルトで自サーバの情報を参照している。
 ## 自サーバの情報を変更した場合追従した方がよいが、既に覚えている情報を上書きすることができない
@@ -56,6 +57,8 @@ function setAuth(){
    sessionTimeout:ph.jQuery("#authSessionTimeout").val()
   },
   function(x){
+    ph.jQuery("#curSchme").text(scheme);
+    alert('認証設定完了');
 ##setAuth完了
   });
 }
@@ -186,6 +189,7 @@ function setTimeouts(){
   writeTimeout:ph.jQuery("#writeTimeout").val()
   },
   function(x){
+    alert('Timeout設定完了');
 ##setTimeouts完了
   });
 }
