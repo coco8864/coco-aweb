@@ -565,7 +565,7 @@ public class HeaderParser extends PoolBase {
 			server = ServerParser.parse(serverString, 80);
 		} else {//TODO WebSocketリクエストをproxyする場合はどうするの？
 			String upgradeHeader = getHeader(UPGRADE_HEADER);
-			if (WEB_SOCKET.equals(upgradeHeader)) {
+			if (WEB_SOCKET.equalsIgnoreCase(upgradeHeader)) {
 				isWs = true;
 			}
 			// Webサーバへのリクエスト,sslproxyの場合もここを通るので、ポート番号の省略値は決められない

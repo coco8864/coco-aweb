@@ -120,13 +120,13 @@ public class DispatchHandler extends ServerBaseHandler {
 			connectTime=System.currentTimeMillis()-startTime.getTime();
 			// 最初の通信データでSSLか否かを判定する。
 			isFirstRead = false;
+			setReadTimeout(config.getReadTimeout());// adminのreadTimeoutを設定
 			if (SslAdapter.isSsl(buffers[0])) {
 				if (!sslOpenWithBuffer(false, buffers)) {
 					asyncClose(null);// handshake失敗
 				}
 				return;
 			}
-			setReadTimeout(config.getReadTimeout());// adminのreadTimeoutを設定
 		}
 		super.onRead(userContext, buffers);
 	}

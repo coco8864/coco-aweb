@@ -82,6 +82,8 @@ public class ServerChecker extends PoolBase implements Timer{
 		accessLog.setWebClientLog(webClientLog);
 		long connectTimeout=1000;
 		synchronized(webClientLog){
+			caller.setResponseHeaderTrace(true);
+			caller.setResponseBodyTrace(true);
 			caller.startRequest(handler, accessLog,connectTimeout);
 			while(true){
 				if(webClientLog.getCheckPoint()>=WebClientLog.CHECK_POINT_RESPONSE_BODY){
@@ -110,7 +112,9 @@ public class ServerChecker extends PoolBase implements Timer{
 				sslProxyTime=webClientLog.getProcessTime(WebClientLog.CHECK_POINT_SSL_PROXY);
 			}
 		}
-		accessLog.unref(true);
+		accessLog.setPersist(true);
+		accessLog.decTrace();
+//		accessLog.unref(true);
 	}
 	
 	private void checkReadTimeout(){

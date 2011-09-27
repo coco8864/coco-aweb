@@ -336,7 +336,13 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 
 	public void onRequestFailure(Object userContext,int stat,Throwable t) {
 		logger.debug("#webClientFailure.cid:"+getChannelId()+":"+stat,t);
-		responseEnd();
+		String statusCode=getResponseStatusCode();
+		if(statusCode!=null){
+			responseEnd();
+		}else{
+			//header‚ğƒŒƒXƒ|ƒ“ƒX‚·‚é–‚È‚­ˆÙí‚Æ‚È‚Á‚½
+			completeResponse("500", "proxyHandler error.stat:"+stat);
+		}
 	}
 	
 	public void onWrittenRequestHeader(Object userContext) {
