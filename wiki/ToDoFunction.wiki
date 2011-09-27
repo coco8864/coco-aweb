@@ -53,7 +53,9 @@
   * 監視機能の機能強化
     * freeMemoryが少なくなったら（少ない状態を複数回観測したら）自動再起動
     * hungupを検出したらThreadDumpを採取した後、再起動
-
+  * WebSocket,draft-ietf-hybi-thewebsocketprotocol-10対応
+    * いつの間にかChromeでWebSocketが使えなくなった
+    * 現状実装は、draft-ietf-hybi-thewebsocketprotocol-00
 
 できそうだけど基本やらない方針
   * Java5対応
