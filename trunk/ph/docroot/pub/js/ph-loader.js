@@ -82,7 +82,12 @@ if(ph.isUseSessionStorage){
 
 ph.isUseWebSocket=$esc.javascript(${config.getBoolean("isUseWebSocket",true)});
 if(typeof WebSocket == 'undefined'){
- ph.isUseWebSocket=false;
+ if(typeof MozWebSocket =='undefined'){
+  ph.isUseWebSocket=false;
+ }else{
+  ph.isUseWebSocket=false;
+//  window.WebSocket=MozWebSocket;
+ }
 }
 
 ph.isUseCrossDomain=$esc.javascript(${config.getBoolean("isUseCrossDomain",true)});
