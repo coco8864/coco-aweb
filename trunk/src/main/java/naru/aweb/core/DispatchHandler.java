@@ -175,8 +175,8 @@ public class DispatchHandler extends ServerBaseHandler {
 		accessLog.setStartTime(startTime);
 		accessLog.setConnectTime(connectTime);
 		accessLog.setHandshakeTime(handshakeTime);
-		accessLog.setRawRead(startTotalReadLength);
-		accessLog.setRawWrite(startTotalWriteLength);
+//		accessLog.setRawRead(startTotalReadLength);
+//		accessLog.setRawWrite(startTotalWriteLength);
 		accessLog.setTimeCheckPint(AccessLog.TimePoint.requestHeader);
 		accessLog.setIp(getRemoteIp());
 		if (user != null) {

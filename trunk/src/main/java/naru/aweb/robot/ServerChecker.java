@@ -22,23 +22,25 @@ public class ServerChecker extends PoolBase implements Timer{
 	private String url;
 	
 	private String status;
-	
+
+	//Ú‘±î•ñ
 	private boolean isHttps;
 	private boolean isUseProxy;
 	private String proxyServer;
 	
+	//ƒwƒbƒ_î•ñ
 	private String httpVersion;
 	private String serverHeader;
 	private String connectionHeader;
 	private String proxyConnectionHeader;
 	private String keepAliveHeader;
 	
-	private long readTimeout;
-	
+	//Ú‘±«”\
 	private double connectTime;
 	private double sslProxyTime;
 	private double handshakeTime;
 	
+	private long readTimeout;
 	private int maxClients;
 	private int listenBacklog;
 	
