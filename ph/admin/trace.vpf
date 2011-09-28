@@ -177,6 +177,7 @@ function updateEntry(accessLogs){
 
 	ph.jQuery("#logId").text(trace.accessLogId);
 	ph.jQuery("#inputLogId").val(trace.accessLogId);
+	ph.jQuery("#viewAccessLogId").val(trace.accessLogId);
 	var accessLog=accessLogs[0];
 	trace.accessLog=accessLog;
 	if(accessLog.originalLogId>=0){
@@ -271,6 +272,7 @@ ID:<input type="text" name="logId" id="inputLogId" size="8"/>
 <input type="button" onclick="jumpParent();" value="parent" disabled="disabled" id="traceParentButton"/>
 
 <input type="button" value="request" onClick="runTrace();"/>
+<input type="button" value="view" onClick="ph.jQuery('#viewAccessLogForm').submit();"/>
 <input type="button" value="check" onClick="traceCheckServer();" title="check server performance"/>
 ##最初は無効状態で表示
 <input type="button" value="save new" onClick="saveTrace();" disabled="disabled" id="traceSaveButton"/>
@@ -309,4 +311,7 @@ ID:<input type="text" name="logId" id="inputLogId" size="8"/>
 <tr><td title="responseBody編集画面"><input type="button" onClick="responseBodyEdit();" value="Response Body"/></td><td title="responseBodyダウンロード" id="responseBody"></td></tr>
 </tbody>
 </table>
+<form id="viewAccessLogForm" target="viewAccessLogWin" action="viewAccessLog">
+<input type="hidden" name="accessLogId" id="viewAccessLogId">
+</form>
 </div>
