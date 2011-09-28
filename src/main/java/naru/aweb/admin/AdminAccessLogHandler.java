@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+import naru.async.store.Store;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;

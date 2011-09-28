@@ -147,15 +147,17 @@ public class GzipContext extends PoolBase{
 				}
 				if(len<0){
 					if(zipedInputStream.isBuffer()==false){
-						buffer.flip();
-						return false;//バッファ不足
-//						len=0;
+						len=0;
 					}else{
 						logger.debug("##error gzipInputStream.gzipInputStream:"+gzipInputStream);
 						throw new IOException("zipedInputStream.isBuffer():"+zipedInputStream.isBuffer());
 					}
 				}
 				buffer.position(pos+len);
+				if(len==0&&zipedInputStream.isBuffer()==false){
+					buffer.flip();
+					return false;//バッファ不足
+				}
 			}
 		}
 		buffer.flip();
