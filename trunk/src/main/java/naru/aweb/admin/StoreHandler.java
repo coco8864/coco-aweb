@@ -88,7 +88,9 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 		}else{
 			setContentLength(length);
 		}
-		setStatusCode("200");
+		if(getStatusCode()==null){
+			setStatusCode("200");
+		}
 		this.store=store;
 		ref();//store‚Ì–Ê“|‚ð‚Ý‚é‚½‚ß
 		skipLength = offset;
