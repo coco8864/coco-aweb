@@ -392,12 +392,8 @@ public class WebServerHandler extends ServerBaseHandler {
 		accessLog.setContentEncoding(responseHeader.getHeader(HeaderParser.CONTENT_ENCODING_HEADER));
 
 		//当該リクエストでの実read長、warite長(sslの場合を考慮)
-		accessLog.setRawRead(getTotalReadLength()-accessLog.getRawRead());
-		accessLog.setRawWrite(getTotalWriteLength()-accessLog.getRawWrite());
-		
-		//当該リクエストでの実read長、warite長(sslの場合を考慮)
-		accessLog.setRawRead(getTotalReadLength()-accessLog.getRawRead());
-		accessLog.setRawWrite(getTotalReadLength()-accessLog.getRawWrite());
+		accessLog.setRawRead(getTotalReadLength());
+		accessLog.setRawWrite(getTotalWriteLength());
 		
 		Store readPeek = popReadPeekStore();
 		if (readPeek != null && readPeek.getPutLength() >= 0) {

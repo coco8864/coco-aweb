@@ -53,9 +53,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	private AccessLog orgAccessLog;//元となったAccessLog
 	private String resolveDigest;
 	
-//	private WebClientHandler webClientHandler;
 	private AccessLog accessLog;
-//	private CallScheduler scheduler;
 	private long responseLength;
 	
 	private boolean isResponseHeaderTrace=false;//TODO 外からもらう必要あり
@@ -221,6 +219,9 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	
 	public void startRequest(WebClientHandler webClientHandler,AccessLog accessLog,long connectTimeout){
 		logger.debug("#startRequest:"+browserName);
+		if(this.accessLog!=null){
+			throw new RuntimeException("this caller is in use.");
+		}
 		this.accessLog=accessLog;
 		WebClientLog webClientLog=accessLog.getWebClientLog();
 		
@@ -355,6 +356,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		}
 	}
 	
+	//onRequestFailureからも呼ばれるので注意
 	public void onRequestEnd(Object userContext,int stat) {
 		logger.debug("#onRequestEnd:"+browserName);
 		if(accessLog.getStatusCode()==null){
@@ -367,12 +369,10 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 					webClientHandler.getTotalReadLength(), 
 					webClientHandler.getTotalWriteLength()
 			);
-				
-			
 		}
 		//accessLogは、サーバとしての情報を格納している、そのため、client基準ではread/writeがひっくりかえる
-		accessLog.setRawRead(webClientHandler.getTotalWriteLength()-accessLog.getRawRead());
-		accessLog.setRawWrite(webClientHandler.getTotalReadLength()-accessLog.getRawWrite());
+		accessLog.setRawRead(webClientHandler.getTotalWriteLength());
+		accessLog.setRawWrite(webClientHandler.getTotalReadLength());
 		accessLog.setChannelId(webClientHandler.getChannelId());
 //		if(accessLog.getStatusCode()==null){
 //			//connectに失敗した場合、handshakeに失敗した場合、その他回線が切れた場合

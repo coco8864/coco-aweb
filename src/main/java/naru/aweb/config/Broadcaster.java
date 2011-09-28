@@ -58,6 +58,7 @@ public class Broadcaster implements Timer {
 		
 		/* json化する変数郡 */
 		long counter=0;
+		long time=0;
 		JSONObject memory=new JSONObject();
 		JSONObject channelContext=new JSONObject();
 		JSONObject authSession=new JSONObject();
@@ -89,6 +90,7 @@ public class Broadcaster implements Timer {
 		
 		void update(){
 			counter++;
+			time=System.currentTimeMillis();
 			Runtime runtime=Runtime.getRuntime();
 			memory.element("free", runtime.freeMemory());
 			memory.element("max", runtime.maxMemory());
@@ -102,6 +104,10 @@ public class Broadcaster implements Timer {
 
 		public long getCounter() {
 			return counter;
+		}
+		
+		public long getTime() {
+			return time;
 		}
 
 		public JSONObject getMemory() {
@@ -134,6 +140,12 @@ public class Broadcaster implements Timer {
 		public SelectorStastics[] getSelectorStasticses() {
 			return selectorStasticses;
 		}
+		
+		/* statis.vsfにjsonオブジェクトに展開するのに使用 */
+		@Override
+		public String toString() {
+			return JSONObject.fromObject(this).toString();
+		}
 	}
 	
 	private long nextLogOutput=0;
@@ -159,4 +171,5 @@ public class Broadcaster implements Timer {
 		long interval=config.getLong("broardcastInterval", BROADCAST_INTERVAL);
 		timerId=TimerManager.setTimeout(interval, this, stastics);
 	}
+	
 }
