@@ -106,6 +106,18 @@ public class AdminHandler extends WebServerHandler{
 	private static final String HEX_0D0A =new String(new byte[]{(byte)0x0d,(byte)0x0a});
 	private static final byte[] HEADER_END_BYTE =new byte[]{(byte)0x0d,(byte)0x0a,(byte)0x0d,(byte)0x0a};
 	
+	private HeaderParser createHeader(ByteBuffer[] buffers){
+		HeaderParser header=(HeaderParser)PoolManager.getInstance(HeaderParser.class);
+		for(int i=0;i<buffers.length;i++){
+			header.parse(buffers[i]);
+		}
+		PoolManager.poolArrayInstance(buffers);
+		if(!header.isParseEnd()){
+			header.parse(ByteBuffer.wrap(HEADER_END_BYTE));
+		}
+		return header;
+	}
+	
 	private HeaderParser getPartHeader(ParameterParser parameter,String part,String digest) throws UnsupportedEncodingException{
 		String text=parameter.getParameter(part);
 		String encode=parameter.getParameter(part+"Encode");
@@ -123,15 +135,7 @@ public class AdminHandler extends WebServerHandler{
 			data=bytes(text,encode);//TODO content-typeのcharset=の右なので、javaのencodeとして齟齬がある
 			buffers=BuffersUtil.toByteBufferArray(ByteBuffer.wrap(data));
 		}
-		HeaderParser header=(HeaderParser)PoolManager.getInstance(HeaderParser.class);
-		for(int i=0;i<buffers.length;i++){
-			header.parse(buffers[i]);
-		}
-		PoolManager.poolArrayInstance(buffers);
-		if(!header.isParseEnd()){
-			header.parse(ByteBuffer.wrap(HEADER_END_BYTE));
-		}
-		return  header;
+		return  createHeader(buffers);
 	}
 	
 	private String digest(ByteBuffer[] data){
@@ -244,6 +248,42 @@ public class AdminHandler extends WebServerHandler{
 		}
 		return accessLog;
 	}
+	
+	/* レスポンスの内容をそのままレスポンスする */
+	private void viewAccessLog(ParameterParser parameter){
+		String accessLogId=parameter.getParameter("accessLogId");
+		AccessLog accessLog=AccessLog.getById(Long.parseLong(accessLogId));
+		if(accessLog==null){
+			completeResponse("404","not found accessLog:"+accessLogId);
+			return;
+		}
+		String responsHeaderDigest=accessLog.getResponseHeaderDigest();
+		if(responsHeaderDigest==null){
+			completeResponse("404","not found response header data.");
+			return;
+		}
+		ByteBuffer[] headerBuffer=DataUtil.toByteBuffers(responsHeaderDigest);
+		if(headerBuffer==null){
+			completeResponse("404","not found response header data.digest:"+responsHeaderDigest);
+			return;
+		}
+		if( !parseResponseHeader(headerBuffer) ){
+			parseResponseHeader(BuffersUtil.toByteBufferArray(ByteBuffer.wrap(HEADER_END_BYTE)));
+		}
+		String responsBodyDigest=accessLog.getResponseBodyDigest();
+		if(responsBodyDigest==null){
+			responseEnd();
+			return;
+		}
+		Store body=Store.open(responsBodyDigest);
+		if(body==null){
+			responseEnd();
+			return;
+		}
+		setAttribute("Store", body);
+		forwardHandler(Mapping.STORE_HANDLER);
+	}
+	
 	
 	private String runAccessLog(ParameterParser parameter) throws UnsupportedEncodingException{
 		String accessLogId=parameter.getParameter("accessLogId");
@@ -526,6 +566,7 @@ public class AdminHandler extends WebServerHandler{
 			path="/admin.vsp";
 			mapping.setResolvePath(path);
 		}
+		ParameterParser parameter=getParameterParser();
 		if(path.endsWith(".vsp")||path.endsWith(".vsf")){
 			mapping.setDesitinationFile(config.getAdminDocumentRoot());
 			forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
@@ -533,8 +574,10 @@ public class AdminHandler extends WebServerHandler{
 		}else if(path.startsWith("/storeDownload")){
 			forwardHandler(Mapping.STORE_HANDLER);
 			return;
+		}else if(path.startsWith("/viewAccessLog")){
+			viewAccessLog(parameter);
+			return;
 		}
-		ParameterParser parameter=getParameterParser();
 		if(!checkToken(parameter)){
 			//tokenが合致しない。POSTならエラー、GETなら静的コンテンツとして処理
 			if(requestHeader.getMethod().equalsIgnoreCase(HeaderParser.POST_METHOD)){

@@ -117,6 +117,9 @@ public class DispatchHandler extends ServerBaseHandler {
 		logger.debug("#onRead.cid:" + getChannelId() + ":buffers.hashCode:"
 				+ buffers.hashCode());
 		if (isFirstRead) {
+			if (startTime == null) {// keepAliveからのリクエストの場合ここがリクエストの基点となる
+				startTime = new Date();
+			}
 			connectTime=System.currentTimeMillis()-startTime.getTime();
 			// 最初の通信データでSSLか否かを判定する。
 			isFirstRead = false;
