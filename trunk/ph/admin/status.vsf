@@ -11,7 +11,7 @@ function setBroadcaster(){
 
 function updateStastics(msg){
 	var stcs=msg.message;
-	ph.jQuery("#broadcasterTime").text(ph.admin.formatYmdhms(msg.time)+"("+ stcs.counter +")");
+	ph.jQuery("#broadcasterTime").text(ph.admin.formatYmdhms(stcs.time)+"("+ stcs.counter +")");
 	var memory=stcs.memory;
 	var useRate=(memory.max-memory.free)*100.0/memory.max;
 	ph.jQuery("#broadcasterMemory").text(memory.free +"/" +memory.max+"("+ useRate.toFixed(2) +"%)");
@@ -85,7 +85,8 @@ function onWatchCheck(){
 }
 
 ph.jQuery(function() {
-	watchStastics();//起動後一回は必ず取得する
+//	watchStastics();//起動後一回は必ず取得する
+	updateStastics({message:${config.config.stasticsObject}});
 	if(ph.isUseSessionStorage && sessionStorage['broardcastWatch']=='true'){
 		ph.jQuery('#broardcastWatchCheck').attr('checked','checked');
 	}else{
