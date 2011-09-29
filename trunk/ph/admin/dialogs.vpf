@@ -276,28 +276,44 @@ json file:<input type="file" name="stressFile" id="stressFile"/>
 
 ##checkServer用ダイアログ
 <div id="checkServerDialog">
-url:<input id="checkServerUrl" type="text" size="64" value=''><br/>
+request count:<select id="checkRequestCount" size="1">
+<option value="1">1</option>
+<option value="2">2</option>
+<option value="4">4</option>
+<option value="8">8</option>
+<option value="16">16</option>
+</select> keepAlive:<input id="checkKeepAlive" type="checkBox"> trace:<input id="checkTrace" type="checkBox"> <br/>
+url:<input id="checkServerUrl" type="text" size="80" value=''><br/>
+<input type="button" value="check" onClick='checkServer();'>
+<input type="button" value="cancel" onClick="jQuery('#checkServerDialog').dialog('close');"><br/>
 <hr/>
 status:<span id="checkStatus"></span><br/>
 url:<span id="checkUrl"></span><br/>
-isUseProxy:<span id="checkIsUseProxy"></span><br/>
-proxyServer:<span id="checkProxyServer"></span><br/>
-<hr/>
-Server:<b><span id="checkServer"></span></b><br/>
-httpVersion:<b><span id="checkHttpVersion"></span></b><br/>
-Connection:<b><span id="checkConnection"></span></b><br/>
-ProxyConnection:<b><span id="checkProxyConnection"></span></b><br/>
-KeepAlive:<b><span id="checkKeepAlive"></span></b><br/>
-<hr/>
-connectTime:<b><span id="checkConnectTime"></span></b><br/>
-sslProxyTime:<b><span id="checkSslProxyTime"></span></b><br/>
-handshakeTime:<b><span id="checkHandshakeTime"></span></b><br/>
-readTimeout:<b><span id="checkReadTimeout"></span></b><br/>
-##maxClients:<span id="checkMaxClients"></span><br/>
-##listenBacklog:<span id="checkListenBacklog"></span><br/>
-<hr/>
-<input type="button" value="check" onClick='checkServer();'>
-<input type="button" value="cancel" onClick="jQuery('#checkServerDialog').dialog('close');"><br/>
+<h3>Connection infomation</h3>
+<ul>
+<li>isUseProxy:<span id="checkIsUseProxy"></span></li>
+<li>proxyServer:<span id="checkProxyServer"></span></li>
+</ul>
+<h3>Header infomation</h3>
+<ul>
+<li>Server:<b><span id="checkServer"></span></b></li>
+<li>httpVersion:<b><span id="checkHttpVersion"></span></b></li>
+<li>Connection:<b><span id="checkConnection"></span></b></li>
+<li>ProxyConnection:<b><span id="checkProxyConnection"></span></b></li>
+<li>KeepAlive:<b><span id="checkKeepAlive"></span></b></li>
+</ul>
+<h3>Performance</h3>
+<ul>
+<li>connectTime:<b><span id="checkConnectTime"></span></b></li>
+<li>sslProxyTime:<b><span id="checkSslProxyTime"></span></b></li>
+<li>handshakeTime:<b><span id="checkHandshakeTime"></span></b></li>
+<li>requestHeaderTime:<b><span id="checkRequestHeaderTime"></span></b></li>
+<li>responseHeaderTime:<b><span id="checkResponseHeaderTime"></span></b></li>
+<li>responseBodyTime:<b><span id="checkResponseBodyTime"></span></b></li>
+##readTimeout:<b><span id="checkReadTimeout"></span></b></li>
+##maxClients:<span id="checkMaxClients"></span></li>
+##listenBacklog:<span id="checkListenBacklog"></span></li>
+</ul>
 </div> 
 
 ##mapping入力用ダイアログ
