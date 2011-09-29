@@ -67,7 +67,7 @@ public class WebClientLog extends PoolBase {
 		processTimes[checkPoint+1]=now;//CHECK_POINT_END‚ÅŒÄ‚Î‚ê‚éŽ–‚Í‚È‚¢
 		synchronized(this){
 			this.checkPoint=checkPoint;
-			notifyAll();
+			notify();
 		}
 	}
 	
