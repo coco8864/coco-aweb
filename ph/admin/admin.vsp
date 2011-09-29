@@ -45,7 +45,7 @@ ph.jQuery(function() {
 	jQuery("#commissionAuthDialog").dialog({title:'代理ログイン情報'});
 	jQuery("#commissionAuthDialog").dialog('close');
 
-	jQuery("#checkServerDialog").dialog({width: 500,title:'server check情報'});
+	jQuery("#checkServerDialog").dialog({width: 600,title:'server check'});
 	jQuery("#checkServerDialog").dialog('close');
 
 	jQuery("#tabs").tabs({
