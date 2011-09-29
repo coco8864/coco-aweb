@@ -22,6 +22,10 @@ public class ServerChecker extends PoolBase implements Timer{
 	private String url;
 	
 	private String status;
+	
+	private boolean isTrace;
+	private int requestCount;
+	private boolean isKeepAlive;
 
 	//Ú‘±î•ñ
 	private boolean isHttps;
@@ -68,7 +72,8 @@ public class ServerChecker extends PoolBase implements Timer{
 	private void setup(String url,String chId) throws MalformedURLException{
 		this.chId=chId;
 		this.url=url;
-		caller=Caller.create(new URL(url),true);
+		//‚±‚±‚Årequest header‚ÍSotre‚Ì•Û‘¶‚³‚ê‚é(digestŒvŽZŽž)
+		caller=Caller.create(new URL(url),isKeepAlive);
 		connection=caller.getConnection();
 		isHttps=connection.isHttps();
 		isUseProxy=connection.isUseProxy();
@@ -77,15 +82,17 @@ public class ServerChecker extends PoolBase implements Timer{
 		}
 	}
 	
-	private void checkHeader(){
+	private void checkHeader(boolean isTrace){
 		WebClientHandler handler=WebClientHandler.create(connection);
 		AccessLog accessLog=(AccessLog)PoolManager.getInstance(AccessLog.class);
 		WebClientLog webClientLog=(WebClientLog)PoolManager.getInstance(WebClientLog.class);
 		accessLog.setWebClientLog(webClientLog);
 		long connectTimeout=1000;
 		synchronized(webClientLog){
-			caller.setResponseHeaderTrace(true);
-			caller.setResponseBodyTrace(true);
+			if(isTrace){
+				caller.setResponseHeaderTrace(true);
+				caller.setResponseBodyTrace(true);
+			}
 			caller.startRequest(handler, accessLog,connectTimeout);
 			while(true){
 				if(webClientLog.getCheckPoint()>=WebClientLog.CHECK_POINT_RESPONSE_BODY){
@@ -106,7 +113,6 @@ public class ServerChecker extends PoolBase implements Timer{
 		if(nomalResponseHeaderTime==0){
 			nomalResponseHeaderTime++;
 		}
-		
 		connectTime=webClientLog.getProcessTime(WebClientLog.CHECK_POINT_CONNECT);
 		if(isHttps){
 			handshakeTime=webClientLog.getProcessTime(WebClientLog.CHECK_POINT_HANDSHAKE);
@@ -114,9 +120,10 @@ public class ServerChecker extends PoolBase implements Timer{
 				sslProxyTime=webClientLog.getProcessTime(WebClientLog.CHECK_POINT_SSL_PROXY);
 			}
 		}
-		accessLog.setPersist(true);
+		if(isTrace){
+			accessLog.setPersist(true);
+		}
 		accessLog.decTrace();
-//		accessLog.unref(true);
 	}
 	
 	private void checkReadTimeout(){
@@ -146,7 +153,6 @@ public class ServerChecker extends PoolBase implements Timer{
 		}
 		accessLog.unref(true);
 	}
-
 	
 	private boolean waitForStartRequest(WebClientLog webClientLog){
 		int checkPoint=webClientLog.getCheckPoint();
@@ -249,15 +255,15 @@ public class ServerChecker extends PoolBase implements Timer{
 		QueueManager queueManager=QueueManager.getInstance();
 		status="checkHeader...";
 		queueManager.publish(chId, this);
-		checkHeader();
+		checkHeader(isTrace);
 		
 		status="checkMultipulConnect...";
 		queueManager.publish(chId, this);
 		checkMultipulConnect();
 		
-		status="readTimeout...";
-		queueManager.publish(chId, this);
-		checkReadTimeout();
+//		status="readTimeout...";
+//		queueManager.publish(chId, this);
+//		checkReadTimeout();
 		
 		status="done";
 		queueManager.publish(chId, this, true, true);
