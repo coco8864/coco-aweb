@@ -3,6 +3,8 @@ package naru.aweb.admin;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Collection;
 
 import naru.aweb.config.AccessLog;
@@ -54,10 +56,10 @@ public class AdminPerfHandler extends WebServerHandler{
 	}
 	
 	//maxClients,listenBacklog,connection性能,handshake性能,Serverヘッダ
-	private String checkServer(String url){
+	private String checkServer(URL url,boolean isKeepAlive,int requestCount,boolean isTrace){
 		QueueManager queueManager=QueueManager.getInstance();
 		String chId=queueManager.createQueue(true);
-		ServerChecker.start(url,chId);
+		ServerChecker.start(url,isKeepAlive,requestCount,isTrace,chId);
 		return chId;
 	}
 	
@@ -120,7 +122,15 @@ public class AdminPerfHandler extends WebServerHandler{
 			return;
 		}else if("checkServer".equals(command)){
 			String url=parameter.getParameter("url");
-			String chId=checkServer(url);
+			String requestCount=parameter.getParameter("requestCount");
+			String isKeepALive=parameter.getParameter("isKeepAlive");
+			String isTrace=parameter.getParameter("isTrace");
+			String chId=null;
+			try {
+				chId = checkServer(new URL(url),Boolean.parseBoolean(isKeepALive),Integer.parseInt(requestCount),Boolean.parseBoolean(isTrace));
+			} catch (NumberFormatException e) {
+			} catch (MalformedURLException e) {
+			}
 			responseJson(chId);
 		}else if("stress".equals(command)){
 			String list=parameter.getParameter("list");

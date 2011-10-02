@@ -43,7 +43,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 	private boolean isKeepAlive;//keepAliveíÜÇ©î€Ç©
 	private boolean isCallerKeepAlive;//keepAliveÇäÛñ]Ç∑ÇÈÇ©î€Ç©
 	private long keepAliveTimeout=15000;//keepAliveÇ∑ÇÈèÍçáÅAkeepAliveÉ^ÉCÉÄ
-	private WebClientConnection webClientConnection=new WebClientConnection();
+	private WebClientConnection webClientConnection;//=new WebClientConnection();
 	private CallScheduler scheduler=null;
 	private long sslProxyActualWriteTime;
 	private long headerActualWriteTime;
@@ -69,6 +69,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 	private Object userContext;
 	
 	public static WebClientHandler create(WebClientConnection webClientConnection){
+		logger.debug("create:"+webClientConnection);
 		WebClientHandler webClientHandler=(WebClientHandler)PoolManager.getInstance(WebClientHandler.class);
 		webClientHandler.setWebClientConnection(webClientConnection);
 		return webClientHandler;
@@ -632,6 +633,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 	}
 
 	public void setWebClientConnection(WebClientConnection webClientConnection) {
+		logger.debug("#setWebClientConnection:" +webClientConnection);
 		if(this.webClientConnection!=null){
 			this.webClientConnection.unref();
 		}
