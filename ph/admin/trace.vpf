@@ -207,11 +207,11 @@ function updateEntry(accessLogs){
 
 	//traceCheckServerの初期値を計算
 	if(accessLog.destinationType=='S'){
-		checkServerUrl='https://' + accessLog.resolveOrigin;
+		checkReqUrl='https://' + accessLog.resolveOrigin;
 	}else if(accessLog.destinationType=='H'){
-		checkServerUrl='http://' + accessLog.resolveOrigin;
+		checkReqUrl='http://' + accessLog.resolveOrigin;
 	}else{
-		checkServerUrl=ph.adminUrl;
+		checkReqUrl=ph.adminUrl;
 	}
 
 	var processTime=accessLog.processTime +'(' +
@@ -257,10 +257,10 @@ function updateEntry(accessLogs){
 	}
 }
 
-var checkServerUrl='';
+var checkReqUrl='';
 
 function traceCheckServer(){
-	ph.jQuery("#checkServerUrl").val(checkServerUrl);
+	ph.jQuery("#checkReqUrl").val(checkReqUrl);
 	jQuery('#checkServerDialog').dialog('open');
 }
 
