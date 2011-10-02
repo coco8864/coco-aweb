@@ -78,6 +78,9 @@ public class WebClientLog extends PoolBase {
 		return writeLengths[checkPoing];
 	}
 	public long getProcessTime(int checkPoing){
+		if(readLengths[checkPoing]<0){
+			return -1;
+		}
 		return processTimes[checkPoing];
 	}
 

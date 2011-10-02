@@ -11,6 +11,7 @@ import java.security.NoSuchAlgorithmException;
 
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
+import naru.async.store.DataUtil;
 import naru.aweb.auth.AuthSession;
 import naru.aweb.auth.LogoutEvent;
 import naru.aweb.config.Config;
@@ -88,21 +89,51 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
     WebSocket-Location: ws://example.com/demo
     WebSocket-Protocol: sample		 *上りにあれば下りにも必要 
 	 */
-	private static byte[] WsOkResponse=(//Chrome 6.0.437.3 dev,http://tools.ietf.org/html/draft-hixie-thewebsocketprotocol-76
+	private static byte[] WsOkResponse=(//Chrome 16.0.889.0 dev-m dev
 		"HTTP/1.1 101 Web Socket Protocol Handshake\r\n" +
 		"Upgrade: WebSocket\r\n" +
 		"Connection: Upgrade\r\n").getBytes();
-//		"Sec-WebSocket-Origin: http://127.0.0.1:1280\r\n" +
-//		"Sec-WebSocket-Location: ws://127.0.0.1:1280/admin/queue\r\n" +
-//		"\r\n").getBytes();
-//	private static byte[] WsOkResponse2=(//Chrome 5.0.375.70
-//		"HTTP/1.1 101 Web Socket Protocol Handshake\r\n" +
-//		"Upgrade: WebSocket\r\n" +
-//		"Connection: Upgrade\r\n" +
-//		"WebSocket-Origin: http://a.b.c.d:1280\r\n" +
-//		"WebSocket-Location: ws://a.b.c.d:1280/admin/queue\r\n" +
-//		"\r\n").getBytes();
 	
+	private static final String SOLT="258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+	private boolean isHybe10=false;
+	
+	private boolean wsShakehand_hybi10(HeaderParser requestHeader){//16.0.889.0 dev-m用http://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-10
+		String key=requestHeader.getHeader(SEC_WEBSOCKET_KEY);
+		String version=requestHeader.getHeader(SEC_WEBSOCKET_VERSION);
+		logger.debug("WebSocket version:"+version);
+		String origin=requestHeader.getHeader(SEC_WEBSOCKET_ORIGIN);
+		String host=requestHeader.getHeader(HeaderParser.HOST_HEADER);
+		String path=requestHeader.getPath();
+		
+		String accept=DataUtil.digestBase64Sha1((key+SOLT).getBytes());
+		
+		setHttpVersion("HTTP/1.1");
+		setStatusCode("101","Switching Protocols");
+		setHeader("Upgrade", "WebSocket");
+		setHeader("Connection", "Upgrade");
+		setHeader(SEC_WEBSOCKET_ACCEPT,accept);
+		
+		webSocketProtocol=requestHeader.getHeader(SEC_WEBSOCKET_PROTOCOL);
+		if(webSocketProtocol!=null){
+			setHeader("Sec-WebSocket-Protocol", webSocketProtocol);
+		}
+		isHybe10=true;
+		flushHeader();
+		handshaked();
+		return true;
+	}
+	
+//	"Sec-WebSocket-Origin: http://127.0.0.1:1280\r\n" +
+//	"Sec-WebSocket-Location: ws://127.0.0.1:1280/admin/queue\r\n" +
+//	"\r\n").getBytes();
+//private static byte[] WsOkResponse2=(//Chrome 5.0.375.70
+//	"HTTP/1.1 101 Web Socket Protocol Handshake\r\n" +
+//	"Upgrade: WebSocket\r\n" +
+//	"Connection: Upgrade\r\n" +
+//	"WebSocket-Origin: http://a.b.c.d:1280\r\n" +
+//	"WebSocket-Location: ws://a.b.c.d:1280/admin/queue\r\n" +
+//	"\r\n").getBytes();
+
 	private boolean wsShakehand_76(HeaderParser requestHeader,ByteBuffer[] readBody){//Chrome 6.0.437.3用
 		handshakeBody=BuffersUtil.concatenate(handshakeBody, readBody);
 		long bodyLength=BuffersUtil.remaining(handshakeBody);
@@ -151,6 +182,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		return true;
 	}
 	
+	
 	private boolean wsShakehand_75(HeaderParser requestHeader){//Chrome 5.0.375.70用
 		String origin=requestHeader.getHeader("Origin");
 		String host=requestHeader.getHeader(HeaderParser.HOST_HEADER);
@@ -187,6 +219,11 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	private static String SEC_WEBSOCKET_KEY2="Sec-WebSocket-Key2";
 	private static String SEC_WEBSOCKET_PROTOCOL="Sec-WebSocket-Protocol";
 	private static String WEBSOCKET_PROTOCOL="WebSocket-Protocol";
+	
+	private static String SEC_WEBSOCKET_KEY="Sec-WebSocket-Key";
+	private static String SEC_WEBSOCKET_VERSION="Sec-WebSocket-Version";
+	private static String SEC_WEBSOCKET_ORIGIN="Sec-WebSocket-Origin";
+	private static String SEC_WEBSOCKET_ACCEPT="Sec-WebSocket-Accept";
 	
 	private int part(String key){
 		byte[] keybyte=null;
@@ -267,8 +304,11 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		RequestContext requestContext=getRequestContext();
 		requestContext.registerLogoutEvnet(this);
 		
+		String key=requestHeader.getHeader(SEC_WEBSOCKET_KEY);
 		String key1=requestHeader.getHeader(SEC_WEBSOCKET_KEY1);
-		if(key1==null){
+		if(key!=null){
+			wsShakehand_hybi10(requestHeader);
+		}else if(key1==null){
 			wsShakehand_75(requestHeader);
 		}else{
 			ByteBuffer[] body=requestHeader.getBodyBuffer();
@@ -290,6 +330,22 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		}catch(Throwable t){
 			logger.error("onMessage return exception",t);
 		}
+	}
+	
+	private final int FINMASK=(int)(0xf0);
+	private final int PCODEMASK=(int)(0x0f);
+	private final int MASKMASK=(int)(0x80);
+	private final int LENMASK=(int)(0x7f);
+	
+	private void parseMessageHybe10(ByteBuffer buffer){
+		int b1=buffer.get();
+		int fin=b1 & FINMASK;
+		int pcode=b1 & PCODEMASK;
+		byte b2=buffer.get();
+		int mask=b2 & MASKMASK;
+		int len=b2 & LENMASK;
+		byte[] maskKey=new byte[4];
+		buffer.get(maskKey);
 	}
 	
 	private void parseMessage(ByteBuffer buffer){
@@ -356,17 +412,24 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 			return;
 		}
 		lastIo=System.currentTimeMillis();
-		if(handshakeStat==1){//handshake未
+		if(isHybe10){
+			for(ByteBuffer buffer:buffers){
+				parseMessageHybe10(buffer);
+			}
+			PoolManager.poolArrayInstance(buffers);
+			asyncRead(null);
+		}else if(handshakeStat==1){//handshake未
 			if(wsShakehand_76(getRequestHeader(), buffers)==false){
 				return;
 			}
 			return;
+		}else{
+			for(ByteBuffer buffer:buffers){
+				parseMessage(buffer);
+			}
+			PoolManager.poolArrayInstance(buffers);
+			asyncRead(null);
 		}
-		for(ByteBuffer buffer:buffers){
-			parseMessage(buffer);
-		}
-		PoolManager.poolArrayInstance(buffers);
-		asyncRead(null);
 	}
 	
 	public void onFailure(Object userContext, Throwable t) {
@@ -420,6 +483,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		handshakeStat=0;
 		handshakeBody=null;
 		webSocketProtocol=null;
+		isHybe10=false;
 		super.recycle();
 	}
 }

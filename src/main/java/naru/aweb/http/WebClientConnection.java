@@ -199,4 +199,18 @@ public class WebClientConnection extends PoolBase {
 		}
 		return hashCode;
 	}
+
+	/*
+	@Override
+	public void ref() {
+		logger.debug("ref",new Throwable());
+		super.ref();
+	}
+	@Override
+	public boolean unref() {
+		logger.debug("unref",new Throwable());
+		return super.unref();
+	}
+	*/
+	
 }
