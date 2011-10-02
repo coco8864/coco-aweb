@@ -120,7 +120,10 @@ function checkServer(){
 //		alert('選択されていません.');
 //		return;
 //	}
-	var url=ph.jQuery("#checkServerUrl").val();
+	var url=ph.jQuery("#checkReqUrl").val();
+	var isKeepAlive=ph.jQuery("#checkKeepAlive").attr('checked');
+	var isTrace=ph.jQuery("#checkTrace").attr('checked');
+	var requestCount=ph.jQuery("#checkRequestCount").val();
 	var checkServerCb={
 		_serverInfo:function(msg){
 			var sv=msg.message;
@@ -129,15 +132,19 @@ function checkServer(){
 			ph.jQuery("#checkUrl").text(sv.url);
 			ph.jQuery("#checkIsUseProxy").text(sv.useProxy);
 			ph.jQuery("#checkProxyServer").text(sv.proxyServer);
-			ph.jQuery("#checkServer").text(sv.serverHeader);
+			ph.jQuery("#checkStatusCode").text(sv.statusCode);
 			ph.jQuery("#checkHttpVersion").text(sv.httpVersion);
+			ph.jQuery("#checkServer").text(sv.serverHeader);
 			ph.jQuery("#checkConnection").text(sv.connectionHeader);
 			ph.jQuery("#checkProxyConnection").text(sv.proxyConnectionHeader);
-			ph.jQuery("#checkKeepAlive").text(sv.keepAliveHeader);
+			ph.jQuery("#checkKeepAliveHeader").text(sv.keepAliveHeader);
 			ph.jQuery("#checkReadTimeout").text(sv.readTimeout);
-			ph.jQuery("#checkConnectTime").text(sv.connectTime);
-			ph.jQuery("#checkSslProxyTime").text(sv.sslProxyTime);
-			ph.jQuery("#checkHandshakeTime").text(sv.handshakeTime);
+			ph.jQuery("#checkConnectTime").text(sv.connectTimes);
+			ph.jQuery("#checkSslProxyTime").text(sv.sslProxyTimes);
+			ph.jQuery("#checkHandshakeTime").text(sv.handshakeTimes);
+			ph.jQuery("#checkRequestHeaderTime").text(sv.requestHeaderTimes);
+			ph.jQuery("#checkResponseHeaderTime").text(sv.responseHeaderTimes);
+			ph.jQuery("#checkResponseBodyTime").text(sv.responseBodyTimes);
 			ph.jQuery("#checkMaxClients").text(sv.maxClients);
 			ph.jQuery("#checkListenBacklog").text(sv.listenBacklog);
 			},
@@ -151,7 +158,7 @@ function checkServer(){
 	ph.admin.doPramCommand(
 		'perf',
 		'checkServer',
-		{url:url},
+		{url:url,isKeepAlive:isKeepAlive,isTrace:isTrace,requestCount:requestCount},
 		function(chId){ 
 			ph.queue.subscribeById(chId,checkServerCb)}
 	);
@@ -280,10 +287,8 @@ request count:<select id="checkRequestCount" size="1">
 <option value="1">1</option>
 <option value="2">2</option>
 <option value="4">4</option>
-<option value="8">8</option>
-<option value="16">16</option>
 </select> keepAlive:<input id="checkKeepAlive" type="checkBox"> trace:<input id="checkTrace" type="checkBox"> <br/>
-url:<input id="checkServerUrl" type="text" size="80" value=''><br/>
+url:<input id="checkReqUrl" type="text" size="80" value=''><br/>
 <input type="button" value="check" onClick='checkServer();'>
 <input type="button" value="cancel" onClick="jQuery('#checkServerDialog').dialog('close');"><br/>
 <hr/>
@@ -296,11 +301,12 @@ url:<span id="checkUrl"></span><br/>
 </ul>
 <h3>Header infomation</h3>
 <ul>
-<li>Server:<b><span id="checkServer"></span></b></li>
+<li>statusCode:<b><span id="checkStatusCode"></span></b></li>
 <li>httpVersion:<b><span id="checkHttpVersion"></span></b></li>
+<li>Server:<b><span id="checkServer"></span></b></li>
 <li>Connection:<b><span id="checkConnection"></span></b></li>
 <li>ProxyConnection:<b><span id="checkProxyConnection"></span></b></li>
-<li>KeepAlive:<b><span id="checkKeepAlive"></span></b></li>
+<li>KeepAlive:<b><span id="checkKeepAliveHeader"></span></b></li>
 </ul>
 <h3>Performance</h3>
 <ul>
