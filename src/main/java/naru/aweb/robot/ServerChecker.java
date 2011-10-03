@@ -128,43 +128,43 @@ public class ServerChecker extends PoolBase implements Timer{
 		long responseHeaderTime=webClientLog.getProcessTime(WebClientLog.CHECK_POINT_RESPONSE_HEADER);
 		long responseBodyTime=webClientLog.getProcessTime(WebClientLog.CHECK_POINT_RESPONSE_BODY);
 		
-		if(connectTime>0){
+		if(connectTime>=0){
 			connectTimes=connectTimes+" "+connectTime;
 		}else{
 			connectTimes=connectTimes+" -";
 		}
 		
-		if(handshakeTime>0){
+		if(handshakeTime>=0){
 			handshakeTimes=handshakeTimes+" "+handshakeTime;
 		}else{
 			handshakeTimes=handshakeTimes+" -";
 		}
 		
-		if(sslProxyTime>0){
+		if(sslProxyTime>=0){
 			sslProxyTimes=sslProxyTimes+" "+sslProxyTime;
 		}else{
 			sslProxyTimes=sslProxyTimes+" -";
 		}
 		
-		if(requestHeaderTime>0){
+		if(requestHeaderTime>=0){
 			requestHeaderTimes=requestHeaderTimes+" "+requestHeaderTime;
 		}else{
 			requestHeaderTimes=requestHeaderTimes+" -";
 		}
 		
-		if(requestBodyTime>0){
+		if(requestBodyTime>=0){
 			requestBodyTimes=requestBodyTimes+" "+requestBodyTime;
 		}else{
 			requestBodyTimes=requestBodyTimes+" -";
 		}
 		
-		if(responseHeaderTime>0){
+		if(responseHeaderTime>=0){
 			responseHeaderTimes=responseHeaderTimes+" "+responseHeaderTime;
 		}else{
 			responseHeaderTimes=responseHeaderTimes+" -";
 		}
 		
-		if(responseBodyTime>0){
+		if(responseBodyTime>=0){
 			responseBodyTimes=responseBodyTimes+" "+responseBodyTime;
 		}else{
 			responseBodyTimes=responseBodyTimes+" -";
@@ -317,8 +317,10 @@ public class ServerChecker extends PoolBase implements Timer{
 				handler=null;
 			}
 		}
-		handler.unref();
-		handler=null;
+		if(handler!=null){
+			handler.unref();
+			handler=null;
+		}
 		
 //		status="checkMultipulConnect...";
 //		queueManager.publish(chId, this);
