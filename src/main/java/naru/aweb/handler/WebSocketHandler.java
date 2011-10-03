@@ -58,6 +58,12 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	
 	public void postMessage(String message){
 		logger.debug("#postMessage.cid:"+getChannelId());
+		if(isHybi10){
+			ByteBuffer[] bufs=WebSocketFrame.encode(message);
+			lastIo=System.currentTimeMillis();
+			asyncWrite(null,bufs);
+			return;
+		}
 		ByteBuffer[] bufs=BuffersUtil.newByteBufferArray(3);
 		bufs[0]=ByteBuffer.wrap(frameStart);
 		try {
@@ -95,7 +101,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		"Connection: Upgrade\r\n").getBytes();
 	
 	private static final String SOLT="258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-	private boolean isHybe10=false;
+	private boolean isHybi10=false;
 	
 	private boolean wsShakehand_hybi10(HeaderParser requestHeader){//16.0.889.0 dev-m—phttp://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-10
 		String key=requestHeader.getHeader(SEC_WEBSOCKET_KEY);
@@ -117,7 +123,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		if(webSocketProtocol!=null){
 			setHeader("Sec-WebSocket-Protocol", webSocketProtocol);
 		}
-		isHybe10=true;
+		isHybi10=true;
 		flushHeader();
 		handshaked();
 		return true;
@@ -337,15 +343,12 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	private final int MASKMASK=(int)(0x80);
 	private final int LENMASK=(int)(0x7f);
 	
-	private void parseMessageHybe10(ByteBuffer buffer){
-		int b1=buffer.get();
-		int fin=b1 & FINMASK;
-		int pcode=b1 & PCODEMASK;
-		byte b2=buffer.get();
-		int mask=b2 & MASKMASK;
-		int len=b2 & LENMASK;
-		byte[] maskKey=new byte[4];
-		buffer.get(maskKey);
+	private WebSocketFrame frame=null;
+	private void parseMessageHybi10(ByteBuffer buffer){
+		if(frame==null||frame.isDecodeEnd()){
+			frame=WebSocketFrame.paseFrame(buffer);
+		}
+		
 	}
 	
 	private void parseMessage(ByteBuffer buffer){
@@ -412,9 +415,9 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 			return;
 		}
 		lastIo=System.currentTimeMillis();
-		if(isHybe10){
+		if(isHybi10){
 			for(ByteBuffer buffer:buffers){
-				parseMessageHybe10(buffer);
+				parseMessageHybi10(buffer);
 			}
 			PoolManager.poolArrayInstance(buffers);
 			asyncRead(null);
@@ -483,7 +486,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		handshakeStat=0;
 		handshakeBody=null;
 		webSocketProtocol=null;
-		isHybe10=false;
+		isHybi10=false;
 		super.recycle();
 	}
 }
