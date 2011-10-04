@@ -12,13 +12,11 @@ import java.security.NoSuchAlgorithmException;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
-import naru.aweb.auth.AuthSession;
 import naru.aweb.auth.LogoutEvent;
 import naru.aweb.config.Config;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.RequestContext;
 import naru.aweb.http.WebServerHandler;
-import naru.aweb.queue.QueueManager;
 import naru.aweb.util.CodeConverter;
 
 import org.apache.log4j.Logger;
@@ -84,6 +82,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		}
 	}
 	public abstract void onMessage(String msgs);
+	public abstract void onMessage(ByteBuffer[] msgs);
 	public abstract void onWsOpen(String subprotocol);
 	public abstract void onWsClose();
 	
