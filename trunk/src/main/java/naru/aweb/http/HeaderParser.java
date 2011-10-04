@@ -62,10 +62,10 @@ public class HeaderParser extends PoolBase {
 	public static final String POST_METHOD = "POST";
 	public static final String HEAD_METHOD = "HEAD";
 	public static final String CONNECION_KEEP_ALIVE = "Keep-Alive";
-	public static final String CONNECION_CLOSE = "Close";
+	public static final String CONNECION_CLOSE = "close";
 	public static final String TRANSFER_ENCODING_CHUNKED = "chunked";
-	public static final String CONTENT_LENGTH_HEADER = "Content-length";
-	public static final String CONTENT_TYPE_HEADER = "Content-type";
+	public static final String CONTENT_LENGTH_HEADER = "Content-Length";
+	public static final String CONTENT_TYPE_HEADER = "Content-Type";
 	public static final String CONTENT_DISPOSITION_HEADER = "Content-Disposition";
 	public static final String IF_MODIFIED_SINCE_HEADER = "If-Modified-Since";
 	public static final String IF_NONE_MATCH = "If-None-Match";

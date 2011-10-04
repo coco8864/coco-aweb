@@ -231,8 +231,8 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		if(browser!=null){
 			Scenario scenario=browser.getScenario();
 			if(scenario!=null){
-				accessLog.setRealHost(scenario.getName());//scenarioèÓïÒ
 				scenarioName=scenario.getName();
+				accessLog.setRealHost(scenarioName);//scenarioèÓïÒ
 			}
 		}
 		if(orgAccessLog!=null){
@@ -485,5 +485,9 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 			
 			
 		}
+	}
+
+	public void setBrowserName(String browserName) {
+		this.browserName = browserName;
 	}
 }

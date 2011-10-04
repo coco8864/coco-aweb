@@ -1,6 +1,5 @@
 package naru.aweb.robot;
 
-import java.net.MalformedURLException;
 import java.net.URL;
 
 import naru.async.Timer;
@@ -15,8 +14,6 @@ import naru.aweb.http.WebClientHandler;
 import naru.aweb.queue.QueueManager;
 
 public class ServerChecker extends PoolBase implements Timer{
-	private static final long CONNECT_TEST_TERM=100;
-	private static final int CONNECT_TEST_MAX=8;
 	private static final int READ_TIMEOUT_MAX=31000;
 	private static Config config=Config.getConfig();
 	
@@ -35,12 +32,16 @@ public class ServerChecker extends PoolBase implements Timer{
 	private String proxyServer;
 	
 	//ヘッダ情報
-	private String statusCode;
-	private String httpVersion;
+	private String statusLine;
 	private String serverHeader;
 	private String connectionHeader;
 	private String proxyConnectionHeader;
 	private String keepAliveHeader;
+	private String contentType;
+	private long contentLength;
+	private String transferEncoding;
+	private String contentEncoding;
+	
 	
 	//接続性能
 	private String connectTimes;
@@ -58,7 +59,7 @@ public class ServerChecker extends PoolBase implements Timer{
 	private Caller caller;
 //	private WebClientHandler handler;
 	private WebClientConnection connection;
-	private long nomalResponseHeaderTime;
+//	private long nomalResponseHeaderTime;
 	
 	//作業用
 	private int timeCount;
@@ -66,14 +67,14 @@ public class ServerChecker extends PoolBase implements Timer{
 	private long sslProxyTimeSum;
 	private long handshakeTimeSum;
 	
-	public static boolean start(URL url,boolean isKeepAlive,int requestCount,boolean isTrace,String chId){
+	public static boolean start(URL url,boolean isKeepAlive,int requestCount,boolean isTrace,String browserName,String chId){
 		ServerChecker serverChecker=(ServerChecker)PoolManager.getInstance(ServerChecker.class);
-		serverChecker.setup(url,isKeepAlive,requestCount,isTrace,chId);
+		serverChecker.setup(url,isKeepAlive,requestCount,isTrace,browserName,chId);
 		TimerManager.setTimeout(0, serverChecker, null);
 		return true;
 	}
 
-	private void setup(URL url,boolean isKeepAlive,int requestCount,boolean isTrace,String chId){
+	private void setup(URL url,boolean isKeepAlive,int requestCount,boolean isTrace,String browserName,String chId){
 		this.chId=chId;
 		this.url=url;
 		this.isKeepAlive=isKeepAlive;
@@ -81,6 +82,7 @@ public class ServerChecker extends PoolBase implements Timer{
 		this.requestCount=requestCount;
 		//ここでrequest headerはSotreの保存される(digest計算時)
 		caller=Caller.create(url,isKeepAlive);
+		caller.setBrowserName(browserName);
 		connection=caller.getConnection();
 //		handler=WebClientHandler.create(connection);
 		isHttps=connection.isHttps();
@@ -110,16 +112,16 @@ public class ServerChecker extends PoolBase implements Timer{
 				}
 			}
 		}
-		statusCode=accessLog.getStatusCode();
-		httpVersion=webClientLog.getHttpVersion();
+		statusLine=webClientLog.getStatusLine();
 		serverHeader=webClientLog.getServerHeader();
 		connectionHeader=webClientLog.getConnectionHeader();
 		proxyConnectionHeader=webClientLog.getProxyConnectionHeader();
 		keepAliveHeader=webClientLog.getKeepAliveHeader();
-		nomalResponseHeaderTime=webClientLog.getProcessTime(WebClientLog.CHECK_POINT_REQUEST_HEADER);
-		if(nomalResponseHeaderTime==0){
-			nomalResponseHeaderTime++;
-		}
+		contentType=accessLog.getContentType();
+		contentLength=accessLog.getResponseLength();
+		transferEncoding=accessLog.getTransferEncoding();
+		contentEncoding=accessLog.getContentEncoding();
+		
 		long connectTime=webClientLog.getProcessTime(WebClientLog.CHECK_POINT_CONNECT);
 		long handshakeTime=webClientLog.getProcessTime(WebClientLog.CHECK_POINT_HANDSHAKE);
 		long sslProxyTime=webClientLog.getProcessTime(WebClientLog.CHECK_POINT_SSL_PROXY);
@@ -204,103 +206,6 @@ public class ServerChecker extends PoolBase implements Timer{
 		accessLog.unref(true);
 	}
 	
-	private boolean waitForStartRequest(WebClientLog webClientLog){
-		int checkPoint=webClientLog.getCheckPoint();
-		if(isHttps){
-			if(checkPoint==WebClientLog.CHECK_POINT_HANDSHAKE){
-				timeCount++;
-				connectTimeSum+=webClientLog.getProcessTime(WebClientLog.CHECK_POINT_CONNECT);
-				handshakeTimeSum+=webClientLog.getProcessTime(WebClientLog.CHECK_POINT_HANDSHAKE);
-				if(isUseProxy){
-					sslProxyTimeSum+=webClientLog.getProcessTime(WebClientLog.CHECK_POINT_SSL_PROXY);
-				}
-				return true;
-			}else if(checkPoint>WebClientLog.CHECK_POINT_HANDSHAKE){
-				//connectTimeoutの可能性が高い
-				return true;
-			}
-			
-		}else{
-			if(checkPoint==WebClientLog.CHECK_POINT_CONNECT){
-				timeCount++;
-				connectTimeSum+=webClientLog.getProcessTime(WebClientLog.CHECK_POINT_CONNECT);
-				return true;
-			}else if(checkPoint>WebClientLog.CHECK_POINT_CONNECT){
-				//connectTimeoutの可能性が高い
-				return true;
-			}
-		}
-		return false;
-	}
-	
-	private void checkMultipulConnect(){
-		Caller[] callers=new Caller[CONNECT_TEST_MAX];
-		WebClientHandler[] handlers=new WebClientHandler[callers.length];
-		AccessLog accessLogs[]=new AccessLog[callers.length];
-		for(int i=0;i<handlers.length;i++){
-			if(i==0){
-				callers[0]=caller;
-			}else{
-				callers[i]=caller.dup(null);
-			}
-			handlers[i]=WebClientHandler.create(connection);
-			accessLogs[i]=(AccessLog)PoolManager.getInstance(AccessLog.class);
-			WebClientLog webClientLog=(WebClientLog)PoolManager.getInstance(WebClientLog.class);
-			accessLogs[i].setWebClientLog(webClientLog);
-		}
-		long startTime=System.currentTimeMillis();
-		timeCount=0;
-		connectTimeSum=sslProxyTimeSum=handshakeTimeSum=0L;
-		for(int i=0;i<handlers.length;i++){
-			WebClientLog webClientLog=accessLogs[i].getWebClientLog();
-			long timeout=startTime+(CONNECT_TEST_TERM*2)-(i*10)-System.currentTimeMillis();
-			synchronized(webClientLog){
-				handlers[i].setHeaderSchedule(timeout, 0);
-				callers[i].startRequest(handlers[i], accessLogs[i],1000);
-				while(true){
-					if( waitForStartRequest(webClientLog) ){
-						break;
-					}
-					try {
-						webClientLog.wait();
-					} catch (InterruptedException e) {
-					}
-				}
-			}
-			if( (System.currentTimeMillis()-startTime)>CONNECT_TEST_TERM ){
-				break;
-			}
-		}
-		maxClients=0;
-//		connectTime=0;
-//		sslProxyTime=0;
-//		handshakeTime=0;
-		if(timeCount==0){
-			//一つも接続できなかった
-			return;
-		}
-//		connectTime=(double)connectTimeSum/(double)timeCount;
-//		sslProxyTime=(double)sslProxyTimeSum/(double)timeCount;
-//		handshakeTime=(double)handshakeTimeSum/(double)timeCount;
-		try {
-			Thread.sleep(System.currentTimeMillis()-startTime+(CONNECT_TEST_TERM*2)+1000);
-		} catch (InterruptedException e1) {
-		}
-		for(int i=0;i<handlers.length;i++){
-			WebClientLog webClientLog=accessLogs[i].getWebClientLog();
-			if(webClientLog.getCheckPoint()<WebClientLog.CHECK_POINT_RESPONSE_BODY){
-				continue;
-			}
-			long requestHeaderTime=webClientLog.getProcessTime(WebClientLog.CHECK_POINT_REQUEST_HEADER);
-			//requestHeaderTimeが極端に大きいのはlisten back logに溜まったから
-			if(requestHeaderTime<=(nomalResponseHeaderTime*8)){
-				maxClients++;
-			}
-			accessLogs[i].unref();
-		}
-		listenBacklog=timeCount-maxClients;
-	}
-	
 	public void onTimer(Object userContext) {
 		QueueManager queueManager=QueueManager.getInstance();
 		WebClientHandler handler=null;
@@ -333,14 +238,6 @@ public class ServerChecker extends PoolBase implements Timer{
 		status="done";
 		queueManager.publish(chId, this, true, true);
 		this.unref(true);
-	}
-
-	public String getStatusCode() {
-		return statusCode;
-	}
-
-	public String getHttpVersion() {
-		return httpVersion;
 	}
 
 	public String getServerHeader() {
@@ -420,12 +317,12 @@ public class ServerChecker extends PoolBase implements Timer{
 		chId=null;
 		url=null;
 		isUseProxy=isHttps=false;
-		proxyServer=httpVersion=serverHeader=
+		contentEncoding=transferEncoding=statusLine=proxyServer=contentType=serverHeader=
 		connectionHeader=proxyConnectionHeader=keepAliveHeader=null;
 		connectTimes=sslProxyTimes=handshakeTimes=
 			requestBodyTimes=requestHeaderTimes=
 			responseHeaderTimes=responseBodyTimes="";
-		readTimeout=maxClients=listenBacklog=0;
+		contentLength=readTimeout=maxClients=listenBacklog=0;
 		if(connection!=null){
 			connection.unref();
 		}
@@ -436,5 +333,25 @@ public class ServerChecker extends PoolBase implements Timer{
 
 	public String getStatus() {
 		return status;
+	}
+
+	public String getStatusLine() {
+		return statusLine;
+	}
+
+	public String getContentType() {
+		return contentType;
+	}
+
+	public long getContentLength() {
+		return contentLength;
+	}
+
+	public String getTransferEncoding() {
+		return transferEncoding;
+	}
+
+	public String getContentEncoding() {
+		return contentEncoding;
 	}
 }
