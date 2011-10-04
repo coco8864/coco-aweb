@@ -18,7 +18,7 @@ public class WebClientLog extends PoolBase {
 	public static final int CHECK_POINT_NUM=9;
 
 	private int checkPoint;
-	private String httpVersion;
+	private String statusLine;
 	private String serverHeader;
 	private String connectionHeader;
 	private String proxyConnectionHeader;
@@ -85,7 +85,7 @@ public class WebClientLog extends PoolBase {
 	}
 
 	public void responseHeader(HeaderParser responseHeader) {
-		httpVersion=responseHeader.getResHttpVersion();
+		statusLine=responseHeader.getStatusLine();
 		serverHeader=responseHeader.getHeader(HeaderParser.SERVER_HEADER);
 		connectionHeader=responseHeader.getHeader(HeaderParser.CONNECTION_HEADER);
 		proxyConnectionHeader=responseHeader.getHeader(HeaderParser.PROXY_CONNECTION_HEADER);
@@ -98,8 +98,8 @@ public class WebClientLog extends PoolBase {
 	
 	public String toString(){
 		StringBuilder sb=new StringBuilder();
-		sb.append("httpVersion:");
-		sb.append(httpVersion);
+		sb.append("statusLine:");
+		sb.append(statusLine);
 		sb.append("\n");
 		sb.append("serverHeader:");
 		sb.append(serverHeader);
@@ -125,9 +125,9 @@ public class WebClientLog extends PoolBase {
 		}
 		return sb.toString();
 	}
-
-	public String getHttpVersion() {
-		return httpVersion;
+	
+	public String getStatusLine() {
+		return statusLine;
 	}
 
 	public String getServerHeader() {
