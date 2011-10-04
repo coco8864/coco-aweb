@@ -132,21 +132,24 @@ function checkServer(){
 			ph.jQuery("#checkUrl").text(sv.url);
 			ph.jQuery("#checkIsUseProxy").text(sv.useProxy);
 			ph.jQuery("#checkProxyServer").text(sv.proxyServer);
-			ph.jQuery("#checkStatusCode").text(sv.statusCode);
-			ph.jQuery("#checkHttpVersion").text(sv.httpVersion);
+			ph.jQuery("#checkStatusLine").text(sv.statusLine);
 			ph.jQuery("#checkServer").text(sv.serverHeader);
 			ph.jQuery("#checkConnection").text(sv.connectionHeader);
 			ph.jQuery("#checkProxyConnection").text(sv.proxyConnectionHeader);
 			ph.jQuery("#checkKeepAliveHeader").text(sv.keepAliveHeader);
-			ph.jQuery("#checkReadTimeout").text(sv.readTimeout);
+
+			ph.jQuery("#checkContentType").text(sv.contentType);
+			ph.jQuery("#checkContentLength").text(sv.contentLength);
+//			ph.jQuery("#checkTransferEncoding").text(sv.transferEncoding);
+//			ph.jQuery("#checkContentEncoding").text(sv.contentEncoding);
+
+
 			ph.jQuery("#checkConnectTime").text(sv.connectTimes);
 			ph.jQuery("#checkSslProxyTime").text(sv.sslProxyTimes);
 			ph.jQuery("#checkHandshakeTime").text(sv.handshakeTimes);
 			ph.jQuery("#checkRequestHeaderTime").text(sv.requestHeaderTimes);
 			ph.jQuery("#checkResponseHeaderTime").text(sv.responseHeaderTimes);
 			ph.jQuery("#checkResponseBodyTime").text(sv.responseBodyTimes);
-			ph.jQuery("#checkMaxClients").text(sv.maxClients);
-			ph.jQuery("#checkListenBacklog").text(sv.listenBacklog);
 			},
 		onComplete:function(msg){this._serverInfo(msg);},
 		onMessage:function(msg){this._serverInfo(msg);},
@@ -301,12 +304,15 @@ url:<span id="checkUrl"></span><br/>
 </ul>
 <h3>Header infomation</h3>
 <ul>
-<li>statusCode:<b><span id="checkStatusCode"></span></b></li>
-<li>httpVersion:<b><span id="checkHttpVersion"></span></b></li>
+<li>statusLine:<b><span id="checkStatusLine"></span></b></li>
 <li>Server:<b><span id="checkServer"></span></b></li>
 <li>Connection:<b><span id="checkConnection"></span></b></li>
 <li>ProxyConnection:<b><span id="checkProxyConnection"></span></b></li>
 <li>KeepAlive:<b><span id="checkKeepAliveHeader"></span></b></li>
+<li>ContentType:<b><span id="checkContentType"></span></b></li>
+<li>ContentLength(real):<b><span id="checkContentLength"></span></b></li>
+##<li>TransferEncoding:<b><span id="checkTransferEncoding"></span></b></li>
+##<li>ContentEncoding:<b><span id="checkContentEncoding"></span></b></li>
 </ul>
 <h3>Performance</h3>
 <ul>

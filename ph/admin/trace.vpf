@@ -32,6 +32,10 @@ var runTraceCb={
 	onMessage:function(msg){ph.log('runTrace onMessage:');ph.dump(msg);}
 };
 function runTrace(){
+	if(trace.accessLogId<0){
+		alert("対象がありません");
+		return;
+	}
 	var param={accessLogId:trace.accessLogId};
 	for(var i=0;i<PARTS.length;i++){
 		var part=PARTS[i];
@@ -140,6 +144,10 @@ function responseBodyEdit(){
 
 ####
 function changeEntry(newLogId){
+	if(!newLogId||newLogId<0){
+		alert("無効なIDです");
+		return;
+	}
 	ph.jQuery("#traceSaveButton").attr("disabled","disabed");
 	trace.clear();
 	trace.accessLogId=newLogId;
@@ -205,7 +213,7 @@ function updateEntry(accessLogs){
 	ph.jQuery("#resolveOrigin").text(accessLog.resolveOrigin);
 	ph.jQuery("#channelId").text(accessLog.channelId);
 
-	//traceCheckServerの初期値を計算
+	//checkServerの初期値を計算
 	if(accessLog.destinationType=='S'){
 		checkReqUrl='https://' + accessLog.resolveOrigin;
 	}else if(accessLog.destinationType=='H'){
@@ -259,9 +267,18 @@ function updateEntry(accessLogs){
 
 var checkReqUrl='';
 
-function traceCheckServer(){
+function checkServerTrace(){
 	ph.jQuery("#checkReqUrl").val(checkReqUrl);
 	jQuery('#checkServerDialog').dialog('open');
+}
+
+function viewTrace(){
+	var id=ph.jQuery("#viewAccessLogId").val();
+	if(!id){
+		alert("対象がありません");
+		return;
+	}
+	ph.jQuery('#viewAccessLogForm').submit();
 }
 
 </script>
@@ -271,9 +288,9 @@ ID:<input type="text" name="logId" id="inputLogId" size="8"/>
 <input type="button" onclick="jumpTrace();" value="id指定"/>
 <input type="button" onclick="jumpParent();" value="parent" disabled="disabled" id="traceParentButton"/>
 
-<input type="button" value="request" onClick="runTrace();"/>
-<input type="button" value="view" onClick="ph.jQuery('#viewAccessLogForm').submit();"/>
-<input type="button" value="check" onClick="traceCheckServer();" title="check server performance"/>
+<input type="button" value="run" onClick="runTrace()"; title="request this trace."/>
+<input type="button" value="view" onClick="viewTrace();" title="view this trace in a browser."/>
+<input type="button" value="check" onClick="checkServerTrace();" title="check server performance."/>
 ##最初は無効状態で表示
 <input type="button" value="save new" onClick="saveTrace();" disabled="disabled" id="traceSaveButton"/>
 <div style="float:right;text-align:right">
