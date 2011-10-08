@@ -78,7 +78,6 @@ public class WsHixie76 extends WsProtocol {
 		for(ByteBuffer buffer:body){
 			b.put(buffer);
 		}
-		PoolManager.poolBufferInstance(body);//配列、中身ごと回収
 		b.flip();
 		byte[] response=null;
 		synchronized(messageDigest){
@@ -89,7 +88,7 @@ public class WsHixie76 extends WsProtocol {
 	}
 	
 	private int handshakeStat=0;//0:handshake前、1:ヘッダは到達したがbodyが未,2:handshake済み
-	private ByteBuffer[] handshakeBody;
+	private ByteBuffer[] handshakeBody=null;
 	
 	private boolean wsShakehand_76(HeaderParser requestHeader,ByteBuffer[] readBody){//Chrome 6.0.437.3用
 		if(!webSocketSpecs.contains(SPEC)){
@@ -137,6 +136,9 @@ public class WsHixie76 extends WsProtocol {
 		String key1=requestHeader.getHeader(SEC_WEBSOCKET_KEY1);
 		String key2=requestHeader.getHeader(SEC_WEBSOCKET_KEY2);
 		response=responseDigest(key1,key2,handshakeBody);
+		PoolManager.poolBufferInstance(handshakeBody);//配列、中身ごと回収
+		handshakeBody=null;
+		
 		handler.asyncWrite(null,BuffersUtil.toByteBufferArray(ByteBuffer.wrap(response)));
 
 		handshakeStat=2;
@@ -265,6 +267,16 @@ public class WsHixie76 extends WsProtocol {
 	@Override
 	public void postMessage(ByteBuffer[] message) {
 		throw new UnsupportedOperationException("postMessage binary mode");
+	}
+
+	@Override
+	public void recycle() {
+		handshakeStat=0;
+		if(handshakeBody!=null){
+			PoolManager.poolBufferInstance(handshakeBody);//配列、中身ごと回収
+			handshakeBody=null;
+		}
+		super.recycle();
 	}
 
 }
