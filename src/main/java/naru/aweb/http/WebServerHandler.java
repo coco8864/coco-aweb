@@ -567,7 +567,7 @@ public class WebServerHandler extends ServerBaseHandler {
 	/**
 	 * WebSocket用にheaderを即座にflushするメソッド
 	 */
-	protected void flushHeader() {
+	public void flushHeader() {
 		ByteBuffer[] headerBuffer = responseHeader.getHeaderBuffer();
 		if (headerBuffer == null) {// ヘッダが確定していない..
 			logger.warn("flushHeader fail to getHeaderBuffer.cid:"+ getChannelId());
