@@ -56,6 +56,8 @@
   * !WebSocket,draft-ietf-hybi-thewebsocketprotocol-10対応
     * いつの間にか!Chromeで!WebSocketが使えなくなった
     * 現状実装は、draft-ietf-hybi-thewebsocketprotocol-00
+  * 任意のリクエストを送信する機能
+  * restartを3回繰り返すと終わってしまう問題対応
 
 できそうだけど基本やらない方針
   * Java5対応
