@@ -3,6 +3,7 @@
  */
 package naru.aweb.queue;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -189,7 +190,7 @@ public class WsQueueHandler extends WebSocketHandler {
 	private Set<String> subscribeIds=new HashSet<String>();
 	
 	@Override
-	public void onWsClose() {
+	public void onWsClose(short code,String reason) {
 		Iterator<String> itr=subscribeIds.iterator();
 		while(itr.hasNext()){
 			String chId=itr.next();
@@ -221,6 +222,10 @@ public class WsQueueHandler extends WebSocketHandler {
 		JSON json=QueueManager.publishMessage(null, "logout", "logout",null);
 		postMessage(json.toString());
 		super.onLogout();
+	}
+
+	@Override
+	public void onMessage(ByteBuffer[] msgs) {
 	}
 	
 }
