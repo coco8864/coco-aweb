@@ -144,7 +144,7 @@ function responseBodyEdit(){
 
 ####
 function changeEntry(newLogId){
-	if(!newLogId||newLogId<0){
+	if(newLogId==null||newLogId<0){
 		alert("無効なIDです");
 		return;
 	}
