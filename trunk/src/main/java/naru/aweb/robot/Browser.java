@@ -59,8 +59,9 @@ public class Browser extends PoolBase implements Timer{
 	 * @param requestBodyBuffer
 	 * @return
 	 */
-	public static Browser create(boolean isHttps,HeaderParser requestHeader,ByteBuffer[] requestBodyBuffer){
+	public static Browser create(String name,boolean isHttps,HeaderParser requestHeader,ByteBuffer[] requestBodyBuffer){
 		Browser browser=(Browser)PoolManager.getInstance(Browser.class);
+		browser.setName(name);
 		browser.setup(isHttps, requestHeader, requestBodyBuffer);
 		return browser;
 	}
@@ -68,6 +69,7 @@ public class Browser extends PoolBase implements Timer{
 	@Override
 	public void recycle() {
 		scenario=null;
+		name=null;
 		startCallers.clear();
 		connections.clear();
 		processingClientHandler.clear();
