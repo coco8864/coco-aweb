@@ -35,8 +35,21 @@ function setKeepAlive(){
 }
 
 function setHtml5(){
+ var specs="";
+ if(ph.jQuery("#isUseHixie75").attr('checked')){
+  specs+='hixie75,';
+ }
+ if(ph.jQuery("#isUseHixie76").attr('checked')){
+  specs+='hixie76,';
+ }
+ if(ph.jQuery("#isUseHybi10").attr('checked')){
+  specs+='hybi10';
+ }
+
  ph.admin.doCommand('setHtml5',{
-   isUseWebSocket:ph.jQuery("#isUseWebSocket").attr('checked'),
+   websocketSpecs:specs,
+   webSocketMessageLimit:ph.jQuery("#webSocketMessageLimit").val(),
+   webSocketPingInterval:ph.jQuery("#webSocketPingInterval").val(),
    isUseSessionStorage:ph.jQuery("#isUseSessionStorage").attr('checked'),
    isUseCrossDomain:ph.jQuery("#isUseCrossDomain").attr('checked')
   },
@@ -319,11 +332,29 @@ checked="checked"
 <H2 onclick="ph.jQuery('#html5Div').toggle();">+HTML5設定</H2>
 <div class="settingItem" id="html5Div">
 <p>利用可能なブラウザでHTML5機能を使用するか否かを設定してください</p>
-WebSocket API:<input type="checkBox" name="isUseWebSocket" id="isUseWebSocket"
-#if(${config.getBoolean('isUseWebSocket',true)})
+WebSocket spec:hixie75:<input type="checkBox" name="isUseHixie75" id="isUseHixie75"
+#if(${config.getString('websocketSpecs').indexOf('hixie75')}>=0)
 checked="checked"
 #end
-/><br>
+/>
+hixie76:<input type="checkBox" name="isUseHixie76" id="isUseHixie76"
+#if(${config.getString('websocketSpecs').indexOf('hixie76')}>=0)
+checked="checked"
+#end
+/>
+hybi10:<input type="checkBox" name="isUseHybi10" id="isUseHybi10"
+#if(${config.getString('websocketSpecs').indexOf('hybi10')}>=0)
+checked="checked"
+#end
+/>
+<br/>
+WebSocketMessageLimit:<input type="text" name="webSocketMessageLimit" id="webSocketMessageLimit"
+value="${config.getInt('webSocketMessageLimit',2048000)}"
+>byte<br/>
+WebSocketPingInterval:<input type="text" name="webSocketPingInterval" id="webSocketPingInterval"
+value="${config.getInt('webSocketPingInterval',0)}"
+>ms<br/>
+
 Web Storage sessionStorage:<input type="checkBox" name="isUseSessionStorage" id="isUseSessionStorage"
 #if(${config.getBoolean('isUseSessionStorage',true)})
 checked="checked"
