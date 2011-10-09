@@ -24,10 +24,27 @@ public class WsHixie75 extends WsProtocol {
 	
 	@Override
 	public boolean onHandshake(HeaderParser requestHeader) {
-		if(!webSocketSpecs.contains(SPEC)){
+		logger.debug("WsHiXie75#onHandshake cid:"+handler.getChannelId());
+		if(!isUseSpec(SPEC)){
 			handler.completeResponse("400");
 			return false;
 		}
+		
+		String webSocketProtocol=requestHeader.getHeader(WEBSOCKET_PROTOCOL);
+		if(webSocketProtocol==null){
+			if(isUseSubprotocol()){//subprotocolを必要とするのにない
+				handler.completeResponse("400");
+				return false;
+			}
+		}else{
+			String subprotocol=checkSubprotocol(webSocketProtocol);
+			if(subprotocol==null){//subprotocolが一致しない
+				handler.completeResponse("400");
+				return false;
+			}
+			handler.setHeader(WEBSOCKET_PROTOCOL, subprotocol);
+		}
+		
 		String origin=requestHeader.getHeader("Origin");
 		String host=requestHeader.getHeader(HeaderParser.HOST_HEADER);
 		String path=requestHeader.getPath();
@@ -50,7 +67,6 @@ public class WsHixie75 extends WsProtocol {
 		sb.append(path);
 		handler.setHeader("WebSocket-Location", sb.toString());
 		
-		String webSocketProtocol=requestHeader.getHeader(WEBSOCKET_PROTOCOL);
 		if(webSocketProtocol!=null){
 			handler.setHeader(WEBSOCKET_PROTOCOL, webSocketProtocol);
 		}
@@ -63,8 +79,8 @@ public class WsHixie75 extends WsProtocol {
 	}
 	
 	private void parseMessage(ByteBuffer buffer){
-		if((frameLength+buffer.remaining())>webSocketMessageLimit){
-			logger.error("buffer too big.");
+		if((frameLength+buffer.remaining())>getWebSocketMessageLimit()){
+			logger.error("buffer too long."+getWebSocketMessageLimit());
 			handler.asyncClose(null);
 			return;
 		}
@@ -124,6 +140,7 @@ public class WsHixie75 extends WsProtocol {
 	/* 回線からデータを受信した */
 	@Override
 	public void onBuffer(ByteBuffer[] buffers) {
+		logger.debug("WsHiXie75#onBuffer cid:"+handler.getChannelId());
 		for(ByteBuffer buffer:buffers){
 			parseMessage(buffer);
 		}
@@ -132,6 +149,7 @@ public class WsHixie75 extends WsProtocol {
 	/* 回線が切断された or AplからcloseWebSocketが呼び出された */
 	@Override
 	public void onClose(boolean isFromLine) {
+		logger.debug("WsHiXie75#onClose cid:"+handler.getChannelId());
 		callOnWsClose();
 		if(!isFromLine){
 			handler.asyncClose(null);
@@ -146,7 +164,7 @@ public class WsHixie75 extends WsProtocol {
 	/* アプリがpostMessageを呼び出した */
 	@Override
 	public void postMessage(String message) {
-		logger.debug("#postMessage.cid:"+handler.getChannelId());
+		logger.debug("WsHiXie75#postMessage(txt) cid:"+handler.getChannelId());
 		ByteBuffer[] bufs=BuffersUtil.newByteBufferArray(3);
 		bufs[0]=ByteBuffer.wrap(START_FRAME);
 		try {
@@ -163,6 +181,7 @@ public class WsHixie75 extends WsProtocol {
 	/* アプリがpostMessageを呼び出した */
 	@Override
 	public void postMessage(ByteBuffer[] message) {
+		logger.debug("WsHiXie75#postMessage(bin) cid:"+handler.getChannelId());
 		throw new UnsupportedOperationException("postMessage binary mode");
 	}
 
