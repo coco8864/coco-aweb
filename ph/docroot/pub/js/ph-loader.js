@@ -85,8 +85,8 @@ if(typeof WebSocket == 'undefined'){
  if(typeof MozWebSocket =='undefined'){
   ph.isUseWebSocket=false;
  }else{
-  ph.isUseWebSocket=false;
-//  window.WebSocket=MozWebSocket;
+  ph.isUseWebSocket=true;
+  window.WebSocket=MozWebSocket;
  }
 }
 
