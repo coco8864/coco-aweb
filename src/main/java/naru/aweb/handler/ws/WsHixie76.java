@@ -90,8 +90,9 @@ public class WsHixie76 extends WsProtocol {
 	private int handshakeStat=0;//0:handshake前、1:ヘッダは到達したがbodyが未,2:handshake済み
 	private ByteBuffer[] handshakeBody=null;
 	
-	private boolean wsShakehand_76(HeaderParser requestHeader,ByteBuffer[] readBody){//Chrome 6.0.437.3用
-		if(!webSocketSpecs.contains(SPEC)){
+	private boolean wsShakehand(HeaderParser requestHeader,ByteBuffer[] readBody){//Chrome 6.0.437.3用
+		logger.debug("WsHiXie76#wsShakehand cid:"+handler.getChannelId());
+		if(!isUseSpec(SPEC)){
 			handler.completeResponse("400");
 			return false;
 		}
@@ -107,6 +108,23 @@ public class WsHixie76 extends WsProtocol {
 			handler.asyncRead(null);
 			return true;
 		}
+
+		String webSocketProtocol=requestHeader.getHeader(SEC_WEBSOCKET_PROTOCOL);
+		if(webSocketProtocol==null){
+			if(isUseSubprotocol()){//subprotocolを必要とするのにない
+				handler.completeResponse("400");
+				return false;
+			}
+		}else{
+			String subprotocol=checkSubprotocol(webSocketProtocol);
+			if(subprotocol==null){//subprotocolが一致しない
+				handler.completeResponse("400");
+				return false;
+			}
+			handler.setHeader(SEC_WEBSOCKET_PROTOCOL, subprotocol);
+		}
+		
+		
 		String origin=requestHeader.getHeader("Origin");
 		String host=requestHeader.getHeader(HeaderParser.HOST_HEADER);
 		String path=requestHeader.getPath();
@@ -126,10 +144,6 @@ public class WsHixie76 extends WsProtocol {
 		sb.append(path);
 		handler.setHeader("Sec-WebSocket-Location", sb.toString());
 		
-		String webSocketProtocol=requestHeader.getHeader(SEC_WEBSOCKET_PROTOCOL);
-		if(webSocketProtocol!=null){
-			handler.setHeader("Sec-WebSocket-Protocol", webSocketProtocol);
-		}
 		handler.flushHeader();
 		
 		byte[] response=null;
@@ -151,8 +165,9 @@ public class WsHixie76 extends WsProtocol {
 	
 	@Override
 	public boolean onHandshake(HeaderParser requestHeader) {
+		logger.debug("WsHiXie76#onHandshake cid:"+handler.getChannelId());
 		ByteBuffer[] body=requestHeader.getBodyBuffer();
-		if(wsShakehand_76(requestHeader,body)){
+		if(wsShakehand(requestHeader,body)){
 			return true;
 		}
 		return false;
@@ -160,8 +175,8 @@ public class WsHixie76 extends WsProtocol {
 	
 	private int frameLength=0;
 	private void parseMessage(ByteBuffer buffer){
-		if((frameLength+buffer.remaining())>webSocketMessageLimit){
-			logger.error("buffer too big.");
+		if((frameLength+buffer.remaining())>getWebSocketMessageLimit()){
+			logger.error("buffer too long."+getWebSocketMessageLimit());
 			handler.asyncClose(null);
 			return;
 		}
@@ -221,8 +236,9 @@ public class WsHixie76 extends WsProtocol {
 	/* 回線からデータを受信した */
 	@Override
 	public void onBuffer(ByteBuffer[] buffers) {
+		logger.debug("WsHiXie76#onBuffer cid:"+handler.getChannelId());
 		if(handshakeStat==1){
-			if(wsShakehand_76(handler.getRequestHeader(), buffers)==false){
+			if(wsShakehand(handler.getRequestHeader(), buffers)==false){
 				return;
 			}
 		}
@@ -235,6 +251,7 @@ public class WsHixie76 extends WsProtocol {
 	/* 回線が切断された or AplからcloseWebSocketが呼び出された */
 	@Override
 	public void onClose(boolean isFromLine) {
+		logger.debug("WsHiXie76#onClose cid:"+handler.getChannelId());
 		callOnWsClose();
 		if(!isFromLine){
 			handler.asyncClose(null);
@@ -249,7 +266,7 @@ public class WsHixie76 extends WsProtocol {
 	/* アプリがpostMessageを呼び出した */
 	@Override
 	public void postMessage(String message) {
-		logger.debug("#postMessage.cid:"+handler.getChannelId());
+		logger.debug("WsHiXie76#postMessage(txt) cid:"+handler.getChannelId());
 		ByteBuffer[] bufs=BuffersUtil.newByteBufferArray(3);
 		bufs[0]=ByteBuffer.wrap(START_FRAME);
 		try {
@@ -266,6 +283,7 @@ public class WsHixie76 extends WsProtocol {
 	/* アプリがpostMessageを呼び出した */
 	@Override
 	public void postMessage(ByteBuffer[] message) {
+		logger.debug("WsHiXie76#postMessage(bin) cid:"+handler.getChannelId());
 		throw new UnsupportedOperationException("postMessage binary mode");
 	}
 

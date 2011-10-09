@@ -41,19 +41,25 @@ public abstract class WsProtocol extends PoolBase{
 	private static Logger logger=Logger.getLogger(WsProtocol.class);
 	private static Config config=Config.getConfig();
 	
-	protected static int webSocketMessageLimit=config.getInt("webSocketMessageLimit",2048000);
-	protected static int webSocketPingInterval=config.getInt("webSocketPingInterval",0);
-	protected static Set<String> webSocketAllowSubprotocols=null;
-	protected static Set<String> webSocketSpecs=null;
-	static{
-		String subprotocols=config.getString("webSocketAllowSubprotocols");
+	private static int webSocketMessageLimit=config.getInt("webSocketMessageLimit",2048000);
+	private static int webSocketPingInterval=config.getInt("webSocketPingInterval",0);
+	private static Set<String> webSocketAllowSubprotocols=null;
+	private static Set<String> webSocketSpecs=null;
+	
+	private static void setupWebSocketAllowSubprotocols(String subprotocols){
+		webSocketAllowSubprotocols=null;
 		if(subprotocols!=null){
+			if("*".equals(subprotocols.trim())){
+				return;
+			}
 			webSocketAllowSubprotocols=new HashSet<String>();
 			for(String subprotocol:subprotocols.split(",")){
 				webSocketAllowSubprotocols.add(subprotocol.trim());
 			}
 		}
-		String specs=config.getString("websocketSpecs");
+	}
+	
+	private static void setupWebSocketSpecs(String specs){
 		webSocketSpecs=new HashSet<String>();
 		if(specs!=null){
 			for(String spec:specs.split(",")){
@@ -61,6 +67,63 @@ public abstract class WsProtocol extends PoolBase{
 			}
 		}
 	}
+	
+	static{
+		String subprotocols=config.getString("webSocketAllowSubprotocols");
+		setupWebSocketAllowSubprotocols(subprotocols);
+		String specs=config.getString("websocketSpecs");
+		setupWebSocketSpecs(specs);
+	}
+	
+	public static int getWebSocketMessageLimit() {
+		return webSocketMessageLimit;
+	}
+
+	public static int getWebSocketPingInterval() {
+		return webSocketPingInterval;
+	}
+
+	public static boolean isUseSubprotocol(){
+		return (webSocketAllowSubprotocols!=null);
+	}
+	
+	public static String checkSubprotocol(String subprotocol){
+		String[] protocols=subprotocol.split(",");
+		if(webSocketAllowSubprotocols==null){
+			return protocols[0];
+		}
+		for(String protocol:protocols){
+			if(webSocketAllowSubprotocols.contains(protocol)){
+				return protocol;
+			}
+		}
+		return null;
+	}
+	
+	public static boolean isUseSpec(String spec){
+		return webSocketSpecs.contains(spec);
+	}
+
+	public static void setWebSocketMessageLimit(int webSocketMessageLimit) {
+		WsProtocol.webSocketMessageLimit = webSocketMessageLimit;
+		config.setProperty("webSocketMessageLimit", webSocketMessageLimit);
+	}
+
+	public static void setWebSocketPingInterval(int webSocketPingInterval) {
+		WsProtocol.webSocketPingInterval = webSocketPingInterval;
+		config.setProperty("webSocketPingInterval", webSocketPingInterval);
+	}
+
+	public static void setWebSocketAllowSubprotocols(String subprotocols) {
+		setupWebSocketAllowSubprotocols(subprotocols);
+		config.setProperty("webSocketAllowSubprotocols",subprotocols);
+	}
+
+	public static void setWebSocketSpecs(String specs) {
+		setupWebSocketSpecs(specs);
+		config.setProperty("websocketSpecs",specs);
+	}
+	
 	
 	public static WsProtocol createWsProtocol(HeaderParser requestHeader){
 		String key=requestHeader.getHeader(SEC_WEBSOCKET_KEY);
@@ -165,4 +228,5 @@ public abstract class WsProtocol extends PoolBase{
 	public abstract void postMessage(String message);
 	public abstract void postMessage(ByteBuffer[] message);
 	public abstract void onReadTimeout();/* 回線readがタイムアウトした */
+
 }

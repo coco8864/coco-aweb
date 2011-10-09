@@ -20,6 +20,7 @@ import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
 import naru.aweb.core.Main;
+import naru.aweb.handler.ws.WsProtocol;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.ParameterParser;
 import naru.aweb.http.RequestContext;
@@ -382,10 +383,14 @@ public class AdminHandler extends WebServerHandler{
 			config.setProperty("allowChunked", allowChunked);
 			responseJson(true);
 		}else if("setHtml5".equals(cmd)){
-			String isUseWebSocket=parameter.getParameter("isUseWebSocket");
+			String websocketSpecs=parameter.getParameter("websocketSpecs");
+			String webSocketMessageLimit=parameter.getParameter("webSocketMessageLimit");
+			String webSocketPingInterval=parameter.getParameter("webSocketPingInterval");
 			String isUseSessionStorage=parameter.getParameter("isUseSessionStorage");
 			String isUseCrossDomain=parameter.getParameter("isUseCrossDomain");
-			config.setProperty("isUseWebSocket", isUseWebSocket);
+			WsProtocol.setWebSocketSpecs(websocketSpecs);
+			WsProtocol.setWebSocketMessageLimit(Integer.parseInt(webSocketMessageLimit));
+			WsProtocol.setWebSocketPingInterval(Integer.parseInt(webSocketPingInterval));
 			config.setProperty("isUseSessionStorage", isUseSessionStorage);
 			config.setProperty("isUseCrossDomain", isUseCrossDomain);
 			responseJson(true);
