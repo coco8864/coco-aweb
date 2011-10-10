@@ -5,6 +5,7 @@
  = <img src='http://www.google.com/images/icons/product/chrome-16.png'>Googole Chrome =
   * 10.0.648.204
   * 12.0.725.0 dev
+  * 16.0.899.0 dev-m
 
  = <img src='http://windows.microsoft.com/favicon.ico?dmy.png' height='16' width='16'>Internat Explorer =
   * 8.0.6001.18702
@@ -28,6 +29,7 @@
    * version4から!WebSocketが使える。有効にするには、以下の設定。
     # アドレスバーに “about:config” と入力
     # network.websocket.override-security-block の値を"true"に変更
+  * 7.0
 
  = <img src='http://jp.opera.com/favicon.ico?dmy.png' height='16' width='16'>Opera =
   * 11.10 Build 2092
