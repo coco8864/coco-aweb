@@ -139,7 +139,7 @@ public class AdminPerfHandler extends WebServerHandler{
 			String name=parameter.getParameter("name");
 			String browserCount=parameter.getParameter("browserCount");
 			String call=parameter.getParameter("loopCount");
-			String time=parameter.getParameter("time");
+//			String time=parameter.getParameter("time");
 //			String trace=parameter.getParameter("trace");
 			String keepAlive=parameter.getParameter("keepAlive");
 			String accessLog=parameter.getParameter("accessLog");
