@@ -84,6 +84,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		nextCallers.clear();
 		resolveDigest=null;
 		startTime=0;
+		browserName=null;
 		super.recycle();
 	}
 	
@@ -170,11 +171,12 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	private void setupExceptNextCaller(Browser browser,WebClientConnection connection,boolean isCallerKeepAlive,
 			String requestLine,ByteBuffer[] requestHeader,ByteBuffer[] requestBody){
 		this.browser=browser;
-		if(browser!=null){
-			this.browserName=browser.getName();
-		}else{
-			this.browserName="dummyBrowser";
-		}
+//この時点ではまだbrowser名が決まっていない場合がある
+//		if(browser!=null){
+//			this.browserName=browser.getName();
+//		}else{
+//			this.browserName="dummyBrowser";
+//		}
 		setConnection(connection);
 		this.isCallerkeepAlive=isCallerKeepAlive;
 		this.requestHeader=requestHeader;
@@ -227,6 +229,9 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		
 		//simulateからの作成された事をマーク
 		String scenarioName="dummyScenario";
+		if(browser!=null){
+			browserName=browser.getName();
+		}
 		accessLog.setIp(browserName);//browser情報
 		if(browser!=null){
 			Scenario scenario=browser.getScenario();
