@@ -21,6 +21,7 @@
   * 5.0.5(7533.21.1)
    * *vistaでloginできるがadminを開くと落ちる*
      !WebSocketのnewで落ちている。一般の!WebSocketのサイトでも発生、XPだと問題なかった。探しても類似が発見できない。
+  * 5.1(7534.50)
 
  = <img src='http://mozilla.jp/img/firefox/favicon.ico?dmy.png' height='16' width='16'>Firefox =
   * 3.6.3
