@@ -198,8 +198,8 @@ public class WsHybiFrame {
 		curPayloadPos=0;
 		payloadBuffers.clear();
 		nextFrameBuffers.clear();
+		workBuffer.clear();
 	}
-	
 	
 	/**
 	 * 
@@ -231,18 +231,39 @@ public class WsHybiFrame {
 		}
 		throw new RuntimeException("parseStat:"+parseStat);
 	}
-
+	
+	private ByteBuffer workBuffer=ByteBuffer.allocate(16);
+	/**
+	 * !!óvãÅÇµÇΩlengthí∑ÇÕtrueïúãAå„Ç©Ç»ÇÁÇ∏ÅAì«Çﬁéñ!!
+	 * @param buffer
+	 * @param length
+	 * @return
+	 */
+	private ByteBuffer fillBuffer(ByteBuffer buffer,int length){
+		int pos=workBuffer.position();
+		int limit=workBuffer.limit();
+		if(pos!=0 && pos==limit){
+			workBuffer.clear();
+			pos=0;
+		}
+		for(int i=pos;i<length;i++){
+			if(!buffer.hasRemaining()){
+				return null;
+			}
+			byte b=buffer.get();
+			workBuffer.put(b);
+		}
+		workBuffer.flip();
+		return workBuffer;
+	}
 	
 	private boolean parseStart(ByteBuffer buffer){
-		int remain=buffer.remaining();
-		if(remain==0){
+		ByteBuffer readBuffer=fillBuffer(buffer,2);
+		if(readBuffer==null){
 			return false;
-		}else if(remain<2){
-			parseStat=ParseStat.ERROR;
-			throw new RuntimeException("parseTop");
 		}
-		byte b1 = buffer.get();
-		byte b2 = buffer.get();
+		byte b1 = readBuffer.get();
+		byte b2 = readBuffer.get();
 		isFin = (b1 & MASK_PCODE) != 0;
 		pcode = (byte) (b1 & MASK_PCODE);
 		isMask = ((b2 & MASK_MASK) != 0);
@@ -256,22 +277,17 @@ public class WsHybiFrame {
 		if(rawLen<0x7E){
 			payloadLength=(int)rawLen;
 		}else if(rawLen==0x7E){
-			if(remain==0){
+			ByteBuffer readBuffer=fillBuffer(buffer,2);
+			if(readBuffer==null){
 				return false;
-			}else if(remain<2){
-				parseStat=ParseStat.ERROR;
-//				throw IllegalFormatException();
-				new RuntimeException("parseLength short."+remain);
 			}
-			payloadLength=(int)buffer.getShort();
+			payloadLength=(int)readBuffer.getShort();
 		}else if(rawLen==0x7F){
-			if(remain==0){
+			ByteBuffer readBuffer=fillBuffer(buffer,4);
+			if(readBuffer==null){
 				return false;
-			}else if(remain<4){
-				parseStat=ParseStat.ERROR;
-				throw new RuntimeException("parseLength int."+remain);
 			}
-			payloadLength=buffer.getInt();
+			payloadLength=readBuffer.getInt();
 		}
 		parseStat=ParseStat.MASK;
 		return true;
@@ -282,14 +298,11 @@ public class WsHybiFrame {
 			parseStat=ParseStat.PAYLOAD;
 			return true;
 		}
-		int remain=buffer.remaining();
-		if(remain==0){
+		ByteBuffer readBuffer=fillBuffer(buffer,4);
+		if(readBuffer==null){
 			return false;
-		}else if(remain<4){
-			parseStat=ParseStat.ERROR;
-			throw new RuntimeException("parseMask");
 		}
-		buffer.get(maskBytes);
+		readBuffer.get(maskBytes);
 		parseStat=ParseStat.PAYLOAD;
 		return true;
 	}

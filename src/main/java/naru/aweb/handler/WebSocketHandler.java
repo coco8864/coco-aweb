@@ -3,22 +3,14 @@
  */
 package naru.aweb.handler;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
-import naru.async.pool.BuffersUtil;
-import naru.async.pool.PoolManager;
-import naru.async.store.DataUtil;
 import naru.aweb.auth.LogoutEvent;
 import naru.aweb.config.Config;
 import naru.aweb.handler.ws.WsProtocol;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.RequestContext;
 import naru.aweb.http.WebServerHandler;
-import naru.aweb.util.CodeConverter;
 
 import org.apache.log4j.Logger;
 
@@ -31,8 +23,6 @@ import org.apache.log4j.Logger;
  */
 public abstract class WebSocketHandler extends WebServerHandler implements LogoutEvent{
 	private static Logger logger=Logger.getLogger(WebSocketHandler.class);
-	private static Config config=Config.getConfig();
-	private long lastIo;
 	private boolean isWs;//WebSocketをハンドリングしているか否か
 	private WsProtocol wsProtocol;
 	
@@ -80,13 +70,13 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 			logger.warn("not found WebSocket Protocol");
 			return;
 		}
+		logger.debug("wsProtocol class:"+wsProtocol.getClass().getName());
 		/* logoff時にonLogoutイベントが通知されるように設定 */
 		RequestContext requestContext=getRequestContext();
 		requestContext.registerLogoutEvnet(this);
 		
 		wsProtocol.setup(this);
 		wsProtocol.onHandshake(requestHeader);
-		lastIo=System.currentTimeMillis();
 	}
 	
 	public void onReadPlain(Object userContext, ByteBuffer[] buffers) {
@@ -122,7 +112,9 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 
 	@Override
 	public void onFinished() {
-		wsProtocol.onClose(true);
+		if(wsProtocol!=null){
+			wsProtocol.onClose(true);
+		}
 		super.onFinished();
 	}
 
