@@ -37,3 +37,4 @@
    * !WebSocketを有効にするには、以下の設定。
     # アドレスバーに “about:config” と入力
     # User Prefs > Enable !WebSockets チェック
+  * 11.51 Build 11.51
