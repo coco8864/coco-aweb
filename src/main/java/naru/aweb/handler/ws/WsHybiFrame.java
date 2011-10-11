@@ -162,9 +162,7 @@ public class WsHybiFrame {
 		return createFinFrame(PCODE_PONG, isMask, message);
 	}
 	
-	//TODO close frame
 	public static ByteBuffer[] createCloseFrame(boolean isMask, short code,String reason) {
-//		ByteBuffer buffer=
 		return createFinFrame(PCODE_CLOSE, isMask, (ByteBuffer[])null);
 	}
 	
