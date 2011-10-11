@@ -164,7 +164,7 @@ function perfProgress(){
 	}
 	var bar=jQuery("#progressbar");
 	if(!stressData.msg){
-		ph.jQuery("#stTestStatus").text("未実行");
+		ph.jQuery("#stTestStatus").text("-");
 		ph.jQuery("#stCancelBtn").hide();
 		bar.progressbar({value:0});
 		return;
@@ -180,11 +180,11 @@ function perfProgress(){
 	ph.jQuery("#stTestBrowser").text((st.runnningBrowserCount)+"/"+st.browserCount);
 	ph.jQuery("#stTestLoop").text((st.loop)+"/"+st.loopCount);
 	if(stressData.isComplete){
-		ph.jQuery("#stTestStatus").text("完了");
+		ph.jQuery("#stTestStatus").text("complete");
 		ph.jQuery("#stCancelBtn").hide();
-		bar.progressbar({value:0});
+		bar.progressbar({value:100});
 	}else{
-		ph.jQuery("#stTestStatus").text("実行中");
+		ph.jQuery("#stTestStatus").text("processing");
 		ph.jQuery("#stCancelBtn").show();
 		bar.progressbar({value:(st.loop/st.loopCount)*100});
 	}
