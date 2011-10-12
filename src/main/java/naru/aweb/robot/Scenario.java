@@ -212,7 +212,7 @@ public class Scenario extends PoolBase{
 	
 	public void setLoopCont(int loopCount){
 		int loopUnit=loopCount/10;
-		if(loopUnit<0){
+		if(loopUnit<=0){
 			loopUnit=1;
 		}else if(loopUnit>100){
 			loopUnit=100;

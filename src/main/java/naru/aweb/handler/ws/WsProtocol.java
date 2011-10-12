@@ -45,6 +45,7 @@ public abstract class WsProtocol extends PoolBase{
 	private static int webSocketPingInterval=config.getInt("webSocketPingInterval",0);
 	private static Set<String> webSocketAllowSubprotocols=null;
 	private static Set<String> webSocketSpecs=null;
+	private static boolean isWebSocketResponseMask=config.getBoolean("isWebSocketResponseMask",false);
 	
 	private static void setupWebSocketAllowSubprotocols(String subprotocols){
 		webSocketAllowSubprotocols=null;
@@ -123,7 +124,15 @@ public abstract class WsProtocol extends PoolBase{
 		setupWebSocketSpecs(specs);
 		config.setProperty("websocketSpecs",specs);
 	}
-	
+
+	public static boolean isWebSocketResponseMask() {
+		return isWebSocketResponseMask;
+	}
+
+	public static void setWebSocketResponseMask(boolean isWebSocketResponseMask) {
+		WsProtocol.isWebSocketResponseMask = isWebSocketResponseMask;
+		config.setProperty("isWebSocketResponseMask",isWebSocketResponseMask);
+	}
 	
 	public static WsProtocol createWsProtocol(HeaderParser requestHeader){
 		String key=requestHeader.getHeader(SEC_WEBSOCKET_KEY);
