@@ -26,11 +26,19 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	private boolean isWs;//WebSocketをハンドリングしているか否か
 	private WsProtocol wsProtocol;
 	
-	public void postMessage(String message){
+	/* このクラスを継承したapplicationから呼び出される */
+	/* メッセージを送信する場合(text) */
+	protected void postMessage(String message){
 		wsProtocol.postMessage(message);
 	}
 	
-	public void closeWebSocket(){
+	/* メッセージを送信する場合(binary) */
+	protected void postMessage(ByteBuffer[] message){
+		wsProtocol.postMessage(message);
+	}
+	
+	/* 通信をやめる場合 */
+	protected void closeWebSocket(){
 		wsProtocol.onClose(false);
 	}
 	

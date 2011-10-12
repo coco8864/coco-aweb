@@ -90,7 +90,7 @@ public class WsHybi10 extends WsProtocol {
 			return;
 		}
 		isSendClose=true;
-		ByteBuffer[] pongBuffer=WsHybiFrame.createCloseFrame(false,code,reason);
+		ByteBuffer[] pongBuffer=WsHybiFrame.createCloseFrame(isWebSocketResponseMask(),code,reason);
 		handler.asyncWrite(null, pongBuffer);
 	}
 	
@@ -148,7 +148,7 @@ public class WsHybi10 extends WsProtocol {
 			break;
 		case WsHybiFrame.PCODE_PING:
 			logger.debug("WsHybi10#doFrame pcode PING");
-			ByteBuffer[] pongBuffer=WsHybiFrame.createPoingFrame(false, payloadBuffers);
+			ByteBuffer[] pongBuffer=WsHybiFrame.createPoingFrame(isWebSocketResponseMask(), payloadBuffers);
 			handler.asyncWrite(null, pongBuffer);
 			break;
 		case WsHybiFrame.PCODE_PONG:
@@ -196,7 +196,7 @@ public class WsHybi10 extends WsProtocol {
 	@Override
 	public void onReadTimeout() {
 		logger.debug("WsHybi10#onReadTimeout cid:"+handler.getChannelId());
-		ByteBuffer[] buffers=WsHybiFrame.createPingFrame(false,"ping:"+System.currentTimeMillis());
+		ByteBuffer[] buffers=WsHybiFrame.createPingFrame(isWebSocketResponseMask(),"ping:"+System.currentTimeMillis());
 		handler.asyncWrite(null, buffers);
 		handler.asyncRead(null);
 	}
@@ -205,7 +205,7 @@ public class WsHybi10 extends WsProtocol {
 	@Override
 	public void postMessage(String message) {
 		logger.debug("WsHybi10#postMessage(txt) cid:"+handler.getChannelId());
-		ByteBuffer[] buffers=WsHybiFrame.createTextFrame(false, message);
+		ByteBuffer[] buffers=WsHybiFrame.createTextFrame(isWebSocketResponseMask(), message);
 		handler.asyncWrite(null, buffers);
 	}
 
@@ -213,7 +213,7 @@ public class WsHybi10 extends WsProtocol {
 	@Override
 	public void postMessage(ByteBuffer[] message) {
 		logger.debug("WsHybi10#postMessage(bin) cid:"+handler.getChannelId());
-		ByteBuffer[] buffers=WsHybiFrame.createBinaryFrame(false, message);
+		ByteBuffer[] buffers=WsHybiFrame.createBinaryFrame(isWebSocketResponseMask(), message);
 		handler.asyncWrite(null, buffers);
 	}
 
