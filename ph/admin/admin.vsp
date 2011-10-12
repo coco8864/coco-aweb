@@ -85,9 +85,9 @@ ph.log("tabs ajaxOptions success");
 		<li><a href="/admin/filter.vsf">filter</a></li>
 #end
 		<li><a href="/admin/chat.vsf">chat</a></li>
-#if($!{parameter.getParameter("debug")})
-		<li><a href="/admin/debug.vsf">debug</a></li>
-#end
+##if($!{parameter.getParameter("debug")})
+##		<li><a href="/admin/debug.vsf">debug</a></li>
+##end
 	</ul>
 ##初期表示タブ
 	<div id="setting">##settingタブ
