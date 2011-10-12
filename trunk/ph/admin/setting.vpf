@@ -207,6 +207,18 @@ function setTimeouts(){
   });
 }
 
+var isShowdebugTab=false;
+function showDebug(){
+  if(isShowdebugTab){
+    jQuery("#tabs").tabs( "remove", 8 );
+    isShowdebugTab=false;
+  }else{
+    jQuery("#tabs").tabs( "add" , "/admin/debug.vsf" , "debug" , 8 );
+    isShowdebugTab=true;
+    jQuery("#tabs").tabs("select",8);
+  }
+}
+
 ph.jQuery(function(){
   ph.jQuery(".settingItem").hide();
   ##realHost一覧を表示
@@ -368,4 +380,6 @@ checked="checked"
 <input type="button" value="設定" onclick="setHtml5();" /><br/>
 </div>
 
+<Hr/>
+<H2 onclick='showDebug();' title='open script debug tab'>script debug</H2>
 

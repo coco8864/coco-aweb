@@ -13,7 +13,7 @@
 <ul>
 <li>ログ出力:ph.log("aa")</li>
 <li>オブジェクトダンプ:ph.dump({aaa:"aaa"})</li>
-<li>郵便番号検索:jQuery.get("http://groovetechnology.co.jp/ZipSearchService/v1/zipsearch?zipcode=1000011",null,ph.dump,"jsonp")</li>
+<li>郵便番号検索:jQuery.get("http://api.postalcode.jp/v1/zipsearch?zipcode=1000011",null,ph.dump,"jsonp")</li>
 <li>phantom proxy realHost情報取得:ph.admin.doPramCommand('realHost','realHostList',null,ph.dump,ph.dump);</li>
 <li>phantom proxy 統計情報取得:
 ph.admin.doCommand('getStastics',null,function(s){
