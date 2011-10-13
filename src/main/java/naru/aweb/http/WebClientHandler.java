@@ -6,7 +6,6 @@ import javax.net.ssl.SSLEngine;
 
 import org.apache.log4j.Logger;
 
-import naru.async.ChannelHandler;
 import naru.async.Timer;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolBase;
@@ -14,7 +13,6 @@ import naru.async.pool.PoolManager;
 import naru.async.ssl.SslHandler;
 import naru.async.timer.TimerManager;
 import naru.aweb.config.Config;
-import naru.aweb.handler.ProxyHandler;
 import naru.aweb.robot.CallScheduler;
 
 public class WebClientHandler extends SslHandler implements Timer {
@@ -472,10 +470,13 @@ public class WebClientHandler extends SslHandler implements Timer {
 			internalStartRequest();
 			return true;
 		}if(stat==STAT_INIT){
-			if(asyncConnect(this, webClientConnection.getRemoteServer(), webClientConnection.getRemotePort(), connectTimeout)){
-				stat = STAT_CONNECT;
-				setReadTimeout(config.getReadTimeout());
-				return true;
+			synchronized (this) {
+				if(asyncConnect(this, webClientConnection.getRemoteServer(), webClientConnection.getRemotePort(), connectTimeout)){
+					//この時点で既にリクエストが終了してしまっている事がある...
+					stat = STAT_CONNECT;
+					setReadTimeout(config.getReadTimeout());
+					return true;
+				}
 			}
 			logger.warn("fail to asyncConnect.");
 			error=FAILURE_CONNECT;

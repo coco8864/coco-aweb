@@ -120,6 +120,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 
 	@Override
 	public void onFinished() {
+		logger.debug("#finished client.cid:"+getChannelId());
 		if(wsProtocol!=null){
 			wsProtocol.onClose(true);
 		}
@@ -134,5 +135,17 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 			wsProtocol=null;
 		}
 		super.recycle();
+	}
+
+	@Override
+	public void ref() {
+		// TODO Auto-generated method stub
+		super.ref();
+	}
+
+	@Override
+	public boolean unref() {
+		// TODO Auto-generated method stub
+		return super.unref();
 	}
 }
