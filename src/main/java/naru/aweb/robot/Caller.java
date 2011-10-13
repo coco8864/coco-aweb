@@ -347,6 +347,9 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		if(responseLength==0){
 			accessLog.setTimeCheckPint(AccessLog.TimePoint.responseBody);
 		}
+		if(buffers==null){
+			return;
+		}
 		responseLength+=BuffersUtil.remaining(buffers);
 		if(isResponseBodyTrace){
 			if(responseBodyStore==null){

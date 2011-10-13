@@ -348,6 +348,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 			onResponseBody(body);
 		}
 		if (isLast) {
+			onResponseBody(null);
 			endOfResponse();
 		}else{
 			logger.debug("asyncRead(CONTEXT_BODY) cid:"+getChannelId());
@@ -551,47 +552,55 @@ public class WebClientHandler extends SslHandler implements Timer {
 	 * à»ç~callbackÉÅÉ\ÉbÉh
 	 */
 	private void onWebConnected() {
+		logger.debug("#webConnected cid:"+getChannelId());
 		if (webClient != null) {
 			webClient.onWebConnected(userContext);
 		}
 	}
 	private void onWebProxyConnected() {
+		logger.debug("#webProxyConnected cid:"+getChannelId());
 		if (webClient != null) {
 			webClient.onWebProxyConnected(userContext);
 		}
 	}
 	
 	private void onWebHandshaked() {
+		logger.debug("#webHandshaked cid:"+getChannelId());
 		if (webClient != null) {
 			webClient.onWebHandshaked(userContext);
 		}
 	}
 	
 	private void onWrittenRequestHeader() {
+		logger.debug("#writtenRequestHeader cid:"+getChannelId());
 		if (webClient != null) {
 			webClient.onWrittenRequestHeader(userContext);
 		}
 	}
 	
 	private void onWrittenRequestBody() {
+		logger.debug("#writtenRequestBody cid:"+getChannelId());
 		if (webClient != null) {
 			webClient.onWrittenRequestBody(userContext);
 		}
 	}
 
 	private void onResponseHeader(HeaderParser responseHeader) {
+		logger.debug("#responseHeader cid:"+getChannelId());
 		if (webClient != null) {
 			webClient.onResponseHeader(userContext,responseHeader);
 		}
 	}
 
 	private void onResponseBody(ByteBuffer[] buffer) {
+		logger.debug("#responseBody cid:"+getChannelId());
 		if (webClient != null) {
 			webClient.onResponseBody(userContext,buffer);
 		}
 	}
 
 	private synchronized void onRequestEnd(int stat) {
+		logger.debug("#requestEnd cid:"+getChannelId() +":webClient:"+webClient);
 		int lastStat=this.stat;
 		this.stat=stat;
 		if (webClient == null) {
@@ -605,6 +614,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 	}
 
 	private void onRequestFailure(int stat,Throwable t) {
+		logger.debug("#requestFailure cid:"+getChannelId());
 		synchronized (this) {
 			if (webClient == null) {
 				return;
