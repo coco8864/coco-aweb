@@ -222,7 +222,7 @@ memory:<span id="stTestMemory"></span>%</div>
 <table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
 <thead>
 <tr><th>ID</th><th>name</th><th>start</th><th>total(ave)</th><th>browser</th><!--th>testRequestCount</th><th>testLoopCount</th-->
-<th>requestLine</th><th>status</th>
+<th>requestLine</th><th title="&:timeout,%:closeNomal,$:failure,#:after header failure">status</th>
 <th>count</th><th>len</th><th>processTime</th><th>requestHeaderTime</th><th>requestBodyTime</th><th>responseHeaderTime</th><th>responseBodyTime</th>
 </tr>
 </thead>
