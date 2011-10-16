@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="Shift_JIS" ?>
+<queueApp>
+  <terminal name="queuelet.control.httpDataPool" threadCount="0">
+    <queuelet type="pool">
+      <param name="className" value="naru.http.HttpData"/>
+      <param name="arg" value="16384"/>
+      <param name="poolCount" value="32"/>
+    </queuelet>
+  </terminal>
+
+  <!--リクエストが途中で途切れた場合に使用 -->
+  <terminal name="queuelet.control.waitForReceive" threadCount="1" >
+    <queuelet type="receive" nextTerminal="receive">
+      <param name="getSocketMethod" value="getSocket"/>
+      <param name="timeout" value="0"/>
+      <param name="timeoutTerminal" value="close"/>
+    </queuelet>
+  </terminal>
+
+  <!--リクエストデータの読み込み -->
+  <terminal name="queuelet.control.receive" threadCount="1" port="$queuelet.control.port" >
+    <queuelet className="naru.http.Request">
+      <param name="pool" value="httpDataPool"/>
+      <param name="complete" value=""/>
+      <param name="incomplete" value="waitForReceive"/>
+      <param name="error" value="close"/>
+    </queuelet>
+    <queuelet className="naru.http.Response" nextTerminal="waitForReceive">
+      <param name="allowKeepAlive" value="false"/>
+      <param name="keepAlive" value="waitForReceive"/>
+      <param name="close" value=""/>
+      <param name="error" value=""/>
+    </queuelet>
+    <!--queuelet type="log" /-->
+    <queuelet className="naru.http.Close" nextTerminal="httpDataPool"/>
+  </terminal>
+
+  <terminal name="queuelet.control.close" threadCount="1" >
+    <!--queuelet type="log" /-->
+    <queuelet className="naru.http.Close" nextTerminal="httpDataPool"/>
+  </terminal>
+</queueApp>
