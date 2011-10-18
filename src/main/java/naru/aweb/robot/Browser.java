@@ -24,6 +24,7 @@ import naru.aweb.queue.QueueManager;
 import naru.aweb.util.ServerParser;
 
 public class Browser extends PoolBase implements Timer{
+	private static final String LENGTH_0_BYTES_DIGEST = "1B2M2Y8AsgTpgAmY7PhCfg==";
 	private static Logger logger = Logger.getLogger(Browser.class);
 	private final int MAX_DOMAIN_CONNECTION=2;
 	
@@ -229,7 +230,7 @@ public class Browser extends PoolBase implements Timer{
 		requestHeader.unref(true);
 		ByteBuffer[] requestBodyBuffer=null;
 		String responseBodyDigest=accessLog.getRequestBodyDigest();
-		if(responseBodyDigest!=null){
+		if(responseBodyDigest!=null && !LENGTH_0_BYTES_DIGEST.equals(responseBodyDigest)){
 			requestBodyBuffer=DataUtil.toByteBuffers(responseBodyDigest);
 		}
 		Caller caller=Caller.create(this, connection, isCallerkeepAlive, nextCaller,requestHeaderBuffer, requestLine, requestBodyBuffer,accessLog);
