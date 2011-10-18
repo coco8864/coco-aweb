@@ -114,6 +114,10 @@ public class Mapping{
 	
 	public static Mapping fromJson(String jsonString){
 		JSON json=JSONObject.fromObject(jsonString);
+		//Ç±Ç±Ç≈à»â∫warningìÆÇ´ÇÕë√ìñÇæÇ™
+		//WARN  net.sf.json.JSONObject - Can't transform property 'destinationType' from java.lang.String into naru.aweb.config.Mapping$DestinationType. Will register a default Morpher
+		//WARN  net.sf.json.JSONObject - Can't transform property 'secureType' from java.lang.String into naru.aweb.config.Mapping$SecureType. Will register a default Morpher
+		//WARN  net.sf.json.JSONObject - Can't transform property 'sourceType' from java.lang.String into naru.aweb.config.Mapping$SourceType. Will register a default Morpher
 		Mapping mapping=(Mapping)JSONSerializer.toJava(json,jsonConfig);
 		return mapping;
 	}
@@ -390,7 +394,7 @@ public class Mapping{
 	/**
 	 * PersistentÇ©ÇÁì«Ç›çûÇÒÇæå„ÅAçÏã∆ópïœêîÇê›íËÇ∑ÇÈ
 	 */
-	public void setup(){
+	public boolean setup(){
 		String sourcePatternString="^"+this.sourcePath;
 		if(!sourcePatternString.endsWith("/")){
 			sourcePatternString+="($|[/;\\?])";
@@ -404,18 +408,24 @@ public class Mapping{
 			sourcePatternString = sourcePatternString.replaceAll("\\.", "(\\\\.)");
 		}
 		this.sourcePathPattern=Pattern.compile(sourcePatternString);
-		
 		sourceServerParser=ServerParser.parse(new ServerParser(),sourceServer,ServerParser.WILD_PORT_NUMBER);
+		if(sourceServerParser==null){
+			return false;
+		}
 		
 		switch(destinationType){
 		case HTTP:
 			destinationServerParser=ServerParser.parse(new ServerParser(),destinationServer,ServerParser.WILD_PORT_NUMBER);
-//			destinationServerParser=ServerParser.parse(new ServerParser(),destinationServer,ServerParser.HTTP_PORT_NUMBER);
+			if(destinationServerParser==null){
+				return false;
+			}
 			destinationHandlerClass=PROXY_HANDLER;
 			break;
 		case HTTPS:
 			destinationServerParser=ServerParser.parse(new ServerParser(),destinationServer,ServerParser.WILD_PORT_NUMBER);
-//			destinationServerParser=ServerParser.parse(new ServerParser(),destinationServer,ServerParser.HTTPS_PORT_NUMBER);
+			if(destinationServerParser==null){
+				return false;
+			}
 			destinationHandlerClass=PROXY_HANDLER;
 			break;
 		case FILE:
@@ -468,6 +478,7 @@ public class Mapping{
 				rolesList.add(rolesArray[i]);
 			}
 		}
+		return true;
 	}
 	
 	public void tearDown(){

@@ -66,7 +66,8 @@ public class ServerParser extends PoolBase {
 			matcher=serverPattern.matcher(server);
 		}
 		if(!matcher.matches()){
-			serverParser.unref(true);
+			//•K‚¸pool‚É‚ ‚é‚Æ‚ÍŒÀ‚ç‚È‚¢‚ª‚à‚µpool‚³‚ê‚Ä‚¢‚éê‡‚É‚ÍŒÄ‚Ño‚µŒ³‚Ì‘ã‚í‚è‚ÉŠJ•ú‚·‚é
+			serverParser.unref();
 			return null;
 		}
 		serverParser.setHost(matcher.group(1));
