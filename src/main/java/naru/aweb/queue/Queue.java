@@ -127,7 +127,12 @@ public class Queue extends PoolBase {
 				}
 			}
 		}
+		
+		WsQueueHandler orgHandler=info.handler;
 		handler.ref();
+		if(orgHandler!=null){
+			orgHandler.unref();
+		}
 		info.handler=handler;
 		return true;
 	}

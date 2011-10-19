@@ -625,7 +625,11 @@ public class WebClientHandler extends SslHandler implements Timer {
 			userContext=null;
 			wkWebClient.onRequestFailure(wkUserContext,stat,t);
 		}
-		logger.warn("#requestFailure.",t);
+		if(t==FAILURE_CONNECT){
+			logger.warn("#requestFailure.connect failure");
+		}else{
+			logger.warn("#requestFailure.",t);
+		}
 	}
 
 	public long getRequestHeaderLength() {
