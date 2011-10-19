@@ -28,8 +28,6 @@ import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
 import naru.async.store.Page;
 import naru.async.store.Store;
-import naru.aweb.core.RealHost;
-import naru.aweb.mapping.MappingResult;
 import naru.aweb.util.ServerParser;
 
 import org.apache.log4j.Logger;
