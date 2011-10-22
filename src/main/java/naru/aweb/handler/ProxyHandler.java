@@ -331,7 +331,11 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 //			InjectionHelper helper=config.getInjectionHelper();
 //			helper.doInject(injectContext, this, null);
 //		}
-		responseEnd();
+		if(getResponseStatusCode()==null){//レスポンスヘッダが確定していない
+			completeResponse("500","no response");
+		}else{
+			responseEnd();
+		}
 	}
 
 	public void onRequestFailure(Object userContext,int stat,Throwable t) {
