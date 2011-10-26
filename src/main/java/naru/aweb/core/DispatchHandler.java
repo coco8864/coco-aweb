@@ -61,6 +61,9 @@ public class DispatchHandler extends ServerBaseHandler {
 		startTime = null;
 		handshakeTime=connectTime=-1;
 		headerPage.recycle();
+		//acceptやsslProxyの場合、そのタイミングでtrue,
+		//KeepAliveで継続する時のためここはfalseで初期化
+		isFirstRead=false;
 		super.recycle();
 	}
 
