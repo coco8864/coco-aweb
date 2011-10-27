@@ -6,7 +6,6 @@ package naru.aweb.handler;
 import java.nio.ByteBuffer;
 
 import naru.aweb.auth.LogoutEvent;
-import naru.aweb.config.Config;
 import naru.aweb.handler.ws.WsProtocol;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.RequestContext;
@@ -137,15 +136,17 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		super.recycle();
 	}
 
+	/*
 	@Override
 	public void ref() {
-		// TODO Auto-generated method stub
+		logger.debug("ref.cid:"+getChannelId(),new Throwable());
 		super.ref();
 	}
 
 	@Override
 	public boolean unref() {
-		// TODO Auto-generated method stub
+		logger.debug("unref.cid:"+getChannelId(),new Throwable());
 		return super.unref();
 	}
+	*/
 }
