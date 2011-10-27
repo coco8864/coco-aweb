@@ -390,6 +390,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 			return;
 		}
 		onRequestEnd(STAT_KEEP_ALIVE);
+		//TODO requestHeaderBuffer,requestBodyBuffer pool
 		requestHeaderBuffer = requestBodyBuffer = null;
 		responseHeaderLength=requestHeaderLength=requestContentLength = requestContentWriteLength = 0;
 		responseHeader.recycle();
