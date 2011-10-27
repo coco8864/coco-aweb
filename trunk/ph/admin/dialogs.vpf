@@ -64,9 +64,8 @@ var doStressCb={
 };
 var streeCommandCb=function(chId){
 	ph.log("streeCommandCb chId:"+chId);
-	jQuery("#tabs").tabs("select",5);
 	if(stressData.chId){//先行しているstressがあった.cancelする
-		ph.admin.doPramCommand('perf','cancel',{chId:stressData.chId});
+		ph.admin.doPramCommand('perf','cancel',{chId:stressData.chId},function(){},function(){});
 	}
 	stressData.chId=chId;
 	ph.queue.subscribeById(chId,doStressCb);
@@ -76,6 +75,8 @@ function doStress(){
 //	if(!doStressCb.isComplete){
 //		alert("実行中");
 //	}
+	jQuery("#tabs").tabs("select",5);
+//	if(typeof perfProgress!='undefined'){perfProgress();}
 	if(ph.jQuery('#isStressFile').attr('checked')){
 		ph.jQuery('#fileStressAccessLogList').val( ph.jQuery('#stressAccessLogList').text() );
 		ph.jQuery('#stressFileForm').submit();

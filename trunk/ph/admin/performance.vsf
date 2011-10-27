@@ -186,7 +186,13 @@ function perfProgress(){
 	}else{
 		ph.jQuery("#stTestStatus").text("processing");
 		ph.jQuery("#stCancelBtn").show();
-		bar.progressbar({value:(st.loop/st.loopCount)*100});
+		var value=0;
+		if(st.loop<st.loopCount){
+			value=(st.loop/st.loopCount)*90;
+		}else{
+			value=90+((st.browserCount-st.runnningBrowserCount)/st.browserCount)*10;
+		}
+		bar.progressbar({value:value});
 	}
 }
 perfTableRefresh();
