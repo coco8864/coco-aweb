@@ -28,6 +28,17 @@ public class Queue extends PoolBase {
 		WsQueueHandler handler;
 		JSONArray msgs;
 		long lastAccess;
+		
+		void setHandler(WsQueueHandler handler){
+			if(handler!=null){
+				handler.ref();
+			}
+			WsQueueHandler orgHandler=handler;
+			this.handler=handler;
+			if(orgHandler!=null){
+				orgHandler.unref();
+			}
+		}
 	}
 	private Map<String,SubscribeInfo> idMap=new HashMap<String,SubscribeInfo>();
 //	private Map<Long,SubscribeInfo> handlerMap=new HashMap<Long,SubscribeInfo>();
@@ -64,10 +75,7 @@ public class Queue extends PoolBase {
 		while(itr.hasNext()){
 			String subId=itr.next();
 			SubscribeInfo info=idMap.get(subId);
-			if(info.handler!=null){
-				info.handler.unref();
-				info.handler=null;
-			}
+			info.setHandler(null);
 			if(info.msgs!=null){
 				info.msgs.clear();
 			}
@@ -88,21 +96,15 @@ public class Queue extends PoolBase {
 	//Handlerがレスポンスした場合（messageが送信できなくなった）場合に呼び出される
 	public synchronized void returnHandler(String chId){
 		SubscribeInfo info=idMap.remove(chId);
-		if(info==null||info.handler==null){
-			return;
+		if(info!=null){
+			info.setHandler(null);
 		}
-		info.handler.unref();
-		info.handler=null;
 	}
 	
 	public synchronized void unsubscribe(String chId){
 		SubscribeInfo info=idMap.remove(chId);
-		if(info==null){
-			return;
-		}
-		if(info.handler!=null){
-			info.handler.unref();
-			info.handler=null;
+		if(info!=null){
+			info.setHandler(null);
 		}
 	}
 	
@@ -121,24 +123,22 @@ public class Queue extends PoolBase {
 			if(isComplete){
 				idMap.remove(chId);
 				if(idMap.isEmpty()){
+					info.setHandler(null);
 					unsubscribe(chId);
 					isFin=true;
 					return true;
 				}
 			}
 		}
-		handler.ref();
-		info.handler=handler;
+		info.setHandler(handler);
 		return true;
 	}
 	
 	public synchronized void unregHandler(String chId){
 		SubscribeInfo info=idMap.get(chId);
-		if(info==null || info.handler==null){
-			return;
+		if(info!=null){
+			info.setHandler(null);
 		}
-		info.handler.unref();
-		info.handler=null;
 	}
 	
 	public synchronized boolean changeUser(String chId,String user){

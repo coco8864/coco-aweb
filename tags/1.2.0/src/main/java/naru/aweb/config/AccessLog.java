@@ -425,6 +425,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 //		requestHeaderTrace=requestBodyTrace=responseHeaderTrace=responseBodyTrace=-1;
 		contentEncoding=transferEncoding=contentType=null;
 		originalLogId=-1;
+		requestHeaderDigest=requestBodyDigest=responseHeaderDigest=responseBodyDigest=null;
 		
 		sourceType='-';
 		realHost=null;

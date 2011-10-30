@@ -92,7 +92,10 @@ public class Mapper {
 			Mapping mapping=itr.next();
 			pm.makeTransient(mapping);
 //			System.out.println("json:"+mapping.toJson());
-			mapping.setup();
+			if(mapping.setup()==false){//TODO mapping.setup‚ªfalse‚Å•œ‹A‚µ‚½‚ç‚·‚×‚Ärollback‚·‚×‚«?
+				logger.error("fail to mapping setup.id:" + mapping.getId()+":note:"+mapping.getNotes());
+				continue;
+			}
 			loadMapping(mapping);
 		}
 	}

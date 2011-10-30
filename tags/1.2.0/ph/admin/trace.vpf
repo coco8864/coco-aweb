@@ -214,10 +214,12 @@ function updateEntry(accessLogs){
 	ph.jQuery("#channelId").text(accessLog.channelId);
 
 	//checkServerの初期値を計算
+	var lines=accessLog.requestLine.split(" ");
+	var statusLinePath=lines[1].replace( /http:\/\/[^/]*(.*)/, "$1");
 	if(accessLog.destinationType=='S'){
-		checkReqUrl='https://' + accessLog.resolveOrigin;
+		checkReqUrl='https://' + accessLog.resolveOrigin + statusLinePath;
 	}else if(accessLog.destinationType=='H'){
-		checkReqUrl='http://' + accessLog.resolveOrigin;
+		checkReqUrl='http://' + accessLog.resolveOrigin + statusLinePath;
 	}else{
 		checkReqUrl=ph.adminUrl;
 	}

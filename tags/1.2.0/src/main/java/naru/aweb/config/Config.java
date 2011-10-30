@@ -60,7 +60,7 @@ public class Config {
 	private static final String WRITE_TIMEOUT = "writeTimeout";
 	private static final long WRITE_TIMEOUT_DEFAULT = 1000;
 	private static final String ACCEPT_TIMEOUT = "acceptTimeout";
-	private static final long ACCEPT_TIMEOUT_DEFAULT = 100;
+	private static final long ACCEPT_TIMEOUT_DEFAULT = 1000;
 	private static final String CONNECT_TIMEOUT = "connectTimeout";
 	private static final long CONNECT_TIMEOUT_DEFAULT = 1000;
 	private static final String SSL_PROXY_PORT = "sslProxyPort";

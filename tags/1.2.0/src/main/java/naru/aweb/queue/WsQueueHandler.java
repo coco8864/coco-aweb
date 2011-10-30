@@ -32,8 +32,10 @@ public class WsQueueHandler extends WebSocketHandler {
 	private static Config config=Config.getConfig();
 	private static QueueManager queueManager=QueueManager.getInstance();
 	
+	private Set<String> subscribeChids=new HashSet<String>();
 	@Override
 	public void recycle() {
+		subscribeChids.clear();
 		super.recycle();
 	}
 	
@@ -50,6 +52,9 @@ public class WsQueueHandler extends WebSocketHandler {
 				responseMsg.add(QueueManager.publishMessage(chId, "error", "fail to subscribe","self"));
 				return null;
 			}
+		}
+		synchronized(subscribeChids){
+			subscribeChids.add(chId);
 		}
 		return chId;
 	}
@@ -77,6 +82,9 @@ public class WsQueueHandler extends WebSocketHandler {
 		//subscribeBynameÇÃÉãÅ[Ég
 		String chId=msg.optString("id");
 		queueManager.unsubscribe(chId);
+		synchronized(subscribeChids){
+			subscribeChids.remove(chId);
+		}
 	}
 	
 	private void listUsers(JSONObject msg,JSONArray responseMsg){
@@ -226,6 +234,19 @@ public class WsQueueHandler extends WebSocketHandler {
 
 	@Override
 	public void onMessage(ByteBuffer[] msgs) {
+	}
+
+	@Override
+	public void onFinished() {
+		synchronized(subscribeChids){
+			Iterator<String> itr=subscribeChids.iterator();
+			while(itr.hasNext()){
+				String chId=itr.next();
+				queueManager.unsubscribe(chId);
+				itr.remove();
+			}
+		}
+		super.onFinished();
 	}
 	
 }
