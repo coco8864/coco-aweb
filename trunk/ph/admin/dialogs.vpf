@@ -294,6 +294,7 @@ request count:<select id="checkRequestCount" size="1">
 </select> keepAlive:<input id="checkKeepAlive" type="checkBox"> trace:<input id="checkTrace" type="checkBox"> <br/>
 url:<input id="checkReqUrl" type="text" size="80" value=''><br/>
 <input type="button" value="check" onClick='checkServer();'>
+<input type="button" value="clear" onClick='ph.jQuery("#checkReqUrl").val("");'>
 <input type="button" value="cancel" onClick="jQuery('#checkServerDialog').dialog('close');"><br/>
 <hr/>
 status:<span id="checkStatus"></span><br/>
