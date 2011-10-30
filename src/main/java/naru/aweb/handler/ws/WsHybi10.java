@@ -42,7 +42,7 @@ public class WsHybi10 extends WsProtocol {
 		String version=requestHeader.getHeader(SEC_WEBSOCKET_VERSION);
 		logger.debug("WebSocket version:"+version);
 		int v=Integer.parseInt(version);
-		if(v>8){//versionが大きすぎる場合は、8で会話するように交渉
+		if(v>13){//versionが大きすぎる場合は、8で会話するように交渉,chrome "16.0.912.12 dev-m"は、13
 			logger.debug("WsHybi10#version error:"+v);
 			handler.setHeader(SEC_WEBSOCKET_VERSION, "8");
 			handler.completeResponse("400");

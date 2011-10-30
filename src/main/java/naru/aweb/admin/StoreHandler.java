@@ -232,11 +232,22 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 			leftLength -= remaining;
 		}
 	}
-	
+
 	private void closeStore(){
-		Store tmpStore=store;//‹}‚ÉnullƒNƒŠƒA‚³‚ê‚é‚Ì‚ğ–h‚®
+		closeStore(true);
+	}
+
+	private void closeStore(boolean isCallClose){
+		Store tmpStore;//‹}‚ÉnullƒNƒŠƒA‚³‚ê‚é‚Ì‚ğ–h‚®
+		synchronized(this){
+			tmpStore=store;
+			store=null;
+		}
 		if(tmpStore!=null){
-			tmpStore.close(this,store);
+			if(isCallClose){
+				tmpStore.close(this,store);
+			}
+			unref();//store‚Æ‚ÌŠÖŒW‚ª‚«‚ê‚½‚Ì‚Å
 		}
 	}
 
@@ -297,12 +308,7 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 		}
 		responseEnd();
 //		onBufferEnd‚ª’Ê’m‚³‚ê‚½‚Æ‚¢‚¤–‚ÍAstore‚ÍŠJ•ú‚³‚ê‚Ä‚¢‚é
-		synchronized(this){
-			if(store!=null){//‚Q‰ñŒÄ‚Î‚ê‚é‚Æ‚Ív‚¦‚È‚¢‚ª”O‚Ì‚½‚ß
-				unref();//store‚Æ‚ÌŠÖŒW‚ª‚«‚ê‚½‚Ì‚Å
-				store=null;//Šù‚Énuull‚©‚à‚µ‚ê‚È‚¢‚ª
-			}
-		}
+		closeStore(false);
 	}
 
 	public void onBufferFailure(Object userContext, Throwable falure) {
@@ -310,12 +316,7 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 		logger.error("onGotFailure error.", falure);
 		responseEnd();
 //		onBufferFailure‚ª’Ê’m‚³‚ê‚½‚Æ‚¢‚¤–‚ÍAstore‚ÍŠJ•ú‚³‚ê‚Ä‚¢‚é
-		synchronized(this){
-			if(store!=null){//‚Q‰ñŒÄ‚Î‚ê‚é‚Æ‚Ív‚¦‚È‚¢‚ª”O‚Ì‚½‚ß
-				unref();//store‚Æ‚ÌŠÖŒW‚ª‚«‚ê‚½‚Ì‚Å
-				store=null;//Šù‚Énuull‚©‚à‚µ‚ê‚È‚¢‚ª
-			}
-		}
+		closeStore(false);
 	}
 
 	public void onWrittenBody() {

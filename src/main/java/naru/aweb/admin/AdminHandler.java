@@ -108,6 +108,9 @@ public class AdminHandler extends WebServerHandler{
 	private static final byte[] HEADER_END_BYTE =new byte[]{(byte)0x0d,(byte)0x0a,(byte)0x0d,(byte)0x0a};
 	
 	private HeaderParser createHeader(ByteBuffer[] buffers){
+		if(buffers==null){
+			return null;
+		}
 		HeaderParser header=(HeaderParser)PoolManager.getInstance(HeaderParser.class);
 		for(int i=0;i<buffers.length;i++){
 			header.parse(buffers[i]);
@@ -295,6 +298,9 @@ public class AdminHandler extends WebServerHandler{
 			return null;
 		}
 		HeaderParser requestHeaderParser=getPartHeader(parameter,"requestHeader",accessLog.getRequestHeaderDigest());
+		if(requestHeaderParser==null){
+			return null;
+		}
 		if(HeaderParser.CONNECT_METHOD.equalsIgnoreCase(requestHeaderParser.getMethod())){
 			//CONNECTメソッドの場合は、真のヘッダがbody部分に格納されている
 			ByteBuffer[] realHeader=requestHeaderParser.getBodyBuffer();

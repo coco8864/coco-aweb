@@ -19,16 +19,6 @@ public class JsonUtil {
 	private static final char CH_ESCAPE = '\\';
 	private static final char CH_SQUOT = '\'';
 	private static final char CH_DQUOT = '\"';
-	private static final char CH_BS = '\b';    // 0x08
-	private static final char CH_HT = '\t';    // 0x09
-	private static final char CH_LF = '\n';    // 0x0A
-	private static final char CH_FF = '\f';    // 0x0C
-	private static final char CH_CR = '\r';    // 0x0D
-	private static final String STR_BS = "\\b";
-	private static final String STR_HT = "\\t";
-	private static final String STR_LF = "\\n";
-	private static final String STR_FF = "\\f";
-	private static final String STR_CR = "\\r";
 
     public static String escape(Object obj) {
 		if (obj == null) {
@@ -52,16 +42,20 @@ public class JsonUtil {
 				sb.append(CH_ESCAPE).append(CH_SQUOT);
 			} else if (ch == CH_DQUOT) {
 				sb.append(CH_ESCAPE).append(CH_DQUOT);
-			} else if (ch == CH_BS) {
-				sb.append(STR_BS);
-			} else if (ch == CH_HT) {
-				sb.append(STR_HT);
-			} else if (ch == CH_LF) {
-				sb.append(STR_LF);
-			} else if (ch == CH_FF) {
-				sb.append(STR_FF);
-			} else if (ch == CH_CR) {
-				sb.append(STR_CR);
+			} else if(Character.isISOControl(ch)){
+				sb.append(CH_ESCAPE).append('u');
+				String hexStr=Integer.toHexString((int)ch);
+				switch(hexStr.length()){
+				case 1:
+					sb.append('0');
+				case 2:
+					sb.append('0');
+				case 3:
+					sb.append('0').append(Integer.toHexString((int)ch));
+					break;
+				default:
+					throw new RuntimeException("hexStr:"+hexStr);
+				}
 			} else {
 				sb.append(ch);
 			}

@@ -31,6 +31,7 @@ public class WebClientLog extends PoolBase {
 	@Override
 	public void recycle() {
 		checkPoint=CHECK_POINT_START;
+		statusLine=serverHeader=proxyConnectionHeader=keepAliveHeader=null;
 		Arrays.fill(readLengths, -1L);
 		Arrays.fill(writeLengths, -1L);
 		Arrays.fill(processTimes, -1L);
