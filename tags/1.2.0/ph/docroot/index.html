@@ -12,10 +12,9 @@
 	<script type="text/javascript" src="/pub/js/ph-loader.js?include=ph-auth.js"></script>
 	<link type="text/css" href="/pub/css/ph.css" rel="stylesheet" /> 
 <style type="text/css"><!--
+table {border-collapse: collapse;}
 td,th {border:1px solid #000;text-align:left;font-size:x-small}
-		.ui-resizable-se {
-			bottom: 17px;
-		}
+.ui-resizable-se {bottom: 17px;}
 .mainTitle{ margin: 0.0em 0.5em;padding:0em 0.0em 0.0em;}
 .welcome{ margin: 0.0em 1.0em;font-size: 125.0%;}
 -->
@@ -38,7 +37,7 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 				inout.attr("src","/pub/images/login.gif");
 				inout.attr("title","login");
 				inout.unbind();
-				inout.bind("click",function(){location=ph.authUrl;});
+				inout.bind("click",function(){checkGo(ph.authUrl);});
 			}
 			var useText;
 			if(typeof WebSocket != 'undefined'){
@@ -78,24 +77,23 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 				useText="使用しません"
 			}
 			ph.jQuery("#useCrossDocument").text(useText);
-			setInterval("check()",5000);
+//			setInterval("check()",5000);
 		});
 	});
 	function goAdmin(){
 		if(typeof ph != "undefined"){
-			location.href=ph.adminUrl;
+			checkGo(ph.adminUrl);
 		}else{
 			location.href="/admin";
 		}
 	}
-	function check(){
-		var status=ph.jQuery("#status");
+	function checkGo(url){
 		var now = new Date();
 		ph.jQuery.ajax({
 			type: 'GET',
 			url: '/check.html?'+now.getTime(),
-			success: function(){status.text('running');},
-			error: function(){status.text('stop');}
+			success: function(){location.href=url;},
+			error: function(){alert('Phatom Proxy停止中');}
 		});
 		
 	}
@@ -111,7 +109,7 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 <div><a href="#" onclick="goAdmin()">Phantom Proxy Console</a></div>
 <hr/>
 <div>Version:<span id="version">checking...</span></div>
-<div>Status:<span id="status">checking...</span></div>
+<!--div>Status:<span id="status">checking...</span></div-->
 <div>Browser support function</div>
 <table>
 <tr><td>WebSocket API</td><td id="websocket"></td><td id="useWebsocket"></td></tr>
