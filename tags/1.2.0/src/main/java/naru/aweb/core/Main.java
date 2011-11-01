@@ -1,6 +1,5 @@
 package naru.aweb.core;
 
-import java.net.BindException;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
