@@ -1,5 +1,5 @@
 #!/bin/sh
-JAVA_HOME=/your/java/home
+#JAVA_HOME=/your/java/home
 case "$0" in
 /*) BIN_DIR=`dirname "$0"` ;;
 *) BIN_DIR=`dirname "$PWD/$0"` ;;

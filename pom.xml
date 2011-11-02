@@ -140,11 +140,11 @@
 							<mkdir dir="pack/phantom/ph/security"/>
 							<mkdir dir="pack/phantom/ph/store"/>
 							<mkdir dir="pack/phantom/ph/tmp"/>
-							<zip destfile="pack/phantom-${version}.zip" 
+							<!--zip destfile="pack/phantom-${version}.zip" 
 								basedir="pack"
 								includes="phantom/**/*"
 								update="true"
-							/>
+							/-->
 							</tasks>
 						</configuration>
 						<goals>
@@ -215,6 +215,33 @@
           </execution>
         </executions>
       </plugin>
+
+			<!--plugin>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>install</phase>
+						<configuration>
+							<tasks>
+							<zip destfile="pack/phantom-${version}.zip" 
+								basedir="pack"
+								includes="**/*"
+								update="true"
+							/>
+							</tasks>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin-->
+			<!--テストを定義でスキップする場合 plugin>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<excludes>
+						<exclude>**/*Test.java</exclude>
+					</excludes>
+				</configuration>
+			</plugin-->
+
 
 		</plugins>
 	</build>

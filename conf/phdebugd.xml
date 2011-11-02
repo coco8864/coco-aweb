@@ -9,8 +9,8 @@
     <param name="watch.type" value="queuelet"/><!--java,watch-->
     <param name="java.vmOption.length" value="3"/><!--初期のvmOption、ダウン時は直近起動時のvmOption -->
     <param name="java.vmOption.0" value="-DPH_HOME=${PH_HOME}"/>
-    <param name="java.vmOption.1" value="${PH_XDEBUG}"/>
-    <param name="java.vmOption.2" value="${PH_XRUNJDWP}"/>
+    <param name="java.vmOption.1" value="${PH_DEBUG}"/>
+    <param name="java.vmOption.2" value="${PH_VM_OPTIONS}"/>
     <param name="java.heapSize" value="${PH_HEAPSIZE}"/>
     <param name="queuelet.conf" value="${PH_CONF_XML}"/>
     <!--初期の引数,省略すると自分のコマンドラインを引き継ぐ -->
