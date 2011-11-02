@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <queueApp checkInterval="check">
   <loader name="main" callStack="true" delegate="false">
-    <classpath path="E:/svn/1.1.0/async/target/classes"/>
-    <classpath path="E:/svn/1.1.0/aweb/target/classes"/>
-    <lib path="E:/ggproj/naruaweb/aweb/target/dependency"/>
+    <classpath path="${AWEB_CLASSES}"/>
+    <classpath path="${ASYNC_CLASSES}"/>
+    <lib path="${PH_LIB}"/>
   </loader>
 
   <terminal name="timer" threadCount="2">
