@@ -17,7 +17,7 @@
     <!--param name="queuelet.arg.length" value="0"/>
     <param name="queuelet.arg.0" value="cleanup"/-->
     <!--ダウンから再起動する場合の引数 -->
-    <param name="queuelet.recoverArg.length" value="0"/><!--ダウンから再起動する場合の引数 -->
+    <param name="queuelet.recoverArg.length" value="0"/>
     <param name="queuelet.recoverArg.0" value="cleanup"/>
   </queuelet>
 </queueApp>

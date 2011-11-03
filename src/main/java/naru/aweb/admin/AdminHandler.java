@@ -16,6 +16,7 @@ import naru.async.store.Store;
 import naru.async.store.StoreManager;
 import naru.aweb.auth.Authenticator;
 import naru.aweb.auth.Authorizer;
+import naru.aweb.auth.LogoutEvent;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
@@ -472,6 +473,7 @@ public class AdminHandler extends WebServerHandler{
 			String isRestartValue=parameter.getParameter("isRestart");
 			String isCleanupValue=parameter.getParameter("isCleanup");
 			String javaHeapSizeValue=parameter.getParameter("javaHeapSize");
+			/*
 			if(!"true".equals(isRestartValue)){
 				Main.terminate();
 			}else{
@@ -479,7 +481,36 @@ public class AdminHandler extends WebServerHandler{
 				int javaHeapSize=Integer.parseInt(javaHeapSizeValue);
 				Main.terminate(true,isCleanup,javaHeapSize);
 			}
-			responseJson(true);
+			*/
+			/* logout‚Érestart‚·‚é‚æ‚¤‚Éİ’è‚·‚é.‚·‚®‚Éterminate‚·‚é‚Æ‰æ–Ê‚ª•ö‚ê‚éê‡‚ª‚ ‚é */
+			boolean isRestart="true".equals(isRestartValue);
+			boolean isCleanup="true".equals(isCleanupValue);
+			int javaHeapSize;
+			if(javaHeapSizeValue==null){
+				javaHeapSize=0;
+			}else{
+				javaHeapSize=Integer.parseInt(javaHeapSizeValue);
+			}
+			LogoutEvent logoutEvent=new LogoutEvent(){
+				boolean isRestart;
+				boolean isCleanup;
+				int javaHeapSize;
+				public LogoutEvent init(boolean isRestart,boolean isCleanup,int javaHeapSize){
+					this.isRestart=isRestart;
+					this.isCleanup=isCleanup;
+					this.javaHeapSize=javaHeapSize;
+					return this;
+				}
+				@Override
+				public void onLogout() {
+					if(!isRestart){
+						Main.terminate();
+					}else{
+						Main.terminate(true,isCleanup,javaHeapSize);
+					}
+				}}.init(isRestart, isCleanup, javaHeapSize);
+			boolean addEvent=getRequestContext().getAuthSession().addLogoutEvent(logoutEvent);
+			responseJson(addEvent);
 		}else if("replayDelete".equals(cmd)){
 			replayDelete();
 			completeResponse("205");

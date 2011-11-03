@@ -39,6 +39,9 @@ public class SslContextPool {
 	public SslContextPool(Config config){
 		sslContexts=new HashMap<String,SSLContext>();
 		trustStoreDir=new File(config.getString(TRUST_STORE_DIR));
+		if(!trustStoreDir.exists()){
+			trustStoreDir.mkdirs();
+		}
 		password=config.getString(TRUST_STORE_PASSWORD);
 		keytool=config.getString(KEYTOOL);
 		if(keytool==null){
