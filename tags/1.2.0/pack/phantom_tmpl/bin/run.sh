@@ -1,6 +1,5 @@
 #!/bin/sh
 #JAVA_HOME=/your/java/home
-JAVA_HOME=/root/jrockit-jdk1.6.0_20-R28.1.0-4.0.1
 case "$0" in
 /*) BIN_DIR=`dirname "$0"` ;;
 *) BIN_DIR=`dirname "$PWD/$0"` ;;
@@ -12,7 +11,7 @@ PH_HOME=${QUEUELET_HOME}/ph
 QUEUELET_BOOT_JAR=${QUEUELET_HOME}/bin/queuelet-boot-1.2.0.jar
 PH_DEBUG=
 PH_HEAPSIZE=256
-PH_VM_OPTIONS=-server
+PH_VM_OPTIONS=
 PH_CONF_XML=phantom.xml
 CONF_XML=phantomd.xml
 
