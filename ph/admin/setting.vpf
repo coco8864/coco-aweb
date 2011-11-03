@@ -233,11 +233,11 @@ ph.jQuery(function(){
 <H2 onclick="ph.jQuery('#realHostDiv').toggle();">+RealHost設定</H2>
 <div class="settingItem" id="realHostDiv">
 <p>サービスするサーバ情報を設定します</p>
-selfDomain:<input type="text" id="selfDomain" size="64" value="$!esc.html($!{config.selfDomain})"/><input type="button" value="設定" onClick="ph.admin.doCommand('setSelfDomain',{domain:ph.jQuery('#selfDomain').val()},null);"><br>
+selfDomain:<input type="text" id="selfDomain" size="64" value="$!esc.html($!{config.selfDomain})"/><input type="button" value="設定" onClick="ph.admin.doCommand('setSelfDomain',{domain:ph.jQuery('#selfDomain').val()},function(){alert('変更を有効にするにはPhantomProxyの再起動が必要です.')});"><br>
 <input type="button" value="real host作成" onClick="realHostDialog({name:'',realHostInitBind:false,bindHost:'*',bindPort:'',backlog:'100',binding:false});">
 <table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
 <thead>
-<tr><th>name</th><th>状態</th><th>init</th><th>bindHost</th><th>bindPort</th><th>backlog</th><th>whiteIpPattern</th><th>blackIpPattern</th></tr>
+<tr><th>name</th><th>状態</th><th>init</th><th>host</th><th>port</th><th>backlog</th><th>whiteIpPattern</th><th>blackIpPattern</th></tr>
 </thead>
 <tbody id="realHostData"></tbody>
 </table>
