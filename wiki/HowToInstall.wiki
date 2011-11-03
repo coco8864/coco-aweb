@@ -21,13 +21,11 @@
    ${phantom}\bin\run.bat
 {{{
 set JAVA_HOME=javaインストールディレクトリ
-set QUEUELET_HOME=${phantom}
 }}}
   * Unix系の場合
    ${phantom}/bin/run.sh
 {{{
 JAVA_HOME=javaインストールディレクトリ
-QUEUELET_HOME=${phantom}
 }}}
    以下コマンドで実行権を付加します。
 {{{
