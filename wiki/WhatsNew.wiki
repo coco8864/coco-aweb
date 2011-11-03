@@ -4,7 +4,7 @@
 
  Phatom Proxyの改版情報を提供します。
  ==  2011.11.03 Phatom Proxy1.2.0 公開 ==
- * !WebSocket hybi-17対応 ie以外のブラウザでWebSocketが利用可能
+ * !WebSocket hybi-17対応 ie以外のブラウザで!WebSocketが利用可能
  * traceタブに機能追加、任意のリクエストを可能とした
  * stressタブにprogressバーを表示
  * 性能改善
