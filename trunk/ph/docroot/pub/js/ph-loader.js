@@ -80,12 +80,16 @@ if(ph.isUseSessionStorage){
  }
 }
 
-ph.isUseWebSocket=$esc.javascript(${config.getBoolean("isUseWebSocket",true)});
+var spec='$esc.javascript(${config.getString("websocketSpecs")})';
+if(spec){
+ ph.isUseWebSocket=true;
+}else{
+ ph.isUseWebSocket=false;
+}
 if(typeof WebSocket == 'undefined'){
  if(typeof MozWebSocket =='undefined'){
   ph.isUseWebSocket=false;
  }else{
-  ph.isUseWebSocket=true;
   window.WebSocket=MozWebSocket;
  }
 }
