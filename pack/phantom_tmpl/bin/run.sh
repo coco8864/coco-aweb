@@ -1,8 +1,9 @@
 #!/bin/sh
 #JAVA_HOME=/your/java/home
+CURDIR=`pwd`
 case "$0" in
 /*) BIN_DIR=`dirname "$0"` ;;
-*) BIN_DIR=`dirname "$PWD/$0"` ;;
+*) BIN_DIR=`dirname "$CURDIR/$0"` ;;
 esac
 
 QUEUELET_HOME=${BIN_DIR}/..
