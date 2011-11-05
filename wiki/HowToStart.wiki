@@ -41,4 +41,5 @@ WatchDeamonQueuelet:start success:phantom Thu Nov 03 20:43:19 JST 2011 interval:
  以下のようなメッセージがコンソールに出力され、起動シェルが終了します。
 {{{
 mainHost listen stop
+phantom:exitValue:0
 }}}
