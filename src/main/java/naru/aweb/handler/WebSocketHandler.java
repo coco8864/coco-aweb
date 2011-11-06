@@ -79,7 +79,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	
 	private ByteBuffer[] stringToBuffers(String message){
 		try {
-			return BuffersUtil.toByteBufferArray(ByteBuffer.wrap(message.getBytes("UTF-8")));
+			return BuffersUtil.toByteBufferArray(ByteBuffer.wrap(message.getBytes("utf-8")));
 		} catch (UnsupportedEncodingException e) {
 			logger.error("stringToBuffers error",e);
 			return null;
