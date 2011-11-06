@@ -20,6 +20,7 @@ import javax.jdo.annotations.Persistent;
 
 import naru.async.BufferGetter;
 import naru.async.pool.PoolBase;
+import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
 import naru.async.store.Store;
 import naru.aweb.http.HeaderParser;
@@ -371,6 +372,11 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	public static final char SOURCE_TYPE_SSL_PROXY='P';
 	public static final char SOURCE_TYPE_SIMULATE='s';
 	public static final char SOURCE_TYPE_EDIT='E';
+//	public static final char SOURCE_TYPE_PLAIN_WEB_SOCKET='c';
+//	public static final char SOURCE_TYPE_SSL_WEB_SOCKET='C';
+	public static final char SOURCE_TYPE_WS_ON_MESSAGE='O';
+	public static final char SOURCE_TYPE_WS_POST_MESSAGE='M';
+	
 	@Persistent
 	@Column(name="SOURCE_TYPE")
 	private char sourceType;
@@ -411,6 +417,26 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	private long thinkingTime;//リクエストする前に待った時間,stressテストのため
 
 	public AccessLog(){
+	}
+	
+	/*
+	 * WebSocketのonMessage,postMessgeをtraceするために作成
+	 */
+	public AccessLog clone(){
+		AccessLog copy=(AccessLog)PoolManager.getInstance(AccessLog.class);
+		copy.channelId=channelId;
+		copy.realHost=realHost;
+		copy.userId=userId;
+		copy.ip=ip;
+		copy.isShortFormat=isShortFormat;
+		copy.isSkipPhlog=isSkipPhlog;
+		copy.destinationType=destinationType;
+//		copy.requestLine=requestLine;
+//		copy.statusCode=statusCode;
+//		copy.contentEncoding;
+//		copy.contentType;
+//		copy.transferEncoding;
+		return copy;
 	}
 	
 	public void recycle(){

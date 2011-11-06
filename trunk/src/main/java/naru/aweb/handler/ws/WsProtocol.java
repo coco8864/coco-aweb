@@ -171,28 +171,23 @@ public abstract class WsProtocol extends PoolBase{
 	
 	protected void callBinaryOnMessage(ByteBuffer[] buffers){
 		try {
+			handler.traceOnMessage(buffers);
 			handler.onMessage(buffers);
 		} catch (Throwable e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.warn("callBinaryOnMessage handler exception.",e);
 		}
 	}
 	
 	protected void callTextOnMessage(){
-		try {
-			handler.onMessage(convertToString());
-		} catch (Throwable e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		callOnMessage(convertToString());
 	}
 	
 	protected void callOnMessage(String msgs){
 		try {
+			handler.traceOnMessage(msgs);
 			handler.onMessage(msgs);
 		} catch (Throwable e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.warn("callOnMessage handler exception.",e);
 		}
 	}
 	

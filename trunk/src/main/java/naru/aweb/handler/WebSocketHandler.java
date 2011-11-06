@@ -3,13 +3,21 @@
  */
 package naru.aweb.handler;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.util.Date;
 
+import naru.async.pool.BuffersUtil;
+import naru.async.pool.PoolManager;
+import naru.async.store.Store;
 import naru.aweb.auth.LogoutEvent;
+import naru.aweb.config.AccessLog;
+import naru.aweb.config.Mapping.LogType;
 import naru.aweb.handler.ws.WsProtocol;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.RequestContext;
 import naru.aweb.http.WebServerHandler;
+import naru.aweb.mapping.MappingResult;
 
 import org.apache.log4j.Logger;
 
@@ -24,15 +32,136 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	private static Logger logger=Logger.getLogger(WebSocketHandler.class);
 	private boolean isWs;//WebSocketをハンドリングしているか否か
 	private WsProtocol wsProtocol;
+	private int onMessageCount;
+	private int postMessageCount;
+	private LogType logType;
+	
+	/**
+	 * 
+	 * @param sourceType
+	 * @param contentType
+	 * @param contentEncoding
+	 * @param transferEncoding
+	 * @param message
+	 */
+	private void wsTrace(char sourceType,String contentType,String comment,ByteBuffer[] message){
+		AccessLog accessLog=getAccessLog();
+		AccessLog wsAccessLog=accessLog.clone();
+		wsAccessLog.setStartTime(new Date());
+		wsAccessLog.setContentType(contentType);
+		long cid=accessLog.getChannelId();
+		wsAccessLog.setRequestLine(accessLog.getRequestLine() + " cid:" + cid +comment);
+		wsAccessLog.setSourceType(sourceType);
+		wsAccessLog.setPersist(true);
+		if(message!=null){
+			Store store = Store.open(true);
+			store.putBuffer(message);
+			long responseLength=BuffersUtil.remaining(message);
+			wsAccessLog.setResponseLength(responseLength);
+			wsAccessLog.incTrace();//close前にカウンタをアップ
+			store.close(wsAccessLog,store);//close時にdigestが決まる
+			wsAccessLog.setResponseBodyDigest(store.getDigest());
+		}
+		wsAccessLog.decTrace();//traceを出力する
+	}
+	
+	private void wsPostTrace(String contentType,ByteBuffer[] message){
+		onMessageCount++;
+		//ブラウザにはonMessageが通知されるので
+		wsTrace(AccessLog.SOURCE_TYPE_WS_ON_MESSAGE,contentType," onMessage:"+onMessageCount,message);
+	}
+	
+	private void wsOnTrace(String contentType,ByteBuffer[] message){
+		postMessageCount++;
+		//ブラウザのpostMessageに起因して記録されるので
+		wsTrace(AccessLog.SOURCE_TYPE_WS_POST_MESSAGE,contentType," postMessage:"+postMessageCount,message);
+	}
+	
+	private ByteBuffer[] stringToBuffers(String message){
+		try {
+			return BuffersUtil.toByteBufferArray(ByteBuffer.wrap(message.getBytes("UTF-8")));
+		} catch (UnsupportedEncodingException e) {
+			logger.error("stringToBuffers error",e);
+			return null;
+		}
+	}
+	
+	public void tracePostMessage(String message){
+		ByteBuffer [] messageBuffers=null;
+		switch(logType){
+		case NONE:
+			return;
+		case ACCESS:
+		case RESPONSE_TRACE:
+			break;
+		case REQUEST_TRACE:
+		case TRACE:
+			messageBuffers=stringToBuffers(message);
+			break;
+		}
+		wsPostTrace("text/plain",messageBuffers);
+	}
+	
+	public void tracePostMessage(ByteBuffer[] message){
+		postMessageCount++;
+		ByteBuffer [] messageBuffers=null;
+		switch(logType){
+		case NONE:
+			return;
+		case ACCESS:
+		case RESPONSE_TRACE:
+			break;
+		case REQUEST_TRACE:
+		case TRACE:
+			messageBuffers=PoolManager.duplicateBuffers(message);
+			break;
+		}
+		wsPostTrace("application/octet-stream",messageBuffers);
+	}
+	
+	public void traceOnMessage(String message){
+		ByteBuffer [] messageBuffers=null;
+		switch(logType){
+		case NONE:
+			return;
+		case ACCESS:
+		case REQUEST_TRACE:
+			break;
+		case RESPONSE_TRACE:
+		case TRACE:
+			messageBuffers=stringToBuffers(message);
+			break;
+		}
+		wsOnTrace("text/plain",messageBuffers);
+	}
+	
+	public void traceOnMessage(ByteBuffer[] message){
+		ByteBuffer [] messageBuffers=null;
+		switch(logType){
+		case NONE:
+			return;
+		case ACCESS:
+		case REQUEST_TRACE:
+			break;
+		case RESPONSE_TRACE:
+		case TRACE:
+			messageBuffers=PoolManager.duplicateBuffers(message);
+			break;
+		}
+		wsOnTrace("octedstream",messageBuffers);
+	}
+	
 	
 	/* このクラスを継承したapplicationから呼び出される */
 	/* メッセージを送信する場合(text) */
 	protected void postMessage(String message){
+		tracePostMessage(message);
 		wsProtocol.postMessage(message);
 	}
 	
 	/* メッセージを送信する場合(binary) */
 	protected void postMessage(ByteBuffer[] message){
+		tracePostMessage(message);
 		wsProtocol.postMessage(message);
 	}
 	
@@ -70,7 +199,6 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 			return;
 		}
 		isWs=true;
-		
 		wsProtocol=WsProtocol.createWsProtocol(requestHeader);
 		if(wsProtocol==null){
 			completeResponse("400");
@@ -78,6 +206,12 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 			return;
 		}
 		logger.debug("wsProtocol class:"+wsProtocol.getClass().getName());
+		/* ログ出力タイプを取得 */
+		MappingResult mapping=getRequestMapping();
+		logType=mapping.getLogType();
+		onMessageCount=0;
+		postMessageCount=0;
+		
 		/* logoff時にonLogoutイベントが通知されるように設定 */
 		RequestContext requestContext=getRequestContext();
 		requestContext.registerLogoutEvnet(this);
