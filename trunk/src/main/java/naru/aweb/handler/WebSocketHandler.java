@@ -170,6 +170,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		wsProtocol.onClose(false);
 	}
 	
+//	public abstract void startWebSocketResponse(HeaderParser requestHeader);
 	public abstract void onWsOpen(String subprotocol);
 	public abstract void onWsClose(short code,String reason);
 	public abstract void onMessage(String msgs);
@@ -179,7 +180,8 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	 * WebSocket接続中にセションきれた場合の通知
 	 */
 	public void onLogout(){
-		asyncClose(null);
+		wsProtocol.onClose(false);
+//		asyncClose(null);
 	}
 	
 	/*
@@ -199,6 +201,15 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 			return;
 		}
 		isWs=true;
+		/* ログ出力タイプを取得 */
+		MappingResult mapping=getRequestMapping();
+		logType=mapping.getLogType();
+		onMessageCount=0;
+		postMessageCount=0;
+		/* logoff時にonLogoutイベントが通知されるように設定 */
+		RequestContext requestContext=getRequestContext();
+		requestContext.registerLogoutEvnet(this);
+		
 		wsProtocol=WsProtocol.createWsProtocol(requestHeader);
 		if(wsProtocol==null){
 			completeResponse("400");
@@ -206,18 +217,35 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 			return;
 		}
 		logger.debug("wsProtocol class:"+wsProtocol.getClass().getName());
-		/* ログ出力タイプを取得 */
-		MappingResult mapping=getRequestMapping();
-		logType=mapping.getLogType();
-		onMessageCount=0;
-		postMessageCount=0;
-		
-		/* logoff時にonLogoutイベントが通知されるように設定 */
-		RequestContext requestContext=getRequestContext();
-		requestContext.registerLogoutEvnet(this);
-		
+		startWebSocketResponse(requestHeader,wsProtocol);
+	}
+	
+	/* すぐにhandshakeしたくない場合は、このメソッドをオーバライドする */
+	/* 準備が整ったところで doHandshakeを呼び出せば処理を継続できる */
+	public 	void startWebSocketResponse(HeaderParser requestHeader,WsProtocol wsProtocol){
+		//subprotocolを特定
+		String subprotocol=null;
+		String webSocketProtocol=wsProtocol.getRequestSubProtocols(requestHeader);
+		if(webSocketProtocol==null){
+			if(WsProtocol.isUseSubprotocol()){//subprotocolを必要とするのにない
+				completeResponse("400");
+				return;
+			}
+		}else{
+			subprotocol=WsProtocol.checkSubprotocol(webSocketProtocol);
+			if(subprotocol==null){//subprotocolが一致しない
+				logger.debug("WsHybi10#suprotocol error.webSocketProtocol:"+webSocketProtocol);
+				completeResponse("400");
+				return;
+			}
+		}
+		doHandshake(subprotocol);
+	}
+	
+	public final boolean doHandshake(String subProtocol){
+		HeaderParser requestHeader=getRequestHeader();
 		wsProtocol.setup(this);
-		wsProtocol.onHandshake(requestHeader);
+		return wsProtocol.onHandshake(requestHeader,subProtocol);
 	}
 	
 	public void onReadPlain(Object userContext, ByteBuffer[] buffers) {

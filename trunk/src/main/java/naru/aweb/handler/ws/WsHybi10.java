@@ -33,7 +33,7 @@ public class WsHybi10 extends WsProtocol {
 	}
 	
 	@Override
-	public boolean onHandshake(HeaderParser requestHeader) {
+	public boolean onHandshake(HeaderParser requestHeader,String subProtocol) {
 		logger.debug("WsHybi10#onHandshake cid:"+handler.getChannelId());
 		if(!isUseSpec(SPEC)){
 			handler.completeResponse("400");
@@ -49,6 +49,7 @@ public class WsHybi10 extends WsProtocol {
 			return false;
 		}
 		
+		/*
 		String webSocketProtocol=requestHeader.getHeader(SEC_WEBSOCKET_PROTOCOL);
 		if(webSocketProtocol==null){
 			if(isUseSubprotocol()){//subprotocolÇïKóvÇ∆Ç∑ÇÈÇÃÇ…Ç»Ç¢
@@ -65,6 +66,11 @@ public class WsHybi10 extends WsProtocol {
 			}
 			handler.setHeader(SEC_WEBSOCKET_PROTOCOL, subprotocol);
 		}
+		*/
+		if(subProtocol!=null){
+			handler.setHeader(SEC_WEBSOCKET_PROTOCOL, subProtocol);
+		}
+		
 		String key=requestHeader.getHeader(SEC_WEBSOCKET_KEY);
 //		String origin=requestHeader.getHeader(SEC_WEBSOCKET_ORIGIN);
 //		String host=requestHeader.getHeader(HeaderParser.HOST_HEADER);
@@ -78,7 +84,7 @@ public class WsHybi10 extends WsProtocol {
 		handler.setHeader(SEC_WEBSOCKET_ACCEPT,accept);
 		
 		handler.flushHeader();
-		handler.onWsOpen(webSocketProtocol);
+		handler.onWsOpen(subProtocol);
 		handler.setReadTimeout(getWebSocketPingInterval());//TODO webSocketPingInterbalÇ™éwíËÇ≥ÇÍÇΩèÍçá
 		handler.asyncRead(null);
 		return true;
@@ -216,5 +222,13 @@ public class WsHybi10 extends WsProtocol {
 		ByteBuffer[] buffers=WsHybiFrame.createBinaryFrame(isWebSocketResponseMask(), message);
 		handler.asyncWrite(null, buffers);
 	}
-
+	
+	@Override
+	public String getWsProtocolName() {
+		return "Hibi10";
+	}
+	@Override
+	public String getRequestSubProtocols(HeaderParser requestHeader) {
+		return requestHeader.getHeader(SEC_WEBSOCKET_PROTOCOL);
+	}
 }
