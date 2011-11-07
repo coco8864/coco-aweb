@@ -12,18 +12,11 @@ import java.nio.ByteBuffer;
  */
 public interface WsClient {
 	public void onWsConnected(Object userContext);
-
 	public void onWsProxyConnected(Object userContext);
-
 	public void onSslHandshaked(Object userContext);
-	
 	public void onWsHandshaked(Object userContext);
-	
-	
 	public void onWsClose(Object userContext);
-	
-	public void onMessage(Object userContext,String message);
-	public void onMessage(Object userContext,ByteBuffer[] message);
-	
+	public void onWsMessage(Object userContext,String message);
+	public void onWsMessage(Object userContext,ByteBuffer[] message);
 	public void onWsFailure(Object userContext,int stat,Throwable t);
 }

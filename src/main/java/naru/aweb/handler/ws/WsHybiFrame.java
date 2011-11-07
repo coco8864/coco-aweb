@@ -322,6 +322,7 @@ public class WsHybiFrame {
 			buffer.position(curPos+readLen);
 		}
 		if(isMask){
+			//通信bufferを直接書き換えるので、traceで通信bufferを参照していた場合、maskBuffer結果が採取される可能性がある
 			maskBuffer(curPayloadPos,maskBytes,payloadBuffer);
 		}
 		payloadBuffers.add(payloadBuffer);

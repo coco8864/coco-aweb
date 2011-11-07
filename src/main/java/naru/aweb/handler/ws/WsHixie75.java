@@ -23,13 +23,14 @@ public class WsHixie75 extends WsProtocol {
 	private int frameLength=0;
 	
 	@Override
-	public boolean onHandshake(HeaderParser requestHeader) {
+	public boolean onHandshake(HeaderParser requestHeader,String subProtocol) {
 		logger.debug("WsHiXie75#onHandshake cid:"+handler.getChannelId());
 		if(!isUseSpec(SPEC)){
 			handler.completeResponse("400");
 			return false;
 		}
 		
+		/*
 		String webSocketProtocol=requestHeader.getHeader(WEBSOCKET_PROTOCOL);
 		if(webSocketProtocol==null){
 			if(isUseSubprotocol()){//subprotocol‚ð•K—v‚Æ‚·‚é‚Ì‚É‚È‚¢
@@ -44,6 +45,7 @@ public class WsHixie75 extends WsProtocol {
 			}
 			handler.setHeader(WEBSOCKET_PROTOCOL, subprotocol);
 		}
+		*/
 		
 		String origin=requestHeader.getHeader("Origin");
 		String host=requestHeader.getHeader(HeaderParser.HOST_HEADER);
@@ -67,12 +69,12 @@ public class WsHixie75 extends WsProtocol {
 		sb.append(path);
 		handler.setHeader("WebSocket-Location", sb.toString());
 		
-		if(webSocketProtocol!=null){
-			handler.setHeader(WEBSOCKET_PROTOCOL, webSocketProtocol);
+		if(subProtocol!=null){
+			handler.setHeader(WEBSOCKET_PROTOCOL, subProtocol);
 		}
 		handler.flushHeader();
 		frameMode=FRAME_MODE_END;
-		handler.onWsOpen(webSocketProtocol);
+		handler.onWsOpen(subProtocol);
 		handler.setReadTimeout(0);
 		handler.asyncRead(null);
 		return true;
@@ -183,6 +185,16 @@ public class WsHixie75 extends WsProtocol {
 	public void postMessage(ByteBuffer[] message) {
 		logger.debug("WsHiXie75#postMessage(bin) cid:"+handler.getChannelId());
 		throw new UnsupportedOperationException("postMessage binary mode");
+	}
+
+	@Override
+	public String getWsProtocolName() {
+		return "Hixie75";
+	}
+
+	@Override
+	public String getRequestSubProtocols(HeaderParser requestHeader) {
+		return requestHeader.getHeader(WEBSOCKET_PROTOCOL);
 	}
 
 }

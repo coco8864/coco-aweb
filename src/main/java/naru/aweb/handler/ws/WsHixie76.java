@@ -89,6 +89,7 @@ public class WsHixie76 extends WsProtocol {
 	
 	private int handshakeStat=0;//0:handshake前、1:ヘッダは到達したがbodyが未,2:handshake済み
 	private ByteBuffer[] handshakeBody=null;
+	private String subProtocol=null;
 	
 	private boolean wsShakehand(HeaderParser requestHeader,ByteBuffer[] readBody){//Chrome 6.0.437.3用
 		logger.debug("WsHiXie76#wsShakehand cid:"+handler.getChannelId());
@@ -109,6 +110,7 @@ public class WsHixie76 extends WsProtocol {
 			return true;
 		}
 
+		/*
 		String webSocketProtocol=requestHeader.getHeader(SEC_WEBSOCKET_PROTOCOL);
 		if(webSocketProtocol==null){
 			if(isUseSubprotocol()){//subprotocolを必要とするのにない
@@ -123,7 +125,10 @@ public class WsHixie76 extends WsProtocol {
 			}
 			handler.setHeader(SEC_WEBSOCKET_PROTOCOL, subprotocol);
 		}
-		
+		*/
+		if(subProtocol!=null){
+			handler.setHeader(SEC_WEBSOCKET_PROTOCOL, subProtocol);
+		}
 		
 		String origin=requestHeader.getHeader("Origin");
 		String host=requestHeader.getHeader(HeaderParser.HOST_HEADER);
@@ -157,15 +162,16 @@ public class WsHixie76 extends WsProtocol {
 
 		handshakeStat=2;
 		frameMode=FRAME_MODE_END;
-		handler.onWsOpen(webSocketProtocol);
+		handler.onWsOpen(subProtocol);
 		handler.setReadTimeout(0);
 		handler.asyncRead(null);
 		return true;
 	}
 	
 	@Override
-	public boolean onHandshake(HeaderParser requestHeader) {
+	public boolean onHandshake(HeaderParser requestHeader,String subProtocol) {
 		logger.debug("WsHiXie76#onHandshake cid:"+handler.getChannelId());
+		this.subProtocol=subProtocol;
 		ByteBuffer[] body=requestHeader.getBodyBuffer();
 		if(wsShakehand(requestHeader,body)){
 			return true;
@@ -294,7 +300,17 @@ public class WsHixie76 extends WsProtocol {
 			PoolManager.poolBufferInstance(handshakeBody);//配列、中身ごと回収
 			handshakeBody=null;
 		}
+		subProtocol=null;
 		super.recycle();
 	}
-
+	
+	@Override
+	public String getWsProtocolName() {
+		return "Hixie76";
+	}
+	
+	@Override
+	public String getRequestSubProtocols(HeaderParser requestHeader) {
+		return requestHeader.getHeader(SEC_WEBSOCKET_PROTOCOL);
+	}
 }
