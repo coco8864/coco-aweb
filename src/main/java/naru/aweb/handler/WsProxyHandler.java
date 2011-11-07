@@ -41,9 +41,15 @@ public class WsProxyHandler extends  WebSocketHandler implements WsClient{
 	private WsClientHandler wsClientHandler;
 	
 	public 	void startWebSocketResponse(HeaderParser requestHeader,WsProtocol wsProtocol){
+		MappingResult mapping=getRequestMapping();
+		ServerParser targetHostServer=mapping.getResolveServer();
+		String path=mapping.getResolvePath();
+		requestHeader.setPath(path);
+		wsClientHandler=WsClientHandler.create(webClientConnection);
+		
+		
 		//Ç«ÇÃprotocolÇ≈åqÇ¨Ç…Ç¢Ç≠Ç©?äÓñ{ÇªÇÃÇ‹Ç‹ÅH
 		String webSocketProtocol=wsProtocol.getRequestSubProtocols(requestHeader);
-		wsClientHandler=WsClientHandler.create(webClientConnection);
 		wsClientHandler.startRequest(this, null, 10000, webSocketProtocol);
 	}
 	

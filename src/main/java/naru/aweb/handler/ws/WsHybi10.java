@@ -15,6 +15,7 @@ public class WsHybi10 extends WsProtocol {
 	static private Logger logger=Logger.getLogger(WsHybi10.class);
 	private static final String SPEC="hybi10";
 	private static final String GUID="258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+	private static final int SUPPORT_VERSION=13;
 	
 	private boolean isSendClose=false;
 	private byte continuePcode;
@@ -42,40 +43,17 @@ public class WsHybi10 extends WsProtocol {
 		String version=requestHeader.getHeader(SEC_WEBSOCKET_VERSION);
 		logger.debug("WebSocket version:"+version);
 		int v=Integer.parseInt(version);
-		if(v>13){//versionが大きすぎる場合は、8で会話するように交渉,chrome "16.0.912.12 dev-m"は、13
+		if(v>SUPPORT_VERSION){//versionが大きすぎる場合は、8で会話するように交渉,chrome "16.0.912.12 dev-m"は、13
 			logger.debug("WsHybi10#version error:"+v);
-			handler.setHeader(SEC_WEBSOCKET_VERSION, "8");
+			handler.setHeader(SEC_WEBSOCKET_VERSION, Integer.toString(SUPPORT_VERSION));
 			handler.completeResponse("400");
 			return false;
 		}
-		
-		/*
-		String webSocketProtocol=requestHeader.getHeader(SEC_WEBSOCKET_PROTOCOL);
-		if(webSocketProtocol==null){
-			if(isUseSubprotocol()){//subprotocolを必要とするのにない
-				logger.debug("WsHybi10#suprotocol error");
-				handler.completeResponse("400");
-				return false;
-			}
-		}else{
-			String subprotocol=checkSubprotocol(webSocketProtocol);
-			if(subprotocol==null){//subprotocolが一致しない
-				logger.debug("WsHybi10#suprotocol error.webSocketProtocol:"+webSocketProtocol);
-				handler.completeResponse("400");
-				return false;
-			}
-			handler.setHeader(SEC_WEBSOCKET_PROTOCOL, subprotocol);
-		}
-		*/
 		if(subProtocol!=null){
 			handler.setHeader(SEC_WEBSOCKET_PROTOCOL, subProtocol);
 		}
 		
 		String key=requestHeader.getHeader(SEC_WEBSOCKET_KEY);
-//		String origin=requestHeader.getHeader(SEC_WEBSOCKET_ORIGIN);
-//		String host=requestHeader.getHeader(HeaderParser.HOST_HEADER);
-//		String path=requestHeader.getPath();
-		
 		String accept=DataUtil.digestBase64Sha1((key+GUID).getBytes());
 		handler.setHttpVersion("HTTP/1.1");
 		handler.setStatusCode("101","Switching Protocols");
