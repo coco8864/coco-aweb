@@ -17,10 +17,10 @@ public interface WsClient {
 	public void onWcProxyConnected(Object userContext);
 	//sslHandshake‚ª¬Œ÷‚µ‚½
 	public void onWcSslHandshaked(Object userContext);
-	//websocket handshake‚ª¬Œ÷‚µ‚½
-	public void onWcHandshaked(Object userContext,String subprotocol);
 	//response header‚ğóM‚µ‚½‚Æ‚«
 	public void onWcResponseHeader(Object userContext,HeaderParser responseHeader);
+	//websocket handshake‚ª¬Œ÷‚µ‚½
+	public void onWcHandshaked(Object userContext,String subprotocol);
 	
 	//I—¹
 	public void onWcClose(Object userContext,int stat);
