@@ -15,3 +15,7 @@
 14={"realHostName":"sampleHost","destinationPath":"/dest/","destinationServer":"your.server.com:80","destinationType":"HTTP","enabled":false,"notes":"reverse proxy server sample","options":"{logType:\\"trace\\"}","secureType":"PLAIN","sourcePath":"/src/","sourceServer":"","sourceType":"WEB"}
 15={"realHostName":"sampleHost","destinationPath":"/","destinationServer":"$1","destinationType":"HTTP","enabled":false,"notes":"proxy sample","options":"{auth:{scheme:\\"basic\\",realm:\\"sampleRealm\\",roles:\\"role1\\"}}","secureType":"PLAIN","sourcePath":"/","sourceServer":"*","sourceType":"PROXY"}
 16={"realHostName":"sampleHost","destinationPath":"/","destinationServer":"$1","destinationType":"HTTPS","enabled":false,"notes":"ssl proxy sample","options":"{peek:false,auth:{scheme:\\"basic\\",realm:\\"sampleRealm\\",roles:\\"role1\\"}}","secureType":"SSL","sourcePath":"/","sourceServer":"*","sourceType":"PROXY"}
+17={"realHostName":"mainHost","destinationPath":"/","destinationServer":"$1","destinationType":"WS","enabled":true,"notes":"web socket proxy trace","options":"{logType:\\"trace\\",pac:true}","secureType":"PLAIN","sourcePath":"/","sourceServer":"ph.*","sourceType":"WS"}
+18={"realHostName":"mainHost","destinationPath":"/","destinationServer":"$1","destinationType":"WSS","enabled":true,"notes":"web socket ssl proxy trace","options":"{logType:\\"trace\\",pac:true}","secureType":"SSL","sourcePath":"/","sourceServer":"ph.*","sourceType":"WS"}
+
+
