@@ -350,6 +350,8 @@ sourcePath:<input id="mappingSourcePath" type="text" size="64"><br/>
 destinationType:<select id="mappingDestinationType" size="1">
 <option value="HTTP">HTTP</option>
 <option value="HTTPS">HTTPS</option>
+<option value="WS">WS</option>
+<option value="WSS">WSS</option>
 <option value="FILE">FILE</option>
 <option value="HANDLER">HANDLER</option>
 </select><br/>
