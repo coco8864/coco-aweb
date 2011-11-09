@@ -45,27 +45,28 @@ public class WsProxyHandler extends  WebSocketHandler implements WsClient{
 		ServerParser targetHostServer=mapping.getResolveServer();
 		String path=mapping.getResolvePath();
 		requestHeader.setPath(path);
-		wsClientHandler=WsClientHandler.create(webClientConnection);
+		wsClientHandler=WsClientHandler.create(mapping.isResolvedHttps(),targetHostServer.getHost(),targetHostServer.getPort());
 		
+		String uri=requestHeader.getRequestUri();
+		String origin=requestHeader.getHeader("Origin");
 		
 		//どのprotocolで繋ぎにいくか?基本そのまま？
-		String webSocketProtocol=wsProtocol.getRequestSubProtocols(requestHeader);
-		wsClientHandler.startRequest(this, null, 10000, webSocketProtocol);
+		String subProtocols=wsProtocol.getRequestSubProtocols(requestHeader);
+		wsClientHandler.startRequest(this, null, 10000, uri,subProtocols,origin);
 	}
 	
 	/* ブラウザからの通知メソッド */
 	/* ブラウザがmessageを送信してきた時 */
 	@Override
 	public void onMessage(String message) {
-		wsClientHandler.wsPostMessage(message);
+		wsClientHandler.postMessage(message);
 	}
 	/* ブラウザがmessageを送信してきた時 */
 	@Override
 	public void onMessage(ByteBuffer[] message) {
-		wsClientHandler.wsPostMessage(message);
+		wsClientHandler.postMessage(message);
 	}
 	
-	/* ブラウザがmessageを送信してきた時 */
 	@Override
 	public void onWsClose(short code, String reason) {
 	}
@@ -74,46 +75,45 @@ public class WsProxyHandler extends  WebSocketHandler implements WsClient{
 	/* WebSocket serverと接続された場合 */
 	@Override
 	public void onWsOpen(String subprotocol) {
-		//handshake開始
-		doHandshake(subprotocol);
 	}
 	
 	/* WebSocket serverがsslの場合、*/
 	@Override
-	public void onSslHandshaked(Object userContext) {
-		// TODO Auto-generated method stub
+	public void onWcSslHandshaked(Object userContext) {
+	}
+	@Override
+	public void onWcClose(Object userContext,int stat) {
+	}
+	@Override
+	public void onWcConnected(Object userContext) {
 		
 	}
 	@Override
-	public void onWsClose(Object userContext) {
-		// TODO Auto-generated method stub
-		
+	public void onWcFailure(Object userContext, int stat, Throwable t) {
 	}
 	@Override
-	public void onWsConnected(Object userContext) {
-		
+	public void onWcHandshaked(Object userContext,String subprotocol) {
+		//handshake開始
+		doHandshake(subprotocol);
 	}
 	@Override
-	public void onWsFailure(Object userContext, int stat, Throwable t) {
-		// TODO Auto-generated method stub
-		
-	}
-	@Override
-	public void onWsHandshaked(Object userContext) {
-		// TODO Auto-generated method stub
-		
-	}
-	@Override
-	public void onWsMessage(Object userContext, String message) {
+	public void onWcMessage(Object userContext, String message) {
 		postMessage(message);
 	}
 	@Override
-	public void onWsMessage(Object userContext, ByteBuffer[] message) {
+	public void onWcMessage(Object userContext, ByteBuffer[] message) {
 		postMessage(message);
 		
 	}
 	@Override
-	public void onWsProxyConnected(Object userContext) {
-		// TODO Auto-generated method stub
+	public void onWcProxyConnected(Object userContext) {
+	}
+
+	@Override
+	public void onWcWrittenHeader(Object userContext) {
+	}
+
+	@Override
+	public void onWcResponseHeader(Object userContext,HeaderParser responseHeader) {
 	}
 }

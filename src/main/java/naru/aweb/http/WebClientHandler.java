@@ -204,7 +204,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 				asyncRead(CONTEXT_SSL_PROXY_CONNECT);
 				return;
 			} else {
-				//ssl handshakeの前に時間を置くことはできない。
+				//この仕組みでは、ssl handshakeの前に時間を置くことはできない。
 				stat=STAT_SSL_HANDSHAKE;
 				// proxyなしのSSL接続
 				sslOpen(true);
@@ -471,7 +471,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 			setReadTimeout(config.getReadTimeout());
 			internalStartRequest();
 			return true;
-		}if(stat==STAT_INIT){
+		}else if(stat==STAT_INIT){
 			synchronized (this) {
 				if(asyncConnect(this, webClientConnection.getRemoteServer(), webClientConnection.getRemotePort(), connectTimeout)){
 					//この時点で既にリクエストが終了してしまっている事がある...

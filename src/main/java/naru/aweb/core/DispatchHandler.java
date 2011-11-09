@@ -348,10 +348,10 @@ public class DispatchHandler extends ServerBaseHandler {
 		// webマッピング対象は、realHost,phntomHost,pathで決まる
 		ServerParser sslServer = keepAliveContext.getProxyTargetServer();
 		// ssl websocket proxyのtraceは別途検討
-		if (sslServer != null) {
+//		if (sslServer != null) {
 			// ssl websocket proxy
-			return null;
-		}
+//			return null;
+//		}
 		MappingResult mapping = mapper.resolveWs(realHost, isSsl(), server,
 				path);
 		return mapping;
