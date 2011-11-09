@@ -126,7 +126,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 			stat = STAT_REQUEST_HEADER;
 			logger.debug("startRequest requestHeaderBuffer length:"+BuffersUtil.remaining(requestHeaderBuffer)+":"+getPoolId()+":cid:"+getChannelId());
 			requestHeaderLength=BuffersUtil.remaining(requestHeaderBuffer);
-			asyncWrite(CONTEXT_HEADER, requestHeaderBuffer);
+			asyncWrite(CONTEXT_HEADER, PoolManager.duplicateBuffers(requestHeaderBuffer));
 		}
 	}
 	
