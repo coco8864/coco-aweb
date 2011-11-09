@@ -74,8 +74,8 @@ public class WsHybi10 extends WsProtocol {
 			return;
 		}
 		isSendClose=true;
-		ByteBuffer[] pongBuffer=WsHybiFrame.createCloseFrame(isWebSocketResponseMask(),code,reason);
-		handler.asyncWrite(null, pongBuffer);
+		ByteBuffer[] closeBuffer=WsHybiFrame.createCloseFrame(isWebSocketResponseMask(),code,reason);
+		handler.asyncWrite(null, closeBuffer);
 	}
 	
 	private void doFrame(){
@@ -132,7 +132,7 @@ public class WsHybi10 extends WsProtocol {
 			break;
 		case WsHybiFrame.PCODE_PING:
 			logger.debug("WsHybi10#doFrame pcode PING");
-			ByteBuffer[] pongBuffer=WsHybiFrame.createPoingFrame(isWebSocketResponseMask(), payloadBuffers);
+			ByteBuffer[] pongBuffer=WsHybiFrame.createPongFrame(isWebSocketResponseMask(), payloadBuffers);
 			handler.asyncWrite(null, pongBuffer);
 			break;
 		case WsHybiFrame.PCODE_PONG:
@@ -151,6 +151,7 @@ public class WsHybi10 extends WsProtocol {
 		try {
 			for(ByteBuffer buffer:buffers){
 				if( frame.parse(buffer) ){
+					//TODO parse ERROR
 					doFrame();
 				}
 			}
@@ -169,6 +170,9 @@ public class WsHybi10 extends WsProtocol {
 	/* 回線が切断された or アプリからcloseWebSocketが呼び出された */
 	@Override
 	public void onClose(boolean isFromLine) {
+		if(handler==null){//handshake前にfinishしてしまった場合
+			return;
+		}
 		logger.debug("WsHybi10#onClose cid:"+handler.getChannelId());
 		callOnWsClose();
 		if(!isFromLine){

@@ -227,7 +227,13 @@ public class MappingResult extends PoolBase {
 	}
 
 	public boolean isResolvedHttps() {
-		return Mapping.DestinationType.HTTPS.equals(resolveType);
+		if(Mapping.DestinationType.HTTPS.equals(resolveType)){
+			return true;
+		}
+		if(Mapping.DestinationType.WSS.equals(resolveType)){
+			return true;
+		}
+		return false;
 	}
 
 	public Mapping.DestinationType getDestinationType() {

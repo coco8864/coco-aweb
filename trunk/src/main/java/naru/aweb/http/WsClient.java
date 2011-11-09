@@ -11,12 +11,25 @@ import java.nio.ByteBuffer;
  *
  */
 public interface WsClient {
-	public void onWsConnected(Object userContext);
-	public void onWsProxyConnected(Object userContext);
-	public void onSslHandshaked(Object userContext);
-	public void onWsHandshaked(Object userContext);
-	public void onWsClose(Object userContext);
-	public void onWsMessage(Object userContext,String message);
-	public void onWsMessage(Object userContext,ByteBuffer[] message);
-	public void onWsFailure(Object userContext,int stat,Throwable t);
+	//物理的にconnectしたとき
+	public void onWcConnected(Object userContext);
+	//proxyから200が返却された時
+	public void onWcProxyConnected(Object userContext);
+	//sslHandshakeが成功した時
+	public void onWcSslHandshaked(Object userContext);
+	//websocket handshakeが成功した時
+	public void onWcHandshaked(Object userContext,String subprotocol);
+	//response headerを受信したとき
+	public void onWcResponseHeader(Object userContext,HeaderParser responseHeader);
+	
+	//終了時
+	public void onWcClose(Object userContext,int stat);
+	//エラー終了時
+	public void onWcFailure(Object userContext,int stat,Throwable t);
+	//メッセージ受信時
+	public void onWcMessage(Object userContext,String message);
+	//メッセージ受信時
+	public void onWcMessage(Object userContext,ByteBuffer[] message);
+	//header書き込みが完了した時
+	public void onWcWrittenHeader(Object userContext);
 }

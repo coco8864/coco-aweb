@@ -30,18 +30,28 @@ public class WebClientConnection extends PoolBase {
 	private int remotePort;// 接続しているサーバのポート,isUseProxyの場合proxyサーバ
 	private String targetServer;// リクエスト先サーバ
 	private int targetPort;// リクエスト先ポート
+	private boolean isWs;//WebSocketプロトコルか否か
 	
 	public static WebClientConnection create(boolean isHttps, String targetServer,int targetPort){
 		WebClientConnection webClinetConnection=(WebClientConnection)PoolManager.getInstance(WebClientConnection.class);
 		webClinetConnection.init(isHttps, targetServer, targetPort);
 		return webClinetConnection;
 	}
-	
 	public void init(boolean isHttps, String targetServer,int targetPort){
+		init(isHttps, targetServer, targetPort, false);
+	}
+	
+	public void init(boolean isHttps, String targetServer,int targetPort,boolean isWs){
 		this.targetServer = targetServer;
 		this.targetPort = targetPort;
 		this.isHttps = isHttps;
-		ServerParser parser=config.findProxyServer(isHttps, targetServer);
+		this.isWs=isWs;
+		ServerParser parser=null;
+		if(!isWs){
+			parser=config.findProxyServer(isHttps, targetServer);
+		}else{//webSocketは、常にhttps用のproxyを使う
+			parser=config.findProxyServer(true, targetServer);
+		}
 		if(parser!=null){
 			this.isUseProxy=true;
 			this.remoteServer = parser.getHost();

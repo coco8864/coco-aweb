@@ -29,6 +29,7 @@ import naru.aweb.handler.FileSystemHandler;
 import naru.aweb.handler.ProxyHandler;
 import naru.aweb.handler.SslProxyHandler;
 import naru.aweb.handler.VelocityPageHandler;
+import naru.aweb.handler.WsProxyHandler;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.util.JdoUtil;
 import naru.aweb.util.ServerParser;
@@ -52,6 +53,7 @@ public class Mapping{
 	public static Class PROXY_HANDLER=ProxyHandler.class;
 	public static Class FILE_SYSTEM_HANDLER=FileSystemHandler.class;
 	public static Class STORE_HANDLER=StoreHandler.class;
+	public static Class WS_PROXY_HANDLE=WsProxyHandler.class;
 	
 	private static Logger logger = Logger.getLogger(Mapping.class);
 	private static JsonConfig jsonConfig;
@@ -350,7 +352,9 @@ public class Mapping{
 		HTTPS,
 		SSLPROXY,//WebSocket proxyも含む、内容をケアしないproxy
 		FILE,
-		HANDLER//WebSocketの場合は必ずHandlerが必要
+		HANDLER,//WebSocketの場合は必ずHandlerが必要
+		WS,
+		WSS
 	}
 	
 	//optionsから設定
@@ -444,6 +448,15 @@ public class Mapping{
 //				this.destinationHandlerClass= Class.forName(destinationServer);
 //			} catch (ClassNotFoundException e) {
 //			}
+			break;
+		case WS:
+		case WSS:
+			destinationServerParser=ServerParser.parse(new ServerParser(),destinationServer,ServerParser.WILD_PORT_NUMBER);
+			if(destinationServerParser==null){
+				return false;
+			}
+			destinationHandlerClass=WS_PROXY_HANDLE;
+			break;
 		}
 		isSessionUpdate=true;
 		if(options!=null){
@@ -745,9 +758,9 @@ public class Mapping{
 			if(port==ServerParser.WILD_PORT_NUMBER){
 				if(targetPort!=ServerParser.WILD_PORT_NUMBER){
 					port=targetPort;
-				}else if(destinationType==DestinationType.HTTPS){
+				}else if(destinationType==DestinationType.HTTPS || destinationType==DestinationType.WSS){
 					port=ServerParser.HTTPS_PORT_NUMBER;
-				}else{
+				}else if(destinationType==DestinationType.HTTP  || destinationType==DestinationType.WS){
 					port=ServerParser.HTTP_PORT_NUMBER;
 				}
 			}
@@ -768,6 +781,8 @@ public class Mapping{
 		switch(destinationType){
 		case HTTP:
 		case HTTPS:
+		case WS:
+		case WSS:
 			ServerParser resolveServer=resolveServer(serverMatcher,targetServer.getPort());
 			mappingResult.setResolveServer(resolveServer);
 			break;

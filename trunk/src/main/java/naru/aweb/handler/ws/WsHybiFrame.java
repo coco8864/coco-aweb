@@ -13,6 +13,7 @@ import naru.aweb.config.Config;
 public class WsHybiFrame {
 	private static Config config=Config.getConfig(); 
 	private static Random random=config.getRandom("WsHibiFrame"+System.currentTimeMillis());
+	private static int webSocketMessageLimit=config.getInt("webSocketMessageLimit",2048000);
 	
 	public static final byte PCODE_CONTINUE = 0x00;
 	public static final byte PCODE_TEXT = 0x01;
@@ -158,7 +159,7 @@ public class WsHybiFrame {
 		return createFinFrame(PCODE_PING, isMask, message);
 	}
 
-	public static ByteBuffer[] createPoingFrame(boolean isMask, ByteBuffer[] message) {
+	public static ByteBuffer[] createPongFrame(boolean isMask, ByteBuffer[] message) {
 		return createFinFrame(PCODE_PONG, isMask, message);
 	}
 	
@@ -185,6 +186,8 @@ public class WsHybiFrame {
 	private byte[] maskBytes=new byte[4];
 	private List<ByteBuffer> payloadBuffers=new ArrayList<ByteBuffer>();
 	private List<ByteBuffer> nextFrameBuffers=new ArrayList<ByteBuffer>();
+	private short closeCode;
+	private String reason;
 	
 	public WsHybiFrame(){
 		init();
@@ -222,10 +225,16 @@ public class WsHybiFrame {
 			if(!parsePayload(buffer)){
 				return false;
 			}
+			if(pcode==PCODE_CLOSE){
+				//TODO 1バッファに入っていることが前提...
+				ByteBuffer payload=payloadBuffers.get(0);
+				closeCode=payload.getShort();
+			}
 			return true;
 		case END:
 			nextFrameBuffers.add(buffer);
 			return true;
+		default://ERROR
 		}
 		throw new RuntimeException("parseStat:"+parseStat);
 	}
@@ -286,6 +295,10 @@ public class WsHybiFrame {
 				return false;
 			}
 			payloadLength=readBuffer.getInt();
+		}
+		if(payloadLength>webSocketMessageLimit){
+			parseStat=ParseStat.ERROR;//パケットが長すぎる
+			return false;
 		}
 		parseStat=ParseStat.MASK;
 		return true;
