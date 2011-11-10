@@ -235,21 +235,27 @@ public class DispatchHandler extends ServerBaseHandler {
 				origin = mapping.getDestinationFile().getAbsolutePath();
 				break;
 			case HANDLER:
-				accessLog
-						.setDestinationType(AccessLog.DESTINATION_TYPE_HANDLER);
+				accessLog.setDestinationType(AccessLog.DESTINATION_TYPE_HANDLER);
 				origin = mapping.getHandlerClass().getName();
+				break;
+			case WS:
+				accessLog.setDestinationType(AccessLog.DESTINATION_TYPE_WS);
+				origin = mapping.getResolveServer().toString();
+				break;
+			case WSS:
+				accessLog.setDestinationType(AccessLog.DESTINATION_TYPE_WSS);
+				origin = mapping.getResolveServer().toString();
 				break;
 			}
 			accessLog.setResolveOrigin(origin);// 本当の接続先が設定されている。
 		}
 		accessLog.setRequestLine(requestHeader.getRequestLine());
-		accessLog.setRequestHeaderLength(connectHeaderLength
-				+ requestHeader.getHeaderLength());
+		accessLog.setRequestHeaderLength(connectHeaderLength+requestHeader.getHeaderLength());
 		accessLog.setChannelId(getChannelId());
 		accessLog.setLocalIp(getLocalIp());
-		logger.debug("cid:" + getChannelId() + ":requestLine:"
-				+ accessLog.getRequestLine());
+		logger.debug("cid:" + getChannelId() + ":requestLine:"+ accessLog.getRequestLine());
 		// DBへのアクセスログ採取有無
+		Mapping.SourceType sourceType = mapping.getMapping().getSourceType();
 		switch (mapping.getLogType()) {
 		case NONE:
 			headerPage.recycle();
@@ -268,6 +274,9 @@ public class DispatchHandler extends ServerBaseHandler {
 			accessLog.incTrace();
 			readPeekStore.close(accessLog, readPeekStore);
 			accessLog.setRequestHeaderDigest(readPeekStore.getDigest());
+			if( sourceType.equals(Mapping.SourceType.WS) || sourceType.equals(Mapping.SourceType.WS_PROXY) ){
+				break;
+			}
 			// requestBodyのpeek処理,header parser時に読み込んだバッファをbody peekに
 			readPeekStore = Store.open(true);
 			ByteBuffer[] bufs = requestHeader.peekBodyBuffer();

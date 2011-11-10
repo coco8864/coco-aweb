@@ -311,13 +311,13 @@ public class WsClientHandler extends SslHandler implements Timer {
 			}
 		}
 		PoolManager.poolArrayInstance(buffers);//配列を返却
-		asyncRead(CONTEXT_MESSAGE);
 	}
 	
 	public void onReadPlain(Object userContext, ByteBuffer[] buffers) {
 		logger.debug("#readPlain.cid:" + getChannelId());
 		if (userContext == CONTEXT_MESSAGE) {
 			parseFrame(buffers);
+			asyncRead(CONTEXT_MESSAGE);
 			return;
 		}
 		stat = STAT_MESSAGE;
@@ -362,6 +362,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 		if (body != null) {
 			parseFrame(body);
 		}
+		setReadTimeout(0);//handshakeが完了したのでタイムアウトさせない
 		logger.debug("asyncRead(CONTEXT_BODY) cid:"+getChannelId());
 		asyncRead(CONTEXT_MESSAGE);
 	}

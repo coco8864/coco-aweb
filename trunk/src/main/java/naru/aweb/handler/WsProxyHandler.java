@@ -46,6 +46,7 @@ public class WsProxyHandler extends  WebSocketHandler implements WsClient{
 		String path=mapping.getResolvePath();
 		requestHeader.setPath(path);
 		wsClientHandler=WsClientHandler.create(mapping.isResolvedHttps(),targetHostServer.getHost(),targetHostServer.getPort());
+		wsClientHandler.ref();
 		
 		String uri=requestHeader.getRequestUri();
 		String origin=requestHeader.getHeader("Origin");
@@ -82,17 +83,22 @@ public class WsProxyHandler extends  WebSocketHandler implements WsClient{
 	public void onWcSslHandshaked(Object userContext) {
 	}
 	@Override
-	public void onWcClose(Object userContext,int stat) {
-	}
-	@Override
 	public void onWcConnected(Object userContext) {
 		
 	}
 	@Override
+	public void onWcClose(Object userContext,int stat) {
+		logger.debug("#onWcClose cid:"+getChannelId());
+		closeWebSocket();
+	}
+	@Override
 	public void onWcFailure(Object userContext, int stat, Throwable t) {
+		logger.debug("#wcFailure cid:"+getChannelId());
+		closeWebSocket();
 	}
 	@Override
 	public void onWcHandshaked(Object userContext,String subprotocol) {
+		logger.debug("#wcHandshaked cid:"+getChannelId() +" subprotocol:"+subprotocol);
 		//handshakeŠJŽn
 		doHandshake(subprotocol);
 	}
@@ -115,5 +121,26 @@ public class WsProxyHandler extends  WebSocketHandler implements WsClient{
 
 	@Override
 	public void onWcResponseHeader(Object userContext,HeaderParser responseHeader) {
+	}
+
+	@Override
+	public void onClosed(Object userContext) {
+	}
+
+	@Override
+	public void onFailure(Object userContext, Throwable t) {
+	}
+
+	@Override
+	public void onFinished() {
+	}
+
+	@Override
+	public void recycle() {
+		if(wsClientHandler!=null){
+			wsClientHandler.unref();
+			wsClientHandler=null;
+		}
+		super.recycle();
 	}
 }

@@ -31,6 +31,7 @@ import org.apache.log4j.Logger;
 public abstract class WebSocketHandler extends WebServerHandler implements LogoutEvent{
 	private static Logger logger=Logger.getLogger(WebSocketHandler.class);
 	private boolean isWs;//WebSocketをハンドリングしているか否か
+	private boolean isHandshaked;
 	private WsProtocol wsProtocol;
 	private int onMessageCount;
 	private int postMessageCount;
@@ -183,7 +184,11 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	
 	/* 通信をやめる場合 */
 	protected void closeWebSocket(){
-		wsProtocol.onClose(false);
+		if(isHandshaked){
+			wsProtocol.onClose(false);
+		}else{
+			completeResponse("500");
+		}
 	}
 	
 //	public abstract void startWebSocketResponse(HeaderParser requestHeader);
@@ -196,8 +201,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	 * WebSocket接続中にセションきれた場合の通知
 	 */
 	public void onLogout(){
-		wsProtocol.onClose(false);
-//		asyncClose(null);
+		closeWebSocket();
 	}
 	
 	/*
@@ -261,8 +265,10 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	public final boolean doHandshake(String subProtocol){
 		HeaderParser requestHeader=getRequestHeader();
 		wsProtocol.setup(this);
-		return wsProtocol.onHandshake(requestHeader,subProtocol);
+		isHandshaked=wsProtocol.onHandshake(requestHeader,subProtocol);
+		return isHandshaked;
 	}
+	
 	
 	public void onReadPlain(Object userContext, ByteBuffer[] buffers) {
 		logger.debug("#read.cid:"+getChannelId());
@@ -275,7 +281,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	
 	public void onFailure(Object userContext, Throwable t) {
 		logger.debug("#failer.cid:" +getChannelId() +":"+t.getMessage());
-		asyncClose(userContext);
+		closeWebSocket();
 		super.onFailure(userContext, t);
 	}
 
@@ -286,7 +292,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	
 	public void onTimeout(Object userContext) {
 		logger.debug("#timeout.cid:" +getChannelId());
-		asyncClose(userContext);
+		closeWebSocket();
 		super.onTimeout(userContext);
 	}
 	
@@ -307,6 +313,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	@Override
 	public void recycle() {
 		isWs=false;
+		isHandshaked=false;
 		if(wsProtocol!=null){
 			wsProtocol.unref(true);
 			wsProtocol=null;
