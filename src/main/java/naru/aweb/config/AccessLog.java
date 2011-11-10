@@ -389,6 +389,9 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	public static final char DESTINATION_TYPE_HANDLER='A';//aplication
 	public static final char DESTINATION_TYPE_REPLAY='R';
 	public static final char DESTINATION_TYPE_EDIT='E';
+	public static final char DESTINATION_TYPE_WS='W';
+	public static final char DESTINATION_TYPE_WSS='X';
+	
 	@Persistent
 	@Column(name="DESTINATION_TYPE")
 	private char destinationType;
@@ -429,6 +432,10 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		copy.isShortFormat=isShortFormat;
 		copy.isSkipPhlog=isSkipPhlog;
 		copy.destinationType=destinationType;
+		copy.requestHeaderDigest=requestHeaderDigest;
+		copy.requestBodyDigest=requestBodyDigest;
+		copy.responseHeaderDigest=responseHeaderDigest;
+		copy.responseBodyDigest=responseBodyDigest;
 //		copy.requestLine=requestLine;
 //		copy.statusCode=statusCode;
 //		copy.contentEncoding;

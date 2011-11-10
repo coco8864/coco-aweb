@@ -567,16 +567,18 @@ public class WebServerHandler extends ServerBaseHandler {
 	/**
 	 * WebSocket用にheaderを即座にflushするメソッド
 	 */
-	public void flushHeader() {
+	public void flushHeaderForWebSocket() {
 		ByteBuffer[] headerBuffer = responseHeader.getHeaderBuffer();
 		if (headerBuffer == null) {// ヘッダが確定していない..
 			logger.warn("flushHeader fail to getHeaderBuffer.cid:"+ getChannelId());
 			asyncClose(null);// 回線を切断
 			return;// 何をしても無駄
 		}
+		getAccessLog().setTimeCheckPint(AccessLog.TimePoint.responseHeader);
 		responseHeaderLength = BuffersUtil.remaining(headerBuffer);
 		Store responsePeek = null;
 		MappingResult mapping=getRequestMapping();
+		AccessLog accessLog = getAccessLog();
 		if(mapping!=null){
 			switch (mapping.getLogType()) {
 			case RESPONSE_TRACE:
@@ -584,19 +586,22 @@ public class WebServerHandler extends ServerBaseHandler {
 				responsePeek = Store.open(true);
 				ByteBuffer[] headerDup = PoolManager.duplicateBuffers(headerBuffer);
 				responsePeek.putBuffer(headerDup);
-				AccessLog accessLog = getAccessLog();
 				logger.debug("#flushHeader"+responsePeek.getStoreId());
 				accessLog.incTrace();
 				responsePeek.close(accessLog,responsePeek);
 				accessLog.setResponseHeaderDigest(responsePeek.getDigest());
-				responsePeek = Store.open(true);
+//				responsePeek = Store.open(true);
+			case REQUEST_TRACE:
+			case ACCESS:
+				AccessLog wkAccessLog=accessLog.clone();
+				wkAccessLog.setPersist(true);
+				wkAccessLog.decTrace();
 			}
 		}
-		getAccessLog().setTimeCheckPint(AccessLog.TimePoint.responseHeader);
 		asyncWrite(WRITE_CONTEXT_HEADER, headerBuffer);
-		if (responsePeek != null) {
-			pushWritePeekStore(responsePeek);
-		}
+//		if (responsePeek != null) {
+//			pushWritePeekStore(responsePeek);
+//		}
 		isFlushFirstResponse = true;
 		if (firstBody != null) {
 			logger.error("flushHeader use only websocket.");
