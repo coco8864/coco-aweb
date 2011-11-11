@@ -47,12 +47,12 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	 */
 	private void wsTrace(char sourceType,String contentType,String comment,String statusCode,ByteBuffer[] message){
 		AccessLog accessLog=getAccessLog();
-		AccessLog wsAccessLog=accessLog.clone();
-		wsAccessLog.setStartTime(new Date());
+		AccessLog wsAccessLog=accessLog.copyForWs();
 		wsAccessLog.setContentType(contentType);
 		wsAccessLog.setRequestLine(accessLog.getRequestLine() +comment);
 		wsAccessLog.setSourceType(sourceType);
 		wsAccessLog.setStatusCode(statusCode);
+		wsAccessLog.endProcess();
 		wsAccessLog.setPersist(true);
 		if(message!=null){
 			Store store = Store.open(true);
@@ -71,10 +71,8 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		onMessageCount++;
 		StringBuilder sb=new StringBuilder();
 		sb.append('[');
-		sb.append(wsProtocol.getWsProtocolName());
-		sb.append(':');
 		sb.append(getChannelId());
-		sb.append(":B<S:");
+		sb.append(":");
 		sb.append(onMessageCount);
 		sb.append(']');
 		wsTrace(AccessLog.SOURCE_TYPE_WS_ON_MESSAGE,contentType,sb.toString(),"B<S",message);
@@ -85,10 +83,8 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		postMessageCount++;
 		StringBuilder sb=new StringBuilder();
 		sb.append('[');
-		sb.append(wsProtocol.getWsProtocolName());
-		sb.append(':');
 		sb.append(getChannelId());
-		sb.append(":B>S:");
+		sb.append(":");
 		sb.append(postMessageCount);
 		sb.append(']');
 		wsTrace(AccessLog.SOURCE_TYPE_WS_POST_MESSAGE,contentType,sb.toString(),"B>S",message);

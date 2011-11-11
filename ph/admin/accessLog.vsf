@@ -155,7 +155,12 @@ function tableLine(accessLog){
 	var ipTag=tdTag=ph.admin.mkTdTag(accessLog.ip);
 	trTag.appendChild(ipTag);
 
-	var startTime=new Date(accessLog.startTime.time);
+	var startTime;
+	if(accessLog.startTime){
+		startTime=new Date(accessLog.startTime.time);
+	}else{
+		startTime=new Date(0);
+	}
 	var tdTag=ph.admin.mkTdTag(
 		ph.admin.formatHms(startTime));
 	trTag.appendChild(tdTag);

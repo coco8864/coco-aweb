@@ -102,6 +102,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 		frame.init();
 		setWsClient(null);
 		userContext=null;
+		super.recycle();
 	}
 	
 	private void setWsClient(WsClient wsClient){
