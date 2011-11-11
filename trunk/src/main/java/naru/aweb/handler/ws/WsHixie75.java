@@ -72,7 +72,7 @@ public class WsHixie75 extends WsProtocol {
 		if(subProtocol!=null){
 			handler.setHeader(WEBSOCKET_PROTOCOL, subProtocol);
 		}
-		handler.flushHeaderForWebSocket();
+		handler.flushHeaderForWebSocket(SPEC,subProtocol);
 		frameMode=FRAME_MODE_END;
 		handler.onWsOpen(subProtocol);
 		handler.setReadTimeout(0);

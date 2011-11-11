@@ -72,6 +72,10 @@ function FindProxyForURL(url, host){
     return FindHttpProxyForURL(url,host);
   }else if (url.substring(0, 6) == "https:") {
     return FindSecureProxyForURL(url,host);
+  }else if (url.substring(0, 3) == "ws:") {
+    return FindSecureProxyForURL(url,host);
+  }else if (url.substring(0, 4) == "wss:") {
+    return FindSecureProxyForURL(url,host);
   }
   #if(${proxyFinder.nextPac})
   return NextFindProxyForURL(url,host);

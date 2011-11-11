@@ -149,7 +149,7 @@ public class WsHixie76 extends WsProtocol {
 		sb.append(path);
 		handler.setHeader("Sec-WebSocket-Location", sb.toString());
 		
-		handler.flushHeaderForWebSocket();
+		handler.flushHeaderForWebSocket(SPEC,subProtocol);
 		
 		byte[] response=null;
 		String key1=requestHeader.getHeader(SEC_WEBSOCKET_KEY1);

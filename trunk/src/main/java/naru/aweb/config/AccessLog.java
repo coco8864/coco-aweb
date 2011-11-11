@@ -372,6 +372,9 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	public static final char SOURCE_TYPE_SSL_PROXY='P';
 	public static final char SOURCE_TYPE_SIMULATE='s';
 	public static final char SOURCE_TYPE_EDIT='E';
+	public static final char SOURCE_TYPE_WS='x';
+	public static final char SOURCE_TYPE_WSS='X';
+	public static final char SOURCE_TYPE_WS_HANDSHAKE='H';
 	public static final char SOURCE_TYPE_WS_ON_MESSAGE='o';
 	public static final char SOURCE_TYPE_WS_POST_MESSAGE='m';
 	
@@ -423,21 +426,23 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	/*
 	 * WebSocketÇÃonMessage,postMessgeÇtraceÇ∑ÇÈÇΩÇﬂÇ…çÏê¨
 	 */
-	public AccessLog clone(){
+	public AccessLog copyForWs(){
 		AccessLog copy=(AccessLog)PoolManager.getInstance(AccessLog.class);
+		copy.startTime=startTime;
 		copy.channelId=channelId;
 		copy.realHost=realHost;
 		copy.userId=userId;
 		copy.ip=ip;
 		copy.isShortFormat=isShortFormat;
-		copy.isSkipPhlog=isSkipPhlog;
 		copy.destinationType=destinationType;
 		copy.requestHeaderDigest=requestHeaderDigest;
 		copy.requestBodyDigest=requestBodyDigest;
 		copy.responseHeaderDigest=responseHeaderDigest;
 		copy.responseBodyDigest=responseBodyDigest;
-//		copy.requestLine=requestLine;
-//		copy.statusCode=statusCode;
+		copy.requestLine=requestLine;
+		copy.statusCode=statusCode;
+		copy.resolveOrigin=resolveOrigin;
+		copy.isSkipPhlog=isSkipPhlog;
 //		copy.contentEncoding;
 //		copy.contentType;
 //		copy.transferEncoding;

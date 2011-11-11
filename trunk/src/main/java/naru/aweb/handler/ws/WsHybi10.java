@@ -61,7 +61,7 @@ public class WsHybi10 extends WsProtocol {
 		handler.setHeader("Connection", "Upgrade");
 		handler.setHeader(SEC_WEBSOCKET_ACCEPT,accept);
 		
-		handler.flushHeaderForWebSocket();
+		handler.flushHeaderForWebSocket(SPEC,subProtocol);
 		handler.onWsOpen(subProtocol);
 		handler.setReadTimeout(getWebSocketPingInterval());//TODO webSocketPingInterbalÇ™éwíËÇ≥ÇÍÇΩèÍçá
 		handler.asyncRead(null);

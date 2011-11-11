@@ -172,7 +172,7 @@ public class DispatchHandler extends ServerBaseHandler {
 	}
 
 	private AccessLog setupTraceLog(String realHostName,
-			HeaderParser requestHeader, MappingResult mapping, User user) {
+			HeaderParser requestHeader, MappingResult mapping, User user,boolean isWs) {
 		// ブラウザから入力されたＵＲＬ,target
 		// http(s)://xxxx:xx/xxx/xxx
 		// mapping先のURL,resolve(proxyの場合)
@@ -202,13 +202,17 @@ public class DispatchHandler extends ServerBaseHandler {
 			case PLAIN:
 				if (mapping.isSourceTypeProxy()) {
 					accessLog.setSourceType(AccessLog.SOURCE_TYPE_PLAIN_PROXY);
-				} else {
+				}else if(isWs){
+					accessLog.setSourceType(AccessLog.SOURCE_TYPE_WS);
+				}else{
 					accessLog.setSourceType(AccessLog.SOURCE_TYPE_PLAIN_WEB);
 				}
 				break;
 			case SSL:
 				if (mapping.isSourceTypeProxy()) {
 					accessLog.setSourceType(AccessLog.SOURCE_TYPE_SSL_PROXY);
+				}else if(isWs){
+					accessLog.setSourceType(AccessLog.SOURCE_TYPE_WSS);
 				} else {
 					accessLog.setSourceType(AccessLog.SOURCE_TYPE_SSL_WEB);
 				}
@@ -255,7 +259,6 @@ public class DispatchHandler extends ServerBaseHandler {
 		accessLog.setLocalIp(getLocalIp());
 		logger.debug("cid:" + getChannelId() + ":requestLine:"+ accessLog.getRequestLine());
 		// DBへのアクセスログ採取有無
-		Mapping.SourceType sourceType = mapping.getMapping().getSourceType();
 		switch (mapping.getLogType()) {
 		case NONE:
 			headerPage.recycle();
@@ -274,7 +277,7 @@ public class DispatchHandler extends ServerBaseHandler {
 			accessLog.incTrace();
 			readPeekStore.close(accessLog, readPeekStore);
 			accessLog.setRequestHeaderDigest(readPeekStore.getDigest());
-			if( sourceType.equals(Mapping.SourceType.WS) || sourceType.equals(Mapping.SourceType.WS_PROXY) ){
+			if(isWs){//WebSocketの場合body traceの採取方法が違う
 				break;
 			}
 			// requestBodyのpeek処理,header parser時に読み込んだバッファをbody peekに
@@ -291,7 +294,7 @@ public class DispatchHandler extends ServerBaseHandler {
 	}
 
 	private void forwardMapping(String realHostName, HeaderParser requestHeader,
-			MappingResult mapping, AuthSession auth) {
+			MappingResult mapping, AuthSession auth,boolean isWs) {
 //		setRequestAttribute(ServerBaseHandler.ATTRIBUTE_AUTH_SESSION, auth);
 		User user = null;
 		if (auth != null) {
@@ -299,7 +302,7 @@ public class DispatchHandler extends ServerBaseHandler {
 		}
 		setRequestAttribute(ServerBaseHandler.ATTRIBUTE_USER, user);
 		// 処理の起点がaccessLogの中に採られる
-		setupTraceLog(realHostName, requestHeader, mapping, user);
+		setupTraceLog(realHostName, requestHeader, mapping, user,isWs);
 		setRequestMapping(mapping);
 		Class<WebServerHandler> responseClass = mapping.getHandlerClass();
 		WebServerHandler response = (WebServerHandler) forwardHandler(responseClass);
@@ -564,7 +567,7 @@ public class DispatchHandler extends ServerBaseHandler {
 		
 		/* dispatchHandlerを出航するときにAccessLogを付加 */
 		keepAliveContext.getRequestContext().allocAccessLog();
-		forwardMapping(realHost, requestHeader, mapping, auth);
+		forwardMapping(realHost, requestHeader, mapping, auth,isWs);
 	}
 
 	public SSLEngine getSSLEngine() {

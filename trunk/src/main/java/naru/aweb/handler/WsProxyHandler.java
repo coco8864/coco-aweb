@@ -4,22 +4,10 @@
 package naru.aweb.handler;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
-import naru.async.pool.PoolManager;
-import naru.async.store.Page;
-import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
-import naru.aweb.config.Mapping;
 import naru.aweb.handler.ws.WsProtocol;
 import naru.aweb.http.HeaderParser;
-import naru.aweb.http.KeepAliveContext;
-import naru.aweb.http.WebClient;
-import naru.aweb.http.WebClientHandler;
-import naru.aweb.http.WebServerHandler;
 import naru.aweb.http.WsClient;
 import naru.aweb.http.WsClientHandler;
 import naru.aweb.mapping.MappingResult;
@@ -123,6 +111,7 @@ public class WsProxyHandler extends  WebSocketHandler implements WsClient{
 	public void onWcResponseHeader(Object userContext,HeaderParser responseHeader) {
 	}
 
+	/*
 	@Override
 	public void onClosed(Object userContext) {
 	}
@@ -134,6 +123,7 @@ public class WsProxyHandler extends  WebSocketHandler implements WsClient{
 	@Override
 	public void onFinished() {
 	}
+	*/
 
 	@Override
 	public void recycle() {
