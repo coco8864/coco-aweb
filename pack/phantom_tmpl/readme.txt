@@ -1,4 +1,4 @@
-Phantom Proxy 1.1.0
+Phantom Proxy 1.2.0
 
 Phantom Proxy は、javaで動作するWeb調査ツールです。
 詳細は以下を参照してください。
@@ -10,11 +10,11 @@ Phantom Proxyは、Java SE 6以上のjava環境上で動作します。以下等を参照しjava実行環
 http://java.sun.com/javase/ja/6/download.html
 
 1)以下よりパッケージをダウンロードしてください。
-http://coco-aweb.googlecode.com/files/phantom-1.0.0.zip
+http://coco-aweb.googlecode.com/files/phantom-1.2.0.zip
 
 2)ダウンロードしたファイルを任意のディレクトリに解凍、展開してください。
 コマンド例）
- >jar xvf phantom.1.0.0.zip
+ >jar xvf phantom.1.2.0.zip
  以降、展開したディレクトリを${phantom}とします。
 
 3)起動シェルを編集してください。
@@ -22,11 +22,9 @@ http://coco-aweb.googlecode.com/files/phantom-1.0.0.zip
  Windowsの場合
   ${phantom}\bin\run.bat
   set JAVA_HOME=javaインストールディレクトリ
-  set QUEUELET_HOME=${phantom}
  Unix系の場合
   ${phantom}/bin/run.sh
   JAVA_HOME=javaインストールディレクトリ
-  QUEUELET_HOME=${phantom}
   
   以下コマンドで実行権を付加します。
    #chmod +x ${phantom}/bin/run.sh
