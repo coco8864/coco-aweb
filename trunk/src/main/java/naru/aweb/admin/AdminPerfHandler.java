@@ -13,6 +13,7 @@ import naru.aweb.http.HeaderParser;
 import naru.aweb.http.ParameterParser;
 import naru.aweb.http.WebServerHandler;
 import naru.aweb.queue.QueueManager;
+import naru.aweb.robot.ConnectChecker;
 import naru.aweb.robot.Scenario;
 import naru.aweb.robot.ServerChecker;
 import net.sf.json.JSON;
@@ -60,6 +61,13 @@ public class AdminPerfHandler extends WebServerHandler{
 		QueueManager queueManager=QueueManager.getInstance();
 		String chId=queueManager.createQueue(true);
 		ServerChecker.start(url,isKeepAlive,requestCount,isTrace,"check",chId);
+		return chId;
+	}
+	
+	private String checkConnection(int count,long timeout){
+		QueueManager queueManager=QueueManager.getInstance();
+		String chId=queueManager.createQueue(true);
+		ConnectChecker checker=ConnectChecker.start(count,timeout,chId);
 		return chId;
 	}
 	
@@ -120,6 +128,15 @@ public class AdminPerfHandler extends WebServerHandler{
 				responseJson(name);
 			}
 			return;
+		}else if("checkConnection".equals(command)){
+			String count=parameter.getParameter("count");
+			String timeout=parameter.getParameter("timeout");
+			String chId=null;
+			try {
+				chId = checkConnection(Integer.parseInt(count),Long.parseLong(timeout));
+			} catch (NumberFormatException e) {
+			}
+			responseJson(chId);
 		}else if("checkServer".equals(command)){
 			String url=parameter.getParameter("url");
 			String requestCount=parameter.getParameter("requestCount");

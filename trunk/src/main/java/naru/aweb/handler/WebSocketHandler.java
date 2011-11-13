@@ -179,7 +179,10 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	}
 	
 	/* 通信をやめる場合 */
-	protected void closeWebSocket(){
+	/**
+	 * statusCode 接続前だった場合、ブラウザに返却するstatusCode
+	 */
+	protected void closeWebSocket(String statusCode){
 		if(isHandshaked){
 			wsProtocol.onClose(false);
 		}else{
@@ -197,7 +200,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	 * WebSocket接続中にセションきれた場合の通知
 	 */
 	public void onLogout(){
-		closeWebSocket();
+		closeWebSocket("500");
 	}
 	
 	/*
@@ -277,7 +280,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	
 	public void onFailure(Object userContext, Throwable t) {
 		logger.debug("#failer.cid:" +getChannelId() +":"+t.getMessage());
-		closeWebSocket();
+		closeWebSocket("500");
 		super.onFailure(userContext, t);
 	}
 
@@ -288,7 +291,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	
 	public void onTimeout(Object userContext) {
 		logger.debug("#timeout.cid:" +getChannelId());
-		closeWebSocket();
+		closeWebSocket("500");
 		super.onTimeout(userContext);
 	}
 	
