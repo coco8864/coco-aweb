@@ -340,6 +340,7 @@ sourceType:<select id="mappingSourceType" size="1">
 <option value="PROXY">PROXY</option>
 <option value="WEB">WEB</option>
 <option value="WS">WS</option>
+<option value="WS_PROXY">WS_PROXY</option>
 </select><br/>
 secureType:<select id="mappingSecureType" size="1">
 <option value="PLAIN">PLAIN</option>
