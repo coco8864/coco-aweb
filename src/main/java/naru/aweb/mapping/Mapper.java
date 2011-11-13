@@ -265,19 +265,26 @@ public class Mapper {
 		return null;
 	}
 	
-	public MappingResult resolveWs(String realHost, boolean isSsl,ServerParser hostHeader, String path){
+	public MappingResult resolveWs(String realHost, boolean isSsl,boolean isProxy,ServerParser hostHeader, String path){
 		SecureType secureType;
 		if(isSsl){
 			secureType=SecureType.SSL;
 		}else{
 			secureType=SecureType.PLAIN;
 		}
-		MappingResult mapping=resolve(activeMappings,realHost,SourceType.WS,secureType,hostHeader,path);
+		SourceType sourceType;
+		if(isProxy){
+			sourceType=SourceType.WS_PROXY;
+		}else{
+			sourceType=SourceType.WS;
+		}
+		MappingResult mapping=resolve(activeMappings,realHost,sourceType,secureType,hostHeader,path);
 		if(mapping!=null){
 			return mapping;
 		}
 		return null;
 	}
+	
 	
 	public MappingResult resolveWeb(String realHost, boolean isSsl,ServerParser hostHeader, String path){
 		SecureType secureType;

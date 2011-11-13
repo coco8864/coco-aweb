@@ -179,7 +179,11 @@ public class ServerParser extends PoolBase {
 
 	@Override
 	public String toString() {
-		return host +":" +port;
+		if(port==WILD_PORT_NUMBER){
+			return host;
+		}else{
+			return host +":" +port;
+		}
 	}
 	
 	public String toServerString() {

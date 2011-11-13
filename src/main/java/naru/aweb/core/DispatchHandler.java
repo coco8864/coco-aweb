@@ -322,21 +322,23 @@ public class DispatchHandler extends ServerBaseHandler {
 		// 自分はproxyなので、localhostの場合、接続先は、リモートホストとなる
 		ServerParser.resolveLocalhost(server, getRemoteIp());
 		boolean isPeek = mapper.isPeekSslProxyServer(realHost, server);
+		//HTTPS,WS proxy,WSS proxyは、サーバ名に同じプレフィクスを持つと直感的に動作する
 		if (isPeek == false) {// 内容に興味がない場合
-			MappingResult mappingResult = mapper.resolveSslProxy(realHost,
-					server);
+			MappingResult mappingResult = mapper.resolveSslProxy(realHost,server);
 			if (mappingResult != null) {
 				return mappingResult;// sslProxyとして動作する場合ここで解決
 			}
 			return DispatchResponseHandler.forbidden();
 		}
-		keepAliveContext.setProxyTargetServer(server);
 		// データをpeekしようとしている。
+		keepAliveContext.setProxyTargetServer(server);
 		HeaderParser requestHeader = getRequestHeader();
 		connectHeaderLength = requestHeader.getHeaderLength();
 		requestHeader.recycle();
-		asyncWrite(SSL_PROXY_OK_CONTEXT, BuffersUtil
-				.toByteBufferArray(ByteBuffer.wrap(ProxyOkResponse)));
+		
+		//CONNECTリクエストに対して成功(200)を返却する
+		asyncWrite(SSL_PROXY_OK_CONTEXT, 
+				BuffersUtil.toByteBufferArray(ByteBuffer.wrap(ProxyOkResponse)));
 		return null;
 	}
 
@@ -351,22 +353,16 @@ public class DispatchHandler extends ServerBaseHandler {
 			return mappingResult;
 		}
 		return DispatchResponseHandler.forbidden();
-		// return MappingResult.createProxyResult(server,path);
 	}
 
 	private MappingResult wsMapping(Mapper mapper,
 			KeepAliveContext keepAliveContext, String realHost,
 			ServerParser server, String path) {
 		// webマッピング対象は、realHost,phntomHost,pathで決まる
-		ServerParser sslServer = keepAliveContext.getProxyTargetServer();
-		// ssl websocket proxyのtraceは別途検討
-//		if (sslServer != null) {
-			// ssl websocket proxy
-//			return null;
-//		}
-		MappingResult mapping = mapper.resolveWs(realHost, isSsl(), server,
-				path);
-		return mapping;
+		ServerParser targetServer = keepAliveContext.getProxyTargetServer();
+		//targetServerがあるということは、WS_PROXY
+		boolean isProxy=(targetServer!=null);
+		return mapper.resolveWs(realHost, isSsl(),isProxy, server,path);
 	}
 
 	private MappingResult webMapping(Mapper mapper,
@@ -387,15 +383,7 @@ public class DispatchHandler extends ServerBaseHandler {
 		return mapping;
 	}
 
-	/*
-	 * private AuthSession webAuth(MappingResult mapping,Authenticator
-	 * authenticator,HeaderParser requestHeader){ AuthSession
-	 * auth=authenticator.webAuthentication(requestHeader,true); if(auth!=null){
-	 * return auth; } List<String> mappingRoles=mapping.getRolesList();
-	 * if(mappingRoles.isEmpty()){ return authenticator.getAdminSession(); }
-	 * return null; }
-	 */
-
+	//CONNECTリクエストからの振り分け
 	private MappingResult sslProxyHandler(HeaderParser requestHeader,
 			KeepAliveContext keepAliveContext) {
 		ServerParser server = requestHeader.getServer();

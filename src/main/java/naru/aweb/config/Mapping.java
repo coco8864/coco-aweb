@@ -683,21 +683,28 @@ public class Mapping{
 	}
 	
 	//https　proxy時に処理対象か否かを判定するために使用
-//	public ServerParser resolveSslProxyServer(String realHostName,ServerParser targetServer){
 	public boolean isPeekSslProxyServer(String realHostName,ServerParser targetServer){
 		if(Boolean.FALSE.equals(getOption("peek"))){//sslproxyの動作を行いたい場合
-			return false;
+			return false;//明示的にpeekする事を拒否している場合
 		}
 		if(!"".equals(this.realHostName)&&this.realHostName!=null && !this.realHostName.equals(realHostName)){
+			return false;//realHost違い
+		}
+		//３つのパターンがある、これ以外は関係なし
+		//1)ssl proxy
+		//2)wss proxy
+		//3)ws proxy
+		switch(sourceType){
+		case PROXY:
+			if(!SecureType.SSL.equals(secureType)){
+				return false;
+			}
+		case WS:
+		case WS_PROXY:
+			break;
+		case WEB:
 			return false;
 		}
-		if(!SourceType.PROXY.equals(sourceType)){
-			return false;
-		}
-		if(!SecureType.SSL.equals(secureType)){
-			return false;
-		}
-		
 		Matcher serverMatcher=null;
 		if(!"".equals(sourceServer)&&sourceServer!=null){
 			if( sourceServerParser.getPort()!=ServerParser.WILD_PORT_NUMBER && 
