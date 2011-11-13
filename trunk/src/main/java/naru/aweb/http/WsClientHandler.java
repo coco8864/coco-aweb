@@ -339,23 +339,16 @@ public class WsClientHandler extends SslHandler implements Timer {
 			asyncClose(null);
 			return;
 		}
-//		responseHeaderLength=responseHeader.getHeaderLength();
 		String statusCode = responseHeader.getStatusCode();
-//		String transfer=responseHeader.getHeader(HeaderParser.TRANSFER_ENCODING_HEADER);
-//		String encoding=responseHeader.getHeader(HeaderParser.CONTENT_ENCODING_HEADER);
-//		isGzip=false;
-//		if(HeaderParser.CONTENT_ENCODING_GZIP.equalsIgnoreCase(encoding)){
-//			isGzip=true;
-//		}
-		
 		onWcResponseHeader(responseHeader);
-		if (!"101".equals(statusCode)) {
+		String headerKey=responseHeader.getHeader("Sec-WebSocket-Accept");
+		if (!"101".equals(statusCode) || !acceptKey.equals(headerKey)) {
+			logger.debug("WsClientHandler fail to handshake.statusCode:"+statusCode+" acceptKey:" + acceptKey +" headerKey:" +headerKey);
 			doEndWsClientFailure(stat, FAILURE_PROTOCOL);
 			asyncClose(null);
 			return;
 		}
-		//TODO acceptKeyチェック
-//		String accept=responseHeader.getHeader("Sec-WebSocket-Accept");
+		
 		String subprotocol=responseHeader.getHeader("Sec-WebSocket-Protocol");
 		onWcHandshaked(subprotocol);
 		

@@ -65,10 +65,10 @@ public class Scenario extends PoolBase{
 	}
 	
 	//TODO 幅を指定可能にする,主にconnectが集中しないようにするため
-	private double dispersion=1000;
+//	private double dispersion=1000;
 	private long calcThinkingtime(){
 		double rand=random.nextDouble()-0.5;
-		rand*=dispersion;//前後dispersion msの幅を作る
+		rand*=thinkingTime;//前後dispersion msの幅を作る
 		return thinkingTime+(long)rand;
 	}
 	

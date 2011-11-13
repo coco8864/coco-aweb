@@ -537,6 +537,24 @@ public class AccessLog extends PoolBase implements BufferGetter{
 			case SOURCE_TYPE_SSL_PROXY:
 				sb.append("sslProxy");
 				break;
+			case SOURCE_TYPE_WS:
+				sb.append("ws");
+				break;
+			case SOURCE_TYPE_WSS:
+				sb.append("wss");
+				break;
+			case SOURCE_TYPE_WS_HANDSHAKE:
+				sb.append("wsHandshake");
+				break;
+			case SOURCE_TYPE_WS_ON_MESSAGE:
+				sb.append("wsOnMessage");
+				break;
+			case SOURCE_TYPE_WS_POST_MESSAGE:
+				sb.append("wsPostMessage");
+				break;
+			case SOURCE_TYPE_SIMULATE:
+				sb.append("simulate");
+				break;
 			default:
 				sb.append("-");
 			}
