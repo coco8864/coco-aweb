@@ -533,6 +533,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 	@Override
 	public void onFinished() {
 		doEndWsClient();
+		super.onFinished();
 	}
 	
 }

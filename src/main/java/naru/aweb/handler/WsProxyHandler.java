@@ -77,12 +77,12 @@ public class WsProxyHandler extends  WebSocketHandler implements WsClient{
 	@Override
 	public void onWcClose(Object userContext,int stat) {
 		logger.debug("#onWcClose cid:"+getChannelId());
-		closeWebSocket();
+		closeWebSocket("500");
 	}
 	@Override
 	public void onWcFailure(Object userContext, int stat, Throwable t) {
 		logger.debug("#wcFailure cid:"+getChannelId());
-		closeWebSocket();
+		closeWebSocket("500");
 	}
 	@Override
 	public void onWcHandshaked(Object userContext,String subprotocol) {

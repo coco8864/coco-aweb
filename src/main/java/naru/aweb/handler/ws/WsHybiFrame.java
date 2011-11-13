@@ -164,7 +164,15 @@ public class WsHybiFrame {
 	}
 	
 	public static ByteBuffer[] createCloseFrame(boolean isMask, short code,String reason) {
-		return createFinFrame(PCODE_CLOSE, isMask, (ByteBuffer[])null);
+		ByteBuffer buffer=PoolManager.getBufferInstance();
+		buffer.putShort(code);
+		try {
+			buffer.put(reason.getBytes("utf-8"));
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException();
+		}
+		buffer.flip();
+		return createFinFrame(PCODE_CLOSE, isMask, BuffersUtil.toByteBufferArray(buffer));
 	}
 	
 	private enum ParseStat{
@@ -323,6 +331,10 @@ public class WsHybiFrame {
 		ByteBuffer payloadBuffer=null;
 		int readLen=0;
 		if(remain==0){//i“W‚È‚µ
+			if(payloadLength==0){
+				parseStat=ParseStat.END;
+				return true;
+			}
 			return false;
 		}else if(payloadLength>=(curPayloadPos+remain)){//‘S•”‚ğ‘ÎÛ‚Æ‚µ‚Ä‚æ‚¢
 			payloadBuffer=buffer;
