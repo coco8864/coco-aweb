@@ -23,6 +23,7 @@ public class ConnectChecker extends PoolBase implements Timer,WsClient{
 	private static Logger logger=Logger.getLogger(ConnectChecker.class);
 	private static Config config=Config.getConfig();
 	private List<WsClientHandler> clients=new ArrayList<WsClientHandler>();
+	private int failCount=0;
 	private String chId;
 	private int count;
 	private boolean isStop=false;
@@ -38,6 +39,7 @@ public class ConnectChecker extends PoolBase implements Timer,WsClient{
 	
 	public void init(int count,String chId){
 		this.count=count;
+		this.failCount=0;
 		this.chId=chId;
 		this.isStop=false;
 		queueManager=QueueManager.getInstance();
@@ -48,10 +50,14 @@ public class ConnectChecker extends PoolBase implements Timer,WsClient{
 		wsClientHandler.ref();
 		synchronized(this){
 			if(isStop){
+				wsClientHandler.unref(true);
 				return;
 			}
 			if(clients.size()>=count){
 				wsClientHandler.unref(true);
+				eventObj.put("connectCount", count);
+				eventObj.put("failCount", failCount);
+				queueManager.publish(chId, eventObj);
 				return;
 			}
 			wsClientHandler.startRequest(this, wsClientHandler, 10000, "/connect","connect","http://test");
@@ -59,13 +65,21 @@ public class ConnectChecker extends PoolBase implements Timer,WsClient{
 		}
 	}
 	
-	private synchronized void delWsClient(WsClientHandler wsClientHandler){
+	private synchronized void delWsClient(WsClientHandler wsClientHandler,boolean isFail){
+		if(isFail){
+			failCount++;
+		}
 		clients.remove(wsClientHandler);
 		wsClientHandler.unref();
-		if(clients.size()!=0){
+		int size=clients.size();
+		if(size!=0){
+			if(size<count){
+				addWsClient();
+			}
 			return;
 		}
 		eventObj.put("connectCount", 0);
+		eventObj.put("failCount", failCount);
 		if(isStop==false){
 			return;
 		}
@@ -113,6 +127,7 @@ public class ConnectChecker extends PoolBase implements Timer,WsClient{
 			curCount=clients.size();
 		}
 		eventObj.put("connectCount", curCount);
+		eventObj.put("failCount", failCount);
 		queueManager.publish(chId, eventObj);
 		stop();
 	}
@@ -120,7 +135,7 @@ public class ConnectChecker extends PoolBase implements Timer,WsClient{
 	@Override
 	public void onWcClose(Object userContext, int stat) {
 		WsClientHandler wsClientHandler=(WsClientHandler)userContext;
-		delWsClient(wsClientHandler);
+		delWsClient(wsClientHandler,false);
 	}
 
 	@Override
@@ -129,9 +144,9 @@ public class ConnectChecker extends PoolBase implements Timer,WsClient{
 
 	@Override
 	public void onWcFailure(Object userContext, int stat, Throwable t) {
-		logger.debug("#wcFailure",t);
+		logger.info("#wcFailure",t);
 		WsClientHandler wsClientHandler=(WsClientHandler)userContext;
-		delWsClient(wsClientHandler);
+		delWsClient(wsClientHandler,true);
 	}
 
 	@Override
