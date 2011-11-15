@@ -197,6 +197,26 @@ function perfProgress(){
 }
 perfTableRefresh();
 perfProgress();
+
+
+function checkConnect(){
+  var checkConnectionCb={
+  onComplete:function(msg){ph.log('onComplete');ph.dump(msg);},
+  onMessage:function(msg){ph.log('onMessage');ph.dump(msg);},
+  onError:function(msg){
+  ph.log('checkConnection onError:');
+  ph.dump(msg);
+  }
+ };
+ var connectCount=ph.jQuery('#connectCount').val();
+ ph.admin.doPramCommand(
+  'perf',
+  'checkConnection',
+  {count:connectCount,timeout:30000},
+  function(chId){ 
+  ph.queue.subscribeById(chId,checkConnectionCb)}
+  );
+ }
 </script>
 
 <h1>Performance list</h1>
@@ -221,9 +241,11 @@ memory:<span id="stTestMemory"></span>%</div>
 <option value="testBrowserCount>=10">browser数が10以上</option>
 <option value="count>=10">実行回数が10以上</option>
 </select>
-<input type="button" value="検索" onClick="perfTableRefresh();">
-<input type="button" value="csv" onClick="perfToCsv();">
-<input type="button" value="削除" onClick="if(confirm('stressデータを削除します.よろしいですか?'))perfDelete();">
+<input type="button" value="検索" onClick="perfTableRefresh();"/>
+<input type="button" value="csv" onClick="perfToCsv();"/>
+<input type="button" value="削除" onClick="if(confirm('stressデータを削除します.よろしいですか?'))perfDelete();"/>
+count:<input type="text" name="connectCount" size="8" />
+<input type="button" value="connect" onClick="checkConnect();" />
 <div style="margin: 0.4em 0.0em; padding: 0.0em 0.0em;background: #fff none; border: solid 0pt #000;">
 <table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
 <thead>
