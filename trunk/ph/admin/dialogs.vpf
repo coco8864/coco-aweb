@@ -237,6 +237,16 @@ function openEditDialog(digest,id,requestLine,part,readonly,chunk,gzip,charset){
 	}
 }
 
+function outputCommonArea(text,append){
+  var orgText;
+  if(append){
+    orgText=ph.jQuery("#commonOutputTextArea").val();
+  }else{
+    orgText="";
+  }
+  orgText=ph.jQuery("#commonOutputTextArea").val(orgText+text);
+}
+
 // --></script>
 ##イメージ表示用ダイアログ
 <div id="imageBox">
@@ -423,3 +433,10 @@ body:<input id="commissionAuthBody" size="64"><br/>
 <input type="button" value="save" onClick='addCommissionUrl();'>
 <input type="button" value="cancel" onClick="jQuery('#commissionAuthDialog').dialog('close')">
 </div> 
+
+##commonOutputダイアログ
+<div id="commonOutputDialog">
+<textarea name="commonOutputTextArea" id="commonOutputTextArea" rows="24" cols="72" ></textarea><br/>
+<input type="button" value="close" onClick="jQuery('#commonOutputDialog').dialog('close')">
+</div> 
+

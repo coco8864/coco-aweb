@@ -202,20 +202,28 @@ perfProgress();
 function checkConnect(){
   var checkConnectionCb={
   onComplete:function(msg){ph.log('onComplete');ph.dump(msg);},
-  onMessage:function(msg){ph.log('onMessage');ph.dump(msg);},
+  onMessage:function(msg){
+   ph.log('onMessage');
+   var d=msg.message;
+   outputCommonArea(d.connectCount+"\t"+d.time+"\t"+d.failCount+"\t"+d.useMemory+"\n",true);
+   ph.dump(msg);
+  },
   onError:function(msg){
-  ph.log('checkConnection onError:');
-  ph.dump(msg);
+   ph.log('checkConnection onError:');
+   ph.dump(msg);
   }
  };
  var connectCount=ph.jQuery('#connectCount').val();
  ph.admin.doPramCommand(
   'perf',
   'checkConnection',
-  {count:connectCount,timeout:30000},
+  {count:connectCount,maxFailCount:10},
   function(chId){ 
   ph.queue.subscribeById(chId,checkConnectionCb)}
   );
+  outputCommonArea("count\ttime\tfailcount\tmemory\n")
+  var dialog=jQuery("#commonOutputDialog");
+  dialog.dialog("open");
  }
 </script>
 
@@ -244,7 +252,7 @@ memory:<span id="stTestMemory"></span>%</div>
 <input type="button" value="検索" onClick="perfTableRefresh();"/>
 <input type="button" value="csv" onClick="perfToCsv();"/>
 <input type="button" value="削除" onClick="if(confirm('stressデータを削除します.よろしいですか?'))perfDelete();"/>
-count:<input type="text" name="connectCount" size="8" />
+count:<input type="text" id="connectCount" size="8" />
 <input type="button" value="connect" onClick="checkConnect();" />
 <div style="margin: 0.4em 0.0em; padding: 0.0em 0.0em;background: #fff none; border: solid 0pt #000;">
 <table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
