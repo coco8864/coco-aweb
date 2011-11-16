@@ -64,10 +64,10 @@ public class AdminPerfHandler extends WebServerHandler{
 		return chId;
 	}
 	
-	private String checkConnection(int count,long timeout){
+	private String checkConnection(int count,int maxFailCount,long timeout){
 		QueueManager queueManager=QueueManager.getInstance();
 		String chId=queueManager.createQueue(true);
-		ConnectChecker checker=ConnectChecker.start(count,timeout,chId);
+		ConnectChecker checker=ConnectChecker.start(count,maxFailCount,timeout,chId);
 		return chId;
 	}
 	
@@ -130,10 +130,11 @@ public class AdminPerfHandler extends WebServerHandler{
 			return;
 		}else if("checkConnection".equals(command)){
 			String count=parameter.getParameter("count");
-			String timeout=parameter.getParameter("timeout");
+			String maxFailCount=parameter.getParameter("maxFailCount");
+//			String timeout=parameter.getParameter("timeout");
 			String chId=null;
 			try {
-				chId = checkConnection(Integer.parseInt(count),Long.parseLong(timeout));
+				chId = checkConnection(Integer.parseInt(count),Integer.parseInt(maxFailCount),0);
 			} catch (NumberFormatException e) {
 			}
 			responseJson(chId);
