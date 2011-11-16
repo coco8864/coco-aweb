@@ -23,63 +23,85 @@ public class ConnectChecker extends PoolBase implements Timer,WsClient{
 	private static Logger logger=Logger.getLogger(ConnectChecker.class);
 	private static Config config=Config.getConfig();
 	private List<WsClientHandler> clients=new ArrayList<WsClientHandler>();
-	private int failCount=0;
+	private int failCount;
 	private String chId;
 	private int count;
-	private boolean isStop=false;
+	private int maxFailCount;
+	private boolean isStop;
 	private QueueManager queueManager;
+	private long timerId;
+	private long startTime;
+	private JSONObject eventObj=new JSONObject();
 	
-	public static ConnectChecker start(int count,long timeout,String chId){
+	public static ConnectChecker start(int count,int maxFailCount,long timeout,String chId){
 		ConnectChecker checker=(ConnectChecker)PoolManager.getInstance(ConnectChecker.class);
-		checker.init(count, chId);
+		checker.init(count, maxFailCount,chId);
+		checker.startTime=System.currentTimeMillis();
+		if(timeout>0){
+			checker.timerId=TimerManager.setTimeout(timeout, checker, null);
+		}else{
+			checker.timerId=TimerManager.INVALID_ID;
+		}
 		checker.run();
-		TimerManager.setTimeout(timeout, checker, null);
 		return checker;
 	}
 	
-	public void init(int count,String chId){
+	public void init(int count,int maxFailCount,String chId){
 		this.count=count;
+		this.maxFailCount=maxFailCount;
 		this.failCount=0;
 		this.chId=chId;
 		this.isStop=false;
 		queueManager=QueueManager.getInstance();
 	}
 	
-	private void addWsClient(){
+	private static Runtime runtime=Runtime.getRuntime();
+	private void publish(int count,int failCount){
+		eventObj.put("time",(System.currentTimeMillis()-startTime));
+		eventObj.put("connectCount", count);
+		eventObj.put("failCount", failCount);
+		eventObj.put("useMemory", (runtime.totalMemory()-runtime.freeMemory()));
+		queueManager.publish(chId, eventObj);
+	}
+	
+	private synchronized void addWsClient(){
+		if(isStop){
+			return;
+		}
+		int size=clients.size();
+		if((size%100)==0||size==count){
+			publish(size,failCount);
+		}
+		if(size>=count){
+			if(timerId==TimerManager.INVALID_ID){
+				stop();
+			}
+			return;
+		}
 		WsClientHandler wsClientHandler=WsClientHandler.create(false,config.getSelfDomain(),config.getInt(Config.SELF_PORT));
 		wsClientHandler.ref();
-		synchronized(this){
-			if(isStop){
-				wsClientHandler.unref(true);
-				return;
-			}
-			if(clients.size()>=count){
-				wsClientHandler.unref(true);
-				eventObj.put("connectCount", count);
-				eventObj.put("failCount", failCount);
-				queueManager.publish(chId, eventObj);
-				return;
-			}
-			wsClientHandler.startRequest(this, wsClientHandler, 10000, "/connect","connect","http://test");
-			clients.add(wsClientHandler);
-		}
+		wsClientHandler.startRequest(this, wsClientHandler, 10000, "/connect","connect",config.getAdminUrl());
+		clients.add(wsClientHandler);
 	}
 	
 	private synchronized void delWsClient(WsClientHandler wsClientHandler,boolean isFail){
-		if(isFail){
-			failCount++;
-		}
 		clients.remove(wsClientHandler);
 		wsClientHandler.unref();
 		int size=clients.size();
+		if(isFail){
+			failCount++;
+			if(failCount>=maxFailCount){
+				publish(size,failCount);
+				stop();
+			}
+		}
 		if(size!=0){
-			if(size<count){
+			if(isFail && size<count){
 				addWsClient();
 			}
 			return;
 		}
-		eventObj.put("connectCount", 0);
-		eventObj.put("failCount", failCount);
+		publish(0,failCount);
 		if(isStop==false){
 			return;
 		}
@@ -120,15 +142,13 @@ public class ConnectChecker extends PoolBase implements Timer,WsClient{
 		}
 	}
 
-	private JSONObject eventObj=new JSONObject();
 	public void onTimer(Object userContext) {
+		timerId=TimerManager.INVALID_ID;
 		int curCount;
 		synchronized(this){
 			curCount=clients.size();
 		}
-		eventObj.put("connectCount", curCount);
-		eventObj.put("failCount", failCount);
-		queueManager.publish(chId, eventObj);
+		publish(curCount,failCount);
 		stop();
 	}
 
