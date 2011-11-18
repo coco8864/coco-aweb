@@ -184,7 +184,7 @@ public class WsHybiFrame {
 		ERROR
 	}
 	
-	ParseStat parseStat;
+	private ParseStat parseStat;
 	private boolean isFin;
 	private byte pcode;
 	private boolean isMask;
@@ -219,32 +219,42 @@ public class WsHybiFrame {
 		switch(parseStat){
 		case START:
 			if(!parseStart(buffer)){
-				return false;
+				break;
+//				return false;
 			}
 		case LENGTH:
 			if(!parseLength(buffer)){
-				return false;
+				break;
+//				return false;
 			}
 		case MASK:
 			if(!parseMask(buffer)){
-				return false;
+				break;
+//				return false;
 			}
 		case PAYLOAD:
-			if(!parsePayload(buffer)){
-				return false;
+			boolean rc=parsePayload(buffer);
+			if(parseStat==ParseStat.PAYLOAD){
+				break;
 			}
 			if(pcode==PCODE_CLOSE){
 				//TODO 1バッファに入っていることが前提...
 				ByteBuffer payload=payloadBuffers.get(0);
 				closeCode=payload.getShort();
+				PoolManager.poolBufferInstance(payloadBuffers);
 			}
-			return true;
+			if(rc){//bufferを消費した場合
+				return true;
+			}
 		case END:
-			nextFrameBuffers.add(buffer);
+			if(buffer.hasRemaining()){
+				nextFrameBuffers.add(buffer);
+			}
 			return true;
 		default://ERROR
 		}
-		throw new RuntimeException("parseStat:"+parseStat);
+		return false;
+//		throw new RuntimeException("parseStat:"+parseStat);
 	}
 	
 	private ByteBuffer workBuffer=ByteBuffer.allocate(16);
@@ -275,6 +285,7 @@ public class WsHybiFrame {
 	private boolean parseStart(ByteBuffer buffer){
 		ByteBuffer readBuffer=fillBuffer(buffer,2);
 		if(readBuffer==null){
+			PoolManager.poolBufferInstance(buffer);
 			return false;
 		}
 		byte b1 = readBuffer.get();
@@ -294,18 +305,21 @@ public class WsHybiFrame {
 		}else if(rawLen==0x7E){
 			ByteBuffer readBuffer=fillBuffer(buffer,2);
 			if(readBuffer==null){
+				PoolManager.poolBufferInstance(buffer);
 				return false;
 			}
 			payloadLength=(int)readBuffer.getShort();
 		}else if(rawLen==0x7F){
 			ByteBuffer readBuffer=fillBuffer(buffer,4);
 			if(readBuffer==null){
+				PoolManager.poolBufferInstance(buffer);
 				return false;
 			}
 			payloadLength=readBuffer.getInt();
 		}
 		if(payloadLength>webSocketMessageLimit){
 			parseStat=ParseStat.ERROR;//パケットが長すぎる
+			PoolManager.poolBufferInstance(buffer);
 			return false;
 		}
 		parseStat=ParseStat.MASK;
@@ -319,6 +333,7 @@ public class WsHybiFrame {
 		}
 		ByteBuffer readBuffer=fillBuffer(buffer,4);
 		if(readBuffer==null){
+			PoolManager.poolBufferInstance(buffer);
 			return false;
 		}
 		readBuffer.get(maskBytes);
@@ -326,25 +341,30 @@ public class WsHybiFrame {
 		return true;
 	}
 	
+	//return bufferを全て処理した場合　true,残りがある場合false
 	private boolean parsePayload(ByteBuffer buffer){
 		int remain=buffer.remaining();
 		ByteBuffer payloadBuffer=null;
+		boolean rc=false;
 		int readLen=0;
 		if(remain==0){//進展なし
 			if(payloadLength==0){
 				parseStat=ParseStat.END;
-				return true;
+//				return true;
 			}
-			return false;
+			PoolManager.poolBufferInstance(buffer);
+			return true;
 		}else if(payloadLength>=(curPayloadPos+remain)){//全部を対象としてよい
 			payloadBuffer=buffer;
 			readLen=remain;
+			rc=true;
 		}else{//途中でFrameが終わっている
 			readLen=payloadLength-curPayloadPos;
 			int curPos=buffer.position();
 			payloadBuffer=PoolManager.duplicateBuffer(buffer);
 			payloadBuffer.limit(curPos+readLen);
 			buffer.position(curPos+readLen);
+			rc=false;
 		}
 		if(isMask){
 			//通信bufferを直接書き換えるので、traceで通信bufferを参照していた場合、maskBuffer結果が採取される可能性がある
@@ -354,9 +374,8 @@ public class WsHybiFrame {
 		curPayloadPos+=readLen;
 		if(payloadLength==curPayloadPos){
 			parseStat=ParseStat.END;
-			return true;
 		}
-		return false;
+		return rc;
 	}
 	
 	public boolean parseNextFrame(){
