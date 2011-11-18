@@ -67,7 +67,7 @@ public class AdminPerfHandler extends WebServerHandler{
 	private String checkConnection(int count,int maxFailCount,long timeout){
 		QueueManager queueManager=QueueManager.getInstance();
 		String chId=queueManager.createQueue(true);
-		ConnectChecker checker=ConnectChecker.start(count,maxFailCount,timeout,chId);
+		ConnectChecker.start(count,maxFailCount,timeout,chId);
 		return chId;
 	}
 	
