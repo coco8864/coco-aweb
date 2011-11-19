@@ -241,7 +241,6 @@ public class WsHybiFrame {
 				//TODO 1バッファに入っていることが前提...
 				ByteBuffer payload=payloadBuffers.get(0);
 				closeCode=payload.getShort();
-				PoolManager.poolBufferInstance(payloadBuffers);
 			}
 			if(rc){//bufferを消費した場合
 				return true;

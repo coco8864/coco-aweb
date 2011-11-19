@@ -273,6 +273,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 			for(ByteBuffer buffer:payloadBuffers){
 				codeConverte.putBuffer(buffer);
 			}
+			PoolManager.poolArrayInstance(payloadBuffers);
 			try {
 				onWcMessage(codeConverte.convertToString());
 			} catch (IOException e) {
@@ -287,6 +288,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 			break;
 		case WsHybiFrame.PCODE_CLOSE:
 			logger.debug("WsClientHandler#doFrame pcode CLOSE");
+			PoolManager.poolBufferInstance(payloadBuffers);
 			sendClose(WsHybiFrame.CLOSE_NORMAL,"OK");
 			doEndWsClient();
 			break;
@@ -297,7 +299,9 @@ public class WsClientHandler extends SslHandler implements Timer {
 			break;
 		case WsHybiFrame.PCODE_PONG:
 			logger.debug("WsClientHandler#doFrame pcode PONG");
+			PoolManager.poolBufferInstance(payloadBuffers);
 			//do nothing
+			break;
 		}
 		if( frame.parseNextFrame() ){
 			doFrame();

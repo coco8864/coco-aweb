@@ -82,7 +82,7 @@ public class WsHybi10 extends WsProtocol {
 		logger.debug("WsHybi10#doFrame cid:"+handler.getChannelId());
 		byte pcode=frame.getPcode();
 		ByteBuffer[] payloadBuffers=frame.getPayloadBuffers();
-		if(!frame.isFin()){
+		if(!frame.isFin()){//最終Frameじゃない
 			logger.debug("WsHybi10#doFrame not isFin");
 			if(pcode!=WsHybiFrame.PCODE_CONTINUE){
 				continuePcode=pcode;
@@ -99,6 +99,7 @@ public class WsHybi10 extends WsProtocol {
 			return;
 		}
 		if(pcode==WsHybiFrame.PCODE_CONTINUE){
+			//1つのメッセージが複数のFrameからできている場合
 			logger.debug("WsHybi10#doFrame pcode CONTINUE");
 			pcode=continuePcode;
 			for(ByteBuffer buffer:payloadBuffers){
@@ -120,6 +121,7 @@ public class WsHybi10 extends WsProtocol {
 			for(ByteBuffer buffer:payloadBuffers){
 				convertPutBuffer(buffer);
 			}
+			PoolManager.poolArrayInstance(payloadBuffers);
 			callTextOnMessage();
 			break;
 		case WsHybiFrame.PCODE_BINARY:
@@ -128,6 +130,7 @@ public class WsHybi10 extends WsProtocol {
 			break;
 		case WsHybiFrame.PCODE_CLOSE:
 			logger.debug("WsHybi10#doFrame pcode CLOSE");
+			PoolManager.poolBufferInstance(payloadBuffers);
 			sendClose(WsHybiFrame.CLOSE_NORMAL,"OK");
 			break;
 		case WsHybiFrame.PCODE_PING:
@@ -137,7 +140,9 @@ public class WsHybi10 extends WsProtocol {
 			break;
 		case WsHybiFrame.PCODE_PONG:
 			logger.debug("WsHybi10#doFrame pcode PONG");
+			PoolManager.poolBufferInstance(payloadBuffers);
 			//do nothing
+			break;
 		}
 		if( frame.parseNextFrame() ){
 			doFrame();
