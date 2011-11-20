@@ -12,7 +12,7 @@ import naru.async.store.DataUtil;
 import naru.aweb.http.HeaderParser;
 
 public class WsHybi10 extends WsProtocol {
-	static private Logger logger=Logger.getLogger(WsHybi10.class);
+	private static Logger logger=Logger.getLogger(WsHybi10.class);
 	private static final String SPEC="hybi10";
 	private static final String GUID="258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 	private static final int SUPPORT_VERSION=13;

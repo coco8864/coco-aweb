@@ -2,7 +2,9 @@ package naru.aweb.handler.ws;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
@@ -12,6 +14,7 @@ import naru.async.pool.PoolManager;
 import naru.aweb.config.Config;
 import naru.aweb.handler.WebSocketHandler;
 import naru.aweb.http.HeaderParser;
+import naru.aweb.mapping.MappingResult;
 import naru.aweb.util.CodeConverter;
 
 /**
@@ -43,22 +46,9 @@ public abstract class WsProtocol extends PoolBase{
 	
 	private static int webSocketMessageLimit=config.getInt("webSocketMessageLimit",2048000);
 	private static int webSocketPingInterval=config.getInt("webSocketPingInterval",0);
-	private static Set<String> webSocketAllowSubprotocols=null;
+//	private static Set<String> webSocketAllowSubprotocols=null;
 	private static Set<String> webSocketSpecs=null;
 	private static boolean isWebSocketResponseMask=config.getBoolean("isWebSocketResponseMask",false);
-	
-	private static void setupWebSocketAllowSubprotocols(String subprotocols){
-		webSocketAllowSubprotocols=null;
-		if(subprotocols!=null){
-			if("*".equals(subprotocols.trim())){
-				return;
-			}
-			webSocketAllowSubprotocols=new HashSet<String>();
-			for(String subprotocol:subprotocols.split(",")){
-				webSocketAllowSubprotocols.add(subprotocol.trim());
-			}
-		}
-	}
 	
 	private static void setupWebSocketSpecs(String specs){
 		webSocketSpecs=new HashSet<String>();
@@ -70,8 +60,8 @@ public abstract class WsProtocol extends PoolBase{
 	}
 	
 	static{
-		String subprotocols=config.getString("webSocketAllowSubprotocols");
-		setupWebSocketAllowSubprotocols(subprotocols);
+//		String subprotocols=config.getString("webSocketAllowSubprotocols");
+//		setupWebSocketAllowSubprotocols(subprotocols);
 		String specs=config.getString("websocketSpecs");
 		setupWebSocketSpecs(specs);
 	}
@@ -84,17 +74,17 @@ public abstract class WsProtocol extends PoolBase{
 		return webSocketPingInterval;
 	}
 
-	public static boolean isUseSubprotocol(){
-		return (webSocketAllowSubprotocols!=null);
+	public boolean isUseSubprotocol(){
+		return (subprotocolSet!=null && subprotocolSet.size()>0);
 	}
 	
-	public static String checkSubprotocol(String subprotocol){
+	public String checkSubprotocol(String subprotocol){
 		String[] protocols=subprotocol.split(",");
-		if(webSocketAllowSubprotocols==null){
+		if(!isUseSubprotocol()){
 			return protocols[0];
 		}
 		for(String protocol:protocols){
-			if(webSocketAllowSubprotocols.contains(protocol)){
+			if(subprotocolSet.contains(protocol)){
 				return protocol;
 			}
 		}
@@ -115,10 +105,12 @@ public abstract class WsProtocol extends PoolBase{
 		config.setProperty("webSocketPingInterval", webSocketPingInterval);
 	}
 
+	/*
 	public static void setWebSocketAllowSubprotocols(String subprotocols) {
 		setupWebSocketAllowSubprotocols(subprotocols);
 		config.setProperty("webSocketAllowSubprotocols",subprotocols);
 	}
+	*/
 
 	public static void setWebSocketSpecs(String specs) {
 		setupWebSocketSpecs(specs);
@@ -133,21 +125,45 @@ public abstract class WsProtocol extends PoolBase{
 		WsProtocol.isWebSocketResponseMask = isWebSocketResponseMask;
 		config.setProperty("isWebSocketResponseMask",isWebSocketResponseMask);
 	}
+	/* ñàâÒsubprotocolÇâêÕÇµÇΩÇ≠Ç»Ç¢ mappingÇ∆ëŒâûïtÇØÇƒÇ±Ç±Ç≈äoÇ¶ÇÈ*/
+	private static Map<Long,Set<String>>mappingSubprotocol=new HashMap<Long,Set<String>>();
 	
-	public static WsProtocol createWsProtocol(HeaderParser requestHeader){
+	public static WsProtocol createWsProtocol(HeaderParser requestHeader,MappingResult mapping){
+		WsProtocol wsProtocol=null;
+		Long id=mapping.getMapping().getId();
+		Set<String> subprotocolSet=(Set<String>)mappingSubprotocol.get(id);
+		if(subprotocolSet==null){
+//			mapping.getMapping().getId();
+			String subprotocol=(String)mapping.getOption("subprotocol");
+			subprotocolSet=new HashSet<String>();
+			if(subprotocol!=null){
+				String[] subprotocols=subprotocol.split(",");
+				for(String subprot:subprotocols){
+					subprot=subprot.trim();
+					if(subprot.length()==0){
+						continue;
+					}
+					subprotocolSet.add(subprot);
+				}
+				mappingSubprotocol.put(id,subprotocolSet);
+			}
+		}
 		String key=requestHeader.getHeader(SEC_WEBSOCKET_KEY);
 		String key1=requestHeader.getHeader(SEC_WEBSOCKET_KEY1);
 		if(key!=null){
-			return (WsProtocol)PoolManager.getInstance(WsHybi10.class);
+			wsProtocol=(WsProtocol)PoolManager.getInstance(WsHybi10.class);
 		}else if(key1==null){
-			return (WsProtocol)PoolManager.getInstance(WsHixie75.class);
+			wsProtocol=(WsProtocol)PoolManager.getInstance(WsHixie75.class);
 		}else{
-			return (WsProtocol)PoolManager.getInstance(WsHixie76.class);
+			wsProtocol=(WsProtocol)PoolManager.getInstance(WsHixie76.class);
 		}
+		wsProtocol.setSubprotocolSet(subprotocolSet);
+		return wsProtocol;
 	}
 	
 	protected WebSocketHandler handler;
 	private CodeConverter codeConverte=new CodeConverter();
+	private Set<String> subprotocolSet;
 	
 	@Override
 	public void recycle() {
@@ -155,6 +171,10 @@ public abstract class WsProtocol extends PoolBase{
 		codeConverte.recycle();
 	}
 	
+	private void setSubprotocolSet(Set<String> subprotocolSet) {
+		this.subprotocolSet = subprotocolSet;
+	}
+
 	protected void convertPutBuffer(ByteBuffer buffer){
 		codeConverte.putBuffer(buffer);
 	}

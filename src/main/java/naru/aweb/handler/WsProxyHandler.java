@@ -56,8 +56,10 @@ public class WsProxyHandler extends  WebSocketHandler implements WsClient{
 		wsClientHandler.postMessage(message);
 	}
 	
+	/* ブラウザからcloseが送られた */
 	@Override
 	public void onWsClose(short code, String reason) {
+		wsClientHandler.doClose(code,reason);
 	}
 	
 	/* WebSocketサーバからの通知メソッド */
@@ -74,8 +76,9 @@ public class WsProxyHandler extends  WebSocketHandler implements WsClient{
 	public void onWcConnected(Object userContext) {
 		
 	}
+	/* サーバからcloseが送られた場合、ブラウザにもcode,reasonを送りたいが... */
 	@Override
-	public void onWcClose(Object userContext,int stat) {
+	public void onWcClose(Object userContext,int stat,short closeCode,String closeReason) {
 		logger.debug("#onWcClose cid:"+getChannelId());
 		closeWebSocket("500");
 	}

@@ -1,16 +1,21 @@
 package naru.aweb.handler.ws;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import org.apache.log4j.Logger;
+
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.aweb.config.Config;
+import naru.aweb.util.CodeConverter;
 
 public class WsHybiFrame {
+	private static Logger logger=Logger.getLogger(WsHybiFrame.class);
 	private static Config config=Config.getConfig(); 
 	private static Random random=config.getRandom("WsHibiFrame"+System.currentTimeMillis());
 	private static int webSocketMessageLimit=config.getInt("webSocketMessageLimit",2048000);
@@ -194,8 +199,9 @@ public class WsHybiFrame {
 	private byte[] maskBytes=new byte[4];
 	private List<ByteBuffer> payloadBuffers=new ArrayList<ByteBuffer>();
 	private List<ByteBuffer> nextFrameBuffers=new ArrayList<ByteBuffer>();
+	
 	private short closeCode;
-	private String reason;
+	private String closeReason;
 	
 	public WsHybiFrame(){
 		init();
@@ -238,9 +244,7 @@ public class WsHybiFrame {
 				break;
 			}
 			if(pcode==PCODE_CLOSE){
-				//TODO 1バッファに入っていることが前提...
-				ByteBuffer payload=payloadBuffers.get(0);
-				closeCode=payload.getShort();
+				parseClosePayload();
 			}
 			if(rc){//bufferを消費した場合
 				return true;
@@ -254,6 +258,39 @@ public class WsHybiFrame {
 		}
 		return false;
 //		throw new RuntimeException("parseStat:"+parseStat);
+	}
+	
+	private CodeConverter codeConverte=new CodeConverter();
+	private void parseClosePayload(){
+		if(payloadBuffers.size()==0){
+			closeCode=CLOSE_ABNORMAL_CLOSURE;
+			closeReason=null;
+			return;
+		}
+		boolean isParseCode=false;
+		try {
+			codeConverte.init("utf-8");
+			for(ByteBuffer buffer:payloadBuffers){
+				if(isParseCode==false){
+					ByteBuffer readBuffer=fillBuffer(buffer,2);
+					if(readBuffer!=null){
+						closeCode=readBuffer.getShort();
+						isParseCode=true;
+					}else{
+						PoolManager.poolBufferInstance(buffer);
+						continue;
+					}
+				}
+				if(buffer.hasRemaining()){
+					codeConverte.putBuffer(buffer);
+				}
+			}
+			closeReason=codeConverte.convertToString();
+		} catch (IOException e) {
+			logger.error("parseClosePayload error.",e);
+		}finally{
+			payloadBuffers.clear();
+		}
 	}
 	
 	private ByteBuffer workBuffer=ByteBuffer.allocate(16);
@@ -427,6 +464,14 @@ public class WsHybiFrame {
 		}
 		payloadBuffers.clear();
 		return payload;
+	}
+
+	public short getCloseCode() {
+		return closeCode;
+	}
+
+	public String getCloseReason() {
+		return closeReason;
 	}
 	
 }

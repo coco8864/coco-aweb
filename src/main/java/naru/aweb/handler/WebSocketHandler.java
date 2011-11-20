@@ -228,36 +228,35 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		/* logoff時にonLogoutイベントが通知されるように設定 */
 		RequestContext requestContext=getRequestContext();
 		requestContext.registerLogoutEvnet(this);
-		
-		wsProtocol=WsProtocol.createWsProtocol(requestHeader);
+		wsProtocol=WsProtocol.createWsProtocol(requestHeader,getRequestMapping());
 		if(wsProtocol==null){
 			completeResponse("400");
 			logger.warn("not found WebSocket Protocol");
 			return;
 		}
 		logger.debug("wsProtocol class:"+wsProtocol.getClass().getName());
-		startWebSocketResponse(requestHeader,wsProtocol);
-	}
-	
-	/* すぐにhandshakeしたくない場合は、このメソッドをオーバライドする */
-	/* 準備が整ったところで doHandshakeを呼び出せば処理を継続できる */
-	public 	void startWebSocketResponse(HeaderParser requestHeader,WsProtocol wsProtocol){
 		//subprotocolを特定
-		String subprotocol=null;
-		String webSocketProtocol=wsProtocol.getRequestSubProtocols(requestHeader);
-		if(webSocketProtocol==null){
-			if(WsProtocol.isUseSubprotocol()){//subprotocolを必要とするのにない
+		String selectSubprotocol=null;
+		String reqSubprotocols=wsProtocol.getRequestSubProtocols(requestHeader);
+		if(reqSubprotocols==null){
+			if(wsProtocol.isUseSubprotocol()){//subprotocolを必要とするのにない
 				completeResponse("400");
 				return;
 			}
 		}else{
-			subprotocol=WsProtocol.checkSubprotocol(webSocketProtocol);
-			if(subprotocol==null){//subprotocolが一致しない
-				logger.debug("WsHybi10#suprotocol error.webSocketProtocol:"+webSocketProtocol);
+			selectSubprotocol=wsProtocol.checkSubprotocol(reqSubprotocols);
+			if(selectSubprotocol==null){//subprotocolが一致しない
+				logger.debug("WsHybi10#suprotocol error.webSocketProtocol:"+reqSubprotocols);
 				completeResponse("400");
 				return;
 			}
 		}
+		startWebSocketResponse(requestHeader,selectSubprotocol);
+	}
+	
+	/* すぐにhandshakeしたくない場合は、このメソッドをオーバライドする */
+	/* 準備が整ったところで doHandshakeを呼び出せば処理を継続できる */
+	public 	void startWebSocketResponse(HeaderParser requestHeader,String subprotocol){
 		doHandshake(subprotocol);
 	}
 	

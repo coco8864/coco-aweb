@@ -19,20 +19,15 @@ public class WSConnectionHandler extends WebSocketHandler {
 	private static Logger logger=Logger.getLogger(WebSocketHandler.class);
 	private static Config config=Config.getConfig();
 	
-	public 	void startWebSocketResponse(HeaderParser requestHeader,WsProtocol wsProtocol){
-		String headerSsubprotocols=wsProtocol.getRequestSubProtocols(requestHeader);
+	@Override
+	public 	void startWebSocketResponse(HeaderParser requestHeader,String subprotocol){
 		MappingResult mapping=getRequestMapping();
-		String subprotocol=(String)mapping.getOption("subprotocol");
-		if(subprotocol!=null){
-			if(!subprotocol.equals(headerSsubprotocols)){
-				closeWebSocket("403");
-			}
-		}
 		String ip=(String)mapping.getOption("ip");
 		if(ip!=null){
 			String remoteIp=getRemoteIp();
 			if(ip.equals(remoteIp)){
 				closeWebSocket("403");
+				return;
 			}
 		}
 		//handshakeŠJŽn

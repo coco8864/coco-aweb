@@ -153,10 +153,10 @@ public class MappingResult extends PoolBase {
 	}
 
 	// ˆ—‚Ì‰ß’ö‚ÅDestination‚ğ•ÏX‚µ‚½‚¢ê‡AResult‘w‚ÅŠo‚¦‚é
-	private Map<String, String> curOption = new HashMap<String, String>();
+	private Map<String, Object> curOption = new HashMap<String, Object>();
 
 	public Object getOption(String key) {
-		String value = curOption.get(key);
+		Object value = curOption.get(key);
 		if (value != null) {
 			return value;
 		}
@@ -166,7 +166,7 @@ public class MappingResult extends PoolBase {
 		return mapping.getOption(key);
 	}
 
-	public void setOption(String key, String value) {
+	public void setOption(String key, Object value) {
 		curOption.put(key, value);
 	}
 

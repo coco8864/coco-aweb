@@ -189,7 +189,7 @@ public class ConnectChecker implements Timer,WsClient{
 	}
 
 	@Override
-	public void onWcClose(Object userContext, int stat) {
+	public void onWcClose(Object userContext, int stat,short closeCode,String closeReason) {
 		WsClientHandler wsClientHandler=(WsClientHandler)userContext;
 		delWsClient(wsClientHandler,false);
 	}
