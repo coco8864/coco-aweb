@@ -23,7 +23,7 @@ public interface WsClient {
 	public void onWcHandshaked(Object userContext,String subprotocol);
 	
 	//終了時
-	public void onWcClose(Object userContext,int stat);
+	public void onWcClose(Object userContext,int stat,short closeCode,String colseReason);
 	//エラー終了時
 	public void onWcFailure(Object userContext,int stat,Throwable t);
 	//メッセージ受信時

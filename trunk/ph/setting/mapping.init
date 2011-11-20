@@ -17,6 +17,6 @@
 16={"realHostName":"sampleHost","destinationPath":"/","destinationServer":"$1","destinationType":"HTTPS","enabled":false,"notes":"ssl proxy sample","options":"{peek:false,auth:{scheme:\\"basic\\",realm:\\"sampleRealm\\",roles:\\"role1\\"}}","secureType":"SSL","sourcePath":"/","sourceServer":"*","sourceType":"PROXY"}
 17={"realHostName":"mainHost","destinationPath":"/","destinationServer":"$1","destinationType":"WS","enabled":true,"notes":"web socket proxy trace","options":"{logType:\\"trace\\",pac:true}","secureType":"PLAIN","sourcePath":"/","sourceServer":"ph.*","sourceType":"WS_PROXY"}
 18={"realHostName":"mainHost","destinationPath":"/","destinationServer":"$1","destinationType":"WSS","enabled":true,"notes":"web socket ssl proxy trace","options":"{logType:\\"trace\\",pac:true}","secureType":"SSL","sourcePath":"/","sourceServer":"ph.*","sourceType":"WS_PROXY"}
-19={"realHostName":"mainHost","destinationPath":"/","destinationServer":"naru.aweb.handler.WSConnectionHandler","destinationType":"HANDLER","enabled":true,"notes":"websocket queue","options":"{sessionUpdate:false}","secureType":"PLAIN","sourcePath":"/connect","sourceServer":"","sourceType":"WS"}
+19={"realHostName":"mainHost","destinationPath":"/","destinationServer":"naru.aweb.handler.WSConnectionHandler","destinationType":"HANDLER","enabled":true,"notes":"for connect test","options":"{sessionUpdate:false,subprotocol:\\"connect\\"}","secureType":"PLAIN","sourcePath":"/connect","sourceServer":"","sourceType":"WS"}
 
 

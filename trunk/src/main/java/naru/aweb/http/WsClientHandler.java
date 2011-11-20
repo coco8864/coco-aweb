@@ -290,7 +290,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 			logger.debug("WsClientHandler#doFrame pcode CLOSE");
 			PoolManager.poolBufferInstance(payloadBuffers);
 			sendClose(WsHybiFrame.CLOSE_NORMAL,"OK");
-			doEndWsClient();
+			doEndWsClient(frame.getCloseCode(),frame.getCloseReason());
 			break;
 		case WsHybiFrame.PCODE_PING:
 			logger.debug("WsClientHandler#doFrame pcode PING");
@@ -439,8 +439,8 @@ public class WsClientHandler extends SslHandler implements Timer {
 		postMessage(BuffersUtil.toByteBufferArray(message));
 	}
 	
-	public final void doClose(){
-		sendClose(WsHybiFrame.CLOSE_NORMAL,"OK");
+	public final void doClose(short closeCode,String closeReason){
+		sendClose(closeCode,closeReason);
 	}
 	
 	/*
@@ -495,7 +495,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 		}
 	}
 
-	private synchronized void doEndWsClient() {
+	private synchronized void doEndWsClient(short closeCode,String closeReason) {
 		logger.debug("#endWsClient cid:"+getChannelId() +":wsClient:"+wsClient);
 		int lastStat=this.stat;
 		this.stat=STAT_END;
@@ -506,7 +506,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 		Object wkUserContext=userContext;
 		setWsClient(null);
 		userContext=null;
-		wkWebClient.onWcClose(wkUserContext,lastStat);
+		wkWebClient.onWcClose(wkUserContext,lastStat,closeCode,closeReason);
 	}
 
 	private void doEndWsClientFailure(int stat,Throwable t) {
@@ -536,7 +536,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 	
 	@Override
 	public void onFinished() {
-		doEndWsClient();
+		doEndWsClient(WsHybiFrame.CLOSE_ABNORMAL_CLOSURE,null);
 		super.onFinished();
 	}
 	
