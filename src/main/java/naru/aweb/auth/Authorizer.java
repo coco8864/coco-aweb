@@ -377,7 +377,7 @@ public class Authorizer implements Timer{
 			synchronized(secondaryId){
 				secondaryId.setPrimaryId(primaryId);
 				secondaryId.setAuthSession(secondarySession);
-				secondaryId.setMapping(mapping);
+//				secondaryId.setMapping(mapping);
 				return true;
 			}
 		}
@@ -416,7 +416,8 @@ public class Authorizer implements Timer{
 	 * @param url
 	 * @return pathOnceIdからPrimaryIdの可能性がある、SessionIdを返却する。(ロックをはずすため、開放される可能性あり）
 	 */
-	public String createSecondaryIdFromPathOnceId(String pathId,String url,Mapping mapping){
+	public String createSecondarySetCookieStringFromPathOnceId(String pathId,String url,Mapping mapping,
+			boolean isCookieSecure,String cookieDomain,String cookiePath) {			
 		SessionId pathOnceId = getSessionId(Type.PATH_ONCE,pathId);
 		if (pathOnceId == null) {
 			return null;
@@ -427,10 +428,10 @@ public class Authorizer implements Timer{
 		}
 		
 		//SecondaryIdは、create時と、内容設定時の２回lockする
-		SessionId secondaryId = SessionId.createSecondaryId();//1回目
+		SessionId secondaryId = SessionId.createSecondaryId(isCookieSecure,cookieDomain,cookiePath);//1回目
 //		String cookieString=secondaryId.getSetCookieString(cookiePath, isSecure);
 		if( setupSecondaryId(secondaryId, primaryId, pathId, pathOnceId, url, mapping) ){//2回目
-			return secondaryId.getId();
+			return secondaryId.getSetCookieString();
 		}
 		secondaryId.remove();
 		return null;
@@ -457,8 +458,9 @@ public class Authorizer implements Timer{
 		return pathOnceId;
 	}
 
-	public SessionId createTemporaryId(String url) {
-		SessionId temporaryId = SessionId.createTemporaryId(url);
+	public SessionId createTemporaryId(String url,
+			boolean isCookieSecure,String cookieDomain,String cookiePath) {
+		SessionId temporaryId = SessionId.createTemporaryId(url,isCookieSecure,cookieDomain,cookiePath);
 		return temporaryId;
 	}
 	
