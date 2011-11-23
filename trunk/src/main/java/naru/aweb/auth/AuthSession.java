@@ -54,7 +54,7 @@ public class AuthSession extends PoolBase{
 		return secodarySession;
 	}
 	
-	public synchronized AuthSession getSecondarySession(boolean isCookieSecure,String cookieDomain,String cookiePath){
+	public synchronized AuthSession getSecondarySession(String authUrl){
 		if(isLogout){
 			return null;
 		}
@@ -63,7 +63,7 @@ public class AuthSession extends PoolBase{
 			return null;
 		}
 		for(AuthSession secondarySession:secandarySessions){
-			if( secondarySession.getSessionId().isCookieMatch(isCookieSecure, cookieDomain, cookiePath) ){
+			if( secondarySession.getSessionId().isCookieMatch(authUrl) ){
 				return secondarySession;
 			}
 		}
