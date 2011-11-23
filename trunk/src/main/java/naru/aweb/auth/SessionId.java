@@ -71,23 +71,28 @@ public class SessionId extends PoolBase{
 		return Cookie.formatSetCookieHeader(SESSION_ID, SESSION_ID, null, path,0, isSecure);
 	}
 
-	public static SessionId createSecondaryId() {
-		return createSessionId(Type.SECONDARY,null,null,null);
+	public static SessionId createSecondaryId(boolean isCookieSecure,String cookieDomain,String cookiePath) {
+		return createSessionId(Type.SECONDARY,null,null,null,isCookieSecure, cookieDomain, cookiePath);
 	}
 	
-	public static SessionId createTemporaryId(String url) {
-		return createSessionId(Type.TEMPORARY,url,null,null);
+	public static SessionId createTemporaryId(String url,
+			boolean isCookieSecure,String cookieDomain,String cookiePath) {
+		return createSessionId(Type.TEMPORARY,url,null,null,isCookieSecure, cookieDomain, cookiePath);
 	}
 	
+	//cookieに設定されないのでcookie関連はダミー
 	public static SessionId createPathOnceId(String url,SessionId primaryId) {
-		return createSessionId(Type.PATH_ONCE,url,primaryId,null);
+		return createSessionId(Type.PATH_ONCE,url,primaryId,null,
+				false,null,null);
 	}
 	
 	public static SessionId createPrimaryId(AuthSession authSession) {
-		return createSessionId(Type.PRIMARY,null,null,authSession);
+		return createSessionId(Type.PRIMARY,null,null,authSession,
+				authorizer.isAuthSsl(), config.getSelfDomain()+config.getInt(Config.SELF_PORT), authorizer.getAuthPath());
 	}
 
-	public static SessionId createSessionId(Type type,String url,SessionId primaryId,AuthSession authSession) {
+	public static SessionId createSessionId(Type type,String url,SessionId primaryId,AuthSession authSession,
+			boolean isCookieSecure,String cookieDomain,String cookiePath) {
 		SessionId sessionId = (SessionId) PoolManager.getInstance(SessionId.class);
 		sessionId.type=type;
 		sessionId.isValid = true;
@@ -98,6 +103,10 @@ public class SessionId extends PoolBase{
 			authSession.setSessionId(sessionId);
 		}
 		sessionId.lastAccessTime = System.currentTimeMillis();
+		sessionId.isCookieSecure=isCookieSecure;
+		sessionId.cookieDomain=cookieDomain;
+		sessionId.cookiePath=cookiePath;
+		
 		//idの生成は、authorizerに任せる
 		authorizer.registerSessionId(sessionId);
 		return sessionId;
@@ -165,7 +174,27 @@ public class SessionId extends PoolBase{
 	private SessionId primaryId;
 	private String url;
 	private long lastAccessTime;
-	private Mapping mapping;//secondary用の場合、どのmapping用のSessionIdか
+	
+	/* secondaryIdが単一のmappingと結びつくとは限らない WebSocket対応*/
+	//	private Mapping mapping;//secondary用の場合、どのmapping用のSessionIdか
+	/* secondaryIdがどの範囲で有効かを保持する WebSocket対応*/
+	private boolean isCookieSecure;
+	private String cookieDomain;
+	private String cookiePath;
+	
+	/* primaryからCookie的に該当するsecondaryの存在をチェックする */
+	public boolean isCookieMatch(boolean isCookieSecure,String cookieDomain,String cookiePath){
+		if(this.isCookieSecure!=isCookieSecure){
+			return false;
+		}
+		if(!this.cookieDomain.equals(cookieDomain)){
+			return false;
+		}
+		if(!this.cookiePath.equals(cookiePath)){
+			return false;
+		}
+		return true;
+	}
 
 	/*
 	public void onTimer(Object userContext) {
@@ -277,8 +306,19 @@ public class SessionId extends PoolBase{
 		this.id=id;
 	}
 
+	public void setCookieInfo(boolean isCookieSecure,String cookieDomain,String cookiePath){
+		this.isCookieSecure=isCookieSecure;
+		this.cookieDomain=cookieDomain;
+		this.cookiePath=cookiePath;
+	}
+	
+	/*
 	public String getSetCookieString(String path, boolean isSecure) {
 		return Cookie.formatSetCookieHeader(SESSION_ID, getId(), null, path,-1, isSecure);
+	}
+	*/
+	public String getSetCookieString() {
+		return Cookie.formatSetCookieHeader(SESSION_ID, getId(), null, cookiePath,-1, isCookieSecure);
 	}
 	
 	public String encodeUrl() {
@@ -375,8 +415,14 @@ public class SessionId extends PoolBase{
 		return authId;
 	}
 
+	/*
 	public void setMapping(Mapping mapping) {
 		this.mapping=mapping;
 	}
-
+	
+	public Mapping getMapping(){
+		return mapping;
+	}
+	*/
+	
 }

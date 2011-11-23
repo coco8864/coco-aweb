@@ -118,7 +118,7 @@ public class AuthHandler extends WebServerHandler {
 			return null;
 		}
 		SessionId primaryId = authorizer.createPrimaryId(authSession);
-		String setCookieString = primaryId.getSetCookieString(authorizer.getAuthPath(),authorizer.isAuthSsl());
+		String setCookieString = primaryId.getSetCookieString();
 		if(url==null){
 			redirect(config.getPublicWebUrl(), setCookieString);//doneResponse("200","authentication success.");
 			return null;
@@ -234,10 +234,14 @@ public class AuthHandler extends WebServerHandler {
 			url=urlSb.toString();
 		}
 		String cookiePath = null;
+		String cookieDomain = null;
 		if (requestHeader.isProxy()) {
 			cookiePath = "/";
+			cookieDomain=requestHeader.getServer().toString();
 		} else {
 			cookiePath = mapping.getSourcePath();
+			cookieDomain=requestHeader.getServer().toString();
+//			cookieDomain=mapping.config.getSelfDomain();xxxx
 		}
 		Mapping m=mapping.getMapping();
 		//pathIdがあるか？cookieIdがあるか？有効か？
@@ -246,22 +250,19 @@ public class AuthHandler extends WebServerHandler {
 			if (url.endsWith(cookiePath) && !url.endsWith("/")) {
 				url = url + "/";// 戻ってきた際には、/xxx;phId=xxxとなるが、chromeではcookieonceが付加されない
 			}
-			SessionId temporaryId = authorizer.createTemporaryId(url);
-			String setCookieString = temporaryId.getSetCookieString(cookiePath, isSsl());
+			SessionId temporaryId = authorizer.createTemporaryId(url,isSsl(),cookieDomain,cookiePath);
+			String setCookieString = temporaryId.getSetCookieString();
 			String authId=temporaryId.getAuthId();
 			redirectAuth(authId, setCookieString);
 			return;
 		}
 		
 		//有効なPathOnceIdが付加されているか、権限はあるか？
-		String secondaryId=authorizer.createSecondaryIdFromPathOnceId(pathId,url,m);
-		if(secondaryId==null){
+		String setCookieString=authorizer.createSecondarySetCookieStringFromPathOnceId(pathId,url,m,isSsl(),cookieDomain,cookiePath);
+		if(setCookieString==null){
 			forbidden("fail to authorize.");
 			return;
 		}
-		// redirect self
-		// keepAliveContext.setAuthSession(secondaryId.getAuthSessionFromPrimary());
-		String setCookieString = Cookie.formatSetCookieHeader(SessionId.SESSION_ID,secondaryId,null, cookiePath,-1, isSsl());
 		redirect(url, setCookieString);
 	}
 	
@@ -283,7 +284,7 @@ public class AuthHandler extends WebServerHandler {
 		}
 		AuthSession authSession=temporaryId.popAuthSession();
 		SessionId primaryId = authorizer.createPrimaryId(authSession);
-		String setCookieString = primaryId.getSetCookieString(authorizer.getAuthPath(),authorizer.isAuthSsl());
+		String setCookieString = primaryId.getSetCookieString();
 		setCookie(setCookieString);
 		String url=temporaryId.getUrl();
 		if(url!=null){
@@ -311,10 +312,11 @@ public class AuthHandler extends WebServerHandler {
 			String path=mapping.getResolvePath();
 			String url=requestHeader.getAddressBar(isSsl());
 			String cookiePath=mapping.getSourcePath();
+			String cookieDomain=requestHeader.getServer().toString();
 			if(AJAX_AUTHID_PATH.equals(path)){//WEB && POST
 				url=url.substring(0, url.length()-AJAX_AUTHID_PATH.length());
-				SessionId temporaryId = authorizer.createTemporaryId(url);
-				String setCookieString = temporaryId.getSetCookieString(cookiePath, isSsl());
+				SessionId temporaryId = authorizer.createTemporaryId(url,isSsl(),cookieDomain,cookiePath);
+				String setCookieString = temporaryId.getSetCookieString();
 				setCookie(setCookieString);
 				String authId=temporaryId.getAuthId();
 				JSONObject json=new JSONObject();
@@ -324,13 +326,15 @@ public class AuthHandler extends WebServerHandler {
 			}else if(AJAX_SETAUTH_PATH.equals(path)){//WEB && POST
 				url=url.substring(0, url.length()-AJAX_SETAUTH_PATH.length());
 				String pathId=parameter.getParameter("pathOnceId");
-				String secondaryId = authorizer.createSecondaryIdFromPathOnceId(pathId,url,mapping.getMapping());
+				String setCookieString = authorizer.createSecondarySetCookieStringFromPathOnceId(
+						pathId,url,mapping.getMapping(),
+						isSsl(),cookieDomain,cookiePath);
 				JSONObject json=new JSONObject();
-				if(secondaryId!=null){
-					String setCookieString = Cookie.formatSetCookieHeader(SessionId.SESSION_ID,secondaryId,null, cookiePath,-1, isSsl());
+				if(setCookieString!=null){
+//					String setCookieString = Cookie.formatSetCookieHeader(SessionId.SESSION_ID,secondaryId,null, cookiePath,-1);
 					setCookie(setCookieString);
 					json.put("result", true);
-					json.put(APP_ID,DataUtil.digestHex(secondaryId.getBytes()));//javascript側でセションを識別するID
+					json.put(APP_ID,DataUtil.digestHex(setCookieString.getBytes()));//javascript側でセションを識別するID
 				}else{
 					json.put("result", false);
 				}
@@ -417,7 +421,7 @@ public class AuthHandler extends WebServerHandler {
 //		String url = authorizer.getUrlFromCookieOnceAuthId(authId);
 		String callback = parameter.getParameter("callback");
 		if(authId==null){//authIdが付加されていない,単に認証を求めてきた場合
-			SessionId temporaryId = authorizer.createTemporaryId(null);
+			SessionId temporaryId = authorizer.createTemporaryId(null,authorizer.isAuthSsl(), config.getSelfDomain(), authorizer.getAuthPath());
 			authId=temporaryId.getAuthId();
 		}
 		loginRedirect(cookieId,isAjaxAuth,authId,callback);

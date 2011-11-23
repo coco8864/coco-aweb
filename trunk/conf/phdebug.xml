@@ -25,7 +25,7 @@
       <param name="p1.limit" value="12800"/>
       <param name="p1.increment" value="16"/>
       <param name="poolBuffers" value="default"/>
-      <param name="default.bufferSize" value="1024"/>
+      <param name="default.bufferSize" value="16384"/>
       <!--param name="default.bufferSize" value="128"/-->
       <param name="default.initial" value="1024"/>
       <param name="default.limit" value="102400"/>

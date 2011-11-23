@@ -44,8 +44,7 @@ public class DispatchHandler extends ServerBaseHandler {
 	private static Config config = Config.getConfig();
 	private static Mapper mapper = config.getMapper();
 	private static Authorizer authorizer=config.getAuthorizer();
-	private static byte[] ProxyOkResponse = "HTTP/1.0 200 Connection established\r\n\r\n"
-			.getBytes();
+	private static byte[] ProxyOkResponse = "HTTP/1.0 200 Connection established\r\n\r\n".getBytes();
 	private static int limitRequestFieldSize = config.getInt("limitRequestFieldSize", 8192);
 
 	private Date startTime;

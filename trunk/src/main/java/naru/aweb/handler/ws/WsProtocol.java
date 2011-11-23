@@ -229,8 +229,7 @@ public abstract class WsProtocol extends PoolBase{
 			try {
 				handler.onWsClose((short)-1, null);
 			} catch (Throwable e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.warn("onWsClose throw exception.",e);
 			}
 			isCallWsClose=true;
 		}
@@ -241,7 +240,6 @@ public abstract class WsProtocol extends PoolBase{
 		try {
 			codeConverte.init("utf-8");
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 		}
 	}
 	
