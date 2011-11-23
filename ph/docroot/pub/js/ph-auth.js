@@ -8,7 +8,30 @@ if(window.ph.auth){
 }
 window.ph.auth={
 	isAuthFrameLoad:false,
-	authFrameName:'authFrame',
+	authFrameName:'_phAuthFrame',
+	_checkSessionCb:null,
+	__checkSessionCb:function(res){
+		if(res.isSecondary){//secondaryセションまで既にあった
+			ph.auth._checkSessionCb(res);
+			return;
+		}else if(!res.isPrimary){//primaryセションもない
+			//戻りアドレスをこのページのhrefにして/authに遷移
+			//href=auth&backxxx
+			return;
+		}
+		//primaryはあるが、secondaryがない
+
+		ph.jQuery.post(ph.auth._authPath+"/ajaxSetAuth",{pathOnceId:pathOnceId},setAuthCb,"html");
+		//
+	},
+	checkSession:function(authUrl,cb){
+		this._checkSessionCb=cb;
+		if(ph.isUseCrossDomain){
+			ph.auth._postMessage({type:'checkSession',authUrl:authUrl});
+		}else{
+			ph.jQuery.post(ph.authUrl+"/checkSession",{authUrl:authUrl},this.__checkSessionCb,"jsonp");
+		}
+	},
 	_getUserCb:null,
 	getUser:function(cb){
 		this._userCb=cb;

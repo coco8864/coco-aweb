@@ -33,6 +33,12 @@ function onMessageFromParent(ev){
 			postMessageToParent(res,origin);
 		}
 		ph.jQuery.post(ph.authUrl+"/ajaxPathOnceId",{authId:req.authId},cb,"html");
+	}else if(req.type=="checkSession"){
+		var cb=function(data){
+			var res={type:req.type,result:true,data:data};
+			postMessageToParent(res,origin);
+		}
+		ph.jQuery.post(ph.authUrl+"/checkSession",{authUrl:authUrl},cb,"html");
 	}
 }
 function postMessageToParent(msg,origin){

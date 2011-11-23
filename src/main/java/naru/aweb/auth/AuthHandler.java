@@ -4,7 +4,6 @@ import naru.async.store.DataUtil;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
 import naru.aweb.config.User;
-import naru.aweb.http.Cookie;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.KeepAliveContext;
 import naru.aweb.http.ParameterParser;
@@ -34,6 +33,7 @@ public class AuthHandler extends WebServerHandler {
 	public static String AJAX_SETAUTH_PATH="/ajaxSetAuth";//
 	public static String AJAX_AUTHID_PATH="/ajaxAuthId";//認可済みで無い場合、authIdを返却
 	private static String CLEANUP_AUTH_HEADER_PATH="/cleanupAuthHeader";//auth header削除用path
+	private static String CHECK_SESSION_PATH="/checkSession";//webSocket,ajax api認証を行う場合呼び出す前にこのパスをiframeに表示
 	private static String LOGOUT_PATH="/logout";//logout用
 	private static String AUTH_PAGE_FILEPATH="/auth/";
 	private static String AUTH_ID="authId";//...temporaryIdの別名
@@ -266,6 +266,42 @@ public class AuthHandler extends WebServerHandler {
 		redirect(url, setCookieString);
 	}
 	
+	private void checkSession(String cookieId){
+		ParameterParser parameter = getParameterParser();
+		String authUrl=parameter.getParameter("authUrl");
+//		boolean isCookieSecure="true".equals(parameter.getParameter("isSsl"));
+//		String cookieDomain=parameter.getParameter("domain");
+//		String cookiePath=parameter.getParameter("path");
+		int rc=authorizer.checkSecondarySessionByPrimaryId(cookieId,authUrl);
+		boolean isPrimary=false;
+		boolean isSecondary=false;
+		String pathOnceId=null;
+		switch(rc){
+		case Authorizer.CHECK_SECONDARY_OK:
+			isSecondary=true;
+			isPrimary=true;
+			break;
+		case Authorizer.CHECK_PRIMARY_ONLY:
+			isSecondary=false;
+			isPrimary=true;
+			SessionId pathOnceSession=authorizer.createPathOnceIdByPrimary(authUrl, cookieId);
+			if(pathOnceSession!=null){
+				pathOnceId=pathOnceSession.getId();
+			}
+			break;
+		case Authorizer.CHECK_NO_PRIMARY:
+			isSecondary=false;
+			isPrimary=false;
+			break;
+		}
+		String callback=parameter.getParameter("callback");
+		JSONObject res=new JSONObject();
+		res.put("isPrimary", isPrimary);
+		res.put("isSecondary", isSecondary);
+		res.put("pathOnceId", pathOnceId);
+		responseJson(res,callback);
+	}
+	
 	private void cleanupAuthHeader(){
 		if( !authenticator.cleanupAuthHeader(this) ){
 			return;
@@ -363,6 +399,9 @@ public class AuthHandler extends WebServerHandler {
 		 */
 		if(CLEANUP_AUTH_HEADER_PATH.equals(path)){
 			cleanupAuthHeader();
+			return;
+		}else if(CHECK_SESSION_PATH.equals(path)){
+			checkSession(cookieId);
 			return;
 		}else if(AJAX_USER_PATH.equals(path)){
 			User user=authorizer.getUserByPrimaryId(cookieId);

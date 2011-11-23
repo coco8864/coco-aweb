@@ -106,6 +106,17 @@ public class SessionId extends PoolBase{
 		sessionId.isCookieSecure=isCookieSecure;
 		sessionId.cookieDomain=cookieDomain;
 		sessionId.cookiePath=cookiePath;
+		if(isCookieSecure){
+		}
+		StringBuilder sb=new StringBuilder();
+		if(isCookieSecure){
+			sb.append("https://");
+		}else{
+			sb.append("http://");
+		}
+		sb.append(cookieDomain);
+		sb.append(cookiePath);
+		sessionId.authUrl=sb.toString();
 		
 		//idの生成は、authorizerに任せる
 		authorizer.registerSessionId(sessionId);
@@ -178,22 +189,14 @@ public class SessionId extends PoolBase{
 	/* secondaryIdが単一のmappingと結びつくとは限らない WebSocket対応*/
 	//	private Mapping mapping;//secondary用の場合、どのmapping用のSessionIdか
 	/* secondaryIdがどの範囲で有効かを保持する WebSocket対応*/
+	private String authUrl;
 	private boolean isCookieSecure;
 	private String cookieDomain;
 	private String cookiePath;
 	
 	/* primaryからCookie的に該当するsecondaryの存在をチェックする */
-	public boolean isCookieMatch(boolean isCookieSecure,String cookieDomain,String cookiePath){
-		if(this.isCookieSecure!=isCookieSecure){
-			return false;
-		}
-		if(!this.cookieDomain.equals(cookieDomain)){
-			return false;
-		}
-		if(!this.cookiePath.equals(cookiePath)){
-			return false;
-		}
-		return true;
+	public boolean isCookieMatch(String authUrl){
+		return this.authUrl.equals(authUrl);
 	}
 
 	/*
@@ -306,12 +309,6 @@ public class SessionId extends PoolBase{
 		this.id=id;
 	}
 
-	public void setCookieInfo(boolean isCookieSecure,String cookieDomain,String cookiePath){
-		this.isCookieSecure=isCookieSecure;
-		this.cookieDomain=cookieDomain;
-		this.cookiePath=cookiePath;
-	}
-	
 	/*
 	public String getSetCookieString(String path, boolean isSecure) {
 		return Cookie.formatSetCookieHeader(SESSION_ID, getId(), null, path,-1, isSecure);
@@ -413,6 +410,10 @@ public class SessionId extends PoolBase{
 	}
 	public String getAuthId(){
 		return authId;
+	}
+
+	public String getAuthUrl() {
+		return authUrl;
 	}
 
 	/*

@@ -284,6 +284,33 @@ public class Authorizer implements Timer{
 		return false;
 	}
 	
+	public static final int CHECK_NO_PRIMARY=1;
+	public static final int CHECK_PRIMARY_ONLY=2;
+	public static final int CHECK_SECONDARY_OK=3;
+	
+	public int checkSecondarySessionByPrimaryId(String id,String authUrl){
+		if(id==null){
+			return CHECK_NO_PRIMARY;
+		}
+		SessionId primaryId = getSessionId(Type.PRIMARY,id);
+		if (primaryId == null) {
+			return CHECK_NO_PRIMARY;
+		}
+		synchronized(primaryId){
+			if(primaryId.isMatch(Type.PRIMARY, id)==false){
+				return CHECK_NO_PRIMARY;
+			}
+			AuthSession authSession=primaryId.getAuthSession();
+			if(authSession==null){
+				return CHECK_NO_PRIMARY;
+			}
+			if(authSession.getSecondarySession(authUrl)==null){
+				return CHECK_PRIMARY_ONLY;
+			}
+		}
+		return CHECK_SECONDARY_OK;
+	}
+	
 	public User getUserByPrimaryId(String id){
 		if(id==null){
 			return null;
