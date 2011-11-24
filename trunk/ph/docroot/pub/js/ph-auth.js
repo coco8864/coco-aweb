@@ -1,7 +1,3 @@
-//認証されている事が前提（認証を実施するapiはない)
-//認証されていない場合は、errorルート
-//frame間通信が使える場合は、postMessageで使えない場合はjsonpで処理
-//logoff,frame内で処理、postMessageで使えない場合はframe名に設定
 (function(){
 if(window.ph.auth){
 	return;
@@ -9,28 +5,56 @@ if(window.ph.auth){
 window.ph.auth={
 	isAuthFrameLoad:false,
 	authFrameName:'_phAuthFrame',
-	_checkSessionCb:null,
-	__checkSessionCb:function(res){
-		if(res.isSecondary){//secondaryセションまで既にあった
-			ph.auth._checkSessionCb(res);
-			return;
-		}else if(!res.isPrimary){//primaryセションもない
-			//戻りアドレスをこのページのhrefにして/authに遷移
-			//href=auth&backxxx
-			return;
+	setUrlAuth:function(url,flag,cb){
+		var authIdcb=function(data){
+			ph.dump(data);
+//			var msg=ph.JSON.parse(data);
+			var msg=data;
+			if(msg.result){
+				ph.log("setUrlAuth direct true:"+url);
+				cb(true,msg.appId);
+				return;
+			}
+			if(!msg.authId){
+				ph.log("setUrlAuth direct false:"+url);
+				cb(false,null);
+				return;
+			}
+			ph.auth._authCb=cb;
+			ph.auth._authPath=url;
+			ph.auth._getPathOnceId2(msg.authId);
 		}
-		//primaryはあるが、secondaryがない
-
-		ph.jQuery.post(ph.auth._authPath+"/ajaxSetAuth",{pathOnceId:pathOnceId},setAuthCb,"html");
-		//
+		ph.jQuery.get(url+"?PH_AUTH=check",{},authIdcb,"jsonp").error(function() {ph.log('setUrlAuth error');cb(false);});
 	},
-	checkSession:function(authUrl,cb){
-		this._checkSessionCb=cb;
-		if(ph.isUseCrossDomain){
-			ph.auth._postMessage({type:'checkSession',authUrl:authUrl});
+	_getPathOnceId2:function(authId){
+		ph.log("_getPathOnceId2:"+authId);
+		if(false/*ph.isUseCrossDomain*/){
+			ph.auth._postMessage({type:'getPathOnceId',authId:authId});
 		}else{
-			ph.jQuery.post(ph.authUrl+"/checkSession",{authUrl:authUrl},this.__checkSessionCb,"jsonp");
+			var pathOnceIdcb=function(data){
+				ph.auth._setUrlAuth(data);
+			}
+			ph.jQuery.get(ph.authUrl+"/ajaxPathOnceId",{authId:authId,top:top.location.href},pathOnceIdcb,"jsonp");
 		}
+	},
+	_setUrlAuth:function(pathOnceId){
+		ph.log("_setUrlAuth:"+pathOnceId);
+		if(!pathOnceId){//primaryもなかったと考えられる
+			ph.log('_setUrlAuth error');
+			var orgUrl=top.location.href;
+			top.location.href=ph.authUrl+"?orgUrl="+orgUrl;
+			return;
+		}
+		var setAuthCb=function(data){
+			ph.dump(data);
+//			var msg=ph.JSON.parse(data);
+			var msg=data;
+			ph.auth._authCb(msg.result,msg.appId);
+			ph.log("_setUrlAuth:"+msg.result+":"+ph.auth._authPath);
+			ph.auth._authPath=null;
+			ph.auth._authCb=null;
+		}
+		ph.jQuery.get(ph.auth._authPath+"?PH_AUTH=auth",{pathOnceId:pathOnceId},setAuthCb,"jsonp");
 	},
 	_getUserCb:null,
 	getUser:function(cb){
@@ -42,7 +66,7 @@ window.ph.auth={
 				ph.auth._userCb(data);
 				ph.auth._userCb=null;
 			}
-			ph.jQuery.post(ph.authUrl+"/ajaxUser",{},userCb,"jsonp");
+			ph.jQuery.get(ph.authUrl+"/ajaxUser",{},userCb,"jsonp");
 		}
 	},
 	_authCb:null,
@@ -71,7 +95,7 @@ window.ph.auth={
 //				var res={type:'getPathOnceId',result:true,data:data};
 //				ph.auth._onMessage(res);
 			}
-			ph.jQuery.post(ph.authUrl+"/ajaxPathOnceId",{authId:authId},pathOnceIdcb,"jsonp");
+			ph.jQuery.get(ph.authUrl+"/ajaxPathOnceId",{authId:authId},pathOnceIdcb,"jsonp");
 		}
 	},
 	_setAuth:function(pathOnceId){
@@ -114,6 +138,9 @@ window.ph.auth={
 };
 
 ph.jQuery(function(){
+	if(!ph.isUseCrossDomain){
+		return;
+	}
 	//server側authと通信するiframeを作成
 	if(window.addEventListener){
 		window.addEventListener('message',ph.auth._onMessage, false);
