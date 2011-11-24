@@ -8,10 +8,12 @@
 <meta http-equiv="Expires" content="0"> 
 <script type="text/javascript" src="/pub/js/ph-loader.js"></script>
 <script  type="text/javascript"><!--
-var phOrigin;
+var parentOrigin;
+var primarySession;
+var requestUrl=null;
 function onMessageFromParent(ev){
 	var origin = ev.origin;
-	if(!ev.data||phOrigin!=origin){
+	if(!ev.data||parentOrigin!=origin){
 		return;
   	}
 	var req=ph.JSON.parse(ev.data);
@@ -43,22 +45,29 @@ function onMessageFromParent(ev){
 }
 function postMessageToParent(msg,origin){
 	var jsonMsg=ph.JSON.stringify(msg);
-//alert(origin);
 	parent.postMessage(jsonMsg,origin);
 }
+function crossDomainRequest(url){
+	requestUrl=url;
+	window._phAuthFrameChild.location.href=url;
+}
+function endOfRequest(){
+	requestUrl=null;
+}
 ph.jQuery(function(){
-	phOrigin=decodeURIComponent(location.search.substring('?origin='.length));
-//	alert('phOrigin:'+phOrigin); TODO check phOrigin from
+	parentOrigin=decodeURIComponent(location.search.substring('?origin='.length));
+//	alert('parentOrigin:'+parentOrigin); TODO check parentOrigin from
 	if(window.addEventListener){
 		window.addEventListener('message',onMessageFromParent, false);
 	}else if(window.attachEvent){
 		window.attachEvent('onmessage',onMessageFromParent);
 	}
-	postMessageToParent({load:true},phOrigin);
+	postMessageToParent({load:true},parentOrigin);
 });
 // --></script>
 </head>
 <body>
+<iframe name="_phAuthFrameChild" id="_phAuthFrameChild" onload="endOfRequest();"></iframe>
 認証処理用フレームコンテンツ
 </body>
 </html>
