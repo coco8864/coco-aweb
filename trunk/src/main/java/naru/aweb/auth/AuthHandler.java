@@ -37,6 +37,10 @@ public class AuthHandler extends WebServerHandler {
 	private static String LOGOUT_PATH="/logout";//logout用
 	private static String AUTH_PAGE_FILEPATH="/auth/";
 	private static String AUTH_ID="authId";//...temporaryIdの別名
+
+	public static String QUERY_AUTH_MARK="queryAuthMark";//queryでauth呼び出しが指定された場合
+	public static String QUERY_AUTH_CHECK="check";
+	public static String QUERY_AUTH_AUTH="auth";
 	
 	//admin/auth配下のコンテンツを返却する。
 	public void forwardAuthPage(String fileName){
@@ -234,14 +238,11 @@ public class AuthHandler extends WebServerHandler {
 			url=urlSb.toString();
 		}
 		String cookiePath = null;
-		String cookieDomain = null;
+		String cookieDomain =requestHeader.getServer().toString();
 		if (requestHeader.isProxy()) {
 			cookiePath = "/";
-			cookieDomain=requestHeader.getServer().toString();
 		} else {
 			cookiePath = mapping.getSourcePath();
-			cookieDomain=requestHeader.getServer().toString();
-//			cookieDomain=mapping.config.getSelfDomain();xxxx
 		}
 		Mapping m=mapping.getMapping();
 		//pathIdがあるか？cookieIdがあるか？有効か？
@@ -250,7 +251,7 @@ public class AuthHandler extends WebServerHandler {
 			if (url.endsWith(cookiePath) && !url.endsWith("/")) {
 				url = url + "/";// 戻ってきた際には、/xxx;phId=xxxとなるが、chromeではcookieonceが付加されない
 			}
-			SessionId temporaryId = authorizer.createTemporaryId(url,isSsl(),cookieDomain,cookiePath);
+			SessionId temporaryId = authorizer.createTemporaryId(url,cookiePath);
 			String setCookieString = temporaryId.getSetCookieString();
 			String authId=temporaryId.getAuthId();
 			redirectAuth(authId, setCookieString);
@@ -332,7 +333,87 @@ public class AuthHandler extends WebServerHandler {
 		}
 	}
 	
+	private void queryAuthCheck(){
+		ParameterParser parameter = getParameterParser();
+		String callback=parameter.getParameter("callback");
+		
+		JSONObject json=new JSONObject();
+		HeaderParser requestHeader = getRequestHeader();
+		String cookieId=requestHeader.getAndRemoveCookieHeader(SessionId.SESSION_ID);
+		//有効なsecondarysessionがあるか？
+		//あれば、result:trueでレスポンス
+		if(cookieId!=null){
+			if(authorizer.isSecondaryId(cookieId)){
+				json.put("result", true);
+				responseJson(json,callback);
+				return;
+			}
+		}
+		String url=requestHeader.getAddressBar(isSsl());
+		int pos=url.indexOf("?");
+		if(pos<0){
+			//内部矛盾
+		}
+		url=url.substring(0,pos);
+		
+		//TODO URLが無効ならresult:falseでレスポンス
+//		if(url==NG){
+//			json.put("result", false);
+//			responseJson(json,callback);
+//			return;
+//		}
+		//URLが有効ならばAUTH_IDをレスポンス
+		SessionId temporaryId = authorizer.createTemporaryId(url,requestHeader.getPath());
+		String setCookieString = temporaryId.getSetCookieString();
+		setCookie(setCookieString);
+		String authId=temporaryId.getAuthId();
+		json.put("result", false);
+		json.put(AUTH_ID, authId);
+		responseJson(json,callback);
+	}
+	
+	private void queryAuth(){
+		ParameterParser parameter = getParameterParser();
+		HeaderParser requestHeader = getRequestHeader();
+		String url=requestHeader.getAddressBar(isSsl());
+		int pos=url.indexOf("?");
+		if(pos<0){
+			//内部矛盾
+		}
+		url=url.substring(0,pos);
+		JSONObject json=new JSONObject();
+		String callback=parameter.getParameter("callback");
+		String cookieId=requestHeader.getAndRemoveCookieHeader(SessionId.SESSION_ID);
+		String pathOnceId=parameter.getParameter("pathOnceId");
+		if(pathOnceId==null || cookieId==null || authorizer.isTemporaryId(cookieId,url)==false){//pathId,cookieIdいずれかが存在しない
+			json.put("result", false);
+			responseJson(json,callback);
+			return;
+		}
+		String cookiePath = requestHeader.getPath();
+		String cookieDomain =requestHeader.getServer().toString();
+		String setCookieString = authorizer.createSecondarySetCookieStringFromPathOnceId(
+				pathOnceId,url,null,
+				isSsl(),cookieDomain,cookiePath);
+		if(setCookieString!=null){
+			setCookie(setCookieString);
+			json.put("result", true);
+			json.put(APP_ID,DataUtil.digestHex(setCookieString.getBytes()));//javascript側でセションを識別するID
+		}else{
+			json.put("result", false);
+		}
+		responseJson(json,callback);
+	}
+	
 	public void startResponseReqBody() {
+		String queryAuth=(String)getRequestAttribute(QUERY_AUTH_MARK);
+		if(QUERY_AUTH_CHECK.equals(queryAuth)){
+			queryAuthCheck();
+			return;
+		}else if(QUERY_AUTH_AUTH.equals(queryAuth)){
+			queryAuth();
+			return;
+		}
 		KeepAliveContext keepAliveContext=getKeepAliveContext();
 		keepAliveContext.setKeepAlive(false);
 		//keepAliveさせない,IEは、同一のポートでhttpとhttpsをやるとおかしな動きをするため
@@ -351,7 +432,7 @@ public class AuthHandler extends WebServerHandler {
 			String cookieDomain=requestHeader.getServer().toString();
 			if(AJAX_AUTHID_PATH.equals(path)){//WEB && POST
 				url=url.substring(0, url.length()-AJAX_AUTHID_PATH.length());
-				SessionId temporaryId = authorizer.createTemporaryId(url,isSsl(),cookieDomain,cookiePath);
+				SessionId temporaryId = authorizer.createTemporaryId(url,cookiePath);
 				String setCookieString = temporaryId.getSetCookieString();
 				setCookie(setCookieString);
 				String authId=temporaryId.getAuthId();
@@ -412,14 +493,15 @@ public class AuthHandler extends WebServerHandler {
 			}
 			return;
 		}else if(AJAX_PATHONCEID_PATH.equals(path)){
+			String callback=parameter.getParameter("callback");
 			String authId=parameter.getParameter(AUTH_ID);
 			String url = authorizer.getUrlFromTemporaryId(authId);
 			if(url==null){
-				responseJson(false,parameter.getParameter("callback"));
+				responseJson(false,callback);
+				return;
 			}
 			SessionId pathOnceId=authorizer.createPathOnceIdByPrimary(url,cookieId);
-			String callback=parameter.getParameter("callback");
-			if(pathOnceId==null){//cookieIdが無効な場合
+			if(pathOnceId==null){//cookieIdが無効な場合つまりprimarySessionがない場合
 				responseJson(false,callback);
 			}else if(callback==null){
 				responseJson(pathOnceId.getId());
@@ -460,7 +542,7 @@ public class AuthHandler extends WebServerHandler {
 //		String url = authorizer.getUrlFromCookieOnceAuthId(authId);
 		String callback = parameter.getParameter("callback");
 		if(authId==null){//authIdが付加されていない,単に認証を求めてきた場合
-			SessionId temporaryId = authorizer.createTemporaryId(null,authorizer.isAuthSsl(), config.getSelfDomain(), authorizer.getAuthPath());
+			SessionId temporaryId = authorizer.createTemporaryId(null,authorizer.getAuthPath());
 			authId=temporaryId.getAuthId();
 		}
 		loginRedirect(cookieId,isAjaxAuth,authId,callback);
