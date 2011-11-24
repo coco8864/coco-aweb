@@ -1,5 +1,6 @@
 package naru.aweb.auth;
 
+import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,9 +76,10 @@ public class SessionId extends PoolBase{
 		return createSessionId(Type.SECONDARY,null,null,null,isCookieSecure, cookieDomain, cookiePath);
 	}
 	
-	public static SessionId createTemporaryId(String url,
-			boolean isCookieSecure,String cookieDomain,String cookiePath) {
-		return createSessionId(Type.TEMPORARY,url,null,null,isCookieSecure, cookieDomain, cookiePath);
+	public static SessionId createTemporaryId(String url,String cookiePath) {
+		boolean isCookieSecure=url.startsWith("https://");
+		String domain=null;//TODO url.substring();
+		return createSessionId(Type.TEMPORARY,url,null,null,isCookieSecure,domain,cookiePath);
 	}
 	
 	//cookieに設定されないのでcookie関連はダミー
@@ -318,6 +320,7 @@ public class SessionId extends PoolBase{
 		return Cookie.formatSetCookieHeader(SESSION_ID, getId(), null, cookiePath,-1, isCookieSecure);
 	}
 	
+	//認証先URLのpath情報にauthIdを付加するメソッド
 	public String encodeUrl() {
 		if(url==null){
 			logger.warn("encodeUrl but url=null:id="+id+":authId:"+authId,new Exception());

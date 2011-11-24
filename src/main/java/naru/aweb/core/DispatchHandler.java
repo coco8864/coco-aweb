@@ -513,6 +513,51 @@ public class DispatchHandler extends ServerBaseHandler {
 		 * web,ws処理は必ずしも認証が必要ない(/pub)ため
 		 */
 		
+		/**
+		 * 1.認証チェック
+		 * wsの場合やjavascript apiを投げる前にそのパスが認証されているか否かを問い合わせるリクエストを送信する
+		 * 1)そのAuthUrlに有効なSecondaryセションがある場合には、OKを返却、
+		 * 2)有効なSecondaryセションがない場合には、AuthId(TempraryId)を返却、
+		 * 3)AuthUrlが不当な場合には、NGを返却
+		 * 
+		 * wsのチェックをする例)ヘッダ情報で判定するのでGET
+		 * GET /queue?PH_AUTH=check(Web or SSL Web)
+		 * GET http://ph.host:port/?PH_AUTH=check(web proxyの場合)
+		 * GET /?PH_AUTH=check(ssl proxyの場合)
+		 * 
+		 * 2.認可
+		 * 1.2)の後、/authでpathOnceIDを取得、再びここにリクエストする
+		 * 1)TempolaryId,pathOnceIdが有効であれば、SecondaryIdを作成してSet-Cookie
+		 * 2)TempolaryId,pathOnceIdが有効でなければ、NGを返却
+		 * 
+		 * wsの認可をする例)ヘッダ情報で判定するのでGET
+		 * GET /queue?PH_AUTH=auth&pathOnceId=${id}(Web or SSL Web)
+		 * GET http://ph.host:port/?PH_AUTH=auth&pathOnceId=${id}(web proxyの場合)
+		 * GET /?PH_AUTH=auth&pathOnceId=${id}(ssl proxyの場合)
+		 * 
+		 * 3.認証(このclassとは関係しない）
+		 * 1.2)の後/authでpathOnceIdの取得もできなかった場合(primaryIdも存在しなかった）、
+		 * 1)/authに画面遷移して認証を求める
+		 * 2)認証が成功したら、リダイレクトで元のURLに戻ってくる(その後同じ処理がされるかどうかは分からないが許容する）
+		 * 
+		 */
+		String query=requestHeader.getQuery();
+		if(isWs==false && query!=null){
+			WebServerHandler response =null;
+			if(query.startsWith("PH_AUTH=check")){
+				setRequestAttribute(AuthHandler.QUERY_AUTH_MARK, AuthHandler.QUERY_AUTH_CHECK);
+				response = (WebServerHandler)forwardHandler(AuthHandler.class);
+				keepAliveContext.getRequestContext().allocAccessLog();
+				response.startResponse();
+				return;
+			}else if(query.startsWith("PH_AUTH=auth")){
+				setRequestAttribute(AuthHandler.QUERY_AUTH_MARK, AuthHandler.QUERY_AUTH_AUTH);
+				response = (WebServerHandler)forwardHandler(AuthHandler.class);
+				keepAliveContext.getRequestContext().allocAccessLog();
+				response.startResponse();
+				return;
+			}
+		}
 		//roleベースの認証は、mapping処理の中で実施
 		MappingResult mapping = null;
 		if (isSslProxy) {// sslproxyの場合,websocket ssl proxyも含まれるがこの段階では判別できない
@@ -538,7 +583,7 @@ public class DispatchHandler extends ServerBaseHandler {
 		
 		//mapping Authを実施
 		//optionsにauth:{realm:"relm",type:"basic"|"digest",roles:"role1,role2"}
-		if(!isWs){
+		if(!isWs){//TODO wsでも401が返却できるようになったので将来サポート可
 			mapping=checkMappingAuth(requestHeader,keepAliveContext,requestContext,mapping);
 		}
 		if(requestContext.getAuthSession()==null){

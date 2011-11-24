@@ -331,6 +331,14 @@ public class Authorizer implements Timer{
 		}
 	}
 	
+	public boolean isSecondaryId(String id){
+		SessionId secondaryId = getSessionId(Type.SECONDARY,id);
+		if (secondaryId == null) {
+			return false;
+		}
+		return true;
+	}
+	
 	/**
 	 * 指定されたidとmappingから,SecondaryIdを特定、存在有無を確認
 	 * 
@@ -485,9 +493,8 @@ public class Authorizer implements Timer{
 		return pathOnceId;
 	}
 
-	public SessionId createTemporaryId(String url,
-			boolean isCookieSecure,String cookieDomain,String cookiePath) {
-		SessionId temporaryId = SessionId.createTemporaryId(url,isCookieSecure,cookieDomain,cookiePath);
+	public SessionId createTemporaryId(String url,String cookiePath) {
+		SessionId temporaryId = SessionId.createTemporaryId(url,cookiePath);
 		return temporaryId;
 	}
 	
