@@ -25,50 +25,29 @@
 <input type="button" value="実行" onclick="doScript();"/>
 <input type="reset" value="クリア"/>
 </form>
-<input type="button" value="出力" id="debugswitch" onclick="debugSwitch(!ph.debug);"/>
-<input type="button" value="表示/非表示" onclick="ph.jQuery('#debug').toggle();"/>
 <input type="button" value="出力クリア" onclick="ph.jQuery('#phDebugArea').text('');"/>
 <h3>使用例</h3>
 <ul>
 <li>ログ出力:ph.log("aa")</li>
 <li>オブジェクトダンプ:ph.dump({aaa:"aaa"})</li>
 <li>郵便番号検索:jQuery.get("http://api.postalcode.jp/v1/zipsearch?zipcode=1000011",null,ph.dump,"jsonp")</li>
-<li>phantom proxy realHost情報取得:ph.admin.doPramCommand('realHost','realHostList',null,ph.dump,ph.dump);</li>
-<li>phantom proxy 統計情報取得:
-ph.admin.doCommand('getStastics',null,function(s){
-  var st=ph.JSON.parse(s);
-  ph.dump1(st.channelStastics);
-  }
-);
-</li>
-<li>ログ出力:window._phAuthFrameChild.location.href="postFrame.html"</li>
+<li>フレーム間通信:window._phAuthFrameChild.location.href="postFrame.html"</li>
 </ul>
 <script type="text/javascript"><!--
 jQuery(function(){
+	ph.setDebug(true);
 	if(window.addEventListener){
-		window.addEventListener('message',funcOnMessage, false);
+		window.addEventListener('message',messageRcv, false);
 	}else if(window.attachEvent){
-		window.attachEvent('onmessage',funcOnMessage);
+		window.attachEvent('onmessage',messageRcv);
 	}
 });
 
-function funcOnMessage(ev){
+function messageRcv(ev){
 	ph.log('onMessageFunc');
 	ph.dump(ev.data);
 }
 
-function debugSwitch(debug){
-	ph.setDebug(debug);
-	debugReflesh();
-}
-
-function debugReflesh(){
-	if(ph.debug){
-		ph.jQuery('#debugswitch').val('抑止');
-	}else{
-		ph.jQuery('#debugswitch').val('出力');
-	}
-}
 function doScript(){
 	var form = document.getElementById("scriptForm");
 	window.eval(form.script.value);
