@@ -77,9 +77,12 @@ public class SessionId extends PoolBase{
 	}
 	
 	public static SessionId createTemporaryId(String url,String cookiePath) {
-		boolean isCookieSecure=url.startsWith("https://");
-		String domain=null;//TODO url.substring();
-		return createSessionId(Type.TEMPORARY,url,null,null,isCookieSecure,domain,cookiePath);
+		if(url!=null){
+			boolean isCookieSecure=url.startsWith("https://");
+			String domain=null;//TODO url.substring();
+			return createSessionId(Type.TEMPORARY,url,null,null,isCookieSecure,domain,cookiePath);
+		}
+		return createSessionId(Type.TEMPORARY,url,null,null,false,null,cookiePath);
 	}
 	
 	//cookieに設定されないのでcookie関連はダミー
@@ -99,6 +102,7 @@ public class SessionId extends PoolBase{
 		sessionId.type=type;
 		sessionId.isValid = true;
 		sessionId.url=url;
+		sessionId.isDirectUrl=true;
 		sessionId.setPrimaryId(primaryId);
 		sessionId.authSession=authSession;
 		if(authSession!=null){
@@ -186,6 +190,8 @@ public class SessionId extends PoolBase{
 	private AuthSession authSession;
 	private SessionId primaryId;
 	private String url;
+	//urlが直接認証を必要とするURLか?wsなどAPIで認証をする場合originは認証画面とは関係しない
+	private boolean isDirectUrl;
 	private long lastAccessTime;
 	
 	/* secondaryIdが単一のmappingと結びつくとは限らない WebSocket対応*/
@@ -366,6 +372,14 @@ public class SessionId extends PoolBase{
 	
 	public void setUrl(String url) {
 		this.url=url;
+	}
+	
+	public void setDirectUrl(boolean isDirectUrl){
+		this.isDirectUrl=isDirectUrl;
+	}
+	
+	public boolean isDirectUrl(){
+		return isDirectUrl;
 	}
 	
 	/*

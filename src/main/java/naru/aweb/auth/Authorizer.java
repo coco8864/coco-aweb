@@ -492,6 +492,12 @@ public class Authorizer implements Timer{
 		SessionId pathOnceId = SessionId.createPathOnceId(url,primaryId);
 		return pathOnceId;
 	}
+	
+	public SessionId createTemporaryId(String url,String cookiePath,boolean isDirectUrl) {
+		SessionId temporaryId = createTemporaryId(url,cookiePath);
+		temporaryId.setDirectUrl(isDirectUrl);
+		return temporaryId;
+	}
 
 	public SessionId createTemporaryId(String url,String cookiePath) {
 		SessionId temporaryId = SessionId.createTemporaryId(url,cookiePath);
