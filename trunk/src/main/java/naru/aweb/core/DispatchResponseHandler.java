@@ -84,6 +84,12 @@ public class DispatchResponseHandler extends WebServerHandler {
 		mapping.setAttribute(TYPE, type);
 		return mapping;
 	}
+	
+	public static MappingResult authMapping() {
+		MappingResult mapping = (MappingResult) PoolManager.getInstance(MappingResult.class);
+		mapping.setHandlerClass(AuthHandler.class);
+		return mapping;
+	}
 
 	public void startResponseReqBody() {
 		MappingResult mapping = getRequestMapping();

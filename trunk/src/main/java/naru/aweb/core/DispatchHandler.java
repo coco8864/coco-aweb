@@ -346,8 +346,7 @@ public class DispatchHandler extends ServerBaseHandler {
 		// 自分はproxyなので、localhostの場合、接続先は、リモートホストとなる
 		ServerParser.resolveLocalhost(server, getRemoteIp());
 		// proxyマッピング対象は、realHost,phntomHost,pathで決まる
-		MappingResult mappingResult = mapper.resolveProxy(realHost, server,
-				path);
+		MappingResult mappingResult = mapper.resolveProxy(realHost, server,	path);
 		if (mappingResult != null) {
 			return mappingResult;
 		}
@@ -443,9 +442,8 @@ public class DispatchHandler extends ServerBaseHandler {
 			isAuthId=AuthHandler.AJAX_AUTHID_PATH.equals(path);
 		}
 		
-		String cookieId=requestHeader.getAndRemoveCookieHeader(SessionId.SESSION_ID);
+		String cookieId=(String)getRequestAttribute(SessionId.SESSION_ID);
 		if(cookieId!=null){
-			setRequestAttribute(SessionId.SESSION_ID, cookieId);
 			AuthSession authSession=authorizer.getAuthSessionBySecondaryId(mapping.getMapping(),cookieId);
 			if(authSession!=null){
 				//権限チェック、権限がなければ403
@@ -541,20 +539,27 @@ public class DispatchHandler extends ServerBaseHandler {
 		 * 2)認証が成功したら、リダイレクトで元のURLに戻ってくる(その後同じ処理がされるかどうかは分からないが許容する）
 		 * 
 		 */
+		/* cookieIdは切り取ってrequestAttributeに移し変える */
+		String cookieId=requestHeader.getAndRemoveCookieHeader(SessionId.SESSION_ID);
+		if(cookieId!=null){
+			setRequestAttribute(SessionId.SESSION_ID, cookieId);
+		}
 		String query=requestHeader.getQuery();
 		if(isWs==false && query!=null){
-			WebServerHandler response =null;
 			if(query.startsWith("PH_AUTH=check")){
 				setRequestAttribute(AuthHandler.QUERY_AUTH_MARK, AuthHandler.QUERY_AUTH_CHECK);
-				response = (WebServerHandler)forwardHandler(AuthHandler.class);
 				keepAliveContext.getRequestContext().allocAccessLog();
-				response.startResponse();
+				forwardMapping(null, requestHeader, DispatchResponseHandler.authMapping(), null, false);
+				return;
+			}else if(query.startsWith("PH_AUTH=setAuth")){
+				setRequestAttribute(AuthHandler.QUERY_AUTH_MARK, AuthHandler.QUERY_SETAUTH_AUTH);
+				keepAliveContext.getRequestContext().allocAccessLog();
+				forwardMapping(null, requestHeader, DispatchResponseHandler.authMapping(), null, false);
 				return;
 			}else if(query.startsWith("PH_AUTH=auth")){
 				setRequestAttribute(AuthHandler.QUERY_AUTH_MARK, AuthHandler.QUERY_AUTH_AUTH);
-				response = (WebServerHandler)forwardHandler(AuthHandler.class);
 				keepAliveContext.getRequestContext().allocAccessLog();
-				response.startResponse();
+				forwardMapping(null, requestHeader, DispatchResponseHandler.authMapping(), null, false);
 				return;
 			}
 		}
