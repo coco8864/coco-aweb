@@ -1,5 +1,8 @@
 package naru.aweb.auth;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+
 import naru.async.store.DataUtil;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
@@ -261,7 +264,7 @@ public class AuthHandler extends WebServerHandler {
 		}
 		
 		//有効なPathOnceIdが付加されているか、権限はあるか？
-		String setCookieString=authorizer.createSecondarySetCookieStringFromPathOnceId(pathId,url,m,isSsl(),cookieDomain,cookiePath);
+		String setCookieString=authorizer.createSecondarySetCookieStringFromPathOnceId(pathId,url,m,isSsl(),cookieDomain,cookiePath,null);
 		if(setCookieString==null){
 			forbidden("fail to authorize.");
 			return;
@@ -272,11 +275,13 @@ public class AuthHandler extends WebServerHandler {
 	private void checkSession(String cookieId){
 		ParameterParser parameter = getParameterParser();
 		String authUrl=parameter.getParameter("authUrl");
-		int rc=authorizer.checkSecondarySessionByPrimaryId(cookieId,authUrl);
+		StringBuffer appId=new StringBuffer();
+		int rc=authorizer.checkSecondarySessionByPrimaryId(cookieId,authUrl,appId);
 		JSONObject res=new JSONObject();
 		switch(rc){
 		case Authorizer.CHECK_SECONDARY_OK:
 			res.put("result", "secondary");
+			res.put(APP_ID, appId.toString());
 			break;
 		case Authorizer.CHECK_PRIMARY_ONLY:
 			SessionId pathOnceSession=authorizer.createPathOnceIdByPrimary(authUrl, cookieId);
@@ -387,12 +392,13 @@ public class AuthHandler extends WebServerHandler {
 		String pathOnceId=parameter.getParameter("pathOnceId");
 		String cookiePath = requestHeader.getPath();
 		String cookieDomain =requestHeader.getServer().toString();
+		StringBuffer appId=new StringBuffer();
 		String setCookieString = authorizer.createSecondarySetCookieStringFromPathOnceId(
-				pathOnceId,url,null,
-				isSsl(),cookieDomain,cookiePath);
+				pathOnceId,url,null,isSsl(),cookieDomain,cookiePath,appId);
 		if(setCookieString!=null){
 			setCookie(setCookieString);
 			json.put("result", true);
+			json.put(APP_ID,appId.toString());
 		}else{
 			json.put("result", false);
 		}
@@ -420,13 +426,15 @@ public class AuthHandler extends WebServerHandler {
 		}
 		String cookiePath = requestHeader.getPath();
 		String cookieDomain =requestHeader.getServer().toString();
+		StringBuffer appId=new StringBuffer();
 		String setCookieString = authorizer.createSecondarySetCookieStringFromPathOnceId(
 				pathOnceId,url,null,
-				isSsl(),cookieDomain,cookiePath);
+				isSsl(),cookieDomain,cookiePath,
+				appId);
 		if(setCookieString!=null){
 			setCookie(setCookieString);
 			json.put("result", true);
-			json.put(APP_ID,DataUtil.digestHex(setCookieString.getBytes()));//javascript側でセションを識別するID
+			json.put(APP_ID,appId.toString());//javascript側でセションを識別するID
 		}else{
 			json.put("result", false);
 		}
@@ -475,15 +483,17 @@ public class AuthHandler extends WebServerHandler {
 			}else if(AJAX_SETAUTH_PATH.equals(path)){//WEB && POST
 				url=url.substring(0, url.length()-AJAX_SETAUTH_PATH.length());
 				String pathId=parameter.getParameter("pathOnceId");
+				StringBuffer appId=new StringBuffer();
 				String setCookieString = authorizer.createSecondarySetCookieStringFromPathOnceId(
 						pathId,url,mapping.getMapping(),
-						isSsl(),cookieDomain,cookiePath);
+						isSsl(),cookieDomain,cookiePath,
+						appId);
 				JSONObject json=new JSONObject();
 				if(setCookieString!=null){
 //					String setCookieString = Cookie.formatSetCookieHeader(SessionId.SESSION_ID,secondaryId,null, cookiePath,-1);
 					setCookie(setCookieString);
 					json.put("result", true);
-					json.put(APP_ID,DataUtil.digestHex(setCookieString.getBytes()));//javascript側でセションを識別するID
+					json.put(APP_ID,appId.toString());//javascript側でセションを識別するID
 				}else{
 					json.put("result", false);
 				}
