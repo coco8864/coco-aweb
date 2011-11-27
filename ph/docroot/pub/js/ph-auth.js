@@ -34,6 +34,11 @@ window.ph.auth={
 		this.orderInfo.cb=null;
 		this.orderInfo.req=null;
 	},
+	/*authUrl固有のappIdを取得する、以下のパターンがある
+	1)secondary既に認可されている
+	2)primaryは認証済みだがsecondaryが未=>認可してappIdを作成
+	3)primaryは認証未=>このメソッドは復帰せず認証画面に遷移
+	*/
 	getAppId:function(authUrl,cb){
 		if(authUrl.lastIndexOf('/',0)==0){
 			authUrl=window.location.protocol + "//" + window.location.host + authUrl;
