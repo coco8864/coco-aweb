@@ -1,9 +1,5 @@
 package naru.aweb.auth;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-
-import naru.async.store.DataUtil;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
 import naru.aweb.config.User;
