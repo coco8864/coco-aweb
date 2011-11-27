@@ -40,7 +40,6 @@ import net.sf.json.JSONSerializer;
 import net.sf.json.JsonConfig;
 import net.sf.json.util.NewBeanInstanceStrategy;
 
-import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 
 /**
@@ -302,7 +301,7 @@ public class Mapping{
 	
 	@NotPersistent
 	private boolean isSourceMatchEntry;//正規表現でマッチさせるまでdestinationが決まらないEntry
-	
+
 	//sourcePathから設定
 	@NotPersistent
 	private Pattern sourcePathPattern;

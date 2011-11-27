@@ -1,9 +1,6 @@
 package naru.aweb.auth;
 
-import java.net.URL;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -14,6 +11,7 @@ import naru.async.pool.PoolManager;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
 import naru.aweb.http.Cookie;
+import naru.aweb.http.CookieLocation;
 
 /*
  * primaryId:/authに付加されるcookie
@@ -93,7 +91,7 @@ public class SessionId extends PoolBase{
 	
 	public static SessionId createPrimaryId(AuthSession authSession) {
 		return createSessionId(Type.PRIMARY,null,null,authSession,
-				authorizer.isAuthSsl(), config.getSelfDomain()+config.getInt(Config.SELF_PORT), authorizer.getAuthPath());
+				authorizer.isAuthSsl(), config.getSelfDomain()+":"+config.getInt(Config.SELF_PORT), authorizer.getAuthPath());
 	}
 
 	public static SessionId createSessionId(Type type,String url,SessionId primaryId,AuthSession authSession,
@@ -102,27 +100,28 @@ public class SessionId extends PoolBase{
 		sessionId.type=type;
 		sessionId.isValid = true;
 		sessionId.url=url;
-		sessionId.isDirectUrl=true;
+		sessionId.isDirectUrl=false;
 		sessionId.setPrimaryId(primaryId);
 		sessionId.authSession=authSession;
 		if(authSession!=null){
 			authSession.setSessionId(sessionId);
 		}
 		sessionId.lastAccessTime = System.currentTimeMillis();
-		sessionId.isCookieSecure=isCookieSecure;
-		sessionId.cookieDomain=cookieDomain;
-		sessionId.cookiePath=cookiePath;
-		if(isCookieSecure){
-		}
-		StringBuilder sb=new StringBuilder();
-		if(isCookieSecure){
-			sb.append("https://");
-		}else{
-			sb.append("http://");
-		}
-		sb.append(cookieDomain);
-		sb.append(cookiePath);
-		sessionId.authUrl=sb.toString();
+		sessionId.cookieLocation=CookieLocation.parse(isCookieSecure,cookieDomain,cookiePath);
+//		sessionId.isCookieSecure=isCookieSecure;
+//		sessionId.cookieDomain=cookieDomain;
+//		sessionId.cookiePath=cookiePath;
+//		if(isCookieSecure){
+//		}
+//		StringBuilder sb=new StringBuilder();
+//		if(isCookieSecure){
+//			sb.append("https://");
+//		}else{
+//			sb.append("http://");
+//		}
+//		sb.append(cookieDomain);
+//		sb.append(cookiePath);
+//		sessionId.authUrl=sb.toString();
 		
 		//idの生成は、authorizerに任せる
 		authorizer.registerSessionId(sessionId);
@@ -197,14 +196,17 @@ public class SessionId extends PoolBase{
 	/* secondaryIdが単一のmappingと結びつくとは限らない WebSocket対応*/
 	//	private Mapping mapping;//secondary用の場合、どのmapping用のSessionIdか
 	/* secondaryIdがどの範囲で有効かを保持する WebSocket対応*/
+	private CookieLocation cookieLocation;
+	/*
 	private String authUrl;
 	private boolean isCookieSecure;
 	private String cookieDomain;
 	private String cookiePath;
+	*/
 	
 	/* primaryからCookie的に該当するsecondaryの存在をチェックする */
 	public boolean isCookieMatch(String authUrl){
-		return this.authUrl.equals(authUrl);
+		return this.cookieLocation.equals(authUrl);
 	}
 
 	/*
@@ -323,7 +325,7 @@ public class SessionId extends PoolBase{
 	}
 	*/
 	public String getSetCookieString() {
-		return Cookie.formatSetCookieHeader(SESSION_ID, getId(), null, cookiePath,-1, isCookieSecure);
+		return Cookie.formatSetCookieHeader(SESSION_ID, getId(),cookieLocation,-1);
 	}
 	
 	//認証先URLのpath情報にauthIdを付加するメソッド
@@ -429,8 +431,13 @@ public class SessionId extends PoolBase{
 		return authId;
 	}
 
-	public String getAuthUrl() {
-		return authUrl;
+	@Override
+	public void recycle() {
+		if(cookieLocation!=null){
+			cookieLocation.unref();
+			cookieLocation=null;
+		}
+		super.recycle();
 	}
 
 	/*

@@ -80,6 +80,10 @@ public class Cookie extends PoolBase{
     	return formatSetCookieHeader(name,value,domain,path,-1,false);
     }
     
+    public static String formatSetCookieHeader(String name,String value,CookieLocation location,int maxAge){
+    	return formatSetCookieHeader(name, value, null/*location.getDomain()*/, location.getPath(), maxAge, location.isSecure());
+    }
+    
     public static String formatSetCookieHeader(String name,String value,String domain,String path,int maxAge,boolean isSecure){
 		StringBuilder buf=new StringBuilder();
 		
@@ -116,9 +120,10 @@ public class Cookie extends PoolBase{
     
 	private String name;
 	private String value;
-	private String domain;
-	private String path;
-	private boolean isSecure=false;
+	private CookieLocation location;
+//	private String domain;
+//	private String path;
+//	private boolean isSecure=false;
 	private int maxAge=-1;
 
 	public String getName() {
@@ -137,6 +142,7 @@ public class Cookie extends PoolBase{
 		this.value = value;
 	}
 
+	/*
 	public String getDomain() {
 		return domain;
 	}
@@ -160,6 +166,7 @@ public class Cookie extends PoolBase{
 	public void setSecure(boolean isSecure) {
 		this.isSecure = isSecure;
 	}
+	*/
 
 	public int getMaxAge() {
 		return maxAge;
@@ -170,7 +177,7 @@ public class Cookie extends PoolBase{
 	}
 
 	public String toSetCookieHeader() {
-		return formatSetCookieHeader(name, value, domain, path, maxAge, isSecure);
+		return formatSetCookieHeader(name, value, location.getDomain(), location.getPath(), maxAge, location.isSecure());
 	}
 
 }
