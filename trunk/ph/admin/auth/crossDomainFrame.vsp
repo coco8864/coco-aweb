@@ -6,13 +6,11 @@
 <meta http-equiv="Pragma" content="no-cache"> 
 <meta http-equiv="Cache-Control" content="no-cache"> 
 <meta http-equiv="Expires" content="0"> 
-<script type="text/javascript" src="/pub/js/ph-loader.js"></script>
 <script  type="text/javascript"><!--
-parent.postMessage("test","http://a.com");
-//window.location="check.html";
+parent.postMessage('$esc.javascript(${response})',"*");
+window.location="$esc.javascript(${config.publicWebUrl})/check.html";
 // --></script>
 </head>
 <body>
-test frame
 </body>
 </html>

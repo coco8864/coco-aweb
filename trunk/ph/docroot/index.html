@@ -23,10 +23,10 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 	ph.jQuery(function() {
 		ph.jQuery("#version").text(ph.version);
 		ph.jQuery("#status").text('running');
-		ph.auth.getUser(function(user){
+		ph.auth.getUser(function(res){
 			var inout=ph.jQuery("#loginout");
-			if(user){
-				ph.jQuery("#welcome").text(user.loginId+"さん ようこそ");
+			if(res.user){
+				ph.jQuery("#welcome").text(res.user.loginId+"さん ようこそ");
 				inout.attr("src","/pub/images/logout.gif");
 				inout.attr("title","logout");
 				inout.unbind();

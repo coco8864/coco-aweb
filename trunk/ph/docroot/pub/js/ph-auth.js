@@ -5,109 +5,45 @@ if(window.ph.auth){
 window.ph.auth={
 	isAuthFrameLoad:false,
 	authFrameName:'_phAuthFrame',
-	setUrlAuth:function(url,flag,cb){
-		var authIdcb=function(data){
-			ph.dump(data);
-//			var msg=ph.JSON.parse(data);
-			var msg=data;
-			if(msg.result){
-				ph.log("setUrlAuth direct true:"+url);
-				cb(true,msg.appId);
-				return;
-			}
-			if(!msg.authId){
-				ph.log("setUrlAuth direct false:"+url);
-				cb(false,null);
-				return;
-			}
-			ph.auth._authCb=cb;
-			ph.auth._authPath=url;
-			ph.auth._getPathOnceId2(msg.authId);
+	orderInfo:{isIn:false,req:null,cb:null},
+	_order:function(req,cb){
+		if(this.orderInfo.isIn){
+			ph.log('duplicate order type'+ req.type);
+			return false;
 		}
-		ph.jQuery.get(url+"?PH_AUTH=check",{},authIdcb,"jsonp").error(function() {ph.log('setUrlAuth error');cb(false);});
+		this.orderInfo.isIn=true;
+		this.orderInfo.req=req;
+		this.orderInfo.cb=cb;
+		this._postAuthFrame(req);
 	},
-	_getPathOnceId2:function(authId){
-		ph.log("_getPathOnceId2:"+authId);
-		if(false/*ph.isUseCrossDomain*/){
-			ph.auth._postMessage({type:'getPathOnceId',authId:authId});
-		}else{
-			var pathOnceIdcb=function(data){
-				ph.auth._setUrlAuth(data);
-			}
-			ph.jQuery.get(ph.authUrl+"/ajaxPathOnceId",{authId:authId,top:top.location.href},pathOnceIdcb,"jsonp");
-		}
-	},
-	_setUrlAuth:function(pathOnceId){
-		ph.log("_setUrlAuth:"+pathOnceId);
-		if(!pathOnceId){//primaryもなかったと考えられる
-			ph.log('_setUrlAuth error');
-			var orgUrl=top.location.href;
-			top.location.href=ph.authUrl+"?orgUrl="+orgUrl;
+	orderResponse:function(res){
+		if(!this.orderInfo.isIn){
+			ph.log('auth not request');
 			return;
 		}
-		var setAuthCb=function(data){
-			ph.dump(data);
-//			var msg=ph.JSON.parse(data);
-			var msg=data;
-			ph.auth._authCb(msg.result,msg.appId);
-			ph.log("_setUrlAuth:"+msg.result+":"+ph.auth._authPath);
-			ph.auth._authPath=null;
-			ph.auth._authCb=null;
+		if(res.type!=this.orderInfo.req.type){
+			ph.log('auth type error:' + res.type +':' +this.orderInfo.req.type);
+			return;
 		}
-		ph.jQuery.get(ph.auth._authPath+"?PH_AUTH=auth",{pathOnceId:pathOnceId},setAuthCb,"jsonp");
+		if(res.result=='redirect'){
+			window.location.href=res.location;
+			return;
+		}
+		this.orderInfo.cb(res);
+		this.orderInfo.isIn=false;
+		this.orderInfo.cb=null;
+		this.orderInfo.req=null;
 	},
-	_getUserCb:null,
+	getAppId:function(authUrl,cb){
+		if(authUrl.lastIndexOf('/',0)==0){
+			authUrl=window.location.protocol + "//" + window.location.host + authUrl;
+		}
+		var req={type:'getAppId',authUrl:authUrl,originUrl:window.location.href};
+		this._order(req,cb);
+	},
 	getUser:function(cb){
-		this._userCb=cb;
-		if(ph.isUseCrossDomain){
-			ph.auth._postMessage({type:'getUser'});
-		}else{
-			var userCb=function(data){
-				ph.auth._userCb(data);
-				ph.auth._userCb=null;
-			}
-			ph.jQuery.get(ph.authUrl+"/ajaxUser",{},userCb,"jsonp");
-		}
-	},
-	_authCb:null,
-	_authPath:null,
-	setAuth:function(path,cb){
-		var authIdcb=function(data){
-			var msg=ph.JSON.parse(data);
-			if(msg.result){
-				ph.log("setAuth direct true:"+path);
-				cb(true,msg.appId);
-				return;
-			}
-			ph.auth._authCb=cb;
-			ph.auth._authPath=path;
-			ph.auth._getPathOnceId(msg.authId);
-		}
-		ph.jQuery.post(path+"/ajaxAuthId",{},authIdcb,"html").error(function() {ph.log('setAuth error');cb(false);});
-	},
-	_getPathOnceId:function(authId){
-		ph.log("_getPathOnceId:"+authId);
-		if(ph.isUseCrossDomain){
-			ph.auth._postMessage({type:'getPathOnceId',authId:authId});
-		}else{
-			var pathOnceIdcb=function(data){
-				ph.auth._setAuth(data);
-//				var res={type:'getPathOnceId',result:true,data:data};
-//				ph.auth._onMessage(res);
-			}
-			ph.jQuery.get(ph.authUrl+"/ajaxPathOnceId",{authId:authId},pathOnceIdcb,"jsonp");
-		}
-	},
-	_setAuth:function(pathOnceId){
-		ph.log("_setAuth:"+pathOnceId);
-		var setAuthCb=function(data){
-			var msg=ph.JSON.parse(data);
-			ph.auth._authCb(msg.result,msg.appId);
-			ph.log("_setAuth:"+msg.result+":"+ph.auth._authPath);
-			ph.auth._authPath=null;
-			ph.auth._authCb=null;
-		}
-		ph.jQuery.post(ph.auth._authPath+"/ajaxSetAuth",{pathOnceId:pathOnceId},setAuthCb,"html");
+		var req={type:'getUser'};
+		this._order(req,cb);
 	},
 	_onMessage:function(ev){
 		ph.log("ph.auth._onMessage:"+ev.data);
@@ -119,21 +55,16 @@ window.ph.auth={
 			return;
   		}
 		var res=ph.JSON.parse(ev.data);
-		if(res.type=='getUser'){
-			ph.auth._userCb(res.data);
-			ph.auth._userCb=null;
-		}else if(res.type=='getPathOnceId'){
-			ph.auth._setAuth(res.data);
-		}
+		ph.auth.orderResponse(res);
 	},
-	_postMessage:function(msg){
+	_postAuthFrame:function(req){
 		if(!ph.auth.isAuthFrameLoad){
 			ph.log("isAuthFrameLoad=false");
-			setTimeout(function(){ph.auth._postMessage(msg);},100);
+			setTimeout(function(){ph.auth._postAuthFrame(req);},100);
 			return;
 		}
-		var jsonMsg=ph.JSON.stringify(msg);
-		window[this.authFrameName].postMessage(jsonMsg,ph.authUrl);
+		var reqText=ph.JSON.stringify(req);
+		window[this.authFrameName].postMessage(reqText,ph.authUrl);
 	}
 };
 
