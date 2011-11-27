@@ -90,12 +90,20 @@ function getAppId(req){
 	ph.jQuery.post(ph.authUrl+"/ajaxCheckSession",{authUrl:req.authUrl,originUrl:req.originUrl},_checkSessionCb,"html");
 }
 
-function onMessageFromParent(ev){
+function onMessageFunc(ev){
 	if(!ev.data){
 		return;
 	}
 	var origin = ev.origin;
 	var req=ph.JSON.parse(ev.data);
+	if(cdrInfo.isIn/*&& origin==cdrInfo.url*/){
+		cdrInfo.isIn=false;
+		cdrInfo.url=null;
+		var cb=cdrInfo.cb;
+		cdrInfo.cb=null;
+		cb(req);
+		return;
+	}
 	if(origin==parentOrigin){
 		if(orderInfo.isIn){
 			return;//処理中
@@ -108,13 +116,6 @@ function onMessageFromParent(ev){
 			getAppId(req);
 		}
   	}
-	if(cdrInfo.isIn/*&& origin==cdrInfo.url*/){
-		cdrInfo.isIn=false;
-		cdrInfo.url=null;
-		var cb=cdrInfo.cb;
-		cdrInfo.cb=null;
-		cb(req);
-	}
 }
 
 function postMessageToParent(msg,origin){
@@ -128,9 +129,9 @@ ph.jQuery(function(){
 	parentOrigin=decodeURIComponent(location.search.substring('?origin='.length));
 //	alert('parentOrigin:'+parentOrigin); TODO check parentOrigin from
 	if(window.addEventListener){
-		window.addEventListener('message',onMessageFromParent, false);
+		window.addEventListener('message',onMessageFunc, false);
 	}else if(window.attachEvent){
-		window.attachEvent('onmessage',onMessageFromParent);
+		window.attachEvent('onmessage',onMessageFunc);
 	}
 	postMessageToParent({load:true},parentOrigin);
 });
