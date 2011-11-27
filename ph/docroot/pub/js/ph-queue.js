@@ -142,12 +142,12 @@ if(typeof ph == "undefined"){
 					this.url=window.location.protocol + "//";
 				}
 				this.url+=window.location.host + path;
-				ph.auth.setAuth(path,function(isAuth,appId){
+				ph.auth.getAppId(path,function(res/*isAuth,appId*/){
 //alert("queue auth:"+isAuth);
-					if(isAuth){
-						ph.log('1:appId:'+appId);
+					if(res.result){
+						ph.log('1:appId:'+res.appId);
 						ph.queue.isAuth=true;
-						ph.queue.appId=appId;
+						ph.queue.appId=res.appId;
 						ph.queue.onTimer();
 						ph.queue._path=path;
 						ph.queue._errorCb=errorCb;
@@ -284,11 +284,11 @@ if(typeof ph == "undefined"){
 					data: sendText,
 					success: this.onCallback,
 					error: function(){
-						ph.auth.setAuth(ph.queue._path,function(isAuth,appId){
-							if(isAuth){
-								ph.log('2:appId'+appId);
+						ph.auth.getAppId(ph.queue._path,function(res/*isAuth,appId*/){
+							if(res.result){
+								ph.log('2:appId'+res.appId);
 								ph.queue.isAuth=true;
-								ph.queue.appId=appId;
+								ph.queue.appId=res.appId;
 							}else{
 								ph.queue.isAuth=false;
 								ph.queue.appId=null;
@@ -418,11 +418,11 @@ if(typeof ph == "undefined"){
 					ph.queue.url=window.location.protocol + "//" + window.location.host + ph.queue._path;
 					ph.log("change to Polling:"+ ph.queue.url);
 				}
-				ph.auth.setAuth(ph.queue._path,function(isAuth,appId){
-					if(isAuth){
-						ph.log('3:appId'+appId);
+				ph.auth.getAppId(ph.queue._path,function(res/*isAuth,appId*/){
+					if(res.result){
+						ph.log('3:appId'+res.appId);
 						ph.queue.isAuth=true;
-						ph.queue.appId=appId;
+						ph.queue.appId=res.appId;
 						setTimeout(ph.queue.onTimer,ph.queue.interval);
 					}else{
 						ph.queue.isAuth=false;

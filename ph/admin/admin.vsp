@@ -61,15 +61,15 @@ ph.log("tabs ajaxOptions success");
 		},
 		selected:0
 	});
-	ph.queue.start('/queue',function(){location='$esc.javascript(${config.PublicWebUrl})'});
+	ph.queue.start('/queue',function(){location=ph.publicWebUrl});
 });
 	</script> 
 </head> 
 <body> 
 <H1 class="mainTitle">Phantom Proxy Console</H1>
 <div style="text-align:right" class="welcom">$!esc.html($loginUser.loginId)さんようこそ
-<img src="/pub/images/home.gif" title="home" onclick='location="$!esc.html(${config.config.publicWebUrl})"'/>
-<img src="/pub/images/logout.gif" title="logout" onclick='location="$!esc.html(${config.config.authUrl})/logout"'/>
+<img src="/pub/images/home.gif" title="home" onclick='location=ph.publicWebUrl'/>
+<img src="/pub/images/logout.gif" title="logout" onclick='location=(ph.authUrl+"/logout")'/>
 </div>
 <div class="demo">
 ##roleによってメニューを変えたい場合・ここを調整する

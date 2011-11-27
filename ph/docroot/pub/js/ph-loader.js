@@ -11,6 +11,7 @@ window.ph={
  hostHeader:'$esc.javascript(${handler.getRequestHeader().getServer()})',
  authUrl:'$esc.javascript(${config.authUrl})',
  adminUrl:'$esc.javascript(${config.adminUrl})',
+ publicWebUrl:'$esc.javascript(${config.publicWebUrl})',
  scripts:['jquery-1.5.1.min.js','ph-jqnoconflict.js','ph-json2.js'],
  isUseWebSocket:false,//WebSocketを使うか否か?
  isUseSessionStorage:false,//SessionStorageを使うか否か?
