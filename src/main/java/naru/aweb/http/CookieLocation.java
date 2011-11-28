@@ -68,37 +68,40 @@ public class CookieLocation extends PoolBase {
 		}
 	}
 	
-	@Override
-	public boolean equals(Object obj) {
-		if(!(obj instanceof CookieLocation)){
-			//url表現と一致するかどうかをチェック
-			if(obj instanceof String){
-				if(equalsUrls.contains(obj)){
-					return true;
-				}
-			}
+	//url表現と一致するかどうかをチェック
+	public boolean isMatch(String authUrl){
+		return equalsUrls.contains(authUrl);
+	}
+	
+	public boolean isMatch(boolean isSecure,ServerParser domain,String path){
+		if(this.isSecure!=isSecure){
 			return false;
 		}
-		CookieLocation cl=(CookieLocation)obj;
-		if(isSecure!=cl.isSecure){
+		if(!this.domain.equals(domain)){
 			return false;
 		}
-		if(!domain.equals(cl.domain)){
-			return false;
-		}
-		if(path!=null){
-			if( path.equals(cl.path) ){
+		if(this.path!=null){
+			if( this.path.equals(path) ){
 				return true;
 			}
-			if("/".equals(path) && cl.path==null){
+			if("/".equals(this.path) && path==null){
 				return true;
 			}
 		}else{
-			if("/".equals(cl.path)||cl.path==null){
+			if("/".equals(path)||path==null){
 				return true;
 			}
 		}
 		return false;
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if(!(obj instanceof CookieLocation)){
+			return false;
+		}
+		CookieLocation cl=(CookieLocation)obj;
+		return isMatch(cl.isSecure,cl.domain,cl.path);
 	}
 
 	@Override

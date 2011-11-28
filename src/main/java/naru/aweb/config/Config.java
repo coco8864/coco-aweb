@@ -109,7 +109,10 @@ public class Config {
 	private File tmpDir;
 	private DiskFileItemFactory uploadItemFactory;
 	private File settingDir;
-
+	
+	//ph-auth.jsを取り込めるサイト列、省略した場合はどこからでも可
+	private Set allowOrigins=null;
+	
 	/* コンテンツエンコードに何を許すか?実際zgip or not */
 	// private String contentEncoding;
 	/* keepAlive関連 */
