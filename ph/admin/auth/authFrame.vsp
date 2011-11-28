@@ -87,7 +87,7 @@ function _checkSessionCb(resText){
 }
 
 function getAppId(req){
-	ph.jQuery.post(ph.authUrl+"/ajaxCheckSession",{authUrl:req.authUrl,originUrl:req.originUrl},_checkSessionCb,"html");
+	ph.jQuery.post(ph.authUrl+"/ajaxCheckSession",req/*{authUrl:req.authUrl,originUrl:req.originUrl}*/,_checkSessionCb,"html");
 }
 
 function onMessageFunc(ev){
