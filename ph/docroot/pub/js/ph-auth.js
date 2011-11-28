@@ -16,7 +16,7 @@ window.ph.auth={
 		this.orderInfo.cb=cb;
 		this._postAuthFrame(req);
 	},
-	orderResponse:function(res){
+	_orderResponse:function(res){
 		if(!this.orderInfo.isIn){
 			ph.log('auth not request');
 			return;
@@ -40,10 +40,12 @@ window.ph.auth={
 	3)primaryは認証未=>このメソッドは復帰せず認証画面に遷移
 	*/
 	getAppId:function(authUrl,cb){
-		if(authUrl.lastIndexOf('/',0)==0){
-			authUrl=window.location.protocol + "//" + window.location.host + authUrl;
-		}
 		var req={type:'getAppId',authUrl:authUrl,originUrl:window.location.href};
+		if(authUrl.lastIndexOf('http//',0)==0 || authUrl.lastIndexOf('https://',0)==0){
+			req.protocol='proxy';
+		}else{
+			req.protocol=window.location.protocol;
+		}
 		this._order(req,cb);
 	},
 	getUser:function(cb){
@@ -60,7 +62,7 @@ window.ph.auth={
 			return;
   		}
 		var res=ph.JSON.parse(ev.data);
-		ph.auth.orderResponse(res);
+		ph.auth._orderResponse(res);
 	},
 	_postAuthFrame:function(req){
 		if(!ph.auth.isAuthFrameLoad){
