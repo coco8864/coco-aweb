@@ -14,6 +14,7 @@ import naru.aweb.auth.SessionId.Type;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
 import naru.aweb.config.User;
+import naru.aweb.util.ServerParser;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
@@ -350,7 +351,7 @@ public class Authorizer implements Timer{
 	 * @param cookies
 	 * @return
 	 */
-	public AuthSession getAuthSessionBySecondaryId(String id,Mapping mapping,String addressBar) {
+	public AuthSession getAuthSessionBySecondaryId(String id,Mapping mapping,boolean isSecure,ServerParser domain) {
 		SessionId secondaryId = getSessionId(Type.SECONDARY,id);
 		if (secondaryId == null) {
 			return null;
@@ -359,7 +360,7 @@ public class Authorizer implements Timer{
 		//ここまでであくまで可能性のある、primaryIdとsecondaryIdを捕まえた
 		//本当に欲するものか否かは、ロック後確認する
 		synchronized(secondaryId){
-			if(!secondaryId.isMatch(Type.SECONDARY, id,mapping)){
+			if(!secondaryId.isMatch(Type.SECONDARY, id,isSecure,domain,mapping.getSourcePath())){
 				return null;
 			}
 			if(mapping.isSessionUpdate()){//ws等はタイムアウト時間計算時にセションアクセスとみなさない
@@ -497,6 +498,10 @@ public class Authorizer implements Timer{
 		if (primaryId == null) {
 			return null;
 		}
+		//TODO このprimaryIdで許されるurlかをチェック,mapping対象か否か?
+		//まずは、mapping全体からチェック。
+		//このprimaryIdで許されるかどうかはDispatch時に再度チェックされるので必須ではない
+		
 		SessionId pathOnceId = SessionId.createPathOnceId(url,primaryId);
 		return pathOnceId;
 	}

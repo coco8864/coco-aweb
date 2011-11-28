@@ -12,6 +12,7 @@ import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
 import naru.aweb.http.Cookie;
 import naru.aweb.http.CookieLocation;
+import naru.aweb.util.ServerParser;
 
 /*
  * primaryId:/authに付加されるcookie
@@ -204,9 +205,14 @@ public class SessionId extends PoolBase{
 	private String cookiePath;
 	*/
 	
-	/* primaryからCookie的に該当するsecondaryの存在をチェックする */
+	/* Cookie的に該当するsecondaryかをチェックする */
 	public boolean isCookieMatch(String authUrl){
-		return this.cookieLocation.equals(authUrl);
+		return this.cookieLocation.isMatch(authUrl);
+	}
+	
+	/* Cookie的に該当するsecondaryかをチェックする */
+	public boolean isCookieMatch(boolean isSecure,ServerParser domain,String path){
+		return this.cookieLocation.isMatch(isSecure,domain,path);
 	}
 
 	/*
@@ -267,8 +273,11 @@ public class SessionId extends PoolBase{
 		return true;
 	}
 	
-	public boolean isMatch(Type type,String id,Mapping mapping){
+	public boolean isMatch(Type type,String id,boolean isSecure,ServerParser domain,String path){
 		if(!isMatch(type,id)){
+			return false;
+		}
+		if(!isCookieMatch(isSecure, domain, path)){
 			return false;
 		}
 		//TODO 認証時と同じmappingとは限らない。異なるmappingの場合は再度認証を求めた方がbetter

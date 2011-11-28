@@ -84,23 +84,6 @@ public class AuthHandler extends WebServerHandler {
 		completeResponse("302");
 	}
 	
-	private void ajaxRedirect(String authId,String setCookieString) {
-		StringBuffer sb=new StringBuffer(authorizer.getAuthUrl());
-		sb.append(AJAX_PATHONCEID_PATH);
-		sb.append('?');
-		sb.append(AUTH_ID);
-		sb.append('=');
-		sb.append(authId);
-		String location = sb.toString();
-		
-		setCookie(setCookieString);
-		
-		JSONObject json=new JSONObject();
-		json.put("isRedirect", true);
-		json.put("location", location);
-		ParameterParser parameter = getParameterParser();
-		responseJson(json,parameter.getParameter("callback"));
-	}
 	
 	/*
 	 * 認証して
@@ -132,58 +115,13 @@ public class AuthHandler extends WebServerHandler {
 		return pathOnceId;
 	}
 	
-	private void loginOnly(String cookieId,boolean isAjaxAuth,String callback){
-		User user=authorizer.getUserByPrimaryId(cookieId);
-		if(user!=null){
-			if(isAjaxAuth){
-//				setHeader(HeaderParser.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
-				JSONObject json=new JSONObject();
-				json.put("isRedirect", false);
-				json.put("result", user.toJson());
-				responseJson(json,callback);
-				return;
-			}
-			completeResponse("200", "authentication ok");
-			return;
-		}
-		if(isAjaxAuth){
-			setHeader(HeaderParser.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
-			JSONObject json=new JSONObject();
-			json.put("isRedirect", false);
-			json.put("result", null);
-			responseJson(json,callback);
-			return;
-		}
-		authenticate(null,null);
-	}
-	
-	private void redirectOrgUrl(SessionId pathOnceId,String authId){
-		String url = authorizer.getUrlFromTemporaryId(authId);
-		String encodeUrl=null;
-		if(url==null){
-			encodeUrl=config.getPublicWebUrl();
-			pathOnceId.unref(true);//この場合pathOnceIdは必要ない
-		}else{
-			pathOnceId.setUrl(url);
-			encodeUrl = pathOnceId.encodeUrl();
-		}
-		//元のurlに戻るところ
-		setHeader(HeaderParser.LOCATION_HEADER, encodeUrl);
-		completeResponse("302");
-	}
-	
-	private boolean primaryAuthorize(HeaderParser requestHeader,String cookieId,String authId){
-		SessionId pathOnceId=authorizer.createPathOnceIdByPrimary(cookieId);
-		if(pathOnceId==null){//cookieIdが無効な場合
-			return false;
-		}
-		redirectOrgUrl(pathOnceId,authId);
-		return true;
-	}
-	
 	private void loginRedirect(String cookieId,boolean isAjaxAuth,String authId,String callback){
-		String url = authorizer.getUrlFromTemporaryId(authId);
-		//TODO directUrlの場合は即座にredirectする
+		SessionId temporaryId = authorizer.getTemporaryId(authId);
+		if(temporaryId==null){
+			completeResponse("403", "authentication error");
+			return;
+		}
+		String url=temporaryId.getUrl();
 		SessionId pathOnceId=authorizer.createPathOnceIdByPrimary(url, cookieId);
 		if(pathOnceId==null){//cookieIdが無効な場合
 			if(isAjaxAuth){
@@ -194,6 +132,13 @@ public class AuthHandler extends WebServerHandler {
 			if( pathOnceId==null ){
 				return;
 			}
+		}
+		if(temporaryId.isDirectUrl()){
+			//directUrlの場合は即座にredirectする
+			pathOnceId.unref();
+			setHeader(HeaderParser.LOCATION_HEADER, url);
+			completeResponse("302");
+			return;
 		}
 		String encodeUrl = pathOnceId.encodeUrl();
 		if(isAjaxAuth){
@@ -270,7 +215,28 @@ public class AuthHandler extends WebServerHandler {
 	
 	private void checkSession(String cookieId){
 		ParameterParser parameter = getParameterParser();
+		String protocol=parameter.getParameter("protocol");
 		String authUrl=parameter.getParameter("authUrl");
+		//TODO authUrlが,mapping対象か否か?
+		if("proxy".equals(protocol)){
+			//proxyとしてマッチするか？
+			if(!authUrl.endsWith("/")){
+				authUrl=authUrl+"/";
+			}
+		}else{
+			//webとしてマッチするか？
+			StringBuffer sb=new StringBuffer();
+			sb.append(protocol);
+			sb.append("//");
+			sb.append(config.getSelfDomain());
+			sb.append(":");
+			sb.append(config.getInt(Config.SELF_PORT));
+			sb.append(authUrl);
+			authUrl=sb.toString();
+		}
+		String originUrl=parameter.getParameter("originUrl");
+		//TODO originUrlが,使用許可のあるoriginか?
+		
 		StringBuffer appId=new StringBuffer();
 		int rc=authorizer.checkSecondarySessionByPrimaryId(cookieId,authUrl,appId);
 		JSONObject res=new JSONObject();
@@ -289,7 +255,6 @@ public class AuthHandler extends WebServerHandler {
 			}
 			break;
 		case Authorizer.CHECK_NO_PRIMARY:
-			String originUrl=parameter.getParameter("originUrl");
 			if(originUrl!=null){
 				SessionId tempraryId=authorizer.createTemporaryId(originUrl,null,true);
 				res.put("result", "redirectAuth");
@@ -360,13 +325,7 @@ public class AuthHandler extends WebServerHandler {
 		}
 		url=url.substring(0,pos);
 		
-		//TODO URLが無効ならresult:falseでレスポンス
-//		if(url==NG){
-//			json.put("result", false);
-//			responseJson(json,callback);
-//			return;
-//		}
-		//URLが有効ならばAUTH_IDをレスポンス
+		//AUTH_IDをレスポンス
 		SessionId temporaryId = authorizer.createTemporaryId(url,requestHeader.getPath());
 		String setCookieString = temporaryId.getSetCookieString();
 		setCookie(setCookieString);

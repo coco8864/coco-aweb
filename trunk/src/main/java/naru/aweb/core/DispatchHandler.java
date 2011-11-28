@@ -444,8 +444,7 @@ public class DispatchHandler extends ServerBaseHandler {
 		
 		String cookieId=(String)getRequestAttribute(SessionId.SESSION_ID);
 		if(cookieId!=null){
-			String addressBar=requestHeader.getAddressBar();
-			AuthSession authSession=authorizer.getAuthSessionBySecondaryId(cookieId,mapping.getMapping(),addressBar);
+			AuthSession authSession=authorizer.getAuthSessionBySecondaryId(cookieId,mapping.getMapping(),isSsl(),requestHeader.getServer());
 			if(authSession!=null){
 				//権限チェック、権限がなければ403
 				if(!authorizer.authorize(mapping.getMapping(),authSession)){

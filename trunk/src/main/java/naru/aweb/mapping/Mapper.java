@@ -350,4 +350,10 @@ public class Mapper {
 	public int getPacProxyPort(){
 		return pacProxyPort;
 	}
+	
+	//authUrlは、マッピング対象となる可能性があるか?
+	//authUrlはCookieLocationベースでのチェックを行うため、wsは、http,wssは、httpsとして存在を確認する
+	public boolean isMappingAllowUrl(String authUrl){
+		return true;
+	}
 }
