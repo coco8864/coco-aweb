@@ -41,7 +41,7 @@ window.ph.auth={
 	*/
 	getAppId:function(authUrl,cb){
 		var req={type:'getAppId',authUrl:authUrl,originUrl:window.location.href};
-		if(authUrl.lastIndexOf('http//',0)==0 || authUrl.lastIndexOf('https://',0)==0){
+		if(authUrl.lastIndexOf('http://',0)==0 || authUrl.lastIndexOf('https://',0)==0){
 			req.protocol='proxy';
 		}else{
 			req.protocol=window.location.protocol;
