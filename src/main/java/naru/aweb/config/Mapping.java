@@ -8,8 +8,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -378,6 +380,10 @@ public class Mapping{
 	@NotPersistent
 	private Class destinationHandlerClass;
 	
+	//ph-auth.jsを取り込めるサイト列、省略した場合はどこからでも可
+	@NotPersistent
+	private Set<String> allowOrigins=null;
+	
 	public JSON toJson(){
 		JSON json=JSONSerializer.toJSON(this,jsonConfig);
 		return json;
@@ -482,6 +488,7 @@ public class Mapping{
 			}
 //			isAuth=optionsJson.optBoolean("auth", false);
 //			isReplay=optionsJson.optBoolean("replay", false);
+			setupAllowOrigins(optionsJson.optString("allowOrigins"));
 		}
 		rolesList.clear();
 		if(roles!=null && roles.length()!=0){
@@ -906,5 +913,32 @@ public class Mapping{
 			return true;
 		}
 		return (sourcePort==port);
+	}
+	
+	private void setupAllowOrigins(String allowOriginsString){
+		if(allowOriginsString==null||"".equals(allowOriginsString)){
+			allowOrigins=null;
+			return;
+		}
+		allowOrigins=new HashSet<String>();
+		String[] array=allowOriginsString.split(",");
+		for(String allowOrigin:array){
+			allowOrigins.add(allowOrigin.trim());
+		}
+	}
+	
+	public boolean isAllowOrigin(String originUrl){
+		if(allowOrigins==null){
+			return false;
+		}
+		for(String allowOrigin:allowOrigins){
+			if("*".equals(allowOrigin)){
+				return true;
+			}
+			if(originUrl.startsWith(allowOrigin)){
+				return true;
+			}
+		}
+		return false;
 	}
 }
