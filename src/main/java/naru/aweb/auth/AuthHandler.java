@@ -1,5 +1,11 @@
 package naru.aweb.auth;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Set;
+
+import org.apache.log4j.Logger;
+
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
 import naru.aweb.config.User;
@@ -7,6 +13,7 @@ import naru.aweb.http.HeaderParser;
 import naru.aweb.http.KeepAliveContext;
 import naru.aweb.http.ParameterParser;
 import naru.aweb.http.WebServerHandler;
+import naru.aweb.mapping.Mapper;
 import naru.aweb.mapping.MappingResult;
 import net.sf.json.JSONObject;
 
@@ -21,6 +28,7 @@ import net.sf.json.JSONObject;
  */
 
 public class AuthHandler extends WebServerHandler {
+	private static Logger logger = Logger.getLogger(AuthHandler.class);
 	private static Config config = Config.getConfig();
 	private static Authenticator authenticator = config.getAuthenticator();
 	private static Authorizer authorizer=config.getAuthorizer();
@@ -213,18 +221,73 @@ public class AuthHandler extends WebServerHandler {
 		redirect(url, setCookieString);
 	}
 	
+	private boolean isMatchProxy(Mapper mapper,String authUrl){
+		boolean isSsl=false;
+		String host=null;
+		int port=-1;
+		try {
+			URL url=new URL(authUrl);
+			String prot=url.getProtocol();
+			if("https".equals(prot)){
+				isSsl=true;
+			}
+			host=url.getHost();
+			port=url.getPort();
+			if(port<0){
+				if(isSsl){
+					port=443;
+				}else{
+					port=80;
+				}
+			}
+		} catch (MalformedURLException e) {
+			logger.warn("authURL format error."+authUrl,e);
+			return false;
+		}
+		if( mapper.isMappingAllowProxyDomain(isSsl, host, port) ){
+			return true;
+		}
+		return false;
+	}
+	private boolean isMatchWebWs(Mapper mapper,String protocol,String authPath){
+		boolean isSsl=false;
+		if("https:".equals(protocol)){
+			isSsl=true;
+		}
+		if(mapper.isMappingAllowWebPath(isSsl, authPath) ){
+			return true;
+		}
+		return false;
+	}
+	
 	private void checkSession(String cookieId){
+		JSONObject res=new JSONObject();
 		ParameterParser parameter = getParameterParser();
 		String protocol=parameter.getParameter("protocol");
 		String authUrl=parameter.getParameter("authUrl");
 		//TODO authUrlが,mapping対象か否か?
+		Mapper mapper=config.getMapper();
 		if("proxy".equals(protocol)){
 			//proxyとしてマッチするか？
+			if( !isMatchProxy(mapper,authUrl) ){
+				//許されないoriginからのアクセス
+				logger.warn("not allow proxy url."+authUrl);
+				res.put("result", "ng");
+				responseJson(res);
+				return;
+			}
 			if(!authUrl.endsWith("/")){
 				authUrl=authUrl+"/";
 			}
 		}else{
-			//webとしてマッチするか？
+			//web wsとしてマッチするか？
+			if(!isMatchWebWs(mapper,protocol, authUrl) ){
+				//許されないoriginからのアクセス
+				logger.warn("not allow web path."+authUrl);
+				res.put("result", "ng");
+				responseJson(res);
+				return;
+			}
 			StringBuffer sb=new StringBuffer();
 			sb.append(protocol);
 			sb.append("//");
@@ -235,11 +298,16 @@ public class AuthHandler extends WebServerHandler {
 			authUrl=sb.toString();
 		}
 		String originUrl=parameter.getParameter("originUrl");
-		//TODO originUrlが,使用許可のあるoriginか?
+		if(originUrl==null || !config.isAllowOrigin(originUrl)){
+			//許されないoriginからのアクセス
+			logger.warn("not allow origin."+originUrl);
+			res.put("result", "ng");
+			responseJson(res);
+			return;
+		}
 		
 		StringBuffer appId=new StringBuffer();
 		int rc=authorizer.checkSecondarySessionByPrimaryId(cookieId,authUrl,appId);
-		JSONObject res=new JSONObject();
 		switch(rc){
 		case Authorizer.CHECK_SECONDARY_OK:
 			res.put("result", "secondary");
@@ -255,13 +323,9 @@ public class AuthHandler extends WebServerHandler {
 			}
 			break;
 		case Authorizer.CHECK_NO_PRIMARY:
-			if(originUrl!=null){
-				SessionId tempraryId=authorizer.createTemporaryId(originUrl,null,true);
-				res.put("result", "redirectAuth");
-				res.put("authId", tempraryId.getAuthId());
-			}else{//originが無いのは正常ではない
-				res.put("result", "ng");
-			}
+			SessionId tempraryId=authorizer.createTemporaryId(originUrl,null,true);
+			res.put("result", "redirectAuth");
+			res.put("authId", tempraryId.getAuthId());
 			break;
 		}
 		String callback=parameter.getParameter("callback");

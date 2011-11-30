@@ -130,7 +130,7 @@ public class ServerParser extends PoolBase {
 		return hostPattern!=null;
 	}
 	
-	public Matcher matcherHost(String targetHost){
+	public Matcher hostMatcher(String targetHost){
 		Matcher matcher=null;
 		synchronized(hostPattern){
 			matcher=hostPattern.matcher(targetHost);

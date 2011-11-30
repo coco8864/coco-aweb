@@ -715,7 +715,7 @@ public class Mapping{
 					return false;
 				}
 			}else{
-				serverMatcher=sourceServerParser.matcherHost(targetServer.getHost());
+				serverMatcher=sourceServerParser.hostMatcher(targetServer.getHost());
 				if(serverMatcher==null){
 					return false;
 				}
@@ -837,7 +837,7 @@ public class Mapping{
 					return null;
 				}
 			}else{
-				serverMatcher=sourceServerParser.matcherHost(targetServer.getHost());
+				serverMatcher=sourceServerParser.hostMatcher(targetServer.getHost());
 				if(serverMatcher==null){
 					return null;
 				}
@@ -891,5 +891,20 @@ public class Mapping{
 
 	public boolean isSessionUpdate() {
 		return isSessionUpdate;
+	}
+	
+	public boolean matchSourceHost(String host){
+		if(sourceServerParser.isWildHost()){
+			Matcher matcher=sourceServerParser.hostMatcher(host);
+			return (matcher!=null);
+		}
+		return host.equals(sourceServerParser.getHost());
+	}
+	public boolean matchSourcePost(int port){
+		int sourcePort=sourceServerParser.getPort();
+		if(sourcePort==ServerParser.WILD_PORT_NUMBER){
+			return true;
+		}
+		return (sourcePort==port);
 	}
 }

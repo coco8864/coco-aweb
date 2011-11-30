@@ -353,7 +353,51 @@ public class Mapper {
 	
 	//authUrlは、マッピング対象となる可能性があるか?
 	//authUrlはCookieLocationベースでのチェックを行うため、wsは、http,wssは、httpsとして存在を確認する
-	public boolean isMappingAllowUrl(String authUrl){
-		return true;
+	public boolean isMappingAllowWebPath(boolean isSsl,String path){
+		for(Mapping mapping:activeMappings){
+			//mapping認証もしくは認証の必要のないMappingはチェックの必要なし
+			if( mapping.getRolesList().size()==0 || mapping.getMappingAuth()!=null){
+				continue;
+			}
+			Mapping.SourceType sourceType=mapping.getSourceType();
+			if(sourceType!=Mapping.SourceType.WEB&&sourceType!=Mapping.SourceType.WS){
+				continue;
+			}
+			Mapping.SecureType secureType=mapping.getSecureType();
+			if(isSsl && secureType==Mapping.SecureType.PLAIN){
+				continue;
+			}
+			if(!isSsl && secureType==Mapping.SecureType.SSL){
+				continue;
+			}
+			String sourcePath=mapping.getSourcePath();
+			if(path.equals(sourcePath)){
+				return true;
+			}
+		}
+		return false;
+	}
+	public boolean isMappingAllowProxyDomain(boolean isSsl,String host,int port){
+		for(Mapping mapping:activeMappings){
+			//mapping認証もしくは認証の必要のないMappingはチェックの必要なし
+			if( mapping.getRolesList().size()==0 || mapping.getMappingAuth()!=null){
+				continue;
+			}
+			Mapping.SourceType sourceType=mapping.getSourceType();
+			if(sourceType!=Mapping.SourceType.PROXY&&sourceType!=Mapping.SourceType.WS_PROXY){
+				continue;
+			}
+			Mapping.SecureType secureType=mapping.getSecureType();
+			if(isSsl && secureType==Mapping.SecureType.PLAIN){
+				continue;
+			}
+			if(!isSsl && secureType==Mapping.SecureType.SSL){
+				continue;
+			}
+			if(mapping.matchSourceHost(host)&&mapping.matchSourcePost(port)){
+				return true;
+			}
+		}
+		return false;
 	}
 }
