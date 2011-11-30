@@ -229,6 +229,8 @@ public class Mapper {
 	
 	public Mapper(Config config){
 		this.config=config;
+		this.selfDomainStr=new HashSet<String>();
+		"//"+config.getSelfDomain()+":"+config.getInt(Config.SELF_PORT)+"/";
 		loadMappings();
 	}
 	
@@ -351,10 +353,14 @@ public class Mapper {
 		return pacProxyPort;
 	}
 	
+	private Set<String> selfDomainStrs;
 	//authUrlは、マッピング対象となる可能性があるか?
 	//authUrlはCookieLocationベースでのチェックを行うため、wsは、http,wssは、httpsとして存在を確認する
-	public boolean isMappingAllowWebPath(boolean isSsl,String path){
+	public boolean isMappingAllowWebPath(boolean isSsl,String path,String originUrl){
 		for(Mapping mapping:activeMappings){
+			if(mapping.isAllowOrigin(originUrl)==false){
+				continue;
+			}
 			//mapping認証もしくは認証の必要のないMappingはチェックの必要なし
 			if( mapping.getRolesList().size()==0 || mapping.getMappingAuth()!=null){
 				continue;
@@ -371,20 +377,23 @@ public class Mapper {
 				continue;
 			}
 			String sourcePath=mapping.getSourcePath();
-			if(path.equals(sourcePath)){
-				return true;
+			if(!path.equals(sourcePath)){
+				continue;
 			}
 		}
 		return false;
 	}
-	public boolean isMappingAllowProxyDomain(boolean isSsl,String host,int port){
+	
+	public boolean isMappingAllowProxyDomain(Mapping.SourceType sourceType,boolean isSsl,String host,int port,String originUrl){
 		for(Mapping mapping:activeMappings){
+			if(mapping.isAllowOrigin(originUrl)==false){
+				continue;
+			}
 			//mapping認証もしくは認証の必要のないMappingはチェックの必要なし
 			if( mapping.getRolesList().size()==0 || mapping.getMappingAuth()!=null){
 				continue;
 			}
-			Mapping.SourceType sourceType=mapping.getSourceType();
-			if(sourceType!=Mapping.SourceType.PROXY&&sourceType!=Mapping.SourceType.WS_PROXY){
+			if(mapping.getSourceType()!=sourceType){
 				continue;
 			}
 			Mapping.SecureType secureType=mapping.getSecureType();

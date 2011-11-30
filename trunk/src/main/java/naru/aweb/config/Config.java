@@ -110,9 +110,6 @@ public class Config {
 	private DiskFileItemFactory uploadItemFactory;
 	private File settingDir;
 	
-	//ph-auth.jsを取り込めるサイト列、省略した場合はどこからでも可
-	private Set<String> allowOrigins=null;
-	
 	/* コンテンツエンコードに何を許すか?実際zgip or not */
 	// private String contentEncoding;
 	/* keepAlive関連 */
@@ -687,9 +684,6 @@ public class Config {
 			exceptProxyDomains=null;
 		}
 		
-		String allowOriginsString = configuration.getString("allowOrigins");
-		setupAllowOrigins(allowOriginsString);
-		
 		// proxy除外リストの初期化
 		updateProxyFinder(pacUrl,proxyServer,sslProxyServer,exceptProxyDomains);
 		broadcaster=new Broadcaster(this);
@@ -1099,37 +1093,5 @@ public class Config {
 	}
 	public int getRestartCount(){
 		return restartCount;
-	}
-
-	private void setupAllowOrigins(String allowOriginsString){
-		if(allowOriginsString==null||"".equals(allowOriginsString)){
-			allowOrigins=null;
-			return;
-		}
-		allowOrigins=new HashSet<String>();
-		String[] array=allowOriginsString.split(",");
-		for(String allowOrigin:array){
-			allowOrigins.add(allowOrigin.trim());
-		}
-	}
-	public boolean isAllowOrigin(String originUrl){
-		if(allowOrigins==null){
-			return true;
-		}
-		for(String allowOrigin:allowOrigins){
-			if(originUrl.startsWith(allowOrigin)){
-				return true;
-			}
-		}
-		return false;
-	}
-	
-	public Set<String> getAllowOrigins() {
-		return allowOrigins;
-	}
-	public void setAllowOrigins(String allowOriginsString) {
-		allowOriginsString=allowOriginsString.trim();
-		setupAllowOrigins(allowOriginsString);
-		configuration.setProperty("allowOrigins", allowOriginsString);
 	}
 }

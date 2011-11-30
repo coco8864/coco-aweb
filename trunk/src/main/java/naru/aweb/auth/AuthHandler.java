@@ -220,15 +220,26 @@ public class AuthHandler extends WebServerHandler {
 		redirect(url, setCookieString);
 	}
 	
-	private boolean isMatchProxy(Mapper mapper,String authUrl){
+	private boolean isMatchProxy(Mapper mapper,String authUrl,String originUrl){
 		boolean isSsl=false;
 		String host=null;
 		int port=-1;
+		Mapping.SourceType sourceType=Mapping.SourceType.PROXY;
 		try {
 			URL url=new URL(authUrl);
 			String prot=url.getProtocol();
 			if("https".equals(prot)){
+				sourceType=Mapping.SourceType.PROXY;
 				isSsl=true;
+			}else if("wss".equals(prot)){
+				sourceType=Mapping.SourceType.WS_PROXY;
+				isSsl=true;
+			}else if("http".equals(prot)){
+				isSsl=false;
+				sourceType=Mapping.SourceType.PROXY;
+			}else if("ws".equals(prot)){
+				isSsl=false;
+				sourceType=Mapping.SourceType.WS_PROXY;
 			}
 			host=url.getHost();
 			port=url.getPort();
@@ -243,17 +254,17 @@ public class AuthHandler extends WebServerHandler {
 			logger.warn("authURL format error."+authUrl,e);
 			return false;
 		}
-		if( mapper.isMappingAllowProxyDomain(isSsl, host, port) ){
+		if( mapper.isMappingAllowProxyDomain(sourceType,isSsl, host, port,originUrl) ){
 			return true;
 		}
 		return false;
 	}
-	private boolean isMatchWebWs(Mapper mapper,String protocol,String authPath){
+	private boolean isMatchWebWs(Mapper mapper,String protocol,String authPath,String originUrl){
 		boolean isSsl=false;
 		if("https:".equals(protocol)){
 			isSsl=true;
 		}
-		if(mapper.isMappingAllowWebPath(isSsl, authPath) ){
+		if(mapper.isMappingAllowWebPath(isSsl, authPath,originUrl) ){
 			return true;
 		}
 		return false;
@@ -264,11 +275,12 @@ public class AuthHandler extends WebServerHandler {
 		ParameterParser parameter = getParameterParser();
 		String protocol=parameter.getParameter("protocol");
 		String authUrl=parameter.getParameter("authUrl");
+		String originUrl=parameter.getParameter("originUrl");
 		//TODO authUrlが,mapping対象か否か?
 		Mapper mapper=config.getMapper();
 		if("proxy".equals(protocol)){
 			//proxyとしてマッチするか？
-			if( !isMatchProxy(mapper,authUrl) ){
+			if( !isMatchProxy(mapper,authUrl,originUrl) ){
 				//許されないoriginからのアクセス
 				logger.warn("not allow proxy url."+authUrl);
 				res.put("result", "ng");
@@ -280,7 +292,7 @@ public class AuthHandler extends WebServerHandler {
 			}
 		}else{
 			//web wsとしてマッチするか？
-			if(!isMatchWebWs(mapper,protocol, authUrl) ){
+			if(!isMatchWebWs(mapper,protocol, authUrl,originUrl) ){
 				//許されないoriginからのアクセス
 				logger.warn("not allow web path."+authUrl);
 				res.put("result", "ng");
@@ -295,14 +307,6 @@ public class AuthHandler extends WebServerHandler {
 			sb.append(config.getInt(Config.SELF_PORT));
 			sb.append(authUrl);
 			authUrl=sb.toString();
-		}
-		String originUrl=parameter.getParameter("originUrl");
-		if(originUrl==null || !config.isAllowOrigin(originUrl)){
-			//許されないoriginからのアクセス
-			logger.warn("not allow origin."+originUrl);
-			res.put("result", "ng");
-			responseJson(res);
-			return;
 		}
 		
 		StringBuffer appId=new StringBuffer();
