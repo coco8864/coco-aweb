@@ -2,7 +2,6 @@ package naru.aweb.auth;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Set;
 
 import org.apache.log4j.Logger;
 
