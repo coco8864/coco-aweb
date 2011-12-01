@@ -77,8 +77,9 @@ function _checkSessionCb(resText){
 		res.result=true;
 		orderResponse(res);
 	}else if(res.result=='primary'){//primaryは、あったがsecondaryがなかった場合
-		var url=orderInfo.req.authUrl +"?PH_AUTH=setAuth&pathOnceId=" + res.pathOnceId;
-		crossDomainRequest(url,_setAuthCb);
+//		var url=orderInfo.req.authUrl +"?PH_AUTH=setAuth&pathOnceId=" + res.pathOnceId;
+//		crossDomainRequest(url,_setAuthCb);
+		crossDomainRequest(res.authEncUrl,_setAuthCb);
 	}else if(res.result=='redirectAuth'){//primaryがなかったため、認証が必要な場合
 		orderResponse({result:'redirect',location:ph.authUrl+"?authId="+res.authId});
 	}else{//urlの問題等でerror

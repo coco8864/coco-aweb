@@ -1,7 +1,9 @@
 package naru.aweb.mapping;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -63,6 +65,9 @@ public class Mapper {
 	private String publicWebUrl;
 	private String adminUrl;
 	private int pacProxyPort;//pacに出力する自サーバのポート番号
+	
+	//cross domainチェックで利用（自分からのリクエストをチェックするため)
+	private List<String> selfOrigins=new ArrayList<String>();
 	
 	public void addMapping(Mapping mapping){
 	}
@@ -229,8 +234,16 @@ public class Mapper {
 	
 	public Mapper(Config config){
 		this.config=config;
-		this.selfDomainStr=new HashSet<String>();
-		"//"+config.getSelfDomain()+":"+config.getInt(Config.SELF_PORT)+"/";
+		String selfDomain=config.getSelfDomain();
+		int port=config.getInt(Config.SELF_PORT);
+		
+		selfOrigins.add("http://"+selfDomain+":"+port+"/");
+		selfOrigins.add("https://"+selfDomain+":"+port+"/");
+		if(port==80){
+			selfOrigins.add("http://"+selfDomain+"/");
+		}else if(port==443){
+			selfOrigins.add("https://"+selfDomain+"/");
+		}
 		loadMappings();
 	}
 	
@@ -353,16 +366,21 @@ public class Mapper {
 		return pacProxyPort;
 	}
 	
-	private Set<String> selfDomainStrs;
 	//authUrlは、マッピング対象となる可能性があるか?
-	//authUrlはCookieLocationベースでのチェックを行うため、wsは、http,wssは、httpsとして存在を確認する
-	public boolean isMappingAllowWebPath(boolean isSsl,String path,String originUrl){
-		for(Mapping mapping:activeMappings){
-			if(mapping.isAllowOrigin(originUrl)==false){
-				continue;
+	private boolean isSelfOrigin(String originUrl){
+		for(String selfOrigin:selfOrigins){
+			if(originUrl.startsWith(selfOrigin)){
+				return true;
 			}
-			//mapping認証もしくは認証の必要のないMappingはチェックの必要なし
-			if( mapping.getRolesList().size()==0 || mapping.getMappingAuth()!=null){
+		}
+		return false;
+	}
+	
+	//authUrlはCookieLocationベースでのチェックを行うため、wsは、http,wssは、httpsとして存在を確認する
+	public int checkCrossDomainWebWs(boolean isSsl,String path,String originUrl){
+		boolean isSelf=isSelfOrigin(originUrl);
+		for(Mapping mapping:activeMappings){
+			if(isSelf==false && mapping.isAllowOrigin(originUrl)==false){
 				continue;
 			}
 			Mapping.SourceType sourceType=mapping.getSourceType();
@@ -377,20 +395,26 @@ public class Mapper {
 				continue;
 			}
 			String sourcePath=mapping.getSourcePath();
-			if(!path.equals(sourcePath)){
-				continue;
+			if(path.equals(sourcePath)){
+				//mapping認証もしくは認証の必要のないMappingはチェックの必要なし
+				if( mapping.getRolesList().size()==0 || mapping.getMappingAuth()!=null){
+					return CHECK_MATCH_NO_AUTH;
+				}else{
+					return CHECK_MATCH_AUTH;
+				}
 			}
 		}
-		return false;
+		return CHECK_NOT_MATCH;
 	}
 	
-	public boolean isMappingAllowProxyDomain(Mapping.SourceType sourceType,boolean isSsl,String host,int port,String originUrl){
+	public static final int CHECK_MATCH_AUTH=1;
+	public static final int CHECK_MATCH_NO_AUTH=2;
+	public static final int CHECK_NOT_MATCH=3;
+	
+	public int checkCrossDomainProxy(Mapping.SourceType sourceType,boolean isSsl,String host,int port,String originUrl){
+		boolean isSelf=isSelfOrigin(originUrl);
 		for(Mapping mapping:activeMappings){
-			if(mapping.isAllowOrigin(originUrl)==false){
-				continue;
-			}
-			//mapping認証もしくは認証の必要のないMappingはチェックの必要なし
-			if( mapping.getRolesList().size()==0 || mapping.getMappingAuth()!=null){
+			if(isSelf==false && mapping.isAllowOrigin(originUrl)==false){
 				continue;
 			}
 			if(mapping.getSourceType()!=sourceType){
@@ -404,9 +428,14 @@ public class Mapper {
 				continue;
 			}
 			if(mapping.matchSourceHost(host)&&mapping.matchSourcePost(port)){
-				return true;
+				//mapping認証もしくは認証の必要のないMappingはチェックの必要なし
+				if( mapping.getRolesList().size()==0 || mapping.getMappingAuth()!=null){
+					return CHECK_MATCH_NO_AUTH;
+				}else{
+					return CHECK_MATCH_AUTH;
+				}
 			}
 		}
-		return false;
+		return CHECK_NOT_MATCH;
 	}
 }
