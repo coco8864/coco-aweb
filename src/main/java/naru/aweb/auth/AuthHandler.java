@@ -14,6 +14,7 @@ import naru.aweb.http.ParameterParser;
 import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.Mapper;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.util.ServerParser;
 import net.sf.json.JSONObject;
 
 /**
@@ -220,92 +221,111 @@ public class AuthHandler extends WebServerHandler {
 		redirect(url, setCookieString);
 	}
 	
-	private boolean isMatchProxy(Mapper mapper,String authUrl,String originUrl){
+	/*
+	 * 復帰は３種類考えられる
+	 * 1)認証必要なし
+	 * 2)認証あり、matchする
+	 * 3)認証あり、matchしない
+	 */
+	private int checkCrossDomainProxy(Mapper mapper,String protocol,String authDomain,String originUrl,StringBuffer authUrlSb){
 		boolean isSsl=false;
-		String host=null;
-		int port=-1;
+		int defaultPort=80;
 		Mapping.SourceType sourceType=Mapping.SourceType.PROXY;
-		try {
-			URL url=new URL(authUrl);
-			String prot=url.getProtocol();
-			if("https".equals(prot)){
-				sourceType=Mapping.SourceType.PROXY;
-				isSsl=true;
-			}else if("wss".equals(prot)){
-				sourceType=Mapping.SourceType.WS_PROXY;
-				isSsl=true;
-			}else if("http".equals(prot)){
-				isSsl=false;
-				sourceType=Mapping.SourceType.PROXY;
-			}else if("ws".equals(prot)){
-				isSsl=false;
-				sourceType=Mapping.SourceType.WS_PROXY;
-			}
-			host=url.getHost();
-			port=url.getPort();
-			if(port<0){
-				if(isSsl){
-					port=443;
-				}else{
-					port=80;
-				}
-			}
-		} catch (MalformedURLException e) {
-			logger.warn("authURL format error."+authUrl,e);
-			return false;
-		}
-		if( mapper.isMappingAllowProxyDomain(sourceType,isSsl, host, port,originUrl) ){
-			return true;
-		}
-		return false;
-	}
-	private boolean isMatchWebWs(Mapper mapper,String protocol,String authPath,String originUrl){
-		boolean isSsl=false;
 		if("https:".equals(protocol)){
+			sourceType=Mapping.SourceType.PROXY;
 			isSsl=true;
+			defaultPort=443;
+		}else if("wss:".equals(protocol)){
+			sourceType=Mapping.SourceType.WS_PROXY;
+			isSsl=true;
+			defaultPort=443;
+		}else if("http:".equals(protocol)){
+			sourceType=Mapping.SourceType.PROXY;
+			isSsl=false;
+			defaultPort=80;
+		}else if("ws:".equals(protocol)){
+			sourceType=Mapping.SourceType.WS_PROXY;
+			isSsl=false;
+			defaultPort=80;
+		}else{
+			logger.warn("protocol format error."+protocol);
+			return Mapper.CHECK_NOT_MATCH;
 		}
-		if(mapper.isMappingAllowWebPath(isSsl, authPath,originUrl) ){
-			return true;
+		ServerParser authDomainParser=ServerParser.parse(authDomain, defaultPort);
+		String host=authDomainParser.getHost();
+		int port=authDomainParser.getPort();
+		
+		//authUrlの構築、wsの場合でも認証要求は、httpを使う(cookieを付加するのが目的)
+		if(isSsl){
+			authUrlSb.append("https://");
+		}else{
+			authUrlSb.append("http://");
 		}
-		return false;
+		authUrlSb.append(host);
+		authUrlSb.append(":");
+		authUrlSb.append(port);
+		authUrlSb.append("/");
+		
+		return mapper.checkCrossDomainProxy(sourceType,isSsl, host, port,originUrl);
+	}
+	private int checkCrossDomainWebWs(Mapper mapper,boolean isSsl,String authPath,String originUrl){
+		return mapper.checkCrossDomainWebWs(isSsl, authPath,originUrl);
 	}
 	
 	private void checkSession(String cookieId){
 		JSONObject res=new JSONObject();
 		ParameterParser parameter = getParameterParser();
-		String protocol=parameter.getParameter("protocol");
-		String authUrl=parameter.getParameter("authUrl");
+		String sourceType=parameter.getParameter("sourceType");
 		String originUrl=parameter.getParameter("originUrl");
+		String authUrl=null;
 		//TODO authUrlが,mapping対象か否か?
 		Mapper mapper=config.getMapper();
-		if("proxy".equals(protocol)){
+		if("proxy".equals(sourceType)){
+			String protocol=parameter.getParameter("protocol");
+			String authDomain=parameter.getParameter("authDomain");
 			//proxyとしてマッチするか？
-			if( !isMatchProxy(mapper,authUrl,originUrl) ){
+			StringBuffer authUrlSb=new StringBuffer();
+			switch(checkCrossDomainProxy(mapper,protocol,authDomain,originUrl,authUrlSb)){
+			case Mapper.CHECK_MATCH_NO_AUTH://認証の必要がない
+				res.put("result", "secondary");
+				res.put(APP_ID, "NEED_NOT_AUTH");
+				responseJson(res);
+				return;
+			case Mapper.CHECK_NOT_MATCH:
 				//許されないoriginからのアクセス
-				logger.warn("not allow proxy url."+authUrl);
+				logger.warn("not allow proxy url."+authDomain);
 				res.put("result", "ng");
 				responseJson(res);
 				return;
 			}
-			if(!authUrl.endsWith("/")){
-				authUrl=authUrl+"/";
-			}
+			authUrl=authUrlSb.toString();
 		}else{
+			boolean isSsl="true".equals(parameter.getParameter("isSsl"));
+			String authPath=parameter.getParameter("authPath");
 			//web wsとしてマッチするか？
-			if(!isMatchWebWs(mapper,protocol, authUrl,originUrl) ){
+			switch(checkCrossDomainWebWs(mapper,isSsl, authPath,originUrl)){
+			case Mapper.CHECK_MATCH_NO_AUTH://認証の必要がない
+				res.put("result", "secondary");
+				res.put(APP_ID, "NEED_NOT_AUTH");
+				responseJson(res);
+				return;
+			case Mapper.CHECK_NOT_MATCH:
 				//許されないoriginからのアクセス
-				logger.warn("not allow web path."+authUrl);
+				logger.warn("not allow web url."+authPath);
 				res.put("result", "ng");
 				responseJson(res);
 				return;
 			}
 			StringBuffer sb=new StringBuffer();
-			sb.append(protocol);
-			sb.append("//");
+			if(isSsl){
+				sb.append("https://");
+			}else{
+				sb.append("http://");
+			}
 			sb.append(config.getSelfDomain());
 			sb.append(":");
 			sb.append(config.getInt(Config.SELF_PORT));
-			sb.append(authUrl);
+			sb.append(authPath);
 			authUrl=sb.toString();
 		}
 		
@@ -321,6 +341,7 @@ public class AuthHandler extends WebServerHandler {
 			if(pathOnceSession!=null){
 				res.put("result", "primary");
 				res.put("pathOnceId", pathOnceSession.getId());
+				res.put("authEncUrl", authUrl +"?PH_AUTH=setAuth&pathOnceId=" + pathOnceSession.getId());
 			}else{
 				res.put("result", "ng");
 			}

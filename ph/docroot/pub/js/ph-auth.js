@@ -41,10 +41,38 @@ window.ph.auth={
 	*/
 	getAppId:function(authUrl,cb){
 		var req={type:'getAppId',authUrl:authUrl,originUrl:window.location.href};
-		if(authUrl.lastIndexOf('http://',0)==0 || authUrl.lastIndexOf('https://',0)==0){
-			req.protocol='proxy';
+		//type:proxy|web(ws or http)
+		//isSsl:true|false
+		//protocol:http:,ws:
+		//authDomain:ph.xxx.com...->proxyの場合
+		//authPath->wsの場合
+		if(authUrl.lastIndexOf('http://',0)==0){
+			req.sourceType='proxy';
+			req.isSsl=false;
+			req.protocol='http:';
+			req.authDomain=authUrl.substr(7);
+		}else if(authUrl.lastIndexOf('https://',0)==0){
+			req.sourceType='proxy';
+			req.isSsl=true;
+			req.protocol='https:';
+			req.authDomain=authUrl.substr(8);
+		}else if(authUrl.lastIndexOf('ws://',0)==0){
+			req.sourceType='proxy';
+			req.isSsl=false;
+			req.protocol='ws:';
+			req.authDomain=authUrl.substr(5);
+		}else if(authUrl.lastIndexOf('wss://',0)==0){
+			req.sourceType='proxy';
+			req.isSsl=true;
+			req.protocol='wss:';
+			req.authDomain=authUrl.substr(6);
 		}else{
-			req.protocol=window.location.protocol;
+			req.sourceType='web';
+			req.authPath=authUrl;
+			req.isSsl=false;
+			if(window.location.protocol=='https:'){
+				req.isSsl=true;
+			}
 		}
 		this._order(req,cb);
 	},

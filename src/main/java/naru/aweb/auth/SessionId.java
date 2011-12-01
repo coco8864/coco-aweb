@@ -9,7 +9,6 @@ import org.apache.log4j.Logger;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.aweb.config.Config;
-import naru.aweb.config.Mapping;
 import naru.aweb.http.Cookie;
 import naru.aweb.http.CookieLocation;
 import naru.aweb.util.ServerParser;
