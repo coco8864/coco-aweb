@@ -1,8 +1,5 @@
 package naru.aweb.auth;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-
 import org.apache.log4j.Logger;
 
 import naru.aweb.config.Config;
@@ -254,6 +251,7 @@ public class AuthHandler extends WebServerHandler {
 		ServerParser authDomainParser=ServerParser.parse(authDomain, defaultPort);
 		String host=authDomainParser.getHost();
 		int port=authDomainParser.getPort();
+		authDomainParser.unref(true);
 		
 		//authUrlの構築、wsの場合でも認証要求は、httpを使う(cookieを付加するのが目的)
 		if(isSsl){

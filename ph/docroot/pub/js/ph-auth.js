@@ -40,32 +40,37 @@ window.ph.auth={
 	3)primaryは認証未=>このメソッドは復帰せず認証画面に遷移
 	*/
 	getAppId:function(authUrl,cb){
+		var ptn=/^(?:([^:\/]+:))?(?:\/\/([^\/]*))?(.*)/
 		var req={type:'getAppId',authUrl:authUrl,originUrl:window.location.href};
+		authUrl.match(ptn);
+		var protocol=RegExp.$1;
+		var authDomain=RegExp.$2;
+		var authPath=RegExp.$3;
 		//type:proxy|web(ws or http)
 		//isSsl:true|false
 		//protocol:http:,ws:
 		//authDomain:ph.xxx.com...->proxyの場合
 		//authPath->wsの場合
-		if(authUrl.lastIndexOf('http://',0)==0){
+		if("http:"==protocol){
 			req.sourceType='proxy';
 			req.isSsl=false;
 			req.protocol='http:';
-			req.authDomain=authUrl.substr(7);
-		}else if(authUrl.lastIndexOf('https://',0)==0){
+			req.authDomain=authDomain;
+		}else if("https:"==protocol){
 			req.sourceType='proxy';
 			req.isSsl=true;
 			req.protocol='https:';
-			req.authDomain=authUrl.substr(8);
-		}else if(authUrl.lastIndexOf('ws://',0)==0){
+			req.authDomain=authDomain;
+		}else if("ws:"==protocol){
 			req.sourceType='proxy';
 			req.isSsl=false;
 			req.protocol='ws:';
-			req.authDomain=authUrl.substr(5);
-		}else if(authUrl.lastIndexOf('wss://',0)==0){
+			req.authDomain=authDomain;
+		}else if("wss:"==protocol){
 			req.sourceType='proxy';
 			req.isSsl=true;
 			req.protocol='wss:';
-			req.authDomain=authUrl.substr(6);
+			req.authDomain=authDomain;
 		}else{
 			req.sourceType='web';
 			req.authPath=authUrl;

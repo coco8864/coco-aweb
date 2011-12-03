@@ -43,6 +43,9 @@ public class RealHost {
 	private static Map<String,RealHost> realHosts=new HashMap<String,RealHost>();
 	private static List<RealHost> realHostsList=new ArrayList<RealHost>();
 	
+	//cross domainチェックで利用（自分からのリクエストをチェックするため)
+	private static List<String> selfOrigins=new ArrayList<String>();
+	
 	private static Map<String,ChannelHandler> handlers=new HashMap<String,ChannelHandler>();
 	private static Map<ServerParser, RealHost> serverRealHostMap = new HashMap<ServerParser, RealHost>();
 
@@ -58,6 +61,16 @@ public class RealHost {
 		RealHost realHost=(RealHost)JSONSerializer.toJava(json,jsonConfig);
 //		realHost.init();
 		return realHost;
+	}
+	
+	//authUrlは、自サーバを指しているか?(自分の場合は、crossDomain呼び出しではない)
+	public static boolean isSelfOrigin(String originUrl){
+		for(String selfOrigin:selfOrigins){
+			if(originUrl.startsWith(selfOrigin)){
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	public static JSON toJsonAll(){
@@ -196,8 +209,15 @@ public class RealHost {
 			Config config=Config.getConfig();
 			int port=realHost.getBindPort();
 			config.setProperty(Config.SELF_PORT,port);
-			String slefDomain=config.getString(Config.SELF_DOMAIN);
-			config.setProperty(Config.SELF_URL, "http://" + slefDomain +":"+port);
+			String selfDomain=config.getString(Config.SELF_DOMAIN);
+			config.setProperty(Config.SELF_URL, "http://" + selfDomain +":"+port);
+			selfOrigins.add("http://"+selfDomain+":"+port+"/");
+			selfOrigins.add("https://"+selfDomain+":"+port+"/");
+			if(port==80){
+				selfOrigins.add("http://"+selfDomain+"/");
+			}else if(port==443){
+				selfOrigins.add("https://"+selfDomain+"/");
+			}
 		}
 		return true;
 	}

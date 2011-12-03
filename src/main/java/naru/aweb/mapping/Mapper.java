@@ -66,9 +66,6 @@ public class Mapper {
 	private String adminUrl;
 	private int pacProxyPort;//pacに出力する自サーバのポート番号
 	
-	//cross domainチェックで利用（自分からのリクエストをチェックするため)
-	private List<String> selfOrigins=new ArrayList<String>();
-	
 	public void addMapping(Mapping mapping){
 	}
 	
@@ -234,16 +231,6 @@ public class Mapper {
 	
 	public Mapper(Config config){
 		this.config=config;
-		String selfDomain=config.getSelfDomain();
-		int port=config.getInt(Config.SELF_PORT);
-		
-		selfOrigins.add("http://"+selfDomain+":"+port+"/");
-		selfOrigins.add("https://"+selfDomain+":"+port+"/");
-		if(port==80){
-			selfOrigins.add("http://"+selfDomain+"/");
-		}else if(port==443){
-			selfOrigins.add("https://"+selfDomain+"/");
-		}
 		loadMappings();
 	}
 	
@@ -366,19 +353,10 @@ public class Mapper {
 		return pacProxyPort;
 	}
 	
-	//authUrlは、マッピング対象となる可能性があるか?
-	private boolean isSelfOrigin(String originUrl){
-		for(String selfOrigin:selfOrigins){
-			if(originUrl.startsWith(selfOrigin)){
-				return true;
-			}
-		}
-		return false;
-	}
 	
 	//authUrlはCookieLocationベースでのチェックを行うため、wsは、http,wssは、httpsとして存在を確認する
 	public int checkCrossDomainWebWs(boolean isSsl,String path,String originUrl){
-		boolean isSelf=isSelfOrigin(originUrl);
+		boolean isSelf=RealHost.isSelfOrigin(originUrl);
 		for(Mapping mapping:activeMappings){
 			if(isSelf==false && mapping.isAllowOrigin(originUrl)==false){
 				continue;
@@ -412,7 +390,7 @@ public class Mapper {
 	public static final int CHECK_NOT_MATCH=3;
 	
 	public int checkCrossDomainProxy(Mapping.SourceType sourceType,boolean isSsl,String host,int port,String originUrl){
-		boolean isSelf=isSelfOrigin(originUrl);
+		boolean isSelf=RealHost.isSelfOrigin(originUrl);
 		for(Mapping mapping:activeMappings){
 			if(isSelf==false && mapping.isAllowOrigin(originUrl)==false){
 				continue;
