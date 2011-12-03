@@ -8,7 +8,8 @@
 <meta http-equiv="Expires" content="0"> 
 <script  type="text/javascript"><!--
 parent.postMessage('$esc.javascript(${response})',"*");
-window.location="$esc.javascript(${config.publicWebUrl})/check.html";
+var now = new Date();
+window.location="$esc.javascript(${config.publicWebUrl})" +"check.html?" +now.getTime();
 // --></script>
 </head>
 <body>

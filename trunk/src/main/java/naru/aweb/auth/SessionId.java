@@ -1,5 +1,6 @@
 package naru.aweb.auth;
 
+import java.net.URL;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -303,7 +304,8 @@ public class SessionId extends PoolBase{
 		if(!isMatch(type,id)){
 			return false;
 		}
-		if(!this.url.equals(url)){
+		//http://xxx:80/path ‚Æ http://xxx/path‚Ì‰Â”\«‚ª‚ ‚é
+		if(!ServerParser.equalsUrl(this.url, url)){
 			return false;
 		}
 		return true;
