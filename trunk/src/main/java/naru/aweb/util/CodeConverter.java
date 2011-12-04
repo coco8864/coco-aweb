@@ -137,10 +137,13 @@ public class CodeConverter extends PoolBase{
 		PoolManager.poolArrayInstance(buffers);
 		char[] chars=new char[1024];
 		while(true){
-			if(!codeInputStream.hasRemaining()){
+//			if(!codeInputStream.hasRemaining()){
+//				break;
+//			}
+			int length=reader.read(chars);
+			if(length<0){
 				break;
 			}
-			int length=reader.read(chars);
 			writer.write(chars,0,length);
 		}
 		writer.flush();
@@ -155,10 +158,13 @@ public class CodeConverter extends PoolBase{
 		char[] chars=new char[1024];
 		StringBuilder sb=new StringBuilder();
 		while(true){
-			if(!codeInputStream.hasRemaining()){
+//			if(!codeInputStream.hasRemaining()){
+//				break;
+//			}
+			int length=reader.read(chars);
+			if(length<0){
 				break;
 			}
-			int length=reader.read(chars);
 			sb.append(chars,0,length);
 		}
 		return sb.toString();

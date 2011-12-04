@@ -28,7 +28,8 @@ public class WsProxyHandler extends  WebSocketHandler implements WsClient{
 	/* WebSocket Server‚Æ‚Â‚È‚ª‚Á‚Ä‚¢‚éHandler */
 	private WsClientHandler wsClientHandler;
 	
-	public 	void startWebSocketResponse(HeaderParser requestHeader,WsProtocol wsProtocol){
+	@Override
+	public void startWebSocketResponse(HeaderParser requestHeader,String subProtocols){
 		MappingResult mapping=getRequestMapping();
 		ServerParser targetHostServer=mapping.getResolveServer();
 		String path=mapping.getResolvePath();
@@ -40,7 +41,7 @@ public class WsProxyHandler extends  WebSocketHandler implements WsClient{
 		String origin=requestHeader.getHeader("Origin");
 		
 		//‚Ç‚Ìprotocol‚ÅŒq‚¬‚É‚¢‚­‚©?Šî–{‚»‚Ì‚Ü‚ÜH
-		String subProtocols=wsProtocol.getRequestSubProtocols(requestHeader);
+//		String subProtocols=wsProtocol.getRequestSubProtocols(requestHeader);
 		wsClientHandler.startRequest(this, null, 10000, uri,subProtocols,origin);
 	}
 	
@@ -66,6 +67,7 @@ public class WsProxyHandler extends  WebSocketHandler implements WsClient{
 	/* WebSocket server‚ÆÚ‘±‚³‚ê‚½ê‡ */
 	@Override
 	public void onWsOpen(String subprotocol) {
+		ref();//server‚ÉÚ‘±‚µ‚½ê‡close‚Ü‚Å©•ª‚Í‰ğ•ú‚µ‚È‚¢
 	}
 	
 	/* WebSocket server‚ªssl‚Ìê‡A*/
@@ -80,11 +82,13 @@ public class WsProxyHandler extends  WebSocketHandler implements WsClient{
 	@Override
 	public void onWcClose(Object userContext,int stat,short closeCode,String closeReason) {
 		logger.debug("#onWcClose cid:"+getChannelId());
+		unref();//server‚ÉÚ‘±‚µ‚½ê‡close‚Ü‚Å©•ª‚Í‰ğ•ú‚µ‚È‚¢
 		closeWebSocket("500");
 	}
 	@Override
 	public void onWcFailure(Object userContext, int stat, Throwable t) {
 		logger.debug("#wcFailure cid:"+getChannelId());
+		unref();//server‚ÉÚ‘±‚µ‚½ê‡close‚Ü‚Å©•ª‚Í‰ğ•ú‚µ‚È‚¢
 		closeWebSocket("500");
 	}
 	@Override

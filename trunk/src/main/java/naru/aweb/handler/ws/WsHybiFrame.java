@@ -171,6 +171,9 @@ public class WsHybiFrame {
 	public static ByteBuffer[] createCloseFrame(boolean isMask, short code,String reason) {
 		ByteBuffer buffer=PoolManager.getBufferInstance();
 		buffer.putShort(code);
+		if(reason==null){
+			reason="OK";
+		}
 		try {
 			buffer.put(reason.getBytes("utf-8"));
 		} catch (UnsupportedEncodingException e) {
@@ -283,6 +286,8 @@ public class WsHybiFrame {
 				}
 				if(buffer.hasRemaining()){
 					codeConverte.putBuffer(buffer);
+				}else{
+					PoolManager.poolBufferInstance(buffer);
 				}
 			}
 			closeReason=codeConverte.convertToString();
