@@ -77,9 +77,13 @@ public class CookieLocation extends PoolBase {
 		if(this.isSecure!=isSecure){
 			return false;
 		}
-		if(!this.domain.equals(domain)){
+		//cookieÇÕÅAportî‘çÜÇ‹Ç≈Ç›Ç»Ç¢ÅH
+		if(!this.domain.getHost().equals(domain.getHost())){
 			return false;
 		}
+//		if(!this.domain.equals(domain)){
+//			return false;
+//		}
 		if(this.path!=null){
 			if( this.path.equals(path) ){
 				return true;
