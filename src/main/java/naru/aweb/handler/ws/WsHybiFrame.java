@@ -27,6 +27,8 @@ public class WsHybiFrame {
 	public static final byte PCODE_PING = 0x09;
 	public static final byte PCODE_PONG = 0x0A;
 
+	public static final short CLOSE_UNKOWN=-1;
+	
 	public static final short CLOSE_NORMAL=1000;
 	public static final short CLOSE_GOING_AWAY=1001;
 	public static final short CLOSE_PROTOCOL_ERROR=1002;

@@ -5,7 +5,6 @@ package naru.aweb.handler;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.util.Date;
 
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
@@ -13,6 +12,7 @@ import naru.async.store.Store;
 import naru.aweb.auth.LogoutEvent;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Mapping.LogType;
+import naru.aweb.handler.ws.WsHybiFrame;
 import naru.aweb.handler.ws.WsProtocol;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.RequestContext;
@@ -78,6 +78,18 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		wsTrace(AccessLog.SOURCE_TYPE_WS_ON_MESSAGE,contentType,sb.toString(),"B<S",message);
 	}
 	
+	private void wsCloseTrace(short code,String reason){
+		StringBuilder sb=new StringBuilder();
+		sb.append("[ServerClose:");
+		sb.append(getChannelId());
+		sb.append(":code:");
+		sb.append(code);
+		sb.append(":reason:");
+		sb.append(reason);
+		sb.append(']');
+		wsTrace(AccessLog.SOURCE_TYPE_WS_ON_MESSAGE,null,sb.toString(),"B<S",null);
+	}
+	
 	private void wsOnTrace(String contentType,ByteBuffer[] message){
 		//ブラウザのpostMessageに起因して記録されるので
 		postMessageCount++;
@@ -88,6 +100,18 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		sb.append(postMessageCount);
 		sb.append(']');
 		wsTrace(AccessLog.SOURCE_TYPE_WS_POST_MESSAGE,contentType,sb.toString(),"B>S",message);
+	}
+	
+	private void wsOnCloseTrace(short code,String reason){
+		StringBuilder sb=new StringBuilder();
+		sb.append("[BrowserClose:");
+		sb.append(getChannelId());
+		sb.append(":code:");
+		sb.append(code);
+		sb.append(":reason:");
+		sb.append(reason);
+		sb.append(']');
+		wsTrace(AccessLog.SOURCE_TYPE_WS_POST_MESSAGE,null,sb.toString(),"B>S",null);
 	}
 	
 	private ByteBuffer[] stringToBuffers(String message){
@@ -132,6 +156,20 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		wsPostTrace("application/octet-stream",messageBuffers);
 	}
 	
+	public void traceClose(short code,String reason){
+		switch(logType){
+		case NONE:
+			return;
+		case ACCESS:
+		case REQUEST_TRACE:
+			break;
+		case RESPONSE_TRACE:
+		case TRACE:
+			break;
+		}
+		wsCloseTrace(code,reason);
+	}
+	
 	public void traceOnMessage(String message){
 		ByteBuffer [] messageBuffers=null;
 		switch(logType){
@@ -164,6 +202,19 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		wsOnTrace("octedstream",messageBuffers);
 	}
 	
+	public void traceOnClose(short code,String reason){
+		switch(logType){
+		case NONE:
+			return;
+		case ACCESS:
+		case REQUEST_TRACE:
+			break;
+		case RESPONSE_TRACE:
+		case TRACE:
+			break;
+		}
+		wsOnCloseTrace(code,reason);
+	}
 	
 	/* このクラスを継承したapplicationから呼び出される */
 	/* メッセージを送信する場合(text) */
@@ -182,13 +233,19 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	/**
 	 * statusCode 接続前だった場合、ブラウザに返却するstatusCode
 	 */
-	protected void closeWebSocket(String statusCode){
+	protected void closeWebSocket(String statusCode,short code,String reason){
 		if(isHandshaked){
-			wsProtocol.onClose(false);
+			wsProtocol.onClose(code,reason);
+//			wsCloseTrace(code,reason);
 		}else{
-			completeResponse("500");
+			completeResponse(statusCode);
 		}
 	}
+	
+	protected void closeWebSocket(String statusCode){
+		closeWebSocket(statusCode,WsHybiFrame.CLOSE_NORMAL,"OK");
+	}
+	
 	
 //	public abstract void startWebSocketResponse(HeaderParser requestHeader);
 	public abstract void onWsOpen(String subprotocol);
@@ -303,7 +360,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	public void onFinished() {
 		logger.debug("#finished client.cid:"+getChannelId());
 		if(wsProtocol!=null){
-			wsProtocol.onClose(true);
+			wsProtocol.onClose(WsHybiFrame.CLOSE_UNKOWN,null);
 		}
 		super.onFinished();
 	}
