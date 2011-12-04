@@ -256,10 +256,10 @@ public class WsHixie76 extends WsProtocol {
 	
 	/* ‰ñü‚ªØ’f‚³‚ê‚½ or Apl‚©‚çcloseWebSocket‚ªŒÄ‚Ño‚³‚ê‚½ */
 	@Override
-	public void onClose(boolean isFromLine) {
+	public void onClose(short code,String reason) {
 		logger.debug("WsHiXie76#onClose cid:"+handler.getChannelId());
-		callOnWsClose();
-		if(!isFromLine){
+		callOnWsClose(code,reason);
+		if(code!=WsHybiFrame.CLOSE_UNKOWN){
 			handler.asyncClose(null);
 		}
 	}

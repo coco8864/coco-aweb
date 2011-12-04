@@ -191,6 +191,7 @@ public abstract class WsProtocol extends PoolBase{
 	
 	protected void callBinaryOnMessage(ByteBuffer[] buffers){
 		try {
+			//traceOnMessageは、buffersを消費しない
 			handler.traceOnMessage(buffers);
 			handler.onMessage(buffers);
 		} catch (Throwable e) {
@@ -221,13 +222,14 @@ public abstract class WsProtocol extends PoolBase{
 	}
 	
 	private boolean isCallWsClose=false;
-	protected void callOnWsClose(){
+	protected void callOnWsClose(short code,String reason){
 		synchronized(handler){
 			if(isCallWsClose){
 				return;
 			}
+			handler.traceOnClose(code, reason);
 			try {
-				handler.onWsClose((short)-1, null);
+				handler.onWsClose(code,reason);
 			} catch (Throwable e) {
 				logger.warn("onWsClose throw exception.",e);
 			}
@@ -246,7 +248,7 @@ public abstract class WsProtocol extends PoolBase{
 	/* handshakeに失敗した場合は、このメソッドで,httpとしてリクエストを完了させる */
 	public abstract boolean onHandshake(HeaderParser requestHeader,String subProtocol);
 	public abstract void onBuffer(ByteBuffer[] data);
-	public abstract void onClose(boolean isFromLine);/* 回線が切断した or アプリがcloseWebSocketを呼び出した */
+	public abstract void onClose(short code,String reason);/* 回線が切断した or アプリがcloseWebSocketを呼び出した */
 	public abstract void postMessage(String message);
 	public abstract void postMessage(ByteBuffer[] message);
 	public abstract void onReadTimeout();/* 回線readがタイムアウトした */

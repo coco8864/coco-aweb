@@ -86,6 +86,7 @@
 									<include name="trace.vpf" />
 									<include name="dialogs.vpf" />
 									<include name="auth/authFrame.vsp" />
+									<include name="auth/crossDomainFrame.vsp" />
 									<include name="auth/basicForm.vsp" />
 									<include name="auth/creanupAuthHeader.vsp" />
 									<include name="auth/digestForm.vsp" />

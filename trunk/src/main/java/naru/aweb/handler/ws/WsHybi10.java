@@ -74,6 +74,7 @@ public class WsHybi10 extends WsProtocol {
 			return;
 		}
 		isSendClose=true;
+		handler.traceClose(code, reason);
 		ByteBuffer[] closeBuffer=WsHybiFrame.createCloseFrame(isWebSocketResponseMask(),code,reason);
 		handler.asyncWrite(null, closeBuffer);
 	}
@@ -131,7 +132,10 @@ public class WsHybi10 extends WsProtocol {
 		case WsHybiFrame.PCODE_CLOSE:
 			logger.debug("WsHybi10#doFrame pcode CLOSE");
 			PoolManager.poolBufferInstance(payloadBuffers);
-			sendClose(WsHybiFrame.CLOSE_NORMAL,"OK");
+			//close受信
+			handler.traceOnClose(frame.getCloseCode(),frame.getCloseReason());
+			//必要ならclose送信
+			sendClose(WsHybiFrame.CLOSE_NORMAL,null);
 			break;
 		case WsHybiFrame.PCODE_PING:
 			logger.debug("WsHybi10#doFrame pcode PING");
@@ -174,14 +178,15 @@ public class WsHybi10 extends WsProtocol {
 	
 	/* 回線が切断された or アプリからcloseWebSocketが呼び出された */
 	@Override
-	public void onClose(boolean isFromLine) {
+	public void onClose(short code,String reason) {
+		logger.debug("WsHybi10#onClose cid:"+handler.getChannelId());
 		if(handler==null){//handshake前にfinishしてしまった場合
 			return;
 		}
 		logger.debug("WsHybi10#onClose cid:"+handler.getChannelId());
-		callOnWsClose();
-		if(!isFromLine){
-			sendClose((short)1000,"");
+		callOnWsClose(code,reason);
+		if(code!=WsHybiFrame.CLOSE_UNKOWN){
+			sendClose((short)code,reason);
 		}
 	}
 
