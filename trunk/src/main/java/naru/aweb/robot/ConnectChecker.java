@@ -8,7 +8,6 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import naru.async.Timer;
-import naru.async.pool.PoolManager;
 import naru.async.timer.TimerManager;
 import naru.aweb.config.Config;
 import naru.aweb.http.HeaderParser;
