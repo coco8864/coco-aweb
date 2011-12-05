@@ -164,11 +164,14 @@ public abstract class WsProtocol extends PoolBase{
 	protected WebSocketHandler handler;
 	private CodeConverter codeConverte=new CodeConverter();
 	private Set<String> subprotocolSet;
+	private boolean isCallWsClose=false;
 	
 	@Override
 	public void recycle() {
 		handler=null;
+		isCallWsClose=false;
 		codeConverte.recycle();
+		subprotocolSet=null;
 	}
 	
 	private void setSubprotocolSet(Set<String> subprotocolSet) {
@@ -221,7 +224,6 @@ public abstract class WsProtocol extends PoolBase{
 		}
 	}
 	
-	private boolean isCallWsClose=false;
 	protected void callOnWsClose(short code,String reason){
 		synchronized(handler){
 			if(isCallWsClose){

@@ -32,8 +32,10 @@ public class Scenario extends PoolBase{
 	private int loop;
 	private long thinkingTime=0;
 	
-	private int loopUnit;
+	private int idleConnection;/* 利用しない回線 */
+	private long idleMemory;/* 利用しないメモリ */
 	
+	private int loopUnit;
 	private int runnningBrowserCount;
 	private List<Browser> browsers=new ArrayList<Browser>();
 	private boolean isAccesslog=false;//TODO 外からもらう必要あり
