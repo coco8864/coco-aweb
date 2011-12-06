@@ -114,6 +114,7 @@ public class QueueManager implements Timer{
 		return createQueueByName(name,user,isNew,comment,true);
 	}
 
+	/* 存在しない場合、queueを作成する、既に存在する場合はそのqueueを使う。その接続chIdを返却 */
 	public String createQueueByName(String name,String user,boolean isNew,String comment,boolean isTimeout){
 		Queue queue=null;
 		synchronized(nameQueueMap){
