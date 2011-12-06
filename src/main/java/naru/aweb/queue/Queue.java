@@ -9,13 +9,15 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 
+import naru.async.Timer;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
+import naru.async.timer.TimerManager;
 import net.sf.json.JSON;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONSerializer;
 
-public class Queue extends PoolBase {
+public class Queue extends PoolBase implements Timer{
 	private static Logger logger = Logger.getLogger(Queue.class);
 	private static QueueManager queueManager=QueueManager.getInstance();
 	
@@ -47,6 +49,10 @@ public class Queue extends PoolBase {
 	private boolean isFin;
 	private boolean lastAccess;
 	private boolean isTimeout;//timeoutするか否か
+
+	private Object watchTimer;
+	private Object watchObj;//object監視queue用、監視対象object
+	private long watchInterval;//object監視queue用、監視間隔
 	
 	public static Queue create(){
 		Queue queue=(Queue)PoolManager.getInstance(Queue.class);
@@ -66,8 +72,27 @@ public class Queue extends PoolBase {
 		return queue;
 	}
 	
+	public static Queue createBloadcaster(String name,String comment,Object watchObj,long watchInterval){
+		Queue queue=(Queue)PoolManager.getInstance(Queue.class);
+		queue.name=name;
+		queue.comment=comment;
+//		queue.isOneshot=isOneshot;
+		queue.isTimeout=false;
+		queue.isFin=false;
+		queue.watchObj=watchObj;
+		queue.watchInterval=watchInterval;
+		queue.watchTimer=TimerManager.setInterval(watchInterval, queue, watchObj);
+		return queue;
+	}
+	
 	@Override
 	public void recycle() {
+		watchObj=null;
+		watchInterval=-1;
+		if(watchTimer!=null){
+			TimerManager.clearInterval(watchTimer);
+			watchTimer=null;
+		}
 		name=null;
 		isComplete=false;
 		isFin=false;
@@ -83,6 +108,9 @@ public class Queue extends PoolBase {
 		idMap.clear();
 	}
 	
+	/*
+	 * subscribe直後に呼び出される,welcomメッセージがある場合ここでpush
+	 */
 	public void createChannel(String chId,String user){
 		SubscribeInfo info=new SubscribeInfo();
 		info.chId=chId;
@@ -334,6 +362,11 @@ public class Queue extends PoolBase {
 //	}
 	public boolean isFin() {
 		return isFin;
+	}
+
+	public void onTimer(Object userContext) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }
