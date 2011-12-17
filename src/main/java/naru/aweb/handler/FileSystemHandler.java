@@ -10,7 +10,6 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.util.Date;
 
-import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
@@ -24,10 +23,24 @@ import org.apache.log4j.Logger;
 
 public class FileSystemHandler extends WebServerHandler {
 	private static Logger logger = Logger.getLogger(FileSystemHandler.class);
-	private static Config config=Config.getConfig();
+	private static Config config=null;//Config.getConfig();
 	private static String LISTING_PAGE="/fileSystem/listing.vsp";
-	private static Configuration contentTypeConfig=config.getConfiguration("ContentType");
+	private static Configuration contentTypeConfig=null;//config.getConfiguration("ContentType");
 
+	private static Config getConfig(){
+		if(config==null){
+			config=Config.getConfig();
+		}
+		return config;
+	}
+
+	private static Configuration getContentTypeConfig(){
+		if(contentTypeConfig==null){
+			contentTypeConfig=getConfig().getConfiguration("ContentType");
+		}
+		return contentTypeConfig;
+	}
+	
 	//TODO adminSettingからデフォルト値を取得する
 	private static boolean defaultListing=true;
 	private static String[] defaultWelcomFiles=new String[]{"index.html","index.htm","index.vsp"};
@@ -90,7 +103,7 @@ public class FileSystemHandler extends WebServerHandler {
 		int pos=name.lastIndexOf(".");
 		if( pos>0 ){
 			String ext=name.substring(pos+1);
-			contentType=contentTypeConfig.getString(ext);
+			contentType=getContentTypeConfig().getString(ext);
 			if( contentType!=null){
 				return contentType;
 			}
@@ -130,7 +143,7 @@ public class FileSystemHandler extends WebServerHandler {
 		MappingResult mapping=getRequestMapping();
 		
 		mapping.setResolvePath(LISTING_PAGE);
-		mapping.setDesitinationFile(config.getAdminDocumentRoot());
+		mapping.setDesitinationFile(getConfig().getAdminDocumentRoot());
 		forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
 		return false;//委譲
 	}
