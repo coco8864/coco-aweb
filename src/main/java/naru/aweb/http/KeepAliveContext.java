@@ -151,7 +151,7 @@ public class KeepAliveContext extends PoolBase {
 			}
 		}
 		/* HTTP1.0Ç≈ñæé¶Ç≥ÇÍÇΩKeepAliveéwíËÇ™Ç†ÇÍÇŒKeepAliveâ¬î\Å@*/
-		boolean isAllowChunked=config.getBoolean("allowChunked",false);
+		boolean isAllowChunked=config.isAllowChunked();
 		String version=requestHeader.getReqHttpVersion();
 		if(HeaderParser.HTTP_VESION_10.equalsIgnoreCase(version)){
 			if(!HeaderParser.CONNECION_KEEP_ALIVE.equalsIgnoreCase(connection)){

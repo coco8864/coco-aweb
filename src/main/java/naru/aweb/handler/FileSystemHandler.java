@@ -9,6 +9,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import naru.async.pool.PoolManager;
 import naru.aweb.config.Config;
@@ -26,6 +28,7 @@ public class FileSystemHandler extends WebServerHandler {
 	private static Config config=null;//Config.getConfig();
 	private static String LISTING_PAGE="/fileSystem/listing.vsp";
 	private static Configuration contentTypeConfig=null;//config.getConfiguration("ContentType");
+	private static Map<String,String> contentTypeMap=new HashMap<String,String> ();
 
 	private static Config getConfig(){
 		if(config==null){
@@ -39,6 +42,18 @@ public class FileSystemHandler extends WebServerHandler {
 			contentTypeConfig=getConfig().getConfiguration("ContentType");
 		}
 		return contentTypeConfig;
+	}
+	
+	private static String calcContentType(String ext){
+		String contentType=contentTypeMap.get(ext);
+		if(contentType!=null){
+			return contentType;
+		}
+		contentType=getContentTypeConfig().getString(ext,"application/octet-stream");
+		synchronized(contentTypeMap){
+			contentTypeMap.put(ext, contentType);
+		}
+		return contentType;
 	}
 	
 	//TODO adminSettingからデフォルト値を取得する
@@ -103,7 +118,7 @@ public class FileSystemHandler extends WebServerHandler {
 		int pos=name.lastIndexOf(".");
 		if( pos>0 ){
 			String ext=name.substring(pos+1);
-			contentType=getContentTypeConfig().getString(ext);
+			contentType=calcContentType(ext);
 			if( contentType!=null){
 				return contentType;
 			}
