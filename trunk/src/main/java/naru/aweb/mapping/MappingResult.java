@@ -108,7 +108,7 @@ public class MappingResult extends PoolBase {
 	}
 	
 	public Mapping.LogType getLogType() {
-		if(config.getBoolean(Config.DEBUG_TRACE,false)){//全リクエストのtraceを採取
+		if(config.isDebugTrace()){//全リクエストのtraceを採取
 			return Mapping.LogType.TRACE;
 		}
 		if (mapping == null) {

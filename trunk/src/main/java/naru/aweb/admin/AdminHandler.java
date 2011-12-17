@@ -381,12 +381,12 @@ public class AdminHandler extends WebServerHandler{
 			String keepAliveTimeout=parameter.getParameter("keepAliveTimeout");
 			String contentEncoding=parameter.getParameter("contentEncoding");
 			String allowChunked=parameter.getParameter("allowChunked");
-			config.setProperty("isWebKeepAlive", isWebKeepAlive);
-			config.setProperty("isProxyKeepAlive", isProxyKeepAlive);
-			config.setProperty("maxKeepAliveRequests", maxKeepAliveRequests);
-			config.setProperty("keepAliveTimeout", keepAliveTimeout);
-			config.setProperty("contentEncoding", contentEncoding);
-			config.setProperty("allowChunked", allowChunked);
+			config.setWebKeepAlive("true".equalsIgnoreCase(isWebKeepAlive));
+			config.setProxyKeepAlive("true".equalsIgnoreCase(isProxyKeepAlive));
+			config.setMaxKeepAliveRequests(Integer.parseInt(maxKeepAliveRequests));
+			config.setKeepAliveTimeout(Integer.parseInt(keepAliveTimeout));
+			config.setContentEncoding(contentEncoding);
+			config.setAllowChaned("true".equalsIgnoreCase(allowChunked));
 			responseJson(true);
 		}else if("setHtml5".equals(cmd)){
 			String websocketSpecs=parameter.getParameter("websocketSpecs");
@@ -426,8 +426,8 @@ public class AdminHandler extends WebServerHandler{
 			responseJson(JSONObject.fromObject(config.getStasticsObject()));
 		}else if("debugTrace".equals(cmd)){
 			String debugTrace=parameter.getParameter("debugTrace");
-			config.setProperty(Config.DEBUG_TRACE,debugTrace);
-			responseJson(config.getBoolean(Config.DEBUG_TRACE, false));
+			config.setDebugTrace("true".equalsIgnoreCase(debugTrace));
+			responseJson(config.isDebugTrace());
 		}else if("runAccessLog".equals(cmd)){
 			try {
 				String chId=runAccessLog(parameter);

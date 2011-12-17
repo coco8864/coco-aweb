@@ -52,6 +52,12 @@ import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.log4j.Logger;
 
 public class Config {
+	private static final String PHANTOM_SERVER_HEADER = "phantomServerHeader";
+	private static final String KEEP_ALIVE_TIMEOUT = "keepAliveTimeout";
+	private static final String MAX_KEEP_ALIVE_REQUESTS = "maxKeepAliveRequests";
+	private static final String IS_WEB_KEEP_ALIVE = "isWebKeepAlive";
+	private static final String IS_PROXY_KEEP_ALIVE = "isProxyKeepAlive";
+	private static final String CONTENT_ENCODING = "contentEncoding";
 	private static final String CONFIG_MARK_CREATE = "_config_create_";
 	private static Logger logger = Logger.getLogger(Config.class);
 	private static String PROPERTIES_ENCODING = "utf-8";
@@ -75,7 +81,7 @@ public class Config {
 	private static Config config = new Config();
 	private static QueueManager queueManager = QueueManager.getInstance();
 	public static String CONF_FILENAME = "phantom.properties";
-	public static final String DEBUG_TRACE="debugTrace";
+	private static final String DEBUG_TRACE="debugTrace";
 	public static final String SELF_DOMAIN = "selfDomain";
 	public static final String SELF_PORT = "selfPort";
 	public static final String SELF_URL = "selfUrl";
@@ -683,7 +689,21 @@ public class Config {
 		if("".equals(exceptProxyDomains)){
 			exceptProxyDomains=null;
 		}
+		isAllowChunked=getBoolean("allowChunked",false);
+		isDebugTrace=getBoolean(DEBUG_TRACE,false);
 		
+		contentEncoding=configuration.getString(CONTENT_ENCODING);
+		isProxyKeepAlive=configuration.getBoolean(IS_PROXY_KEEP_ALIVE, false);
+		isWebKeepAlive=configuration.getBoolean(IS_WEB_KEEP_ALIVE, false);
+		maxKeepAliveRequests=configuration.getInt(MAX_KEEP_ALIVE_REQUESTS, 100);
+		keepAliveTimeout=configuration.getInt(KEEP_ALIVE_TIMEOUT, 15000);
+		
+		writeTimeout=getLong(WRITE_TIMEOUT, WRITE_TIMEOUT_DEFAULT);
+		readTimeout=getLong(READ_TIMEOUT, READ_TIMEOUT_DEFAULT);
+		connectTimeout=getLong(CONNECT_TIMEOUT, CONNECT_TIMEOUT_DEFAULT);
+		acceptTimeout=getLong(ACCEPT_TIMEOUT, ACCEPT_TIMEOUT_DEFAULT);
+		
+		serverHeader=config.getString(PHANTOM_SERVER_HEADER, null);
 		// proxy除外リストの初期化
 		updateProxyFinder(pacUrl,proxyServer,sslProxyServer,exceptProxyDomains);
 		broadcaster=new Broadcaster(this);
@@ -819,56 +839,89 @@ public class Config {
 	// private String webAuthenticate = null;
 	// private String webAuthenticateCookieKey = null;
 	// private Pattern webAuthenticatePattern = null;
+	private long acceptTimeout;
 	public long getAcceptTimeout() {
-		return getLong(ACCEPT_TIMEOUT, ACCEPT_TIMEOUT_DEFAULT);
+		return acceptTimeout;
 	}
 
 	public void setAcceptTimeout(long acceptTimeout) {
 		configuration.setProperty(ACCEPT_TIMEOUT, acceptTimeout);
+		this.acceptTimeout=acceptTimeout;
 	}
 
+	private long connectTimeout;
 	public long getConnectTimeout() {
-		return getLong(CONNECT_TIMEOUT, CONNECT_TIMEOUT_DEFAULT);
+		return connectTimeout;
 	}
 
 	public void setConnectTimeout(long connectTimeout) {
 		configuration.setProperty(CONNECT_TIMEOUT, connectTimeout);
+		this.connectTimeout=connectTimeout;
 	}
 
+	private long readTimeout;
 	public long getReadTimeout() {
-		return getLong(READ_TIMEOUT, READ_TIMEOUT_DEFAULT);
+		return readTimeout;
 	}
 
 	public void setReadTimeout(long readTimeout) {
 		configuration.setProperty(READ_TIMEOUT, readTimeout);
+		this.readTimeout=readTimeout;
 	}
 
+	private long writeTimeout;
 	public long getWriteTimeout() {
-		return getLong(WRITE_TIMEOUT, WRITE_TIMEOUT_DEFAULT);
+		return writeTimeout;
 	}
 
 	public void setWriteTimeout(long writeTimeout) {
 		configuration.setProperty(WRITE_TIMEOUT, writeTimeout);
+		this.writeTimeout=writeTimeout;
 	}
 
+	public void setContentEncoding(String contentEncoding){
+		setProperty(CONTENT_ENCODING, contentEncoding);
+		this.contentEncoding=contentEncoding;
+	}
+	
 	public String getContentEncoding() {
-		return configuration.getString("contentEncoding");
+		return contentEncoding;
 	}
 
+	public void setProxyKeepAlive(boolean isProxyKeepAlive){
+		setProperty(IS_PROXY_KEEP_ALIVE, isProxyKeepAlive);
+		this.isProxyKeepAlive=isProxyKeepAlive;
+	}
+	
 	public boolean isProxyKeepAlive() {
-		return configuration.getBoolean("isProxyKeepAlive", false);
+		return isProxyKeepAlive;
+	}
+	
+	public void setWebKeepAlive(boolean isWebKeepAlive){
+		setProperty(IS_WEB_KEEP_ALIVE, isWebKeepAlive);
+		this.isWebKeepAlive=isWebKeepAlive;
 	}
 
 	public boolean isWebKeepAlive() {
-		return configuration.getBoolean("isWebKeepAlive", false);
+		return isWebKeepAlive;
 	}
 
+	public void setMaxKeepAliveRequests(int maxKeepAliveRequests){
+		setProperty(MAX_KEEP_ALIVE_REQUESTS, maxKeepAliveRequests);
+		this.maxKeepAliveRequests=maxKeepAliveRequests;
+	}
+	
 	public int getMaxKeepAliveRequests() {
-		return configuration.getInt("maxKeepAliveRequests", 100);
+		return maxKeepAliveRequests;
 	}
 
+	public void setKeepAliveTimeout(int keepAliveTimeout){
+		setProperty(KEEP_ALIVE_TIMEOUT, keepAliveTimeout);
+		this.keepAliveTimeout=keepAliveTimeout;
+	}
+	
 	public int getKeepAliveTimeout() {
-		return configuration.getInt("keepAliveTimeout", 15000);
+		return keepAliveTimeout;
 	}
 
 	/* pac対応、個人設定がなければ全体設定を参照する */
@@ -1093,5 +1146,39 @@ public class Config {
 	}
 	public int getRestartCount(){
 		return restartCount;
+	}
+	
+	private boolean isAllowChunked;
+	private boolean isWebKeepAlive;
+	private boolean isProxyKeepAlive;
+	private int maxKeepAliveRequests;
+	private String contentEncoding;
+	private int keepAliveTimeout;
+	private boolean isDebugTrace;
+	
+	public void setAllowChaned(boolean isAllowChunked){
+		setProperty("allowChunked", Boolean.toString(isAllowChunked));
+		this.isAllowChunked=isAllowChunked;
+	}
+	public boolean isAllowChunked(){
+		return isAllowChunked;
+	}
+	
+	public void setDebugTrace(boolean isDebugTrace){
+		setProperty(DEBUG_TRACE, Boolean.toString(isDebugTrace));
+		this.isDebugTrace=isDebugTrace;
+	}
+	public boolean isDebugTrace(){
+		return isDebugTrace;
+	}
+	
+	private String serverHeader;
+	
+	public void setServerHeader(String serverHeader){
+		setProperty(PHANTOM_SERVER_HEADER, serverHeader);
+		this.serverHeader=serverHeader;
+	}
+	public String getServerHeader(){
+		return serverHeader;
 	}
 }
