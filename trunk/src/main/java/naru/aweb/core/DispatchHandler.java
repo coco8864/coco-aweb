@@ -41,12 +41,40 @@ import naru.aweb.util.ServerParser;
  */
 public class DispatchHandler extends ServerBaseHandler {
 	static Logger logger = Logger.getLogger(DispatchHandler.class);
-	private static Config config = Config.getConfig();
-	private static Mapper mapper = config.getMapper();
-	private static Authorizer authorizer=config.getAuthorizer();
 	private static byte[] ProxyOkResponse = "HTTP/1.0 200 Connection established\r\n\r\n".getBytes();
-	private static int limitRequestFieldSize = config.getInt("limitRequestFieldSize", 8192);
+	private static Config config = null;//Config.getConfig();
+	private static Mapper mapper = null;//config.getMapper();
+	private static Authorizer authorizer=null;//config.getAuthorizer();
+	private static int limitRequestFieldSize = -1;//config.getInt("limitRequestFieldSize", 8192);
 
+	private static Config getConfig(){
+		if(config==null){
+			config=Config.getConfig();
+		}
+		return config;
+	}
+	
+	private static Mapper getMapper(){
+		if(mapper==null){
+			mapper=getConfig().getMapper();
+		}
+		return mapper;
+	}
+	
+	private static Authorizer getAuthorizer(){
+		if(authorizer==null){
+			authorizer=getConfig().getAuthorizer();
+		}
+		return authorizer;
+	}
+	
+	private static int getLimitRequestFieldSize(){
+		if(limitRequestFieldSize==-1){
+			limitRequestFieldSize=getConfig().getInt("limitRequestFieldSize", 8192);
+		}
+		return limitRequestFieldSize;
+	}
+	
 	private Date startTime;
 	private long handshakeTime=-1;
 	private long connectTime=-1;
@@ -81,7 +109,7 @@ public class DispatchHandler extends ServerBaseHandler {
 	}
 
 	public void onAccepted(Object userContext) {
-		setReadTimeout(config.getAcceptTimeout());// Connection Flood 攻撃対応で比較的短く設定
+		setReadTimeout(getConfig().getAcceptTimeout());// Connection Flood 攻撃対応で比較的短く設定
 		logger.debug("#accepted.cid:" + getChannelId());
 		isFirstRead = true;
 		getKeepAliveContext(true);// keepAliveContextを用意する
@@ -125,7 +153,7 @@ public class DispatchHandler extends ServerBaseHandler {
 			connectTime=System.currentTimeMillis()-startTime.getTime();
 			// 最初の通信データでSSLか否かを判定する。
 			isFirstRead = false;
-			setReadTimeout(config.getReadTimeout());// adminのreadTimeoutを設定
+			setReadTimeout(getConfig().getReadTimeout());// adminのreadTimeoutを設定
 			if (SslAdapter.isSsl(buffers[0])) {
 				if (!sslOpenWithBuffer(false, buffers)) {
 					asyncClose(null);// handshake失敗
@@ -153,14 +181,14 @@ public class DispatchHandler extends ServerBaseHandler {
 				logger.warn("http header error");
 				asyncClose(null);
 			} else {
-				if(headerParser.isProxy()&&config.getRealHost(headerParser.getServer())!=null ){
+				if(headerParser.isProxy()&&getConfig().getRealHost(headerParser.getServer())!=null ){
 					//自分自身をproxyしようとしている。
 					headerParser.forceWebRequest();
 				}
 				mappingHandler();
 			}
 		} else {
-			if (limitRequestFieldSize <= headerPage.getBufferLength()) {
+			if (getLimitRequestFieldSize() <= headerPage.getBufferLength()) {
 				logger.warn("too long header size."
 						+ headerPage.getBufferLength());
 				asyncClose(null);
@@ -368,7 +396,7 @@ public class DispatchHandler extends ServerBaseHandler {
 			ServerParser server, String path) {
 		// webマッピング対象は、realHost,phntomHost,pathで決まる
 		ServerParser sslServer = keepAliveContext.getProxyTargetServer();
-		if (config.getRealHost(sslServer) == null && sslServer != null) {// ssl
+		if (getConfig().getRealHost(sslServer) == null && sslServer != null) {// ssl
 		// proxyでログ/traceを採取するルート
 			MappingResult mappingResult = mapper.resolvePeekSslProxy(realHost,sslServer, path);
 			if (mappingResult != null) {
@@ -387,7 +415,7 @@ public class DispatchHandler extends ServerBaseHandler {
 		ServerParser server = requestHeader.getServer();
 		keepAliveContext.setProxyTargetServer(server);
 		String realHost = keepAliveContext.getRealHost().getName();// getRealHost(localIp,localPort)
-		return sslProxyMapping(mapper, keepAliveContext, realHost, server);
+		return sslProxyMapping(getMapper(), keepAliveContext, realHost, server);
 	}
 
 	private MappingResult proxyHandler(HeaderParser requestHeader,
@@ -396,7 +424,7 @@ public class DispatchHandler extends ServerBaseHandler {
 		keepAliveContext.setProxyTargetServer(server);
 		String realHost = keepAliveContext.getRealHost().getName();// getRealHost(localIp,localPort)
 		String path = requestHeader.getPath();
-		MappingResult mapping = proxyMapping(mapper, realHost, server, path);
+		MappingResult mapping = proxyMapping(getMapper(), realHost, server, path);
 		mapping = checkPhAuth(requestHeader, keepAliveContext, requestContext,mapping);
 		return mapping;
 	}
@@ -409,7 +437,7 @@ public class DispatchHandler extends ServerBaseHandler {
 		// if(PROXY_AUTHENTICATION_PATH.equals(path)){//認証リクエスト,?action=logon,?action=logoff
 		// }
 		ServerParser server = requestHeader.getServer();
-		MappingResult mapping = webMapping(mapper, keepAliveContext, realHost,server, path);
+		MappingResult mapping = webMapping(getMapper(), keepAliveContext, realHost,server, path);
 		if (mapping == null) {
 			mapping = DispatchResponseHandler.notfound("not found mapping");
 			return mapping;
@@ -423,7 +451,7 @@ public class DispatchHandler extends ServerBaseHandler {
 		String realHost = keepAliveContext.getRealHost().getName();// getRealHost(localIp,localPort)
 		String path = requestHeader.getPath();
 		ServerParser server = requestHeader.getServer();
-		MappingResult mapping = wsMapping(mapper, keepAliveContext, realHost,server, path);
+		MappingResult mapping = wsMapping(getMapper(), keepAliveContext, realHost,server, path);
 		if (mapping == null) {
 			mapping = DispatchResponseHandler.notfound("not found mapping");
 			return mapping;
@@ -448,6 +476,7 @@ public class DispatchHandler extends ServerBaseHandler {
 			ServerParser domain=requestHeader.getServer();
 			boolean isSsl=isSsl();
 			domain.setupPortIfNeed(isSsl);
+			Authorizer authorizer=getAuthorizer();
 			AuthSession authSession=authorizer.getAuthSessionBySecondaryId(cookieId,mapping.getMapping(),isSsl,domain);
 			if(authSession!=null){
 				//権限チェック、権限がなければ403
@@ -614,7 +643,7 @@ public class DispatchHandler extends ServerBaseHandler {
 	public SSLEngine getSSLEngine() {
 		KeepAliveContext keepAliveContext = getKeepAliveContext();
 		ServerParser sslServer = keepAliveContext.getProxyTargetServer();
-		return config.getSslEngine(sslServer);
+		return getConfig().getSslEngine(sslServer);
 	}
 
 	/**

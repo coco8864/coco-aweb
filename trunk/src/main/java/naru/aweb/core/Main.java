@@ -1,11 +1,15 @@
 package naru.aweb.core;
 
+import java.nio.ByteBuffer;
 import java.util.Map;
+
+import javax.net.ssl.SSLEngine;
 
 import org.apache.log4j.Logger;
 
 import naru.async.Timer;
 import naru.async.core.IOManager;
+import naru.async.pool.PoolManager;
 import naru.async.timer.TimerManager;
 import naru.aweb.config.Config;
 import naru.queuelet.Queuelet;
@@ -101,6 +105,11 @@ datanucleus.validateConstraints=false
 			context.finish(false,true,startupInfo);
 			return;
 		}
+		//pool‚Ì‰Šú‰»
+		PoolManager.createArrayPool(ByteBuffer.class, 1, 5120);
+		SSLEngine sslEngine=config.getSslEngine(null);
+		PoolManager.createBufferPool(sslEngine.getSession().getPacketBufferSize(), 1024);
+		
 		mainInstance=this;
 		Main.context=context;
 		if( !RealHost.bindAll(true) ){
