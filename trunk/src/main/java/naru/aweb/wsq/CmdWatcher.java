@@ -1,34 +1,39 @@
 package naru.aweb.wsq;
 
-import java.util.List;
-
-import naru.async.Timer;
-import naru.async.timer.TimerManager;
-
 /**
  * 一問一答、非同期結果通知用watcher
  * @author Owner
  */
-public class CmdWatcher implements WsqWatcher,Timer {
-	public static WsqWatcher create(long timeout){
+public class CmdWatcher implements WsqWatcher {
+	public static String create(long timeout){
 		CmdWatcher watcher=new CmdWatcher();
-		if( WsqManager.createWsq(watcher)==false ){
+		if( WsqManager.createWsq(watcher,null,timeout)==false ){
 			return null;
 		}
-		TimerManager.setTimeout(timeout, watcher, null);
-		return watcher;
+		return watcher.getWsqName();
 	}
 	
 	private WsqContext wsqContext;
 	private String wsqName;
+	private String chid;
+	private Object result;
 	
-	public synchronized void doResult(Object result){
+	private void send(){
 		if(wsqContext==null){
 			return;
 		}
-		wsqContext.publish(result.toString());
-		wsqContext.endQueue();
-		wsqContext=null;
+		if(chid!=null && result!=null){
+			wsqContext.publish(result.toString());
+			wsqContext.endQueue();
+			chid=null;
+			result=null;
+			wsqContext=null;
+		}
+	}
+	
+	public synchronized void doResult(Object result){
+		this.result=result;
+		send();
 	}
 	
 	public String getWsqName(){
@@ -39,15 +44,24 @@ public class CmdWatcher implements WsqWatcher,Timer {
 	public void onStartQueue(String wsqName, WsqContext wsqContext) {
 		this.wsqName=wsqName;
 		this.wsqContext=wsqContext;
+		this.chid=null;
 	}
 
 	/* timeout経過した */
-	public synchronized void onTimer(Object userContext) {
+	@Override
+	public synchronized boolean onWatch() {
 		if(wsqContext==null){
-			return;
+			return false;
 		}
 		wsqContext.endQueue();
 		wsqContext=null;
+		return false;
+	}
+	
+	@Override
+	public synchronized void onSubscribe(WsqFrom from) {
+		this.chid=from.getChid();
+		send();
 	}
 	
 	@Override
@@ -55,19 +69,10 @@ public class CmdWatcher implements WsqWatcher,Timer {
 	}
 
 	@Override
-	public void onMessage(String fromChid, String message) {
+	public void onMessage(WsqFrom from, Object message) {
 	}
 
 	@Override
-	public void onSubscribe(String fromChid, String userName, List<String> roles) {
-	}
-
-	@Override
-	public void onUnsubscribe(String fromChid) {
-	}
-
-	@Override
-	public boolean onWatch() {
-		return false;
+	public void onUnsubscribe(WsqFrom from) {
 	}
 }

@@ -15,8 +15,8 @@ public class EchoWatcher implements WsqWatcher {
 	}
 	
 	@Override
-	public void onMessage(String fromChid, String message) {
-		wsqContext.publish(message, fromChid);
+	public void onMessage(WsqFrom fromChid, Object message) {
+		wsqContext.publish(message.toString(), fromChid.getChid());
 	}
 	
 	@Override
@@ -28,11 +28,11 @@ public class EchoWatcher implements WsqWatcher {
 	}
 
 	@Override
-	public void onSubscribe(String fromChid, String userName, List<String> roles) {
+	public void onSubscribe(WsqFrom from) {
 	}
 
 	@Override
-	public void onUnsubscribe(String fromChid) {
+	public void onUnsubscribe(WsqFrom from) {
 	}
 
 	@Override
