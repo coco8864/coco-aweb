@@ -1,8 +1,14 @@
 package naru.aweb.wsq;
 
-import java.util.List;
+
+import net.sf.json.JSON;
 
 /**
+ * form
+ *  chid:brawser側で採番するid
+ *  user:userName
+ *  roles:userが持つroleリスト
+ * 
  * wsqに登録するオブジェクト
  * TODO:すべてのメソッドを記述する必要はなく、必要なメソッドのみでよいようにしたい
  * @author Owner
@@ -11,10 +17,16 @@ import java.util.List;
 public interface WsqWatcher {
 	public void onStartQueue(String wsqName,WsqContext context);
 	public void onEndQueue();
-	public void onMessage(String fromChid,String message);
-	public void onSubscribe(String fromChid,String userName,List<String> roles);
-	public void onUnsubscribe(String fromChid);
 	
+	/**
+	 * 端末からのデータ送信を通知
+	 * @param from 送信元
+	 * @param message(JSON or String)
+	 */
+	public void onMessage(WsqFrom from,Object message);
+	
+	public void onSubscribe(WsqFrom from);
+	public void onUnsubscribe(WsqFrom from);
 	
 	/**
 	 * 定期監視の前に毎回呼び出される
