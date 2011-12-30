@@ -45,6 +45,22 @@ public class WebServerHandler extends ServerBaseHandler {
 
 	private static Logger logger = Logger.getLogger(WebServerHandler.class);
 	private static Config config = Config.getConfig();
+	private static final String NON_SERVER_HEADER="$$NON_SERVER_HEADER$$";
+	private static String serverHeader=null;//config.getString("phantomServerHeader", null);
+	private static String getServerHeader(){
+		if(serverHeader==NON_SERVER_HEADER){
+			return null;
+		}else if(serverHeader!=null){
+			return serverHeader;
+		}
+		serverHeader=config.getString("phantomServerHeader", null);
+		if(serverHeader==null){
+			serverHeader=NON_SERVER_HEADER;
+			return null;
+		}
+		return serverHeader;
+	}
+	
 	private HeaderParser responseHeader = new HeaderParser();
 	private long requestContentLength;
 	private long requestReadBody;
@@ -318,7 +334,7 @@ public class WebServerHandler extends ServerBaseHandler {
 		if (httpVersion == null) {// レスポンスバージョンが確定していない場合、myProxyがWebサーバ
 			// myProxyがWebサーバなのでServerヘッダを追加
 			responseHeader.setResHttpVersion(HeaderParser.HTTP_VESION_11);
-			String serverHeader=config.getString("phantomServerHeader", null);
+			String serverHeader=getServerHeader();
 			if(serverHeader!=null){//場合によってはServerヘッダを出力しない
 				responseHeader.setHeader("Server", serverHeader);
 			}
