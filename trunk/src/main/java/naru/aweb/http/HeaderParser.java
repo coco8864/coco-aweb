@@ -96,10 +96,21 @@ public class HeaderParser extends PoolBase {
 	public static final byte[] CRLF = "\r\n".getBytes();
 	public static final byte[] SPACE = " ".getBytes();
 
-	private static SimpleDateFormat headerDateFormat = null;
-	static {
-		headerDateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z",Locale.US);
-		headerDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+//	private static SimpleDateFormat headerDateFormat = null;
+//	static {
+//		headerDateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z",Locale.US);
+//		headerDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+//	}
+	private static ThreadLocal<SimpleDateFormat> headerDateFormatThradLocal=new ThreadLocal<SimpleDateFormat>();
+	
+	private static SimpleDateFormat getHeaderDateFormat(){
+		SimpleDateFormat headerDateFormat=headerDateFormatThradLocal.get();
+		if(headerDateFormat==null){
+			headerDateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z",Locale.US);
+			headerDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+			headerDateFormatThradLocal.set(headerDateFormat);
+		}
+		return headerDateFormat;
 	}
 
 	public static Date parseDateHeader(String header) {
@@ -108,9 +119,8 @@ public class HeaderParser extends PoolBase {
 		}
 		String fields[] = header.split(";");
 		try {
-			synchronized (headerDateFormat) {
-				return headerDateFormat.parse(fields[0]);
-			}
+			SimpleDateFormat headerDateFormat=getHeaderDateFormat();
+			return headerDateFormat.parse(fields[0]);
 		} catch (ParseException e) {
 			logger.warn("fail to parse date header." + header);
 			return null;
@@ -118,9 +128,8 @@ public class HeaderParser extends PoolBase {
 	}
 
 	public static String fomatDateHeader(Date date) {
-		synchronized (headerDateFormat) {
-			return headerDateFormat.format(date);
-		}
+		SimpleDateFormat headerDateFormat=getHeaderDateFormat();
+		return headerDateFormat.format(date);
 	}
 
 	public static HeaderParser createByStore(Store store) {
