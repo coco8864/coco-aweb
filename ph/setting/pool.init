@@ -1,0 +1,8 @@
+{
+bfferlimit_100:512,
+poolInfos:[
+  {type:'class',className:'',limit_100:999}
+ ,{type:'array',className:'',arraySize:999,limit_100:999}
+ ,{type:'buffer',bufferSize:999,limit_100:999}
+ ]
+}
