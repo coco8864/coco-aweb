@@ -63,6 +63,8 @@ public class VelocityPageHandler extends WebServerHandler {
 		velocityEngine = new VelocityEngine();
 //		velocityEngine.addProperty(RuntimeConstants.RESOURCE_LOADER,"file");
 		velocityEngine.addProperty("file.resource.loader.path",repository.getAbsolutePath());
+		velocityEngine.addProperty("file.resource.loader.cache","false");
+		velocityEngine.addProperty("file.resource.loader.modificationCheckInterval ","60");
 		velocityEngine.setProperty("runtime.log.logsystem.class","org.apache.velocity.runtime.log.SimpleLog4JLogSystem");
 		velocityEngine.setProperty("runtime.log.logsystem.log4j.category","velocity");
 		velocityEngine.setProperty("resource.manager.logwhenfound","false");

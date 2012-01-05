@@ -3,6 +3,7 @@ package naru.aweb.config;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -40,6 +41,9 @@ import naru.aweb.util.JdoUtil;
 import naru.aweb.util.JsonUtil;
 import naru.aweb.util.ServerParser;
 import naru.queuelet.QueueletContext;
+import net.sf.json.JSON;
+import net.sf.json.JSONArray;
+import net.sf.json.JSONSerializer;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.configuration.Configuration;
@@ -102,6 +106,7 @@ public class Config {
 	private Authorizer authorizer;
 	private LogPersister logPersister;
 	private SslContextPool sslContextPool;
+	private FileCache fileCache;
 	private ReplayHelper replayHelper;
 	private FilterHelper filterHelper;
 	private InjectionHelper injectionHelper;
@@ -508,6 +513,9 @@ public class Config {
 			return;
 		}
 		isAleadyTerm = true;
+		if(fileCache!=null){
+			fileCache.term();
+		}
 		if(broadcaster!=null){//initの途中で例外した場合broadcasterの可能性がある。
 			broadcaster.term();
 			broadcaster=null;
@@ -559,6 +567,25 @@ public class Config {
 		configuration.setProperty(REAL_HOSTS, names.toString());
 	}
 
+	private JSON readInitFile(File file){
+		if(!file.exists()||!file.isFile()||!file.canRead()){
+			throw new RuntimeException("readInitFile file access error."+file);
+		}
+		try {
+			int length=(int)file.length();
+			byte[] buf=new byte[length];
+			InputStream is=new FileInputStream(file);
+			if( is.read(buf)<length ){
+				throw new RuntimeException("readInitFile file read error."+file);
+			}
+			is.close();
+			String jsonString=new String(buf,"utf-8");
+			return JSONSerializer.toJSON(jsonString);
+		} catch (IOException e) {
+			throw new RuntimeException("readInitFile error."+file,e);
+		}
+	}
+	
 	public boolean init(QueueletContext queueletContext, boolean isCleanup) {
 		this.queueletContext = queueletContext;
 		configuration = crateConfiguration(queueletContext, isCleanup);
@@ -605,6 +632,9 @@ public class Config {
 			logger.error("fail to initDatanucleus.");
 			return false;
 		}
+		//100端末あたりのpool数初期値
+		JSON poolJson=readInitFile(new File(settingPath, "pool.init"));
+		
 		if (isCleanup) {
 			JdoUtil.cleanup(Performance.class);
 			JdoUtil.cleanup(AccessLog.class);
@@ -613,7 +643,8 @@ public class Config {
 			JdoUtil.cleanup(CommissionAuthUrl.class);
 			JdoUtil.cleanup(CommissionAuth.class);
 			JdoUtil.cleanup(User.class);
-			Mapping.cleanup(new File(settingPath, "mapping.init"));
+			JSON mappingJson=readInitFile(new File(settingPath, "mapping.init"));
+			Mapping.cleanup((JSONArray)mappingJson);
 		}
 		/* ファイルアップロード機能 */
 		String tmpPath = configuration.getString("path.tmp");
@@ -635,6 +666,7 @@ public class Config {
 		logPersister = new LogPersister(this);
 		sslContextPool = new SslContextPool(this);
 		sslContext = sslContextPool.getSSLContext(getSelfDomain());
+		fileCache=FileCache.create();
 
 		String[] hostsArray = Config.getStringArray(configuration, REAL_HOSTS);
 		for (int i = 0; i < hostsArray.length; i++) {
@@ -1103,6 +1135,10 @@ public class Config {
 		return logPersister;
 	}
 
+	public FileCache getFileCache(){
+		return fileCache;
+	}
+	
 	public ReplayHelper getReplayHelper() {
 		return replayHelper;
 	}

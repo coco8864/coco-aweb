@@ -1,6 +1,8 @@
 package naru.aweb.core;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import javax.net.ssl.SSLEngine;
@@ -15,6 +17,8 @@ import naru.aweb.config.Config;
 import naru.queuelet.Queuelet;
 import naru.queuelet.QueueletContext;
 import naru.queuelet.watch.StartupInfo;
+import net.sf.json.JSON;
+import net.sf.json.JSONObject;
 
 public class Main implements Queuelet,Timer {
 	static private Logger logger=Logger.getLogger(Main.class);
@@ -55,6 +59,16 @@ public class Main implements Queuelet,Timer {
 		TimerManager.setTimeout(1000, mainInstance, responseStartupInfo);
 	}
 	
+	private class PoolInfo{
+		String type;//class,buffer,array
+		String className;
+		int bufferSize;
+		int arraySize;
+		int limit_100;//100í[ññÇ†ÇΩÇËÇÃlimit
+	}
+	
+	private List<PoolInfo> poolInfos=new ArrayList<PoolInfo>();
+	private int bfferlimit_100;
 	
 	/**
 	 * datanucleus.properties
@@ -100,15 +114,17 @@ datanucleus.validateConstraints=false
 				return;
 			}
 		}catch(Throwable t){
-			t.printStackTrace();
 			logger.error("fail to config init.",t);
 			context.finish(false,true,startupInfo);
 			return;
 		}
 		//poolÇÃèâä˙âª
+		
+		
+		
 		PoolManager.createArrayPool(ByteBuffer.class, 1, 5120);
 		SSLEngine sslEngine=config.getSslEngine(null);
-		PoolManager.createBufferPool(sslEngine.getSession().getPacketBufferSize(), 1024);
+		PoolManager.createBufferPool(sslEngine.getSession().getPacketBufferSize(),1024);
 		
 		mainInstance=this;
 		Main.context=context;
@@ -118,7 +134,33 @@ datanucleus.validateConstraints=false
 			context.finish(false,true,startupInfo);
 		}
 	}
-
+	
+	/**
+	 * @param maxClients ëzíËí[ññêî
+	 */
+	public void setupPool(int maxClients,boolean isSsl){
+		if( maxClients<=0 ){
+			maxClients=100;
+		}
+		int client_100=((maxClients-1)/100)+1;
+		for(PoolInfo poolInfo:poolInfos){
+			if("class".equals(poolInfo.type)){
+				PoolManager.setupClassPool(poolInfo.className, poolInfo.limit_100*client_100);
+			}else if("array".equals(poolInfo.type)){
+				PoolManager.setupArrayPool(poolInfo.className,poolInfo.arraySize,poolInfo.limit_100*client_100);
+			}else if("buffer".equals(poolInfo.type)){
+				PoolManager.setupBufferPool(poolInfo.bufferSize, poolInfo.limit_100*client_100);
+			}
+		}
+		if(isSsl){
+			SSLEngine sslEngine=config.getSslEngine(null);
+			PoolManager.setupBufferPool(sslEngine.getSession().getPacketBufferSize(), bfferlimit_100*client_100);
+		}else{
+			int defaultBufferSize=PoolManager.getDefaultBufferSize();
+			PoolManager.setupBufferPool(defaultBufferSize, bfferlimit_100*client_100);
+		}
+	}
+	
 	public boolean service(Object arg0) {
 		return false;
 	}

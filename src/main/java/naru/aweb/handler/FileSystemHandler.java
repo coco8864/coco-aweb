@@ -2,6 +2,7 @@ package naru.aweb.handler;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -14,7 +15,9 @@ import java.util.Map;
 
 import naru.async.pool.PoolManager;
 import naru.aweb.config.Config;
+import naru.aweb.config.FileCache;
 import naru.aweb.config.Mapping;
+import naru.aweb.config.FileCache.FileCacheInfo;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.MappingResult;
@@ -29,6 +32,7 @@ public class FileSystemHandler extends WebServerHandler {
 	private static String LISTING_PAGE="/fileSystem/listing.vsp";
 	private static Configuration contentTypeConfig=null;//config.getConfiguration("ContentType");
 	private static Map<String,String> contentTypeMap=new HashMap<String,String> ();
+	private static FileCache fileCache=null;
 
 	private static Config getConfig(){
 		if(config==null){
@@ -54,6 +58,13 @@ public class FileSystemHandler extends WebServerHandler {
 			contentTypeMap.put(ext, contentType);
 		}
 		return contentType;
+	}
+	
+	private static FileCache getFileCache(){
+		if(fileCache==null){
+			fileCache=getConfig().getFileCache();
+		}
+		return fileCache;
 	}
 	
 	//TODO adminSettingからデフォルト値を取得する
@@ -127,16 +138,30 @@ public class FileSystemHandler extends WebServerHandler {
 		return "application/octet-stream";
 	}
 	
-	private long getContentLength(File file){
+	private long getContentLength(long fileLength){
 		Long length=(Long)getRequestAttribute(ATTRIBUTE_RESPONSE_CONTENT_LENGTH);
 		if(length!=null){
 			return length.longValue();
 		}
-		return file.length();
+		return fileLength;
 	}
 	
-	private void responseBodyFromFile(File file) throws IOException{
+	
+	private void responseBodyFromFile(File file,FileCacheInfo fileCacheInfo) throws IOException{
 		Long offset=(Long)getRequestAttribute(ATTRIBUTE_STORE_OFFSET);
+		if(fileCacheInfo!=null){
+			ByteBuffer contents=fileCacheInfo.getContents();
+			if(contents!=null){
+				if(offset!=null){
+					int pos=contents.position()+offset.intValue();
+					contents.position(pos);
+				}
+				responseBody(contents);
+				responseEnd();//実close発行
+				return;
+			}
+		}
+		
 		FileChannel readChannel=null;
 		FileInputStream fis=new FileInputStream(file);
 		readChannel=fis.getChannel();
@@ -164,7 +189,7 @@ public class FileSystemHandler extends WebServerHandler {
 	}
 	
 	//存在確認済みのファイルをレスポンスする。
-	private boolean sendFile(MappingResult mapping,File baseDirectory,String path,String ifModifiedSince,File file){
+	private boolean sendFile(MappingResult mapping,File baseDirectory,String path,String ifModifiedSince,File file,FileCacheInfo fileCacheInfo){
 		if(isVelocityUse(mapping,path)){
 			//TODO ちゃんとする
 			mapping.setResolvePath(path);//加工後のpathを設定
@@ -179,7 +204,7 @@ public class FileSystemHandler extends WebServerHandler {
 		if(ifModifiedSinceDate!=null){
 			ifModifiedSinceTime=ifModifiedSinceDate.getTime();
 		}
-		long lastModifiedTime=file.lastModified();
+		long lastModifiedTime=fileCacheInfo!=null?fileCacheInfo.lastModified():file.lastModified();
 		String lastModified=HeaderParser.fomatDateHeader(new Date(lastModifiedTime));
 		//ファイル日付として表現できる値には、誤差があるため、表現できる時刻を取得
 		lastModifiedTime=HeaderParser.parseDateHeader(lastModified).getTime();
@@ -188,7 +213,7 @@ public class FileSystemHandler extends WebServerHandler {
 			return true;
 		}
 		setHeader(HeaderParser.LAST_MODIFIED_HEADER, lastModified);
-		long contentLength=getContentLength(file);
+		long contentLength=getContentLength(fileCacheInfo!=null?fileCacheInfo.length():file.length());
 		setContentLength(contentLength);
 		String contentDisposition=(String)getRequestAttribute(ATTRIBUTE_RESPONSE_CONTENT_DISPOSITION);
 		if( contentDisposition!=null){
@@ -198,7 +223,7 @@ public class FileSystemHandler extends WebServerHandler {
 		setContentType(contentType);
 		setStatusCode("200");
 		try {
-			responseBodyFromFile(file);
+			responseBodyFromFile(file,fileCacheInfo);
 			return false;
 		} catch (IOException e) {
 			logger.error("responseBodyFromFile error."+file,e);
@@ -222,12 +247,19 @@ public class FileSystemHandler extends WebServerHandler {
 		MappingResult mapping=getRequestMapping();
 		File file=(File)getRequestAttribute(ATTRIBUTE_RESPONSE_FILE);
 		if(file!=null){//レスポンスするファイルが、直接指定された場合
-			if(!file.exists()){
-				logger.debug("Not found."+file.getAbsolutePath());
-				completeResponse("404","file not exists");
-				return true;
+			FileCacheInfo fileCacheInfo=getFileCache().lockFileInfo(file);
+			try{
+				if( (fileCacheInfo!=null && !fileCacheInfo.exists())||(fileCacheInfo==null && !file.exists())){
+					logger.debug("Not found."+file.getAbsolutePath());
+					completeResponse("404","file not exists");
+					return true;
+				}
+				return sendFile(mapping,null,null,ifModifiedSince,file,fileCacheInfo);
+			} finally{
+				if(fileCacheInfo!=null){
+					fileCacheInfo.unlock();
+				}
 			}
-			return sendFile(mapping,null,null,ifModifiedSince,file);
 		}
 		String path=mapping.getResolvePath();
 		try {
@@ -296,7 +328,14 @@ public class FileSystemHandler extends WebServerHandler {
 			}
 		}
 		if(file.isFile()){//ファイルだったら
-			return sendFile(mapping,baseDirectory,path,ifModifiedSince,file);
+			FileCacheInfo fileCacheInfo=getFileCache().lockFileInfo(file);
+			try {
+				return sendFile(mapping,baseDirectory,path,ifModifiedSince,file,fileCacheInfo);
+			} finally{
+				if(fileCacheInfo!=null){
+					fileCacheInfo.unlock();
+				}
+			}
 		}
 		boolean listing=isListing(mapping);
 		if(listing && file.isDirectory()){//ディレクトリだったら
