@@ -36,6 +36,7 @@ import naru.aweb.mapping.MappingResult;
 import naru.aweb.util.JdoUtil;
 import naru.aweb.util.ServerParser;
 import net.sf.json.JSON;
+import net.sf.json.JSONArray;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
@@ -83,40 +84,42 @@ public class Mapping{
 		jsonConfig.setNewBeanInstanceStrategy(new MappingInstanceStrategy());
 	}
 	
-	public static void cleanup(File mappingInitFile){
+	public static void cleanup(JSONArray mappings){
 		JdoUtil.cleanup(Mapping.class);
-		if(!mappingInitFile.exists()){
-			logger.warn("cleanup but mappingInitFile not exists."+mappingInitFile);
-			return;
-		}
-		InputStream is=null;
-		try {
-			is=new FileInputStream(mappingInitFile);//Mapping.class.getResourceAsStream("MappingIni.properties");
-			Properties prop=new Properties();
-			prop.load(is);
-			for(int i=0;;i++){
-				String jsonString=prop.getProperty(Integer.toString(i));
-				if(jsonString==null){
-					break;
-				}
-				Mapping m=fromJson(jsonString);
+//		if(!mappingInitFile.exists()){
+//			logger.warn("cleanup but mappingInitFile not exists."+mappingInitFile);
+//			return;
+//		}
+//		InputStream is=null;
+//		try {
+//			is=new FileInputStream(mappingInitFile);//Mapping.class.getResourceAsStream("MappingIni.properties");
+//			Properties prop=new Properties();
+//			prop.load(is);
+			int size=mappings.size();
+			for(int i=0;i<size;i++){
+//				String jsonString=prop.getProperty(Integer.toString(i));
+//				if(jsonString==null){
+//					break;
+//				}
+				JSONObject mapping=mappings.getJSONObject(i);
+				Mapping m=fromJson(mapping);
 				m.save();
-				logger.info("cleanup add mapping."+jsonString);
+				logger.info("cleanup add mapping."+mapping);
 			}
-		} catch (IOException e) {
-			logger.error("fail to init.",e);
-		}finally{
-			if(is!=null){
-				try {
-					is.close();
-				} catch (IOException ignore) {
-				}
-			}
-		}
+//		} catch (IOException e) {
+//			logger.error("fail to init.",e);
+//		}finally{
+//			if(is!=null){
+//				try {
+//					is.close();
+//				} catch (IOException ignore) {
+//				}
+//			}
+//		}
 	}
 	
-	public static Mapping fromJson(String jsonString){
-		JSON json=JSONObject.fromObject(jsonString);
+	public static Mapping fromJson(JSON json){
+//		JSON json=JSONObject.fromObject(jsonString);
 		//‚±‚±‚ÅˆÈ‰ºwarning“®‚«‚Í‘Ã“–‚¾‚ª
 		//WARN  net.sf.json.JSONObject - Can't transform property 'destinationType' from java.lang.String into naru.aweb.config.Mapping$DestinationType. Will register a default Morpher
 		//WARN  net.sf.json.JSONObject - Can't transform property 'secureType' from java.lang.String into naru.aweb.config.Mapping$SecureType. Will register a default Morpher

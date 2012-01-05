@@ -178,7 +178,7 @@
                 <artifactItem>
                   <groupId>naru.async</groupId>
                   <artifactId>async</artifactId>
-                  <version>1.2.0</version>
+                  <version>${naru.async.version}</version>
                   <type>jar</type>
                   <overWrite>true</overWrite>
                   <outputDirectory>pack/phantom/ph/lib</outputDirectory>
