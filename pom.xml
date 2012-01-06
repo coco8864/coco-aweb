@@ -11,7 +11,7 @@
     <naru.async.version>1.2.1</naru.async.version>
     <queuelet-boot.version>1.2.0</queuelet-boot.version>
     <queuelet-common.version>1.2.1</queuelet-common.version>
-    <queuelet-system.version>1.2.1</queuelet-system.version>
+    <queuelet-system.version>1.2.2</queuelet-system.version>
   </properties>
 
 	<build>
@@ -97,6 +97,7 @@
 							<copy todir="pack/phantom/ph/setting/">
 								<fileset dir="ph/setting/">
 									<include name="mapping.init" />
+									<include name="pool.init" />
 									<include name="velocityTool.xml" />
 								</fileset>
 							</copy>

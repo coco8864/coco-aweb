@@ -43,6 +43,7 @@ import naru.aweb.util.ServerParser;
 import naru.queuelet.QueueletContext;
 import net.sf.json.JSON;
 import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
 
 import org.apache.commons.codec.binary.Base64;
@@ -633,7 +634,7 @@ public class Config {
 			return false;
 		}
 		//100í[ññÇ†ÇΩÇËÇÃpoolêîèâä˙íl
-		JSON poolJson=readInitFile(new File(settingPath, "pool.init"));
+		poolInfo_100=(JSONArray)readInitFile(new File(settingPath, "pool.init"));
 		
 		if (isCleanup) {
 			JdoUtil.cleanup(Performance.class);
@@ -1191,6 +1192,7 @@ public class Config {
 	private String contentEncoding;
 	private int keepAliveTimeout;
 	private boolean isDebugTrace;
+	private JSONArray poolInfo_100;
 	
 	public void setAllowChaned(boolean isAllowChunked){
 		setProperty("allowChunked", Boolean.toString(isAllowChunked));
@@ -1216,5 +1218,9 @@ public class Config {
 	}
 	public String getServerHeader(){
 		return serverHeader;
+	}
+	
+	public JSONArray getPoolInfo100(){
+		return poolInfo_100;
 	}
 }

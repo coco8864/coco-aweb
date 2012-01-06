@@ -118,6 +118,11 @@ public class Mapping{
 //		}
 	}
 	
+	public static Mapping fromJson(String jsonString){
+		JSON json=JSONObject.fromObject(jsonString);
+		return fromJson(json);
+	}
+	
 	public static Mapping fromJson(JSON json){
 //		JSON json=JSONObject.fromObject(jsonString);
 		//‚±‚±‚ÅˆÈ‰ºwarning“®‚«‚Í‘Ã“–‚¾‚ª
