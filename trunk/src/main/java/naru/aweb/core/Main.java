@@ -18,6 +18,7 @@ import naru.queuelet.Queuelet;
 import naru.queuelet.QueueletContext;
 import naru.queuelet.watch.StartupInfo;
 import net.sf.json.JSON;
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 public class Main implements Queuelet,Timer {
@@ -59,6 +60,7 @@ public class Main implements Queuelet,Timer {
 		TimerManager.setTimeout(1000, mainInstance, responseStartupInfo);
 	}
 	
+	/*
 	private class PoolInfo{
 		String type;//class,buffer,array
 		String className;
@@ -69,6 +71,7 @@ public class Main implements Queuelet,Timer {
 	
 	private List<PoolInfo> poolInfos=new ArrayList<PoolInfo>();
 	private int bfferlimit_100;
+	*/
 	
 	/**
 	 * datanucleus.properties
@@ -120,11 +123,9 @@ datanucleus.validateConstraints=false
 		}
 		//poolÇÃèâä˙âª
 		
-		
-		
-		PoolManager.createArrayPool(ByteBuffer.class, 1, 5120);
-		SSLEngine sslEngine=config.getSslEngine(null);
-		PoolManager.createBufferPool(sslEngine.getSession().getPacketBufferSize(),1024);
+		int maxClients=config.getInt("maxClients",1000);
+		boolean isUseSslBuffer=config.getBoolean("isUseSslBuffer", true);
+		setupPool(maxClients,isUseSslBuffer);
 		
 		mainInstance=this;
 		Main.context=context;
@@ -138,26 +139,37 @@ datanucleus.validateConstraints=false
 	/**
 	 * @param maxClients ëzíËí[ññêî
 	 */
-	public void setupPool(int maxClients,boolean isSsl){
+	public void setupPool(int maxClients,boolean isUseSslBuffer){
+		JSONArray poolInfo_100=config.getPoolInfo100();
 		if( maxClients<=0 ){
 			maxClients=100;
 		}
 		int client_100=((maxClients-1)/100)+1;
-		for(PoolInfo poolInfo:poolInfos){
-			if("class".equals(poolInfo.type)){
-				PoolManager.setupClassPool(poolInfo.className, poolInfo.limit_100*client_100);
-			}else if("array".equals(poolInfo.type)){
-				PoolManager.setupArrayPool(poolInfo.className,poolInfo.arraySize,poolInfo.limit_100*client_100);
-			}else if("buffer".equals(poolInfo.type)){
-				PoolManager.setupBufferPool(poolInfo.bufferSize, poolInfo.limit_100*client_100);
+		int size=poolInfo_100.size();
+		for(int i=0;i<size;i++){
+			JSONObject info=poolInfo_100.getJSONObject(i);
+			String type=info.getString("type");
+			int limit100=info.getInt("limit100");
+			if("class".equals(type)){
+				String className=info.getString("className");
+				PoolManager.setupClassPool(className,limit100*client_100);
+			}else if("array".equals(type)){
+				String className=info.getString("className");
+				int arraySize=info.getInt("arraySize");
+				PoolManager.setupArrayPool(className,arraySize,limit100*client_100);
+			}else if("buffer".equals(type)){
+				int bufferSize=info.getInt("bufferSize");
+				PoolManager.setupBufferPool(bufferSize, limit100*client_100);
+			}else if("sslBuffer".equals(type)){
+				if(!isUseSslBuffer){
+					continue;
+				}
+				SSLEngine sslEngine=config.getSslEngine(null);
+				PoolManager.setupBufferPool(sslEngine.getSession().getPacketBufferSize(), limit100*client_100);
+			}else if("defaultBuffer".equals(type)){
+				int bufferSize=info.getInt("bufferSize");
+				PoolManager.changeDefaultBuffer(bufferSize,limit100*client_100);
 			}
-		}
-		if(isSsl){
-			SSLEngine sslEngine=config.getSslEngine(null);
-			PoolManager.setupBufferPool(sslEngine.getSession().getPacketBufferSize(), bfferlimit_100*client_100);
-		}else{
-			int defaultBufferSize=PoolManager.getDefaultBufferSize();
-			PoolManager.setupBufferPool(defaultBufferSize, bfferlimit_100*client_100);
 		}
 	}
 	
