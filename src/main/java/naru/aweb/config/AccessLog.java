@@ -44,6 +44,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	private static final String ACCESSLOG_QUERY="SELECT FROM " + AccessLog.class.getName() + " ";
 	
 	private static Logger logger=Logger.getLogger(AccessLog.class);	
+	private static Logger accesslogLogger=Logger.getLogger("accesslog");	
 	private static Config config=Config.getConfig();
 	private static JsonConfig jsonConfig;
 	static{
@@ -575,7 +576,12 @@ public class AccessLog extends PoolBase implements BufferGetter{
 			sb.append(",");
 			sb.append(getChannelId());
 		}
-		logger.info(sb.toString());
+		String logText=sb.toString();
+		if(debug){
+			logger.info(logText);
+		}else{
+			accesslogLogger.info(logText);
+		}
 	}
 	
 	/**
