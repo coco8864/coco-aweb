@@ -28,6 +28,8 @@ public abstract class ServerBaseHandler extends SslHandler {
 	public static final String ATTRIBUTE_RESPONSE_FILE = "responseFile";
 	public static final String ATTRIBUTE_RESPONSE_CONTENT_LENGTH = "responseContentLength";
 	public static final String ATTRIBUTE_STORE_OFFSET = "responseOffset";
+	//cacheÇégÇÌÇ»Ç¢èÍçáÇ…ê›íË
+	public static final String ATTRIBUTE_RESPONSE_FILE_NOT_USE_CACHE = "responseFileNotUseCache";
 	
 	public static final String ATTRIBUTE_VELOCITY_PAGE="velocityPage";
 	public static final String ATTRIBUTE_VELOCITY_REPOSITORY="velocityRepository";

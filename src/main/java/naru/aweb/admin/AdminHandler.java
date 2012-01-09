@@ -463,6 +463,7 @@ public class AdminHandler extends WebServerHandler{
 			}
 			setRequestAttribute(ATTRIBUTE_RESPONSE_CONTENT_DISPOSITION,"attachment; filename=\"" + logName + "\"");
 			setRequestAttribute(ATTRIBUTE_RESPONSE_FILE,new File(config.getPhantomHome(),"/log/" + logName));
+			setRequestAttribute(ATTRIBUTE_RESPONSE_FILE_NOT_USE_CACHE,ATTRIBUTE_RESPONSE_FILE_NOT_USE_CACHE);
 			forwardHandler(Mapping.FILE_SYSTEM_HANDLER);
 		}else if("checkPool".equals(cmd)){
 			System.gc();

@@ -247,7 +247,10 @@ public class FileSystemHandler extends WebServerHandler {
 		MappingResult mapping=getRequestMapping();
 		File file=(File)getRequestAttribute(ATTRIBUTE_RESPONSE_FILE);
 		if(file!=null){//レスポンスするファイルが、直接指定された場合
-			FileCacheInfo fileCacheInfo=getFileCache().lockFileInfo(file);
+			FileCacheInfo fileCacheInfo=null;
+			if(getRequestAttribute(ATTRIBUTE_RESPONSE_FILE_NOT_USE_CACHE)==null){
+				fileCacheInfo=getFileCache().lockFileInfo(file);
+			}
 			try{
 				if( (fileCacheInfo!=null && !fileCacheInfo.exists())||(fileCacheInfo==null && !file.exists())){
 					logger.debug("Not found."+file.getAbsolutePath());
