@@ -45,7 +45,6 @@ public class FileCache2 implements Timer{
 		private boolean exists;
 		private long lastModified;
 		private long length;
-		
 		private boolean isNeedContents;//contents‚Ì—p•s—v
 		private ByteBuffer contents;
 		
