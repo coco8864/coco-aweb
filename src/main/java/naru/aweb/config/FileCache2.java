@@ -7,6 +7,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -24,8 +26,11 @@ public class FileCache2 implements Timer{
 	private static final int MAX_COUNT=256;
 
 	public class FileCacheInfo{
-		private Set<String> queue=new HashSet<String>();
+		private FileCacheInfo parent;
 		private Map<String,FileCacheInfo> child=new HashMap<String,FileCacheInfo>();
+		private boolean isInPool;//poolオブジェクトか否か?
+		private boolean isInCache;//cache中か否か?
+		
 		private int idleCounter=0;//直近利用からの時間
 		private int accessCounter=0;//通算利用回数
 		private int lockCounter=0;
@@ -62,8 +67,12 @@ public class FileCache2 implements Timer{
 		}
 		public synchronized void unlock(){
 			lockCounter--;
-			if(lockCounter==0){
-				notify();
+			if(isInPool){
+				synchronized(pool){
+					pool.add(this);
+				}
+			}else if(lockCounter==0){
+				notify();//読み込みthreadが待っているかもしれない
 			}
 		}
 		public File getFile() {
@@ -84,34 +93,69 @@ public class FileCache2 implements Timer{
 		}
 	}
 	
+	private List<FileCacheInfo> pool=new LinkedList<FileCacheInfo>();
 	private Map<File,FileCacheInfo> cache=new HashMap<File,FileCacheInfo>();
+	
 	private Set<File> queue=new HashSet<File>();
 	private boolean newEntry=true;
 	private long totalSize=0;
-
+	
+	private FileCacheInfo getPoolFileCacheInfo(){
+		synchronized(pool){
+			if(pool.size()>0){
+				return pool.remove(0);
+			}else{
+				FileCacheInfo info=new FileCacheInfo();
+				info.isInPool=true;
+				return info;
+			}
+		}
+	}
+	
+	/*
+	 * 平常時にlockなしにするには、その場でputする事ができない。
+	 * unlockのタイミングでqueueしてtimerにputしてもらう
+	 */
 	public FileCacheInfo lockFileInfo(File base,String path){
 		FileCacheInfo fileInfo=cache.get(base);
 		if(fileInfo!=null){
-			if(path==null){
-				fileInfo.lock();
-				return fileInfo;
+		}else{
+			if(newEntry){
+				fileInfo=new FileCacheInfo();
+			}else{
+				fileInfo=getPoolFileCacheInfo();
 			}
+		}
+		if(path==null){
+			fileInfo.lock();
+			return fileInfo;
+		}
+			
+			
+			
+			
+			
 			FileCacheInfo chFileInfo=fileInfo.child.get(path);
 			if(chFileInfo==null){
 				if(newEntry){
-					synchronized (chFileInfo.queue) {
-						chFileInfo.queue.add(path);
-					}
+					chFileInfo=new FileCacheInfo();
+					fileInfo.child.put(path, chFileInfo);
+				}else{
+					chFileInfo=getPoolFileCacheInfo();
 				}
+				return chFileInfo;
 			}
 			chFileInfo.lock();
 			return chFileInfo;
 		}else{
 			if(newEntry){
-				synchronized (queue) {
-					queue.add(base);
-				}
+				fileInfo=new FileCacheInfo();
+				cache.put(base, fileInfo);
+				fileInfo.child.put(path, chFileInfo);
+			}else{
+				fileInfo=getPoolFileCacheInfo();
 			}
+			return fileInfo;
 		}
 		return null;
 	}
