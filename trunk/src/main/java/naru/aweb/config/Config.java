@@ -696,15 +696,20 @@ public class Config {
 		// maxKeepAliveRequests =
 		// configuration.getInt("maxKeepAliveRequests",100);
 		// keepAliveTimeout = configuration.getInt("keepAliveTimeout", 15000);
-		String dir = configuration.getString(PATH_PUBLIC_DOCROOT);
-		publicDocumentRoot = new File(dir);
-		dir = configuration.getString(PATH_ADMIN_DOCROOT);
-		adminDocumentRoot = new File(dir);
-		dir = configuration.getString(PATH_PORTAL_DOCROOT);
-		portalDocumentRoot = new File(dir);
-		dir = configuration.getString(PATH_INJECTION_DIR);
-		injectionDir = new File(dir);
-		injectionHelper = new InjectionHelper(this);
+		try {
+			String dir = configuration.getString(PATH_PUBLIC_DOCROOT);
+			publicDocumentRoot = new File(dir).getCanonicalFile();
+			dir = configuration.getString(PATH_ADMIN_DOCROOT);
+			adminDocumentRoot = new File(dir).getCanonicalFile();
+			dir = configuration.getString(PATH_PORTAL_DOCROOT);
+			portalDocumentRoot = new File(dir).getCanonicalFile();
+			dir = configuration.getString(PATH_INJECTION_DIR);
+			injectionDir = new File(dir).getCanonicalFile();
+			injectionHelper = new InjectionHelper(this);
+		} catch (IOException e) {
+			logger.error("getCanonicalFile error.",e);
+			return false;
+		}
 		
 		String pacUrl = configuration.getString("pacUrl");
 		if("".equals(pacUrl)){
