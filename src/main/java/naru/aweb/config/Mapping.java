@@ -448,11 +448,16 @@ public class Mapping{
 		case FILE:
 			destinationHandlerClass=FILE_SYSTEM_HANDLER;
 			//fileの場合、pathにベースとなるディレクトリを指定、ブラウザからのpathはベースからの相対とする
-			if(destinationPath.startsWith("/")||destinationPath.indexOf(":")>0){
-				this.destinationFile=new File(destinationPath);
-			}else{
-				this.destinationFile=new File(config.getPhantomHome(),destinationPath);
-			}
+			try {
+					if(destinationPath.startsWith("/")||destinationPath.indexOf(":")>0){
+						this.destinationFile=new File(destinationPath).getCanonicalFile();
+					}else{
+						this.destinationFile=new File(config.getPhantomHome(),destinationPath).getCanonicalFile();
+					}
+				} catch (IOException e1) {
+					logger.error("getCanonicalFile error,",e1);
+					return false;
+				}
 //			this.destinationPath="/";
 			break;
 		case HANDLER:

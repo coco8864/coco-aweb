@@ -2,6 +2,8 @@ package naru.aweb.core;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -129,16 +131,30 @@ public class RealHost {
 		return realHost;
 	}
 	
-	private InetSocketAddress prepareBind() throws UnknownHostException{
+	private InetSocketAddress prepareBind() throws UnknownHostException, SocketException{
 		InetAddress inetAdder=null;
 		if(!"*".equals(bindHost)){
 			inetAdder=InetAddress.getByName(bindHost);
 			servers.add(new ServerParser(bindHost, bindPort));
 			servers.add(new ServerParser(inetAdder.getHostAddress(), bindPort));
+			logger.info(name + " bind ip:"+inetAdder.getHostAddress());
 		}else{
-			servers.add(new ServerParser(InetAddress.getLocalHost().getHostAddress(), bindPort));
-			servers.add(new ServerParser("0.0.0.0", bindPort));//•K—v‚È‚µ
-			servers.add(new ServerParser("127.0.0.1", bindPort));
+			//ref http://www.itmedia.co.jp/enterprise/articles/0407/27/news031.html
+			java.util.Enumeration enuIfs = NetworkInterface.getNetworkInterfaces();
+			if (null != enuIfs) {
+				while (enuIfs.hasMoreElements()) {
+					NetworkInterface ni = (NetworkInterface) enuIfs.nextElement();
+					java.util.Enumeration enuAddrs = ni.getInetAddresses();
+					while (enuAddrs.hasMoreElements()) {
+						InetAddress in4 = (InetAddress) enuAddrs.nextElement();
+						servers.add(new ServerParser(in4.getHostAddress(), bindPort));
+						logger.info(name + " bind ip:"+in4.getHostAddress());
+					}
+				}
+			}else{
+				//bind ‚·‚éIP‚ª‚È‚¢??
+				logger.warn(name + " no bind ip");
+			}
 		}
 		for(String virtualHost:virtualHosts){
 			this.servers.add(ServerParser.create(virtualHost, bindPort));
@@ -188,6 +204,9 @@ public class RealHost {
 		try {
 			address=realHost.prepareBind();
 		} catch (UnknownHostException e) {
+			logger.error("bindHost error.",e);
+			return false;
+		} catch (SocketException e) {
 			logger.error("bindHost error.",e);
 			return false;
 		}

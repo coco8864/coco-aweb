@@ -101,13 +101,44 @@ public class HeaderParser extends PoolBase {
 //		headerDateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z",Locale.US);
 //		headerDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
 //	}
-	private static ThreadLocal<SimpleDateFormat> headerDateFormatThradLocal=new ThreadLocal<SimpleDateFormat>();
-	
-	private static SimpleDateFormat getHeaderDateFormat(){
-		SimpleDateFormat headerDateFormat=headerDateFormatThradLocal.get();
-		if(headerDateFormat==null){
+	private static ThreadLocal<HeaderDataFormat> headerDateFormatThradLocal=new ThreadLocal<HeaderDataFormat>();
+	private static class HeaderDataFormat{
+		HeaderDataFormat(){
 			headerDateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z",Locale.US);
 			headerDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+		}
+		private SimpleDateFormat headerDateFormat;
+		private long cacheDate;
+		private String casheHeader;
+		private Map<String,Date> headerCashe=new HashMap<String,Date>();
+		public Date parseDateHeader(String header) {
+			Date date=headerCashe.get(header);
+			if(date!=null){
+				return date;
+			}
+			try {
+				date=headerDateFormat.parse(header);
+				headerCashe.put(header, date);
+				return date;
+			} catch (ParseException e) {
+				logger.warn("fail to parse date header." + header);
+			}
+			return null;
+		}
+		public String fomatDateHeader(Date date) {
+			long t=date.getTime()/1000L;
+			if(t!=cacheDate){
+				cacheDate=t;
+				casheHeader=headerDateFormat.format(date);
+			}
+			return casheHeader;
+		}
+	}
+	
+	private static HeaderDataFormat getHeaderDateFormat(){
+		HeaderDataFormat headerDateFormat=headerDateFormatThradLocal.get();
+		if(headerDateFormat==null){
+			headerDateFormat = new HeaderDataFormat();
 			headerDateFormatThradLocal.set(headerDateFormat);
 		}
 		return headerDateFormat;
@@ -118,18 +149,13 @@ public class HeaderParser extends PoolBase {
 			return null;
 		}
 		String fields[] = header.split(";");
-		try {
-			SimpleDateFormat headerDateFormat=getHeaderDateFormat();
-			return headerDateFormat.parse(fields[0]);
-		} catch (ParseException e) {
-			logger.warn("fail to parse date header." + header);
-			return null;
-		}
+		HeaderDataFormat headerDateFormat=getHeaderDateFormat();
+		return headerDateFormat.parseDateHeader(fields[0]);
 	}
-
+	
 	public static String fomatDateHeader(Date date) {
-		SimpleDateFormat headerDateFormat=getHeaderDateFormat();
-		return headerDateFormat.format(date);
+		HeaderDataFormat headerDateFormat=getHeaderDateFormat();
+		return headerDateFormat.fomatDateHeader(date);
 	}
 
 	public static HeaderParser createByStore(Store store) {
