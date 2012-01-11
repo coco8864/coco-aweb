@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -24,10 +25,18 @@ public class FileCache2 implements Timer{
 	private static final long FILE_MAX_SIZE=4*1024*1024;
 	private static final long TOTAL_MAX_SIZE=64*1024*1024;
 	private static final int MAX_COUNT=256;
+	
+	private boolean newEntry=true;
+	private long totalSize=0;
 
+	private List<FileCacheInfo> pool=new LinkedList<FileCacheInfo>();
+	private Map<File,FileCacheInfo> cache=new HashMap<File,FileCacheInfo>();
+	private Set<FileCacheInfo> queue=new HashSet<FileCacheInfo>();
+	
 	public class FileCacheInfo{
 		private FileCacheInfo parent;
 		private Map<String,FileCacheInfo> child=new HashMap<String,FileCacheInfo>();
+		
 		private boolean isInPool;//poolオブジェクトか否か?
 		private boolean isInCache;//cache中か否か?
 		
@@ -39,13 +48,13 @@ public class FileCache2 implements Timer{
 		private String path;
 		private File canonFile;
 		
+		private boolean isError;//処理中にエラー
 		private boolean isInBase;//トラバーサルチェック
 		private boolean isDirectory;
 		private boolean isFile;
 		private boolean exists;
 		private long lastModified;
 		private long length;
-		private boolean isNeedContents;//contentsの用不要
 		private ByteBuffer contents;
 		
 		private synchronized void lock(){
@@ -66,16 +75,14 @@ public class FileCache2 implements Timer{
 		}
 		public synchronized void unlock(){
 			lockCounter--;
+			if(isInCache && lockCounter==0){
+				notify();//読み込みthreadが待っているかもしれない
+			}
 			if(isInPool){
 				synchronized(pool){
 					pool.add(this);
 				}
-			}else if(lockCounter==0){
-				notify();//読み込みthreadが待っているかもしれない
 			}
-		}
-		public File getFile() {
-			return file;
 		}
 		public boolean exists() {
 			return exists;
@@ -87,28 +94,88 @@ public class FileCache2 implements Timer{
 			return length;
 		}
 		public ByteBuffer getContents() {
-			isNeedContents=true;
-			return PoolManager.duplicateBuffer(contents, true);
+			ByteBuffer buffer=null;
+			if(contents!=null){
+				return PoolManager.duplicateBuffer(contents, true);
+			}else{
+				buffer=readFile(canonFile, length);
+			}
+			if(length>=FILE_MAX_SIZE){
+				return buffer;
+			}else{
+				contents=buffer;
+				return PoolManager.duplicateBuffer(contents, true);
+			}
+		}
+		
+		public boolean isError(){
+			return isError();
+		}
+		public boolean isDirectory(){
+			return isDirectory();
+		}
+		public boolean isFile(){
+			return isFile();
+		}
+		
+		private void setup(File base,String path,FileCacheInfo parent){
+			this.base=base;
+			this.path=path;
+			this.parent=parent;
+			update();
+		}
+		private void update(){
+			isError=false;
+			if(contents!=null){
+				PoolManager.poolBufferInstance(contents);
+				contents=null;
+			}
+			File file;
+			if(path!=null){
+				file=new File(base,path);
+			}else{
+				file=base;
+			}
+			try {
+				canonFile=file.getCanonicalFile();
+				String baseCanon=base.getCanonicalPath();
+				if(canonFile.getAbsolutePath().startsWith(baseCanon)){
+					isInBase=true;
+				}else{
+					isInBase=false;
+				}
+			} catch (IOException e) {
+				isError=true;
+				logger.error("getCanonical error.",e);
+				return;
+			}
+			if(isInBase==false){
+				return;
+			}
+			exists=file.exists();
+			if(exists){
+				length=file.length();
+				lastModified=file.lastModified();
+				isDirectory=file.isDirectory();
+				isFile=file.isFile();
+				contents=null;//必要に応じてコンテンツを読み込む
+			}
 		}
 	}
 	
-	private List<FileCacheInfo> pool=new LinkedList<FileCacheInfo>();
-	private Map<File,FileCacheInfo> cache=new HashMap<File,FileCacheInfo>();
-	
-	private Set<File> queue=new HashSet<File>();
-	private boolean newEntry=true;
-	private long totalSize=0;
-	
-	private FileCacheInfo getPoolFileCacheInfo(){
+	private FileCacheInfo getFileCacheInfo(File base,String path,FileCacheInfo parent){
+		FileCacheInfo info=null;
 		synchronized(pool){
 			if(pool.size()>0){
-				return pool.remove(0);
-			}else{
-				FileCacheInfo info=new FileCacheInfo();
-				info.isInPool=true;
-				return info;
+				info=pool.remove(0);
 			}
 		}
+		if(info==null){
+			info=new FileCacheInfo();
+			info.isInPool=true;
+		}
+		info.setup(base, path, parent);
+		return info;
 	}
 	
 	/*
@@ -116,47 +183,20 @@ public class FileCache2 implements Timer{
 	 * unlockのタイミングでqueueしてtimerにputしてもらう
 	 */
 	public FileCacheInfo lockFileInfo(File base,String path){
-		FileCacheInfo fileInfo=cache.get(base);
-		if(fileInfo!=null){
-		}else{
-			if(newEntry){
-				fileInfo=new FileCacheInfo();
-			}else{
-				fileInfo=getPoolFileCacheInfo();
-			}
+		FileCacheInfo parentInfo=cache.get(base);
+		if(parentInfo==null){
+			parentInfo=getFileCacheInfo(base,null,null);
 		}
 		if(path==null){
-			fileInfo.lock();
-			return fileInfo;
+			parentInfo.lock();
+			return parentInfo;
 		}
-			
-			
-			
-			
-			
-			FileCacheInfo chFileInfo=fileInfo.child.get(path);
-			if(chFileInfo==null){
-				if(newEntry){
-					chFileInfo=new FileCacheInfo();
-					fileInfo.child.put(path, chFileInfo);
-				}else{
-					chFileInfo=getPoolFileCacheInfo();
-				}
-				return chFileInfo;
-			}
-			chFileInfo.lock();
-			return chFileInfo;
-		}else{
-			if(newEntry){
-				fileInfo=new FileCacheInfo();
-				cache.put(base, fileInfo);
-				fileInfo.child.put(path, chFileInfo);
-			}else{
-				fileInfo=getPoolFileCacheInfo();
-			}
-			return fileInfo;
+		FileCacheInfo chFileInfo=parentInfo.child.get(path);
+		if(chFileInfo==null){
+			chFileInfo=getFileCacheInfo(base,path,parentInfo);
 		}
-		return null;
+		chFileInfo.lock();
+		return chFileInfo;
 	}
 	
 	public FileCacheInfo lockFileInfo(File file){
@@ -225,7 +265,6 @@ public class FileCache2 implements Timer{
 				orgContents=fileInfo.contents;
 				fileInfo.contents=contents;
 			}else if(fileInfo.contents!=null){
-				fileInfo.isNeedContents=false;
 				fileInfo.length=0;
 				orgContents=fileInfo.contents;
 				fileInfo.contents=null;
@@ -241,51 +280,9 @@ public class FileCache2 implements Timer{
 		}
 		logger.info("cache reload file."+file.getAbsolutePath() +":" + fileInfo.length);
 	}
-	
-	private FileCacheInfo createFileInfo(File base,String path){
-		FileCacheInfo fileInfo=new FileCacheInfo();
-		File file;
-		if(path!=null){
-			file=new File(base,path);
-		}else{
-			file=base;
-		}
-		try {
-			fileInfo.canonFile=file.getCanonicalFile();
-			String baseCanon=base.getCanonicalPath();
-			if(fileInfo.canonFile.getAbsolutePath().startsWith(baseCanon)){
-				fileInfo.isInBase=true;
-			}else{
-				fileInfo.isInBase=false;
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-			return null;
-		}
-		if(fileInfo.isInBase==false){
-			return fileInfo;
-		}
-		file=fileInfo.canonFile;
-		fileInfo.exists=file.exists();
-		if(fileInfo.exists){
-			fileInfo.length=file.length();
-			if(fileInfo.length>=FILE_MAX_SIZE){
-				return null;
-			}
-			fileInfo.lastModified=file.lastModified();
-			fileInfo.isDirectory=file.isDirectory();
-			fileInfo.isFile=file.isFile();
-			fileInfo.isNeedContents=false;
-//			fileInfo.contents=readFile(file,fileInfo.length);
-//			if(fileInfo.contents==null){//読み込み失敗
-//				return null;
-//			}
-		}
-		logger.info("cache create file."+file.getAbsolutePath()+":" + fileInfo.length);
-		return fileInfo;
-	}
 
 	public void onTimer(Object userContext) {
+		//cacheコンテンツに変更がないかを確認
 		for(File file:cache.keySet()){
 			FileCacheInfo fileInfo=cache.get(file);
 			checkFileInfo(fileInfo);
@@ -293,20 +290,14 @@ public class FileCache2 implements Timer{
 				checkFileInfo(childFileInfo);
 			}
 		}
-		Object[] queueFiles=null;
+		//新たなcache候補を取り込み
+		List<FileCacheInfo> queueInfos=new ArrayList<FileCacheInfo>();
 		synchronized(queue){
-			queueFiles=queue.toArray();
+			queueInfos.addAll(queue);
 			queue.clear();
 		}
-		for(Object fileO:queueFiles){
-			File file=(File)fileO;
-			FileCacheInfo fileInfo=createFileInfo(file,null);
-			if(fileInfo!=null){
-				cache.put(file, fileInfo);
-				if( cache.size()>=MAX_COUNT ){
-					newEntry=false;
-				}
-			}
+		for(FileCacheInfo info:queueInfos){
+			
 		}
 	}
 	
