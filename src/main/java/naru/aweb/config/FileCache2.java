@@ -156,14 +156,7 @@ public class FileCache2 implements Timer{
 			this.base=base;
 			this.path=path;
 			this.parent=parent;
-			update();
-		}
-		private void update(){
-			isError=false;
-			if(contents!=null){
-				PoolManager.poolBufferInstance(contents);
-				contents=null;
-			}
+			this.isError=false;
 			File file;
 			if(path!=null){
 				file=new File(base,path);
@@ -186,52 +179,49 @@ public class FileCache2 implements Timer{
 			if(isInBase==false){
 				return;
 			}
-			exists=file.exists();
-			if(exists){
-				length=file.length();
-				lastModified=file.lastModified();
-				isDirectory=file.isDirectory();
-				isFile=file.isFile();
-				canRead=file.canRead();
-				contents=null;//必要に応じてコンテンツを読み込む
-			}
+			check(true);
 		}
 		
 		//cache内容が正しいかチェックする
-		private void check(){
+		private void check(boolean isSetup){
 			idleCounter++;
 			boolean exists=canonFile.exists();
 			long lastModified=0;
 			long length=0;
+			boolean isDirectory=false;
+			boolean isFile=false;
+			boolean canRead=false;
 			if(exists){
 				lastModified=canonFile.lastModified();
 				length=canonFile.length();
+				isDirectory=canonFile.isDirectory();
+				isFile=canonFile.isFile();
+				canRead=canonFile.canRead();
 			}
-			if(this.exists){
-				if(exists && 
-					this.lastModified==lastModified && 
-					this.length==length){
-					return;
-				}
-			}else{
-				if(exists==false){
-					return;
+			if(!isSetup){
+				if(this.exists){
+					if(exists && 
+						this.lastModified==lastModified && 
+						this.length==length){
+						return;
+					}
+				}else{
+					if(exists==false){
+						return;
+					}
 				}
 			}
 			ByteBuffer orgContents=null;
 			long orgLength=length;
 			synchronized(this){
 				waitLock();
-				if(exists){
-					this.lastModified=lastModified;
-					this.length=length;
-					orgContents=this.contents;
-					this.contents=null;
-				}else if(contents!=null){
-					this.length=0;
-					orgContents=this.contents;
-					this.contents=null;
-				}
+				this.lastModified=lastModified;
+				this.length=length;
+				orgContents=this.contents;
+				this.contents=null;
+				this.isDirectory=isDirectory;
+				this.isFile=isFile;
+				this.canRead=canRead;
 				this.exists=exists;
 			}
 			if(orgContents!=null){
@@ -285,9 +275,9 @@ public class FileCache2 implements Timer{
 		//cacheコンテンツに変更がないかを確認
 		for(File file:cache.keySet()){
 			FileCacheInfo fileInfo=cache.get(file);
-			fileInfo.check();
+			fileInfo.check(false);
 			for(FileCacheInfo childFileInfo:fileInfo.child.values()){
-				childFileInfo.check();
+				childFileInfo.check(false);
 			}
 		}
 		//新たなcache候補を取り込み
