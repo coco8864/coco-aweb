@@ -54,6 +54,7 @@ public class FileCache2 implements Timer{
 		
 		private boolean isDirectory;
 		private boolean isFile;
+		private boolean canRead;
 		private boolean exists;
 		private long lastModified;
 		private long length;
@@ -147,6 +148,9 @@ public class FileCache2 implements Timer{
 		public boolean isFile(){
 			return isFile;
 		}
+		public boolean canRead(){
+			return canRead;
+		}
 		
 		private void setup(File base,String path,FileCacheInfo parent){
 			this.base=base;
@@ -188,6 +192,7 @@ public class FileCache2 implements Timer{
 				lastModified=file.lastModified();
 				isDirectory=file.isDirectory();
 				isFile=file.isFile();
+				canRead=file.canRead();
 				contents=null;//必要に応じてコンテンツを読み込む
 			}
 		}
