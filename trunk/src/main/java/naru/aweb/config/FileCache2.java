@@ -28,6 +28,7 @@ public class FileCache2 implements Timer{
 	
 	private boolean newEntry=true;
 	private long totalSize=0;
+	private int cacheCount=0;
 
 	private List<FileCacheInfo> pool=new LinkedList<FileCacheInfo>();
 	private Map<File,FileCacheInfo> cache=new HashMap<File,FileCacheInfo>();
@@ -50,6 +51,7 @@ public class FileCache2 implements Timer{
 		
 		private boolean isError;//処理中にエラー
 		private boolean isInBase;//トラバーサルチェック
+		
 		private boolean isDirectory;
 		private boolean isFile;
 		private boolean exists;
@@ -93,12 +95,40 @@ public class FileCache2 implements Timer{
 		public long length() {
 			return length;
 		}
+		
+		private ByteBuffer readFile(){
+			length=canonFile.length();
+			ByteBuffer buffer=null;
+			try {
+				FileChannel channel=null;
+				FileInputStream fis=new FileInputStream(canonFile);
+				channel=fis.getChannel();
+				buffer = PoolManager.getBufferInstance((int)length);
+				if( channel.read(buffer)<length){
+					PoolManager.poolBufferInstance(buffer);
+					logger.error("readFile length error."+length);
+					isError=true;
+					return null;
+				}
+				buffer.flip();
+				logger.info("cache load file."+canonFile.getAbsolutePath()+":" + length);
+			} catch (IOException e) {
+				if(buffer!=null){
+					PoolManager.poolBufferInstance(buffer);
+					buffer=null;
+				}
+				isError=true;
+				logger.error("readFile error",e);
+			}
+			return buffer;
+		}
+		
 		public ByteBuffer getContents() {
 			ByteBuffer buffer=null;
 			if(contents!=null){
 				return PoolManager.duplicateBuffer(contents, true);
 			}else{
-				buffer=readFile(canonFile, length);
+				buffer=readFile();
 			}
 			if(length>=FILE_MAX_SIZE){
 				return buffer;
@@ -109,13 +139,13 @@ public class FileCache2 implements Timer{
 		}
 		
 		public boolean isError(){
-			return isError();
+			return isError;
 		}
 		public boolean isDirectory(){
-			return isDirectory();
+			return isDirectory;
 		}
 		public boolean isFile(){
-			return isFile();
+			return isFile;
 		}
 		
 		private void setup(File base,String path,FileCacheInfo parent){
@@ -161,6 +191,49 @@ public class FileCache2 implements Timer{
 				contents=null;//必要に応じてコンテンツを読み込む
 			}
 		}
+		
+		//cache内容が正しいかチェックする
+		private void check(){
+			idleCounter++;
+			boolean exists=canonFile.exists();
+			long lastModified=0;
+			long length=0;
+			if(exists){
+				lastModified=canonFile.lastModified();
+				length=canonFile.length();
+			}
+			if(this.exists){
+				if(exists && 
+					this.lastModified==lastModified && 
+					this.length==length){
+					return;
+				}
+			}else{
+				if(exists==false){
+					return;
+				}
+			}
+			ByteBuffer orgContents=null;
+			long orgLength=length;
+			synchronized(this){
+				waitLock();
+				if(exists){
+					this.lastModified=lastModified;
+					this.length=length;
+					orgContents=this.contents;
+					this.contents=null;
+				}else if(contents!=null){
+					this.length=0;
+					orgContents=this.contents;
+					this.contents=null;
+				}
+				this.exists=exists;
+			}
+			if(orgContents!=null){
+				PoolManager.poolBufferInstance(orgContents);
+				totalSize-=orgLength;
+			}
+		}
 	}
 	
 	private FileCacheInfo getFileCacheInfo(File base,String path,FileCacheInfo parent){
@@ -202,92 +275,14 @@ public class FileCache2 implements Timer{
 	public FileCacheInfo lockFileInfo(File file){
 		return lockFileInfo(file,null);
 	}
-	
-	private ByteBuffer readFile(File file,long length){
-		ByteBuffer buffer=null;
-		try {
-			FileChannel channel=null;
-			FileInputStream fis=new FileInputStream(file);
-			channel=fis.getChannel();
-			buffer = PoolManager.getBufferInstance((int)length);
-			if( channel.read(buffer)<length){
-				PoolManager.poolBufferInstance(buffer);
-				logger.error("readFile length error."+length);
-				return null;
-			}
-			buffer.flip();
-			totalSize+=length;
-			logger.info("cache load file."+file.getAbsolutePath()+":" + length);
-		} catch (IOException e) {
-			if(buffer!=null){
-				PoolManager.poolBufferInstance(buffer);
-				buffer=null;
-			}
-			logger.error("readFile error",e);
-		}
-		return buffer;
-	}
-	
-	private void checkFileInfo(FileCacheInfo fileInfo){
-		File file=fileInfo.canonFile;
-		fileInfo.idleCounter++;
-		boolean exists=file.exists();
-		long lastModified=0;
-		long length=0;
-		if(exists){
-			lastModified=file.lastModified();
-			length=file.length();
-		}
-		if(fileInfo.exists){
-			if(fileInfo.isNeedContents==true && fileInfo.contents==null){
-				//content要求があったがまだ読み込んでいない
-			}else if(exists && 
-				fileInfo.lastModified==lastModified && 
-				fileInfo.length==length){
-				return;
-			}
-		}else{
-			if(exists==false){
-				return;
-			}
-		}
-		ByteBuffer contents=null;
-		if(exists&&fileInfo.isNeedContents==true){
-			contents=readFile(file,length);
-		}
-		ByteBuffer orgContents=null;
-		long orgLength=fileInfo.length;
-		synchronized(fileInfo){
-			fileInfo.waitLock();
-			if(exists){
-				fileInfo.lastModified=lastModified;
-				fileInfo.length=length;
-				orgContents=fileInfo.contents;
-				fileInfo.contents=contents;
-			}else if(fileInfo.contents!=null){
-				fileInfo.length=0;
-				orgContents=fileInfo.contents;
-				fileInfo.contents=null;
-			}
-			fileInfo.exists=exists;
-		}
-		if(orgContents!=null){
-			PoolManager.poolBufferInstance(orgContents);
-			totalSize-=orgLength;
-		}
-		if(totalSize>=(TOTAL_MAX_SIZE-FILE_MAX_SIZE)){
-			newEntry=false;
-		}
-		logger.info("cache reload file."+file.getAbsolutePath() +":" + fileInfo.length);
-	}
 
 	public void onTimer(Object userContext) {
 		//cacheコンテンツに変更がないかを確認
 		for(File file:cache.keySet()){
 			FileCacheInfo fileInfo=cache.get(file);
-			checkFileInfo(fileInfo);
+			fileInfo.check();
 			for(FileCacheInfo childFileInfo:fileInfo.child.values()){
-				checkFileInfo(childFileInfo);
+				childFileInfo.check();
 			}
 		}
 		//新たなcache候補を取り込み
@@ -297,7 +292,25 @@ public class FileCache2 implements Timer{
 			queue.clear();
 		}
 		for(FileCacheInfo info:queueInfos){
-			
+			if(!newEntry){
+				synchronized(pool){
+					pool.add(info);//再利用にまわす
+				}
+			}
+			cacheCount++;
+			if(cacheCount>=MAX_COUNT){
+				newEntry=false;
+			}
+			info.isInCache=true;
+			if(info.parent==null){
+				cache.put(info.base,info);
+			}else{
+				if(info.parent.isInCache==false){
+					info.parent.isInCache=true;
+					cache.put(info.parent.base,info.parent);
+				}
+				info.parent.child.put(info.path, info);
+			}
 		}
 	}
 	
