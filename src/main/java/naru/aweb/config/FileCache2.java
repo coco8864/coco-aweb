@@ -16,6 +16,7 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 
 import naru.async.Timer;
+import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.async.timer.TimerManager;
 
@@ -38,7 +39,7 @@ public class FileCache2 implements Timer{
 		private FileCacheInfo parent;
 		private Map<String,FileCacheInfo> child=new HashMap<String,FileCacheInfo>();
 		
-		private boolean isInPool;//poolオブジェクトか否か?
+//		private boolean isInPool;//poolオブジェクトか否か?
 		private boolean isInCache;//cache中か否か?
 		
 		private int idleCounter=0;//直近利用からの時間
@@ -58,7 +59,8 @@ public class FileCache2 implements Timer{
 		private boolean exists;
 		private long lastModified;
 		private long length;
-		private ByteBuffer contents;
+		private File[] listFiles;
+		private ByteBuffer[] contents;
 		
 		private synchronized void lock(){
 			idleCounter=0;
@@ -81,9 +83,9 @@ public class FileCache2 implements Timer{
 			if(isInCache && lockCounter==0){
 				notify();//読み込みthreadが待っているかもしれない
 			}
-			if(isInPool){
-				synchronized(pool){
-					pool.add(this);
+			if(!isInCache){
+				synchronized(queue){
+					queue.add(this);
 				}
 			}
 		}
@@ -97,45 +99,47 @@ public class FileCache2 implements Timer{
 			return length;
 		}
 		
-		private ByteBuffer readFile(){
+		private ByteBuffer[] readFile(){
 			length=canonFile.length();
-			ByteBuffer buffer=null;
+			ByteBuffer[] buffers=null;
 			try {
 				FileChannel channel=null;
 				FileInputStream fis=new FileInputStream(canonFile);
 				channel=fis.getChannel();
-				buffer = PoolManager.getBufferInstance((int)length);
-				if( channel.read(buffer)<length){
-					PoolManager.poolBufferInstance(buffer);
+				buffers=BuffersUtil.prepareBuffers(length);
+//				buffer = PoolManager.getBufferInstance((int)length);
+				if( channel.read(buffers)<length){
+					PoolManager.poolBufferInstance(buffers);
 					logger.error("readFile length error."+length);
 					isError=true;
 					return null;
 				}
-				buffer.flip();
+				BuffersUtil.flipBuffers(buffers);
 				logger.info("cache load file."+canonFile.getAbsolutePath()+":" + length);
 			} catch (IOException e) {
-				if(buffer!=null){
-					PoolManager.poolBufferInstance(buffer);
-					buffer=null;
+				if(buffers!=null){
+					PoolManager.poolBufferInstance(buffers);
+					buffers=null;
 				}
 				isError=true;
 				logger.error("readFile error",e);
 			}
-			return buffer;
+			return buffers;
 		}
 		
-		public ByteBuffer getContents() {
-			ByteBuffer buffer=null;
+		public ByteBuffer[] getContents() {
+			ByteBuffer[] buffers=null;
 			if(contents!=null){
-				return PoolManager.duplicateBuffer(contents, true);
+				return PoolManager.duplicateBuffers(contents, true);
 			}else{
-				buffer=readFile();
+				buffers=readFile();
 			}
 			if(length>=FILE_MAX_SIZE){
-				return buffer;
+				return buffers;
 			}else{
-				contents=buffer;
-				return PoolManager.duplicateBuffer(contents, true);
+				contents=buffers;
+				totalSize+=length;
+				return PoolManager.duplicateBuffers(contents, true);
 			}
 		}
 		
@@ -148,8 +152,48 @@ public class FileCache2 implements Timer{
 		public boolean isFile(){
 			return isFile;
 		}
+		public boolean isInBase(){
+			return isInBase;
+		}
 		public boolean canRead(){
 			return canRead;
+		}
+		
+		public File[] listFiles(){
+			return listFiles;
+		}
+		
+		public File getCanonicalFile(){
+			return canonFile;
+		}
+		
+		public FileCacheInfo lockWelcomefile(String[] paths){
+			FileCacheInfo baseInfo=null;
+			FileCacheInfo info=null;
+			String basePath=null;
+			if(parent!=null){
+				baseInfo=parent;
+				basePath=path;
+				if(!basePath.endsWith("/")){
+					basePath+="/";
+				}
+			}else{
+				baseInfo=this;
+			}
+			for(String path:paths){
+				String reasPath=(basePath==null)?path:basePath+path;
+				info=baseInfo.child.get(reasPath);
+				if(info==null){
+					info=lockFileInfo(baseInfo.base, reasPath);
+				}else{
+					info.lock();
+				}
+				if(info.exists){
+					break;
+				}
+				info.unlock();
+			}
+			return info;
 		}
 		
 		private void setup(File base,String path,FileCacheInfo parent){
@@ -191,12 +235,16 @@ public class FileCache2 implements Timer{
 			boolean isDirectory=false;
 			boolean isFile=false;
 			boolean canRead=false;
+			File[] listFiles=null;
 			if(exists){
 				lastModified=canonFile.lastModified();
 				length=canonFile.length();
 				isDirectory=canonFile.isDirectory();
 				isFile=canonFile.isFile();
 				canRead=canonFile.canRead();
+				if(isDirectory && canRead){
+					listFiles=canonFile.listFiles();
+				}
 			}
 			if(!isSetup){
 				if(this.exists){
@@ -211,23 +259,52 @@ public class FileCache2 implements Timer{
 					}
 				}
 			}
-			ByteBuffer orgContents=null;
-			long orgLength=length;
+			ByteBuffer[] orgContents=this.contents;
+			long orgLength=this.length;
 			synchronized(this){
 				waitLock();
 				this.lastModified=lastModified;
 				this.length=length;
-				orgContents=this.contents;
 				this.contents=null;
 				this.isDirectory=isDirectory;
 				this.isFile=isFile;
 				this.canRead=canRead;
+				this.listFiles=listFiles;
 				this.exists=exists;
 			}
 			if(orgContents!=null){
 				PoolManager.poolBufferInstance(orgContents);
 				totalSize-=orgLength;
 			}
+		}
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((base == null) ? 0 : base.hashCode());
+			result = prime * result + ((path == null) ? 0 : path.hashCode());
+			return result;
+		}
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			final FileCacheInfo other = (FileCacheInfo) obj;
+			if (base == null) {
+				if (other.base != null)
+					return false;
+			} else if (!base.equals(other.base))
+				return false;
+			if (path == null) {
+				if (other.path != null)
+					return false;
+			} else if (!path.equals(other.path))
+				return false;
+			return true;
 		}
 	}
 	
@@ -240,7 +317,7 @@ public class FileCache2 implements Timer{
 		}
 		if(info==null){
 			info=new FileCacheInfo();
-			info.isInPool=true;
+			info.isInCache=false;
 		}
 		info.setup(base, path, parent);
 		return info;
@@ -288,6 +365,11 @@ public class FileCache2 implements Timer{
 		}
 		for(FileCacheInfo info:queueInfos){
 			if(!newEntry){
+				if(info.contents!=null){
+					totalSize-=info.length;
+					PoolManager.poolBufferInstance(info.contents);
+					info.contents=null;
+				}
 				synchronized(pool){
 					pool.add(info);//再利用にまわす
 				}
@@ -300,11 +382,15 @@ public class FileCache2 implements Timer{
 			if(info.parent==null){
 				cache.put(info.base,info);
 			}else{
-				if(info.parent.isInCache==false){
-					info.parent.isInCache=true;
-					cache.put(info.parent.base,info.parent);
+				FileCacheInfo parent=cache.get(info.base);
+				if(parent==null){
+					parent=info.parent;
 				}
-				info.parent.child.put(info.path, info);
+				if(parent.isInCache==false){
+					parent.isInCache=true;
+					cache.put(parent.base,parent);
+				}
+				parent.child.put(info.path, info);
 			}
 		}
 	}

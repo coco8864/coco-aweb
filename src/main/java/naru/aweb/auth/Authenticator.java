@@ -411,7 +411,7 @@ public class Authenticator {
 		//1)cookieOnceのid
 		//2)username:user.getLoginId()
 		//3)password:間違ったpassword..乱数からシークアンドトライ
-		authHandler.forwardAuthPage("creanupAuthHeader.vsp");
+		authHandler.forwardAuthPage("/creanupAuthHeader.vsp");
 		return true;
 	}
 	
@@ -461,7 +461,7 @@ public class Authenticator {
 		if(scheme==BASIC){//isBasic
 			response.setHeader(HeaderParser.WWW_AUTHENTICATE_HEADER, createBasicAuthenticateHeader(realm));
 			response.setRequestAttribute(AuthHandler.ATTRIBUTE_RESPONSE_STATUS_CODE, "401");
-			response.forwardAuthPage("webAuthenticate.vsp");
+			response.forwardAuthPage("/webAuthenticate.vsp");
 		}else if(scheme==DIGEST){
 			response.setHeader(HeaderParser.WWW_AUTHENTICATE_HEADER,createDigestAuthenticateHeader(realm));
 			response.setRequestAttribute(AuthHandler.ATTRIBUTE_RESPONSE_STATUS_CODE, "401");

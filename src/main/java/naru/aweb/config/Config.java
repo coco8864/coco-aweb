@@ -107,7 +107,7 @@ public class Config {
 	private Authorizer authorizer;
 	private LogPersister logPersister;
 	private SslContextPool sslContextPool;
-	private FileCache fileCache;
+	private FileCache2 fileCache;
 	private ReplayHelper replayHelper;
 	private FilterHelper filterHelper;
 	private InjectionHelper injectionHelper;
@@ -667,7 +667,7 @@ public class Config {
 		logPersister = new LogPersister(this);
 		sslContextPool = new SslContextPool(this);
 		sslContext = sslContextPool.getSSLContext(getSelfDomain());
-		fileCache=FileCache.create();
+		fileCache=FileCache2.create();
 
 		String[] hostsArray = Config.getStringArray(configuration, REAL_HOSTS);
 		for (int i = 0; i < hostsArray.length; i++) {
@@ -1141,7 +1141,7 @@ public class Config {
 		return logPersister;
 	}
 
-	public FileCache getFileCache(){
+	public FileCache2 getFileCache(){
 		return fileCache;
 	}
 	

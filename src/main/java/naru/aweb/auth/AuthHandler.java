@@ -39,7 +39,7 @@ public class AuthHandler extends WebServerHandler {
 	private static String CLEANUP_AUTH_HEADER_PATH="/cleanupAuthHeader";//auth header削除用path
 	private static String AJAX_CHECK_SESSION_PATH="/ajaxCheckSession";//webSocket,ajax api認証を行う場合呼び出す前にこのパスをiframeに表示
 	private static String LOGOUT_PATH="/logout";//logout用
-	private static String AUTH_PAGE_FILEPATH="/auth/";
+	private static String AUTH_PAGE_FILEPATH="/auth";
 	private static String AUTH_ID="authId";//...temporaryIdの別名
 
 	public static String QUERY_AUTH_MARK="queryAuthMark";//queryでauth呼び出しが指定された場合
@@ -50,7 +50,11 @@ public class AuthHandler extends WebServerHandler {
 	//admin/auth配下のコンテンツを返却する。
 	public void forwardAuthPage(String fileName){
 		MappingResult mapping=getRequestMapping();
-		mapping.setResolvePath(AUTH_PAGE_FILEPATH + fileName);
+		if(fileName.startsWith("/")){
+			mapping.setResolvePath(AUTH_PAGE_FILEPATH + fileName);
+		}else{
+			mapping.setResolvePath(AUTH_PAGE_FILEPATH + "/" +fileName);
+		}
 		mapping.setDesitinationFile(config.getAdminDocumentRoot());
 		forwardHandler(Mapping.FILE_SYSTEM_HANDLER);
 	}
@@ -444,7 +448,7 @@ public class AuthHandler extends WebServerHandler {
 			json.put("result", false);
 		}
 		setRequestAttribute("response", json.toString());
-		forwardAuthPage("crossDomainFrame.vsp");
+		forwardAuthPage("/crossDomainFrame.vsp");
 	}
 	
 	private void queryAuth(){

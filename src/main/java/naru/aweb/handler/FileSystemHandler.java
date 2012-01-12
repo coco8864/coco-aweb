@@ -2,7 +2,6 @@ package naru.aweb.handler;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -13,11 +12,12 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.aweb.config.Config;
-import naru.aweb.config.FileCache;
+import naru.aweb.config.FileCache2;
 import naru.aweb.config.Mapping;
-import naru.aweb.config.FileCache.FileCacheInfo;
+import naru.aweb.config.FileCache2.FileCacheInfo;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.MappingResult;
@@ -32,7 +32,7 @@ public class FileSystemHandler extends WebServerHandler {
 	private static String LISTING_PAGE="/fileSystem/listing.vsp";
 	private static Configuration contentTypeConfig=null;//config.getConfiguration("ContentType");
 	private static Map<String,String> contentTypeMap=new HashMap<String,String> ();
-	private static FileCache fileCache=null;
+	private static FileCache2 fileCache=null;
 
 	private static Config getConfig(){
 		if(config==null){
@@ -60,7 +60,7 @@ public class FileSystemHandler extends WebServerHandler {
 		return contentType;
 	}
 	
-	private static FileCache getFileCache(){
+	private static FileCache2 getFileCache(){
 		if(fileCache==null){
 			fileCache=getConfig().getFileCache();
 		}
@@ -69,14 +69,14 @@ public class FileSystemHandler extends WebServerHandler {
 	
 	//TODO adminSettingからデフォルト値を取得する
 	private static boolean defaultListing=true;
-	private static String[] defaultWelcomFiles=new String[]{"index.html","index.htm","index.vsp"};
+	private static String[] defaultWelcomeFiles=new String[]{"index.html","index.htm","index.vsp"};
 	//vsp ... "velocity server page"  vsf ... "velocity server flagment"
 	private static String[] defaultVelocityExtentions=new String[]{".vsp","vsf"};
 	
-	private String[] getWelcomFiles(MappingResult mapping){
-		String welcomFiles=(String)mapping.getOption(MappingResult.PARAMETER_FILE_WELCOM_FILES);
+	private String[] getWelcomeFiles(MappingResult mapping){
+		String welcomFiles=(String)mapping.getOption(MappingResult.PARAMETER_FILE_WELCOME_FILES);
 		if(welcomFiles==null){
-			return defaultWelcomFiles;
+			return defaultWelcomeFiles;
 		}
 		return welcomFiles.split(",");
 	}
@@ -150,11 +150,10 @@ public class FileSystemHandler extends WebServerHandler {
 	private void responseBodyFromFile(File file,FileCacheInfo fileCacheInfo) throws IOException{
 		Long offset=(Long)getRequestAttribute(ATTRIBUTE_STORE_OFFSET);
 		if(fileCacheInfo!=null){
-			ByteBuffer contents=fileCacheInfo.getContents();
+			ByteBuffer[] contents=fileCacheInfo.getContents();
 			if(contents!=null){
 				if(offset!=null){
-					int pos=contents.position()+offset.intValue();
-					contents.position(pos);
+					BuffersUtil.skip(contents, offset.intValue());
 				}
 				responseBody(contents);
 				responseEnd();//実close発行
@@ -172,14 +171,14 @@ public class FileSystemHandler extends WebServerHandler {
 	}
 	
 	//存在確認済みのディレクトリを一覧レスポンスする。
-	private boolean snedFileList(String uri,File file,boolean isBase){
+	private boolean snedFileList(String uri,FileCacheInfo info,boolean isBase){
 		if(!uri.endsWith("/")){
 			uri=uri+"/";
 		}
 		setRequestAttribute("isBase",isBase);
 		setRequestAttribute("base",uri);
-		setRequestAttribute("source", file.getAbsoluteFile());
-		setRequestAttribute("fileList", file.listFiles());
+		setRequestAttribute("source", info.getCanonicalFile());
+		setRequestAttribute("fileList", info.listFiles());
 		MappingResult mapping=getRequestMapping();
 		
 		mapping.setResolvePath(LISTING_PAGE);
@@ -219,7 +218,7 @@ public class FileSystemHandler extends WebServerHandler {
 		if( contentDisposition!=null){
 			setHeader(HeaderParser.CONTENT_DISPOSITION_HEADER, contentDisposition);
 		}
-		String contentType=getContentType(file);
+		String contentType=getContentType(fileCacheInfo!=null?fileCacheInfo.getCanonicalFile():file);
 		setContentType(contentType);
 		setStatusCode("200");
 		try {
@@ -277,40 +276,31 @@ public class FileSystemHandler extends WebServerHandler {
 			path=path.substring(0,pos);
 		}
 		
-		//トラバーサルされたら、loggingして404
 		File baseDirectory=mapping.getDestinationFile();
-		file = new File(baseDirectory,path);
-		String fileCanonPath=null;
-		String distCanonPath=null;
-		try {
-			fileCanonPath = file.getCanonicalPath();
-			distCanonPath = baseDirectory.getCanonicalPath();
-		} catch (IOException e) {
-			logger.warn("fail to getCanonicalPath.",e);
-			completeResponse("500","fail to getCanonicalPath.");
-			return true;
-		}
-		if( !fileCanonPath.startsWith(distCanonPath) ){
-			logger.warn("traversal error. file:" + fileCanonPath + " dist:" + distCanonPath);
-			completeResponse("404","traversal error:"+ fileCanonPath);
-			return true;
-		}
-		
-		if( !file.exists() || !file.canRead()){//存在しなかったり、読み込めなかったら
-			logger.debug("Not found."+file.getAbsolutePath());
-			completeResponse("404","file not exists");
-			return true;
-		}
-		
-		//wellcomfile処理
-		String[] welcomFiles=getWelcomFiles(mapping);
-		if( file.isDirectory() && welcomFiles!=null){
-			for(int i=0;i<welcomFiles.length;i++){
-				File wellcomFile=new File(file,welcomFiles[i]);
-				if( wellcomFile.exists() && wellcomFile.canRead()){
-					file=wellcomFile;
-					//もし、URIが"/"で終わっていなかったら相対が解決できないので、リダイレクト
-					if(!path.endsWith("/")){
+		FileCacheInfo info=getFileCache().lockFileInfo(baseDirectory, path);
+		try{
+			if(info.isError()){
+				logger.warn("fail to getCanonicalPath.");
+				completeResponse("500","fail to getCanonicalPath.");
+				return true;
+			}else if(!info.isInBase()){
+				//トラバーサルされたら、loggingして404
+				logger.warn("traversal error.");
+				completeResponse("404","traversal error");
+				return true;
+			}else if(!info.exists() || !info.canRead()){
+				logger.debug("Not found."+info.getCanonicalFile());
+				completeResponse("404","file not exists");
+				return true;
+			}
+			//welcomefile処理
+			String[] welcomeFiles=getWelcomeFiles(mapping);
+			if( info.isDirectory() && welcomeFiles!=null){
+				FileCacheInfo childInfo=info.lockWelcomefile(welcomeFiles);
+				if(childInfo!=null){
+					if(childInfo.exists()&&childInfo.canRead()&&!path.endsWith("/")){
+						childInfo.unlock();
+						//もし、URIが"/"で終わっていなかったら相対が解決できないので、リダイレクト
 						ServerParser selfServer=requestHeader.getServer();
 						StringBuilder sb=new StringBuilder();
 						if(isSsl()){
@@ -325,25 +315,20 @@ public class FileSystemHandler extends WebServerHandler {
 						completeResponse("302");
 						return true;
 					}
-					path=path+welcomFiles[i];
-					break;
+					info.unlock();
+					info=childInfo;
 				}
 			}
-		}
-		if(file.isFile()){//ファイルだったら
-			FileCacheInfo fileCacheInfo=getFileCache().lockFileInfo(file);
-			try {
-				return sendFile(mapping,baseDirectory,path,ifModifiedSince,file,fileCacheInfo);
-			} finally{
-				if(fileCacheInfo!=null){
-					fileCacheInfo.unlock();
-				}
+			if(info.isFile()){//ファイルだったら
+				return sendFile(mapping,baseDirectory,path,ifModifiedSince,file,info);
 			}
-		}
-		boolean listing=isListing(mapping);
-		if(listing && file.isDirectory()){//ディレクトリだったら
-			//velocityPageからリスト出力
-			return snedFileList(selfPath,file,"/".equals(path));
+			boolean listing=isListing(mapping);
+			if(listing && info.isDirectory()){//ディレクトリだったら
+				//velocityPageからリスト出力
+				return snedFileList(selfPath,info,"/".equals(path));
+			}
+		}finally{
+			info.unlock();
 		}
 		logger.debug("Not allow listing");
 		completeResponse("404");
