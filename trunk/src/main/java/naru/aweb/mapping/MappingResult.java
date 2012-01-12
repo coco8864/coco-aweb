@@ -16,7 +16,7 @@ import naru.aweb.config.Mapping;
 import naru.aweb.util.ServerParser;
 
 public class MappingResult extends PoolBase {
-	public static String PARAMETER_FILE_WELCOM_FILES = "fileWeblcomFiles";
+	public static String PARAMETER_FILE_WELCOME_FILES = "fileWeblcomeFiles";
 	public static String PARAMETER_FILE_LISTING = "fileListing";
 	public static String PARAMETER_FILE_RESOURCE_PATH = "resoucePath";
 	public static String PARAMETER_VELOCITY_USE = "velocityUse";
