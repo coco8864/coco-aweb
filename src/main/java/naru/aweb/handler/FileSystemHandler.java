@@ -15,9 +15,9 @@ import java.util.Map;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.aweb.config.Config;
-import naru.aweb.config.FileCache2;
+import naru.aweb.config.FileCache;
 import naru.aweb.config.Mapping;
-import naru.aweb.config.FileCache2.FileCacheInfo;
+import naru.aweb.config.FileCache.FileCacheInfo;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.MappingResult;
@@ -32,7 +32,7 @@ public class FileSystemHandler extends WebServerHandler {
 	private static String LISTING_PAGE="/fileSystem/listing.vsp";
 	private static Configuration contentTypeConfig=null;//config.getConfiguration("ContentType");
 	private static Map<String,String> contentTypeMap=new HashMap<String,String> ();
-	private static FileCache2 fileCache=null;
+	private static FileCache fileCache=null;
 
 	private static Config getConfig(){
 		if(config==null){
@@ -60,7 +60,7 @@ public class FileSystemHandler extends WebServerHandler {
 		return contentType;
 	}
 	
-	private static FileCache2 getFileCache(){
+	private static FileCache getFileCache(){
 		if(fileCache==null){
 			fileCache=getConfig().getFileCache();
 		}
