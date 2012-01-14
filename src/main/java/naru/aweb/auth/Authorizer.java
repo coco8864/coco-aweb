@@ -433,9 +433,9 @@ public class Authorizer implements Timer{
 		User user=authSession.getUser();
 		
 		// List<String> mappingRoles = mapping.getRolesList();
-		if (mappingRoles == null) {// DispatchResponseHandler‚Ìê‡
-			return true;
-		}
+		//if (mappingRoles == null) {// DispatchResponseHandler‚Ìê‡
+		//	return true;
+		//}
 		List<String> userRoles = user.getRolesList();
 		if (userRoles.contains(User.ROLE_ADMIN)) {// admin role‚ğ‚Â‚à‚Ì‚Í‚È‚ñ‚Å‚àg‚¦‚é
 			return true;

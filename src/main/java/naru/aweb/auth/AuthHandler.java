@@ -1,5 +1,7 @@
 package naru.aweb.auth;
 
+import java.util.List;
+
 import org.apache.log4j.Logger;
 
 import naru.aweb.config.Config;
@@ -12,6 +14,7 @@ import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.Mapper;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.util.ServerParser;
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 /**
@@ -574,11 +577,28 @@ public class AuthHandler extends WebServerHandler {
 			return;
 		}else if(AJAX_USER_PATH.equals(path)){
 			User user=authorizer.getUserByPrimaryId(cookieId);
+			List<String> userRoles=null;
+			JSONObject userJson=null;
 			if(user!=null){
-				responseJson(user.toJson(),callback);
+				userRoles=user.getRolesList();
+				userJson=(JSONObject)user.toJson();
 			}else{
-				responseJson(null,callback);
+				userRoles=null;
+				userJson=new JSONObject();
 			}
+			//íºê⁄égÇ¶ÇÈWebURLÇóÒãì
+			List<Mapping> allowMappings=config.getMapper().getRoleWebMappings(userRoles);
+			JSONArray allowUrls=new JSONArray();
+			for(Mapping allowMapping:allowMappings){
+				String notes=allowMapping.getNotes();
+				String url=allowMapping.calcSourceUrl();
+				JSONObject urlJson=new JSONObject();
+				urlJson.put("notes", notes);
+				urlJson.put("url", url);
+				allowUrls.add(urlJson);
+			}
+			userJson.put("allowUrls", allowUrls);
+			responseJson(userJson,callback);
 			return;
 		}else if(AJAX_PATHONCEID_PATH.equals(path)){
 			String authId=parameter.getParameter(AUTH_ID);

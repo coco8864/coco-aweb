@@ -24,9 +24,10 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 		ph.jQuery("#version").text(ph.version);
 		ph.jQuery("#status").text('running');
 		ph.auth.getUser(function(res){
+			var user=res.user;
 			var inout=ph.jQuery("#loginout");
-			if(res.user){
-				ph.jQuery("#welcome").text(res.user.loginId+"さん ようこそ");
+			if(user.loginId){
+				ph.jQuery("#welcome").text(user.loginId+"さん ようこそ");
 				inout.attr("src","/pub/images/logout.gif");
 				inout.attr("title","logout");
 				inout.unbind();
@@ -39,6 +40,14 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 				inout.unbind();
 				inout.bind("click",function(){checkGo(ph.authUrl);});
 			}
+
+			var allowUrls=user.allowUrls;
+			var len=allowUrls.length;
+			for(var i=0;i<len;i++){
+				var liTag="<li><a href='#' onclick='checkGo(\"" +allowUrls[i].url+ "\")'>"+allowUrls[i].notes+"</a></li>"
+				ph.jQuery("#links").append(liTag);
+			}
+
 			var useText;
 			if(typeof WebSocket != 'undefined'){
 				useText="利用できます"
@@ -98,7 +107,6 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 		
 	}
 	</script>
-
 </head> 
 <body> 
 <H1>Phantom Proxy Home</span></H1>
@@ -106,16 +114,18 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 <img id="loginout"/>
 </div>
 <hr/>
-<div><a href="#" onclick="goAdmin()">Phantom Proxy Console</a></div>
+<H2>Available web link list</H2>
+<ul id="links">
+</ul>
 <hr/>
-<div>Version:<span id="version">checking...</span></div>
 <!--div>Status:<span id="status">checking...</span></div-->
-<div>Browser support function</div>
+<H2>Browser support function</H2>
 <table>
 <tr><td>WebSocket API</td><td id="websocket"></td><td id="useWebsocket"></td></tr>
 <tr><td>Web Storage sessionStorage</td><td id="sessionStorage"></td><td id="useSessionStorage"></td></tr>
 <tr><td>Cross-document messaging</td><td id="crossDocument"></td><td id="useCrossDocument"></td></tr>
 </table>
 <hr/>
+<H2>Version:<span id="version">checking...</span></H2>
 </body>
 </html>

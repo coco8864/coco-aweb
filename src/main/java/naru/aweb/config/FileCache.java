@@ -188,11 +188,11 @@ public class FileCache implements Timer{
 					info.lock();
 				}
 				if(info.exists){
-					break;
+					return info;
 				}
 				info.unlock();
 			}
-			return info;
+			return null;
 		}
 		
 		private void setup(File base,String path,FileCacheInfo parent){

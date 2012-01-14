@@ -687,8 +687,8 @@ public class Authenticator {
 
 	public String getLogoutUrl() {
 		String logoutUrl=config.getString(AUTHENTICATE_LOGOUT_URL, null);
-		if(logoutUrl==null){
-			logoutUrl=config.getString(Config.SELF_URL);
+		if(logoutUrl==null||"".equals(logoutUrl)){
+			logoutUrl=config.getPublicWebUrl();
 		}
 		return logoutUrl;
 	}
