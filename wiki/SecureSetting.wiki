@@ -13,10 +13,11 @@
 }}}
  == 通信の暗号化 ==
   認証およびConsoleでの通信を暗号化(SSL)することができます。
-  mappingより"admin web"(/admin)と"auth handler"(/auth)のsecureTypeをsslに変更してください。
+  mappingより"Phantom Proxy Home"(/),"Phantom Proxy Console"(/admin)および"auth handler"(/auth)のsecureTypeをsslに変更してください。
 {{{
- mappingタグ noteが"admin web"のidをclick secureTypeにSSLを選んでsaveボタン
- mappingタグ noteが"auth handler"のidをclick secureTypeにSSLを選んでsaveボタン
+ mappingタグ notesが"Phantom Proxy Home"のidをclick secureTypeにSSLを選んでsaveボタン
+ mappingタグ notesが"Phantom Proxy Console"のidをclick secureTypeにSSLを選んでsaveボタン
+ mappingタグ notesが"auth handler"のidをclick secureTypeにSSLを選んでsaveボタン
  mappingタグ 反映ボタン
 }}}
   この後、一旦homeに戻ってhomeにあるConsoleへのリンクを押下してください。
