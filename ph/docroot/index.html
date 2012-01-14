@@ -25,6 +25,13 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 		ph.jQuery("#status").text('running');
 		ph.auth.getUser(function(res){
 			var user=res.user;
+			var allowUrls=user.allowUrls;
+			var len=allowUrls.length;
+			for(var i=0;i<len;i++){
+				var liTag="<li><a href='#' onclick='checkGo(\"" +allowUrls[i].url+ "\")'>"+allowUrls[i].notes+"</a></li>"
+				ph.jQuery("#links").append(liTag);
+			}
+
 			var inout=ph.jQuery("#loginout");
 			if(user.loginId){
 				ph.jQuery("#welcome").text(user.loginId+"さん ようこそ");
@@ -32,6 +39,10 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 				inout.attr("title","logout");
 				inout.unbind();
 				inout.bind("click",function(){location=ph.authUrl+'/logout';});
+
+				var liTag="<li><a href='#' onclick='checkGo(\"" +ph.authUrl+ "/logout\")'>Phantom Proxy Logout</a></li>"
+				ph.jQuery("#links").append(liTag);
+
 //				ph.jQuery("#loginout")[0].href=ph.authUrl+'/logout';
 			}else{
 				ph.jQuery("#welcome").text("Welcome to Phantom Proxy");
@@ -39,14 +50,12 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 				inout.attr("title","login");
 				inout.unbind();
 				inout.bind("click",function(){checkGo(ph.authUrl);});
+
+				var liTag="<li><a href='#' onclick='checkGo(\"" +ph.authUrl+ "\")'>Phantom Proxy Login</a></li>"
+				ph.jQuery("#links").append(liTag);
+
 			}
 
-			var allowUrls=user.allowUrls;
-			var len=allowUrls.length;
-			for(var i=0;i<len;i++){
-				var liTag="<li><a href='#' onclick='checkGo(\"" +allowUrls[i].url+ "\")'>"+allowUrls[i].notes+"</a></li>"
-				ph.jQuery("#links").append(liTag);
-			}
 
 			var useText;
 			if(typeof WebSocket != 'undefined'){
