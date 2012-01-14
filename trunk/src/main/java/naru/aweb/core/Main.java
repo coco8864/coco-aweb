@@ -1,8 +1,5 @@
 package naru.aweb.core;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import javax.net.ssl.SSLEngine;
@@ -17,7 +14,6 @@ import naru.aweb.config.Config;
 import naru.queuelet.Queuelet;
 import naru.queuelet.QueueletContext;
 import naru.queuelet.watch.StartupInfo;
-import net.sf.json.JSON;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -57,7 +53,8 @@ public class Main implements Queuelet,Timer {
 			}
 			responseStartupInfo.setJavaVmOptions(null);//javaVmOptionÇÕïœçXÇ≥ÇπÇ»Ç¢
 		}
-		TimerManager.setTimeout(1000, mainInstance, responseStartupInfo);
+		long stopDelayTime=config.getLong("stopDelayTime",2000);
+		TimerManager.setTimeout(stopDelayTime, mainInstance, responseStartupInfo);
 	}
 	
 	/*

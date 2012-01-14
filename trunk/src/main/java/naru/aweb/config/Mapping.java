@@ -27,6 +27,7 @@ import javax.jdo.annotations.Persistent;
 import naru.async.pool.PoolManager;
 import naru.aweb.admin.StoreHandler;
 import naru.aweb.auth.MappingAuth;
+import naru.aweb.core.RealHost;
 import naru.aweb.handler.FileSystemHandler;
 import naru.aweb.handler.ProxyHandler;
 import naru.aweb.handler.SslProxyHandler;
@@ -953,5 +954,34 @@ public class Mapping{
 			}
 		}
 		return false;
+	}
+	
+	//Ç±ÇÃMappingÇåƒÇ—èoÇ∑ÇΩÇﬂÇÃURL
+	public String calcSourceUrl(){
+		if(sourceType!=SourceType.WEB){
+			return null;
+		}
+		StringBuffer sb=new StringBuffer();
+		int defaultPort;
+		if(secureType==SecureType.PLAIN){
+			sb.append("http://");
+			defaultPort=80;
+		}else{
+			sb.append("https://");
+			defaultPort=443;
+		}
+		if(sourceServer!=null && !"".equals(sourceServer)){
+			sb.append(sourceServer);
+		}else{
+			sb.append(config.getSelfDomain());
+		}
+		RealHost realHost=RealHost.getRealHost(realHostName);
+		int port=realHost.getBindPort();
+		if(defaultPort!=port){
+			sb.append(":");
+			sb.append(port);
+		}
+		sb.append(sourcePath);
+		return sb.toString();
 	}
 }

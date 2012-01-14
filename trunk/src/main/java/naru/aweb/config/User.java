@@ -39,7 +39,6 @@ public class User {
 	public static final String ROLE_GUEST="guest";
 	public static final String ROLE_USER="user";
 	
-	
 	private static class UserInstanceStrategy extends NewBeanInstanceStrategy{
 		@Override
 		public Object newInstance(Class clazz, JSONObject json)

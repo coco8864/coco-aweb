@@ -5,6 +5,7 @@
 ,{type:'class',className:'naru.async.core.Order',limit100:512}
 ,{type:'class',className:'naru.aweb.config.AccessLog',limit100:384}
 ,{type:'class',className:'naru.aweb.core.DispatchHandler',limit100:100}
+,{type:'class',className:'naru.aweb.http.WebClientHandler',limit100:100}
 ,{type:'class',className:'naru.aweb.handler.FileSystemHandler',limit100:100}
 ,{type:'class',className:'naru.aweb.http.RequestContext',limit100:64}
 ,{type:'class',className:'naru.aweb.auth.AuthSession',limit100:16}

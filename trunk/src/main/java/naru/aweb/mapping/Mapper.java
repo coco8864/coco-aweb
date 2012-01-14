@@ -16,6 +16,7 @@ import naru.aweb.auth.Authorizer;
 import naru.aweb.auth.MappingAuth;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
+import naru.aweb.config.User;
 import naru.aweb.config.Mapping.SecureType;
 import naru.aweb.config.Mapping.SourceType;
 import naru.aweb.core.RealHost;
@@ -415,5 +416,44 @@ public class Mapper {
 			}
 		}
 		return CHECK_NOT_MATCH;
+	}
+	
+	private boolean matchRoles(List<String> userRoles,List<String> mapppingRoles){
+		//role設定がないmappingは誰でも使える
+		if(mapppingRoles.size()==0){
+			return true;
+		}
+		//roleを持たないユーザは上記以外のmappingは使えない
+		if(userRoles==null){
+			return false;
+		}
+		//roleに"admin"を持つものは何でも使える
+		if(userRoles.contains(User.ROLE_ADMIN)){
+			return true;
+		}
+		//userとmappingのroleを付き合わせる
+		for(String userRole:userRoles){
+			if(mapppingRoles.contains(userRole)){
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	public List<Mapping> getRoleWebMappings(List<String> userRoles){
+		List<Mapping> mappings=new ArrayList<Mapping>();
+		for(Mapping mapping:activeMappings){
+			if(!(mapping.getSourceType()==Mapping.SourceType.WEB)){
+				continue;
+			}
+			if( Boolean.FALSE.equals(mapping.getOption("listing")) ){
+				continue;
+			}
+			List<String> mappingRoles=mapping.getRolesList();
+			if(matchRoles(userRoles,mappingRoles)){
+				mappings.add(mapping);
+			}
+		}
+		return mappings;
 	}
 }
