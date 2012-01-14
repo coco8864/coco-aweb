@@ -3,6 +3,18 @@
 = 新着情報=
 
  Phatom Proxyの改版情報を提供します。
+ ==  2012.1.14 Phatom Proxy1.3.0 公開 ==
+ * 認証方式の見直し
+ * accesslogをaccesslog.logに独立して採取
+ * !WebSocketのtraceを、onMessage,postMessage単位で採取
+ * ダウンリカバリの強化(parsist store)
+ * バグ修正
+ * 性能改善
+  # poolサイズの最適化
+  # ファイルキャッシュの実装
+  # DBアクセスの削減
+
+
  ==  2011.11.03 Phatom Proxy1.2.0 公開 ==
  * !WebSocket hybi-17対応 ie以外のブラウザで!WebSocketが利用可能
  * traceタブに機能追加、任意のリクエストを可能とした
