@@ -455,15 +455,15 @@ public class FileCache implements Timer{
 		Iterator<File> fileItr=cache.keySet().iterator();
 		while(fileItr.hasNext()){
 			File file=fileItr.next();
-			fileItr.remove();
 			FileCacheInfo fileInfo=cache.get(file);
 			fileInfo.clear();
 			Iterator<FileCacheInfo> infoItr=fileInfo.children.values().iterator();
 			while(infoItr.hasNext()){
 				FileCacheInfo childFileInfo=infoItr.next();
-				infoItr.remove();
 				childFileInfo.clear();
+				infoItr.remove();
 			}
+			fileItr.remove();
 		}
 	}
 
