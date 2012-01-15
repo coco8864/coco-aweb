@@ -8,6 +8,7 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -450,6 +451,19 @@ public class FileCache implements Timer{
 	public void term(){
 		if(intervalObj!=null){
 			TimerManager.clearInterval(intervalObj);
+		}
+		Iterator<File> fileItr=cache.keySet().iterator();
+		while(fileItr.hasNext()){
+			File file=fileItr.next();
+			fileItr.remove();
+			FileCacheInfo fileInfo=cache.get(file);
+			fileInfo.clear();
+			Iterator<FileCacheInfo> infoItr=fileInfo.children.values().iterator();
+			while(infoItr.hasNext()){
+				FileCacheInfo childFileInfo=infoItr.next();
+				infoItr.remove();
+				childFileInfo.clear();
+			}
 		}
 	}
 
