@@ -452,17 +452,18 @@ public class FileCache implements Timer{
 		if(intervalObj!=null){
 			TimerManager.clearInterval(intervalObj);
 		}
+		logger.info("FileCache term.cacheCount:"+cacheCount);
 		Iterator<File> fileItr=cache.keySet().iterator();
 		while(fileItr.hasNext()){
 			File file=fileItr.next();
 			FileCacheInfo fileInfo=cache.get(file);
-			fileInfo.clear();
 			Iterator<FileCacheInfo> infoItr=fileInfo.children.values().iterator();
 			while(infoItr.hasNext()){
 				FileCacheInfo childFileInfo=infoItr.next();
 				childFileInfo.clear();
 				infoItr.remove();
 			}
+			fileInfo.clear();
 			fileItr.remove();
 		}
 	}
