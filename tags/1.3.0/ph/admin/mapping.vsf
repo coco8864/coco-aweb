@@ -1,0 +1,149 @@
+<script type="text/javascript"> 
+
+function doMappingCommand(command){
+	var mapping={
+		id:jQuery("#mappingId").text(),
+		enabled:jQuery("#mappingEnabled").attr("checked"),
+		notes:jQuery("#mappingNotes").val(),
+		realHostName:jQuery("#mappingRealHost").val(),
+		sourceType:jQuery("#mappingSourceType").val(),
+		secureType:jQuery("#mappingSecureType").val(),
+		sourceServer:jQuery("#mappingSourceServer").val(),
+		sourcePath:jQuery("#mappingSourcePath").val(),
+		destinationType:jQuery("#mappingDestinationType").val(),
+		destinationServer:jQuery("#mappingDestinationServer").val(),
+		destinationPath:jQuery("#mappingDestinationPath").val(),
+		roles:jQuery("#mappingRoles").val(),
+##jsonlibが引用譜を除いて'{'で始まる文字列は、jsonと判定してしまう。
+		options:' ' + jQuery("#mappingOptions").val()
+	}
+	if(command=="mappingInsert"){
+		delete mapping.id;
+	}
+	ph.admin.doObjCommand('mapping',command,mapping,function(json){
+				ph.log('doMappingSave:'+json);
+				mappingTableRefresh();
+			});
+	jQuery("#mappingDialog").dialog('close');
+}
+
+
+function mappingTableRefresh(){
+	ph.log("mappingTableRefresh");
+	ph.admin.doPramCommand('mapping','mappingList',{order:'realHostName, sourceType,sourceServer,sourcePath'},function(json){
+		var mappings=ph.JSON.parse(json);
+		mappingTable(mappings);
+	});
+}
+
+function mappingTable(lines){
+	ph.jQuery("#mappingData").empty();
+	var targetTag=document.getElementById("mappingData");
+	for(i in lines){
+		var trTag=document.createElement("tr");
+		mappingLine(trTag,lines[i]);
+		targetTag.appendChild(trTag);
+	}
+}
+
+function mappingLine(trTag,mapping){
+	var tdTag;
+	tdTag=document.createElement("td");
+	var textNode=document.createTextNode(mapping.id);
+	var aTag=document.createElement("a");
+	aTag.setAttribute("href","#");
+	aTag.appendChild(textNode);
+	tdTag.appendChild(aTag);
+	jQuery(aTag).bind("click",function(){
+			jQuery("#mappingId").text(mapping.id);
+			jQuery("#mappingEnabled").attr("checked",mapping.enabled);
+			jQuery("#mappingNotes").val(mapping.notes);
+			jQuery("#mappingRealHost").val(mapping.realHostName);
+			jQuery("#mappingSourceType").val(mapping.sourceType);
+			jQuery("#mappingSecureType").val(mapping.secureType);
+			jQuery("#mappingSourceServer").val(mapping.sourceServer);
+			jQuery("#mappingSourcePath").val(mapping.sourcePath);
+			jQuery("#mappingDestinationType").val(mapping.destinationType);
+			jQuery("#mappingDestinationServer").val(mapping.destinationServer);
+			jQuery("#mappingDestinationPath").val(mapping.destinationPath);
+			jQuery("#mappingRoles").val(mapping.roles);
+			jQuery("#mappingOptions").val(mapping.options);
+			jQuery("#mappingDialog").dialog('open');
+			return false;
+		});
+//	tdTag=ph.admin.mkTdTag(mapping.id);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(mapping.enabled);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(mapping.notes);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(mapping.realHostName);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(mapping.sourceType);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(mapping.secureType);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(mapping.sourceServer);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(mapping.sourcePath);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(mapping.destinationType);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(mapping.destinationServer);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(mapping.destinationPath);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(mapping.roles);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(mapping.options);
+	trTag.appendChild(tdTag);
+}
+mappingTableRefresh();
+
+function updateDebugTrace(debugTrace){
+	ph.log('updateDebugTrace:'+debugTrace);
+	if(debugTrace=='true'){
+		ph.jQuery("#debugTraceSt").text('採取中');
+		ph.jQuery("#debugTraceBt").val('停止');
+		ph.jQuery("#debugTraceBt").unbind();
+		ph.jQuery("#debugTraceBt").bind('click',function(){
+			ph.admin.doCommand('debugTrace',{debugTrace:false},updateDebugTrace);
+			}
+		);
+	}else{
+		ph.jQuery("#debugTraceSt").text('停止');
+		ph.jQuery("#debugTraceBt").val('採取');
+		ph.jQuery("#debugTraceBt").unbind();
+		ph.jQuery("#debugTraceBt").bind('click',function(){
+			ph.admin.doCommand('debugTrace',{debugTrace:true},updateDebugTrace);
+			}
+		);
+	}
+}
+updateDebugTrace("$esc.javascript(${config.getBoolean('debugTrace')})");
+</script>
+
+<h1>Mapping list</h1>
+<hr/>
+<form method="post" enctype="multipart/form-data" action="mapping" target="uploadFrame">
+<input type="button" value="更新" onClick="mappingTableRefresh()">
+<input type="button" value="反映" onClick="ph.admin.doPramCommand('mapping','reloadMappings',null,function(){alert('反映完了');})">
+<input type="hidden" name="command" value="importsMappings" />
+<input type="hidden" name="token" value="$esc.html(${session.token})"/>
+移入ファイル指定:<input type="file" name="importsFile" id="importsFile" />
+<input type="submit" value="移入"/>
+debugTrace:<span id="debugTraceSt"></span><input id="debugTraceBt" type="button">
+</form>
+<div style="margin: 0.4em 0.0em; padding: 0.0em 0.0em;background: #fff none; border: solid 0pt #000;">
+<table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
+<thead>
+<tr><th title='id'>ID</th><th title='enabled'>en</th><th title='notes'>notes</th><th title='realHostName'>realHost</th>
+<th title='sourceType'>source</th><th title='secureType'>secure</th><th title='sourceServer'>srcServer</th><th title='sourcePath'>srcPath</th>
+<th title='destinationType'>desType</th><th title='destinationServer'>desServer</th><th title='destinationPath'>desPath</th>
+<th title='roles'>roles</th><th  title='options'>options</th>
+</tr>
+</thead>
+<tbody id="mappingData"></tbody>
+</table>
+</div>
+

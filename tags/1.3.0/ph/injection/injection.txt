@@ -1,0 +1,105 @@
+<script type="text/javascript" src="http://127.0.0.1:1280/pub/js/ph-loader.js"></script>
+<script type="text/javascript"><!--
+ph.jQuery=jQuery.noConflict(true);
+////alert('ph.jQuery after:'+window.name);
+ph.log('ph.jQuery after:'+window.name);
+ph.debug=true;
+ph.onMessage=function(event){
+//// alert(evnet.data);
+ ph.log('onMessage:'+event.data);
+ var obj=ph.JSON.parse(event.data);
+ ph.postMessage(obj);
+},
+ph.postMessage=function(obj){
+ if(obj.via){
+  obj.via++;
+ }else{
+  obj.via=1;
+ }
+ obj.windowName=window.name;
+ obj.documentLocation=document.location;
+ var msg=ph.JSON.stringify(obj);
+ ph.log('postMessage:'+msg);
+ window.top.postMessage(msg, '*');
+},
+ph.jQuery(function(){
+////alert('ph.jQuery init:'+window.name);
+//  for(var i=0;i<atags.length;i++){
+//   if(atags[i].onClick){
+//     atags[i].phOrgClick=atags[i].onClick;
+//   }
+//  }
+/*
+  R=0; x1=.1; y1=.05; x2=.25; y2=.24; x3=1.6; y3=.24; x4=300; y4=200; x5=300; y5=200; DI=document.images; DIL=DI.length; 
+	ph.A=function(){
+		for(i=0; i<DIL; i++){
+			DIS=DI[ i ].style; DIS.position='absolute'; DIS.left=Math.sin(R*x1+i*x2+x3)*x4+x5; DIS.top=Math.cos(R*y1+i*y2+y3)*y4+y5
+		}R++
+	};setInterval('ph.A();',5); void(0);
+*/
+  var start=new Date().getTime();
+  ph.log('window.name:' + window.name);
+  ph.log('document.location:' + document.location);
+ if (typeof window.addEventListener != 'undefined') {
+	window.addEventListener('message', ph.onMessage, false);
+ } else if (typeof window.attachEvent != 'undefined') {
+	window.attachEvent('onmessage', ph.onMessage);
+ }
+//  ph.jQuery(window).bind('message',ph.onMessage);
+  ph.jQuery(window).unload(function(){
+   ph.postMessage({type:'unload'});
+////  alert("Bye now!");
+  });
+
+  var atags=ph.jQuery('a');
+  atags.bind("click", function(){
+		ph.postMessage({
+			type:'click',
+			target:this.target,
+			href:this.href
+		});
+		if(this.href.match(/^http:\/\/inj\./)){
+		}else{
+//			this.href='http://inj.' +this.href.substring(7);
+		}
+		return false;
+	});
+  var forms=ph.jQuery('form');
+  forms.bind("submit", function(){
+		ph.postMessage({
+			type:'submit',
+			target:this.target,
+			action:this.action
+		});
+		return false;
+  });
+
+/*
+  var w=window;
+  var pname=null;
+  while(true){
+    try{
+      var t=w.name;
+      pname=t;
+      w=w.parent;
+    }catch(e){
+       ph.dump(e);
+       break;
+    }
+  }
+  ph.log('pname:'+pname);
+*/
+  ph.postMessage({
+			type:'rewrite'
+  });
+//  window.parent.postMessage('window.name = ' + window.name +':document.location:' + document.location, '*');
+  var end=new Date().getTime();
+  ph.log("rewrite ok."+(end-start));
+//  alert('inject'+ph.jQuery('b').text());
+//  alert('inject'+ph.jQuery('title').text());
+//  ph.jQuery('title').text('xxxxx');
+ });
+// -->
+</script>
+<pre id="phDebugArea"></pre>
+

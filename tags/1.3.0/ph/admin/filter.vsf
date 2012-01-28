@@ -1,0 +1,158 @@
+##http://www.shallalist.de/Downloads/shallalist.tar.gz
+##http://squidguard.mesd.k12.or.us/blacklists.tgz
+##http://urlblacklist.com/cgi-bin/commercialdownload.pl?type=download&file=bigblacklist
+<script type="text/javascript"> 
+
+function filterTableRefresh(){
+	ph.log("filterTableRefresh");
+	ph.admin.doPramCommand('filter','listCategory',null,function(json){
+		var mappings=ph.JSON.parse(json);
+		filterTable(mappings);
+	});
+}
+function filterListUpdate(){
+	ph.log("filterListUpdate");
+	var param={source:ph.jQuery("#filterSource").val()};
+	ph.admin.doPramCommand('filter','listUpdate',param,function(json){
+	});
+}
+
+function filterCheckList(){
+	var result=[];
+	var checkList=ph.jQuery(".categoryIdCheck");
+	for(var i=0;i<checkList.length;i++){
+		var check=checkList[i];
+		if(check.checked){
+			result.push(check.categoryId);
+		}
+	}
+	return result;
+}
+
+function getRoleList(){
+	ph.log("getRoleList");
+	var role=ph.jQuery("#filterRole").val();
+	var isBlacklist=ph.jQuery("#filterIsBlacklist").attr("checked");
+	var param={role:role,isBlacklist:isBlacklist};
+	ph.admin.doPramCommand('filter','getRoleList',param,function(jsonIds){
+		var ids=ph.JSON.parse(jsonIds);
+		ph.log("ids:"+ids);
+		var checkList=ph.jQuery(".categoryIdCheck");
+		for(var i=0;i<checkList.length;i++){
+			var category=checkList[i];
+			ph.log("category.categoryId:"+category.categoryId);
+			var c=ph.jQuery(category);
+			c.attr("checked","");
+			for(var j=0;j<ids.length;j++){
+				ph.log("ids[j]:"+ids[j]);
+				if(category.categoryId==ids[j]){
+					c.attr("checked","checked");
+					break;
+				}
+			}
+		}
+		var listName;
+		if(isBlacklist){
+			listName='blacklist';
+		}else{
+			listName='whitelist';
+		}
+		alert('role:'+role +'の' +listName +'を表示');
+	});
+}
+
+function setRoleList(){
+	ph.log("setRoleList");
+	var role=ph.jQuery("#filterRole").val();
+	var isBlacklist=ph.jQuery("#filterIsBlacklist").attr("checked");
+	var param={role:role,isBlacklist:isBlacklist,categoryIds:filterCheckList().join()};
+	ph.admin.doPramCommand('filter','setRoleList',param,function(json){
+//		alert(json);
+	});
+}
+
+function addEntry(){
+	ph.log("addEntry");
+	var ids=filterCheckList();
+	if(ids.length==0){
+		alert('categoryを選んでください');
+		return;
+	}
+	if(ids.length>1){
+		alert('複数categoryが選ばれています');
+		return;
+	}
+	var filter=ph.jQuery("#entryFilter").val();
+	var param={categoryId:ids[0],filter:filter};
+	ph.admin.doPramCommand('filter','addEntry',param,function(json){
+//		alert(json);
+	});
+}
+
+
+function filterTable(lines){
+	ph.jQuery("#filterData").empty();
+	var targetTag=document.getElementById("filterData");
+	for(i in lines){
+		var trTag=document.createElement("tr");
+		filterLine(trTag,lines[i]);
+		targetTag.appendChild(trTag);
+	}
+}
+
+##リンク付きのテーブルセル(td)作成
+function mkFilterIdtag(category){
+	var textNode=document.createTextNode(category.id);
+	var aTag=document.createElement("a");
+	aTag.setAttribute("href","#");
+	aTag.setAttribute("target","logentry");
+	aTag.appendChild(textNode);
+	var inputTag=document.createElement("input");
+    inputTag.setAttribute("type","checkBox");
+    inputTag.setAttribute("class","categoryIdCheck");
+    inputTag.categoryId=category.id;
+	var tdTag=document.createElement("td");
+	tdTag.appendChild(inputTag);
+	aTag.appendChild(textNode);
+	tdTag.appendChild(aTag);
+	ph.jQuery(aTag).bind("click",function(){##AccessLog詳細画面へのジャンプ
+			return false;
+		});
+	return tdTag;
+}
+
+function filterLine(trTag,category){
+	var tdTag;
+	tdTag=mkFilterIdtag(category);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(ph.admin.formatYmdhm(category.lastUpdate));
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(category.source);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(category.category);
+	trTag.appendChild(tdTag);
+}
+filterTableRefresh();
+</script>
+
+<h1>Filter Role設定</h1>
+<hr/>
+role:<input type="text" id="filterRole" value="" size="64" />
+<input type="checkBox" id="filterIsBlacklist" checked="checked">blacklist
+<input type="button" value="参照" onClick="getRoleList();" />
+<input type="button" value="更新" onClick="setRoleList();" /><br/>
+source:<input type="text" id="filterSource" value="" size="64" />
+<input type="button" value="list取り込み" onClick="filterListUpdate();" title="指定したurlからblacklistをダウンロードしてcategoryに追加します。">
+<input type="button" value="reload" onClick="filterTableRefresh();"><br/>
+filter:<input type="text" id="entryFilter" size="64" />
+<input type="button" value="filter追加" onClick="addEntry();" title="選択したcategoryにurlもしくはdomainを追加します。">
+<div style="margin: 0.4em 0.0em; padding: 0.0em 0.0em;background: #fff none; border: solid 0pt #000;">
+<table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
+<thead>
+<tr><th>ID</th><th>lastUpdate</th><th>source</th><th>category</th>
+</tr>
+</thead>
+<tbody id="filterData"></tbody>
+</table>
+</div>
+

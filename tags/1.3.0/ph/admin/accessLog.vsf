@@ -1,0 +1,350 @@
+<script type="text/javascript">
+var curQuery;
+var curWhere;
+var curQueryCondition;
+
+var exportAccessLogCb={
+	onComplete:function(msg){
+		ph.jQuery("#exportFileId").val(msg.message);
+		ph.jQuery("#exportDownloadForm").submit();},
+	onError:function(msg){ph.log('runTrace onError:');ph.dump(msg);}
+};
+var deleteAccessLogCb={
+	onComplete:function(msg){searchPage();},
+	onError:function(msg){ph.log('runTrace onError:');ph.dump(msg);}
+};
+
+function selectAll(cmd){
+	var checkList=ph.jQuery(".logIdCheck");
+	var checked=checkList.attr("checked");
+	checked=!checked;
+	checkList.attr("checked",checked);
+}
+
+function openStress(){
+	var selectList=logCheckList();
+	if(selectList.length==0){
+		alert('選択されていません.');
+		return;
+	}
+	ph.jQuery('#stressAccessLogList').text(selectList.join());
+	jQuery('#stress').dialog('open');
+}
+
+##AccessLog移出、削除コマンド
+function accessLogIdsCommand(cmd,cb){
+	var selectList=logCheckList();
+	if(selectList.length==0){
+		alert(cmd+':選択されていません.');
+		return;
+	}
+	ph.admin.doPramCommand('accessLog',cmd,{list:selectList.join()},function(chId){
+			ph.queue.subscribeById(chId,cb);
+		});
+}
+
+function accessLogDeleteQuery(query){
+	ph.admin.doPramCommand('accessLog','deleteQuery',{query:query},function(chId){
+			ph.queue.subscribeById(chId,deleteAccessLogCb);
+		});
+}
+
+function accessLogExportQuery(query){
+	ph.admin.doPramCommand('accessLog','exportQuery',{query:query},function(chId){
+			ph.queue.subscribeById(chId,exportAccessLogCb);
+		});
+}
+
+function searchPage(){
+	var maxResults=ph.jQuery("#maxResults").val();
+##画面入力条件を更新
+	var orderBy=ph.jQuery("#orderBy").val();
+	var logQuery=ph.jQuery("#logQuery").val();
+	var queryString="";
+	if(logQuery!=""){
+		queryString+="WHERE "+logQuery;
+	}
+	if(orderBy!=""){
+		queryString+=" ORDER BY "+orderBy;
+	}
+	var topIndex=ph.jQuery("#topIndex").val();
+##条件を変更した場合には、topIndexを0にする
+	if(curQuery && curQuery.query!=queryString){
+		topIndex=0;
+		ph.jQuery("#topIndex").val(topIndex)
+	}
+	query(queryString,topIndex,topIndex+maxResults);
+	curQueryCondition="最大行:" + maxResults;
+}
+
+function exportAccesslog(){
+	var queryString="from AccessLog " + curWhere;
+	var exportObj={};
+	exportObj.hql=queryString;
+	ph.jQuery.get("exportAccesslog", exportObj, function(text){
+		alert(text);
+	});
+}
+
+##ページめくり
+function page(direct){
+	var maxResults=ph.jQuery("#maxResults").val()-0;
+	var from,to;
+	if(direct){
+		from=curQuery.to;
+		to=from+maxResults;
+	}else{
+		to=curQuery.from;
+		from=to-maxResults;
+        if(from<0){
+          from=0;
+        }
+	}
+	ph.jQuery("#topIndex").val(from);
+	query(curQuery.query,from,to);
+}
+
+##queryString)"where responseLength>100 && contentType.indexOf('image')>=0 ORDER BY id DESC"
+function query(queryString,from,to){
+	var queryObj={};
+	queryObj.from=from-0;
+	queryObj.to=to-0;
+    if(queryString){
+	  queryObj.query=queryString;
+    }else{
+	  delete queryObj.query;
+    }
+	ph.admin.doPramCommand("accessLog","list",queryObj,function(jsonStr){
+		var accessLogList=ph.JSON.parse(jsonStr);
+		refreshTable(accessLogList);
+	});
+	curQuery=queryObj;
+}
+
+function refreshTable(lines){
+	ph.jQuery("#curQueryCondition").text(curQueryCondition);
+	ph.jQuery("#curLinecount").text(lines.length);
+	ph.jQuery("#tableData").empty();
+	var targetTag=document.getElementById("tableData");
+	for(i in lines){
+		var trTag=tableLine(lines[i]);
+		targetTag.appendChild(trTag);
+	}
+}
+
+##アクセスログの一行(tr)を作成
+function tableLine(accessLog){
+	var trTag=document.createElement("tr");
+	var id=accessLog.id;
+	var idTag;
+	idTag=mkIdtag(accessLog);
+	trTag.appendChild(idTag);
+
+	var tdTag;
+	tdTag=mkImageTag(accessLog);
+	trTag.appendChild(tdTag);
+
+
+	tdTag=ph.admin.mkTdTag(accessLog.sourceType);
+	trTag.appendChild(tdTag);
+
+##Serverタイプ:Web,Proxy,ReverseProxy,Replay,Contllerを確定
+	tdTag=ph.admin.mkTdTag(accessLog.destinationType);
+	trTag.appendChild(tdTag);
+
+	var ipTag=tdTag=ph.admin.mkTdTag(accessLog.ip);
+	trTag.appendChild(ipTag);
+
+	var startTime;
+	if(accessLog.startTime){
+		startTime=new Date(accessLog.startTime.time);
+	}else{
+		startTime=new Date(0);
+	}
+	var tdTag=ph.admin.mkTdTag(
+		ph.admin.formatHms(startTime));
+	trTag.appendChild(tdTag);
+
+	var requestLineTag=tdTag=ph.admin.mkTdTag(accessLog.requestLine);
+	trTag.appendChild(requestLineTag);
+		
+	var statusCodeTag=ph.admin.mkTdTag(accessLog.statusCode);
+	trTag.appendChild(statusCodeTag);
+
+	tdTag=ph.admin.mkTdTag(accessLog.responseLength);
+	trTag.appendChild(tdTag);
+
+	tdTag=ph.admin.mkTdTag(accessLog.processTime);
+	trTag.appendChild(tdTag);
+## contentTypeを含める場合
+##	tdTag=ph.admin.mkTdTag(accessLog.contentType);
+##	trTag.appendChild(tdTag);
+
+	return trTag;
+}
+
+function isLogCheck(){
+	var checkList=ph.jQuery(".logIdCheck");
+	for(var i=0;i<checkList.length;i++){
+		var check=checkList[i];
+		if(check.checked){
+			return true;
+		}
+	}
+	return false;
+}
+
+function logCheckList(){
+	var result=[];
+	var checkList=ph.jQuery(".logIdCheck");
+	for(var i=0;i<checkList.length;i++){
+		var check=checkList[i];
+		if(check.checked){
+			result.push(check.accessLogId);
+		}
+	}
+	return result;
+}
+
+function getContentHeaders(accessLog){
+	var headers='Content-Type=' + encodeURIComponent(accessLog.contentType);
+	if(accessLog.contentEncoding){
+		headers+='&Content-Encoding='+ encodeURIComponent(accessLog.contentEncoding);
+	}
+	if(accessLog.transferEncoding){
+		headers+='&Transfer-Encoding='+ encodeURIComponent(accessLog.transferEncoding);
+	}
+	return headers;
+}
+
+##リンク付きのテーブルセル(td)作成
+function mkIdtag(accessLog){
+	var textNode=document.createTextNode(accessLog.id);
+	var aTag=document.createElement("a");
+	aTag.setAttribute("href","#");
+	aTag.setAttribute("target","logentry");
+	aTag.appendChild(textNode);
+	var inputTag=document.createElement("input");
+    inputTag.setAttribute("type","checkBox");
+    inputTag.setAttribute("class","logIdCheck");
+    inputTag.accessLogId=accessLog.id;
+##AccessLog選択メニュー
+	var tdTag=document.createElement("td");
+	tdTag.appendChild(inputTag);
+	aTag.appendChild(textNode);
+	tdTag.appendChild(aTag);
+	ph.jQuery(aTag).bind("click",function(){##AccessLog詳細画面へのジャンプ
+			changeEntry(accessLog.id);
+			jQuery("#tabs").tabs("select",4);##AccessLog詳細画面は、5(-1)番目のタグ
+			return false;
+		});
+
+	if(!accessLog.responseBodyDigest){
+		return tdTag;
+	}
+
+	aTag=null;
+	return tdTag;
+}
+
+function mkImageTag(accessLog){
+	var tdTag=document.createElement("td");
+	var imgNode=null;
+	if(accessLog.contentType.indexOf('image')>=0){
+		imgNode=document.createElement("img");
+		imgNode.setAttribute('src','/pub/images/img.gif');
+		imgNode.setAttribute('title','image表示');
+		var dialog=jQuery("#imageBox");
+		ph.jQuery(imgNode).bind("click",
+			function(){
+				var contentHeaders=getContentHeaders(accessLog);
+				ph.jQuery("#imageBoxId").text(accessLog.id);
+				ph.jQuery("#imageBoxRequestLine").text(accessLog.requestLine);
+				ph.jQuery("#imageBoxImage").attr('src',
+					'/admin/storeDownload?'+contentHeaders +
+					'&storeDigest='+encodeURIComponent(accessLog.responseBodyDigest));
+				dialog.dialog("option", "position", 'center');
+				dialog.dialog("open");
+			});
+	}else if(accessLog.responseLength>0 &&
+			(accessLog.contentType.indexOf('xml')>=0||
+			accessLog.contentType.indexOf('text')>=0||
+			accessLog.contentType.indexOf('javascript')>=0) ){
+		imgNode=document.createElement("img");
+		imgNode.setAttribute('src','/pub/images/txt.gif');
+		imgNode.setAttribute('title','text表示');
+		var dialog=jQuery("#textEdit");
+		ph.jQuery(imgNode).bind("click",
+			function(){
+				var charset='utf-8';
+				if( accessLog.contentType.match(/charset=(.*)/i) ){
+					charset=RegExp.$1;
+				}
+				openEditDialog(
+					accessLog.responseBodyDigest,
+					accessLog.id,
+					accessLog.requestLine,
+					'responseBody',
+					true,
+					accessLog.transferEncoding=='chunked',
+					accessLog.contentEncoding=='gzip',
+					charset
+					);
+			});
+	}
+    if(imgNode){
+		tdTag.appendChild(imgNode);
+	}
+	return tdTag;
+}
+
+</script>
+<h1>AccessLog list</h1>
+<hr/>
+<div>
+top:<input type="text" value="0" id="topIndex" size="8" />
+最大行:<input type="text" value="20" id="maxResults" size="8" />
+Order By:<input type="text" value="id DESC" id="orderBy" size="32" />
+検索サンプル:
+<select id="searchSample" size="1" onChange="ph.jQuery('#logQuery').val(this.value);">
+<option value="">JDOQL例</option>
+<option value="requestLine.indexOf('google')>=0">requestLineに'google'を含む</option>
+<option value="requestLine.startsWith('POST')">POSTメソッドのみ</option>
+<option value="contentType.indexOf('image')>=0">imageのみ</option>
+<option value="statusCode!='200'">statusCode 200以外</option>
+<option value="userId.equals('admin')">adminで採取したログのみ</option>
+<option value="contentEncoding.equals('gzip')">gzipコンテンツ</option>
+<option value="transferEncoding.equals('chunked')">chunkedコンテンツ</option>
+<option value="processTime>=5000">処理時間が5秒以上</option>
+<option value="realHost=='sampleHost'">realHostが'sampleHost'</option>
+<option value="ip.indexOf('test')>=0">clientIpに'test'を含む</option>
+<option value="destinationType=='H'">http</option>
+<option value="destinationType=='S'">https</option>
+<option value="destinationType=='R'">replay</option>
+<option value="sourceType=='s'">simurate</option>
+<option value="sourceType=='E'">edit</option>
+</select>
+</div>
+条件入力:<input type="text" id="logQuery" value="" size="100" />
+<input type="button" onclick="searchPage();" value="更新"/>
+<div>
+<input type="button" value="全" onClick="selectAll();"/>
+選択Log操作:
+<input type="button" value="削除" onClick="accessLogIdsCommand('deleteIds',deleteAccessLogCb);"/>
+<input type="button" value="移出" onClick="accessLogIdsCommand('exportIds',exportAccessLogCb);"/>
+<input type="button" value="stress" onClick="openStress();"/>
+現在条件 <span id="curQueryCondition"></span>/現在行:<span id="curLinecount"></span>
+<input type="button" onclick="page(false);" value="前ページ"/>
+<input type="button" onclick="page(true);" value="次ページ"/>
+</div>
+<div style="margin: 0.4em 0.0em; padding: 0.0em 0.0em;background: #fff none; border: solid 0pt #000;">
+<table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
+<thead>
+<tr><th title='id'>ID</th><th>icon</th><th title='sourceType'>s</th><th title='destinationType'>d</th><th title='ip'>IP</th><th title='time'>時刻</th><th title='requestLine'>request line</th><th title='statusCode'>code</th><th title='responseLength'>length</th><th  title='processTime'>time</th><!--th>contentType</th--></tr>
+</thead>
+<tbody  id="tableData"></tbody>
+</table>
+</div>
+<script type="text/javascript"> 
+searchPage();
+</script> 

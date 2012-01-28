@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="Shift_JIS" ?>
+<queueApp>
+  <!--コントローラ -->
+  <terminal name="QueueletControler" threadCount="1" port="${queuelet.manager.httpPort}">
+    <queuelet className="naru.queuelet.manager.Request">
+    </queuelet>
+    <queuelet className="naru.queuelet.manager.Response">
+      <param name="allowKeepAlive" value="false"/>
+    </queuelet>
+  </terminal>
+</queueApp>

@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja" dir="ltr">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Pragma" content="no-cache"> 
+<meta http-equiv="Cache-Control" content="no-cache"> 
+<meta http-equiv="Expires" content="0"> 
+<script type="text/javascript" src="/pub/js/ph-loader.js"></script>
+<script  type="text/javascript"><!--
+##親frameのlocation.href
+var parentOrigin;
+
+##受付リクエスト情報
+var orderInfo={isIn:false,req:null}
+
+function orderResponse(result){
+	if(!orderInfo.isIn){
+		return;
+	}
+	result.type=orderInfo.req.type;
+	var resText=ph.JSON.stringify(result);
+	orderInfo.isIn=false;
+	orderInfo.req=null;
+	parent.postMessage(resText,parentOrigin);
+}
+
+##crossDomainRequest情報
+var cdrInfo={isIn:false,url:null,cb:null}
+
+function crossDomainRequest(url,cb){
+	if(cdrInfo.isIn){//リクエスト中
+		cb({result:false});
+		return;
+	}
+	cdrInfo.isIn=true;
+	cdrInfo.url=url;
+	cdrInfo.cb=cb;
+	window._phAuthFrameChild.location.href=url;
+}
+
+function endOfFrameLoad(){
+	//正常時はloadされる前にpostMessageされるはず
+	if(!cdrInfo.isIn){
+		return;
+	}
+	cdrInfo.isIn=false;
+	cdrInfo.url=null;
+	var cb=cdrInfo.cb;
+	cdrInfo.cb=null;
+	cb({result:false});
+}
+
+
+/* 親windowからのリクエスト */
+function getUser(req){
+	var cb=function(resText){
+		var resObj=ph.JSON.parse(resText);
+		var res={type:req.type,result:true,user:resObj};
+		postMessageToParent(res,parentOrigin);
+	}
+	ph.jQuery.post(ph.authUrl+"/ajaxUser",{},cb,"html");
+}
+
+function _setAuthCb(res){
+//	var res=ph.JSON.parse(resText);
+	if(res.result){//認可成功
+		orderResponse(res);
+	}else{
+		orderResponse(res);
+	}
+}
+
+function _checkSessionCb(resText){
+	var res=ph.JSON.parse(resText);
+	if(res.result=='secondary'){//secondaryがあった場合
+		res.result=true;
+		orderResponse(res);
+	}else if(res.result=='primary'){//primaryは、あったがsecondaryがなかった場合
+//		var url=orderInfo.req.authUrl +"?PH_AUTH=setAuth&pathOnceId=" + res.pathOnceId;
+//		crossDomainRequest(url,_setAuthCb);
+		crossDomainRequest(res.authEncUrl,_setAuthCb);
+	}else if(res.result=='redirectAuth'){//primaryがなかったため、認証が必要な場合
+		orderResponse({result:'redirect',location:ph.authUrl+"?authId="+res.authId});
+	}else{//urlの問題等でerror
+		orderResponse({result:false});
+	}
+}
+
+function getAppId(req){
+	ph.jQuery.post(ph.authUrl+"/ajaxCheckSession",req/*{authUrl:req.authUrl,originUrl:req.originUrl}*/,_checkSessionCb,"html");
+}
+
+function onMessageFunc(ev){
+	if(!ev.data){
+		return;
+	}
+	var origin = ev.origin;
+	var req=ph.JSON.parse(ev.data);
+	if(cdrInfo.isIn/*&& origin==cdrInfo.url*/){
+		cdrInfo.isIn=false;
+		cdrInfo.url=null;
+		var cb=cdrInfo.cb;
+		cdrInfo.cb=null;
+		cb(req);
+		return;
+	}
+	if(origin==parentOrigin){
+		if(orderInfo.isIn){
+			return;//処理中
+		}
+		orderInfo.isIn=true;
+		orderInfo.req=req;
+		if(req.type=="getUser"){
+			getUser(req);
+		}else if(req.type=="getAppId"){
+			getAppId(req);
+		}
+  	}
+}
+
+function postMessageToParent(msg,origin){
+	orderInfo.isIn=false;
+	orderInfo.req=null;
+	var jsonMsg=ph.JSON.stringify(msg);
+	parent.postMessage(jsonMsg,origin);
+}
+
+ph.jQuery(function(){
+	parentOrigin=decodeURIComponent(location.search.substring('?origin='.length));
+//	alert('parentOrigin:'+parentOrigin); TODO check parentOrigin from
+	if(window.addEventListener){
+		window.addEventListener('message',onMessageFunc, false);
+	}else if(window.attachEvent){
+		window.attachEvent('onmessage',onMessageFunc);
+	}
+	postMessageToParent({load:true},parentOrigin);
+});
+// --></script>
+</head>
+<body>
+<iframe name="_phAuthFrameChild" id="_phAuthFrameChild" onload="endOfFrameLoad();"></iframe>
+認証処理用フレームコンテンツ
+</body>
+</html>

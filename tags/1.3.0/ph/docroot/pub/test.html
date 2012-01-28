@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja" dir="ltr">
+<head>
+	<script type="text/javascript" src="/pub/js/jquery-1.4.2.min.js"></script>
+<script>
+function onmessage(event){
+	alert('onmessage:'+event);
+}
+
+jQuery(function() {
+//alert("I am Test" + window.postMessage);
+//window.top.postMessage('testx','*');
+
+if(window.addEventListener){
+	window.addEventListener('message', onmessage, false);
+window.postMessage('test','*');
+}else if(window.attachEvent){
+//alert("window.attachEvent" +window.attachEvent);
+	window.attachEvent('onmessage', onmessage);
+window.postMessage('test','*');
+//	document.attachEvent('onmessage', onmessage);
+}
+});
+//var fr = document.getElementById ("uploadFrame");
+</script>
+
+</head>
+<body>
+test.html
+<input type='button' value='test' onclick="alert('test'+window.top.postMessage);alert(window.top.postMessage('test','*'));">
+</body>
+</html>

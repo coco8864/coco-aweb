@@ -1,0 +1,50 @@
+<H1>javascriptテスト</H1>
+<form id="scriptForm" name="scriptForm">
+<textarea name="script" rows="10" cols="80">
+</textarea><br>
+<input type="button" value="実行" onclick="doScript();"/>
+<input type="reset" value="クリア"/>
+</form>
+<input type="button" value="出力" id="debugswitch" onclick="debugSwitch();"/>
+<input type="button" value="表示/非表示" onclick="ph.jQuery('#debug').toggle();"/>
+<input type="button" value="出力クリア" onclick="ph.jQuery('#phDebugArea').text('');"/>
+<h3>使用例</h3>
+<ul>
+<li>ログ出力:ph.log("aa")</li>
+<li>オブジェクトダンプ:ph.dump({aaa:"aaa"})</li>
+<li>郵便番号検索:jQuery.get("http://groovetechnology.co.jp/ZipSearchService/v1/zipsearch?zipcode=1000011",null,ph.dump,"jsonp")</li>
+<li>sessionStorageダンプ</li>
+<pre>
+for(var i=0;i&lt;sessionStorage.length;i++){
+var key=sessionStorage.key(i);
+var value=sessionStorage[key];
+ph.log(key +":" +value);
+}
+<li>localStorageダンプ</li>
+for(var i=0;i&lt;localStorage.length;i++){
+var key=localStorage.key(i);
+var value=localStorage[key];
+ph.log(key +":" +value);
+}
+</pre>
+
+</ul>
+<script type="text/javascript"><!--
+function debugSwitch(debug){
+	if(debug){
+		ph.debug=debug;
+	}else{
+		ph.debug=!ph.debug;
+	}
+	if(ph.debug){
+		ph.jQuery('#debugswitch').val('抑止');
+	}else{
+		ph.jQuery('#debugswitch').val('出力');
+	}
+}
+function doScript(){
+	var form = document.getElementById("scriptForm");
+	window.eval(form.script.value);
+}
+debugSwitch(true);
+// --></script>

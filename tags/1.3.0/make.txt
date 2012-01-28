@@ -1,0 +1,121 @@
+Phantom Proxy 1.3.0の依存
+naru.aweb 1.3.0
+naru.async 1.2.1
+queuelet-boot 1.2.0
+queuelet-common 1.2.1
+queuelet-system 1.2.2
+
+Phantom Proxy 1.2.0の依存
+naru.aweb 1.2.0
+naru.async 1.1.1
+queuelet-boot 1.2.0
+queuelet-common 1.2.0
+queuelet-system 1.2.1
+
+Phantom Proxy 1.1.0の依存
+naru.aweb 1.1.0
+naru.async 1.1.0
+queuelet-boot 1.2.0
+queuelet-common 1.2.0
+queuelet-system 1.2.0
+
+Phantom Proxy 1.0.0の依存
+naru.aweb 1.0.0
+naru.async 1.0.0
+queuelet-boot 1.1.0
+queuelet-common 1.1.0
+queuelet-system 1.1.0
+
+環境の作成方法
+
+必要なもの
+maven
+ant
+subversion
+eclipse
+ subclipse http://subclipse.tigris.org/update_1.6.x/
+ m2eclipse http://m2eclipse.sonatype.org/sites/m2e
+ DataNucleus http://www.datanucleus.org/downloads/eclipse-update/
+
+
+svn co https://coco-aweb.googlecode.com/svn/trunk aweb
+svn co https://coco-async.googlecode.com/svn/trunk async
+svn co https://coco-queuelet.googlecode.com/svn/trunk queuelet
+
+trunkのところはvl依存
+
+cd queuelet/queuelet-common
+mvn -Dmaven.test.skip=true install
+mvn eclipse:eclipse
+
+cd queuelet/queuelet-boot
+mvn -Dmaven.test.skip=true install
+mvn eclipse:eclipse
+
+cd queuelet/queuelet-system
+mvn -Dmaven.test.skip=true install
+mvn eclipse:eclipse
+
+cd async
+mvn -Dmaven.test.skip=true install
+mvn eclipse:eclipse
+
+cd aweb
+mvn -Dmaven.test.skip=true install
+mvn eclipse:eclipse
+mvn dependency:copy-dependencies
+
+以降 eclipseでの作業
+eclipse File > New > Java Project > Project name:queuelet-common from existing souce: queuelet/queuelet-common
+できたprojectを右クリック　Maven > Enable
+
+eclipse File > New > Java Project > Project name:queuelet-boot from existing souce: queuelet/queuelet-boot
+できたprojectを右クリック　Maven > Enable
+
+eclipse File > New > Java Project > Project name:queuelet-system from existing souce: queuelet/queuelet-system
+できたprojectを右クリック　Maven > Enable
+
+eclipse File > New > Java Project > Project name:async from existing souce: async
+できたprojectを右クリック　Maven > Enable
+
+eclipse File > New > Java Project > Project name:aweb from existing souce: aweb
+できたprojectを右クリック　Maven > Enable
+
+
+以降 コマンドライン
+
+aweb/bin/runDebug.batを編集、違う名前に変名（svnで間違ってcommitしないため)
+-------
+set JAVA_HOME=C:\jdk1.6.0_24
+set QUEUELET_HOME=queuelet/home
+set PH_HOME=aweb/phh
+rem set DEBUG_FLAG=
+set DEBUG_FLAG=-Xdebug -Xrunjdwp:transport=dt_socket,server=y,address="1234"
+-------
+
+aweb/ph/ph.env.debug.propertiesに以下を追加編集してph.env.propertiesに変名
+-------
+async.classes=async/target/classes
+aweb.classes=aweb/target/classes
+aweb.dependency=aweb/target/dependency
+
+#This setting is enabled when the cleanup and initial startup.Referred to by ph.ini.properties
+#Information from the browsers to point to this server
+phantom.selfDomain=127.0.0.1
+phantom.selfPort=1280
+
+#This setting is enabled when the cleanup and initial startup.Referred to by ph.ini.properties
+#Proxy information used by this server
+phantom.pacUrl=
+phantom.proxyServer=
+phantom.sslProxyServer=
+phantom.exceptProxyDomains=
+-------
+
+
+メモ
+queueletのjdkを1.4としたいが、queuelet-commonのTestBaseがjdk5に依存している。
+テストの時しか使わないclassなので、これだけ別にコンパイルするというのもありか？
+
+
+

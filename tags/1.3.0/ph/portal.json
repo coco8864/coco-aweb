@@ -1,0 +1,6 @@
+[
+{"realHostName":"mainHost","destinationPath":"/","destinationServer":"$1","destinationType":"HTTP","enabled":true,"notes":"proxy injection","options":" {injector:'naru.aweb.portal.PortalInjector',pac:true}","secureType":"PLAIN","sourcePath":"/","sourceServer":"inj.*","sourceType":"PROXY","roles":"portal"},
+{"realHostName":"mainHost","destinationPath":"/","destinationServer":"$1","destinationType":"HTTPS","enabled":true,"notes":"sslProxy injection","options":" {injector:'naru.aweb.portal.PortalInjector',pac:true}","secureType":"SSL","sourcePath":"/","sourceServer":"inj.*","sourceType":"PROXY","roles":"portal"},
+{"realHostName":"mainHost","destinationPath":"/","destinationServer":"naru.aweb.portal.PortalHandler","destinationType":"HANDLER","enabled":true,"notes":"portal web","options":" {}","secureType":"PLAIN","sourcePath":"/portal","sourceServer":"","sourceType":"WEB","roles":"portal"},
+{"realHostName":"mainHost","destinationPath":"/","destinationServer":"naru.aweb.portal.PortalHandler","destinationType":"HANDLER","enabled":true,"notes":"portal web","options":" {}","secureType":"SSL","sourcePath":"/portal","sourceServer":"","sourceType":"WEB","roles":"portal"}
+]
