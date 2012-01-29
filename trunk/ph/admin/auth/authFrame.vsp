@@ -105,7 +105,7 @@ function onMessageFunc(ev){
 		cb(req);
 		return;
 	}
-	if(origin==parentOrigin){
+	if(parentOrigin=="*" || origin==parentOrigin){
 		if(orderInfo.isIn){
 			return;//処理中
 		}
@@ -128,6 +128,9 @@ function postMessageToParent(msg,origin){
 
 ph.jQuery(function(){
 	parentOrigin=decodeURIComponent(location.search.substring('?origin='.length));
+	if(parentOrigin=='file://'){
+		parentOrigin='*';
+	}
 //	alert('parentOrigin:'+parentOrigin); TODO check parentOrigin from
 	if(window.addEventListener){
 		window.addEventListener('message',onMessageFunc, false);

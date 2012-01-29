@@ -356,16 +356,19 @@ public class Mapper {
 	
 	
 	//authUrlはCookieLocationベースでのチェックを行うため、wsは、http,wssは、httpsとして存在を確認する
-	public int checkCrossDomainWebWs(boolean isSsl,String path,String originUrl){
+	public int checkCrossDomainWebWs(Mapping.SourceType sourceType,boolean isSsl,String path,String originUrl){
 		boolean isSelf=RealHost.isSelfOrigin(originUrl);
 		for(Mapping mapping:activeMappings){
 			if(isSelf==false && mapping.isAllowOrigin(originUrl)==false){
 				continue;
 			}
-			Mapping.SourceType sourceType=mapping.getSourceType();
-			if(sourceType!=Mapping.SourceType.WEB&&sourceType!=Mapping.SourceType.WS){
+			if(mapping.getSourceType()!=sourceType){
 				continue;
 			}
+//			Mapping.SourceType sourceType=mapping.getSourceType();
+//			if(sourceType!=Mapping.SourceType.WEB&&sourceType!=Mapping.SourceType.WS){
+//				continue;
+//			}
 			Mapping.SecureType secureType=mapping.getSecureType();
 			if(isSsl && secureType==Mapping.SecureType.PLAIN){
 				continue;

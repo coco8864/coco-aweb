@@ -127,7 +127,7 @@ public class AuthHandler extends WebServerHandler {
 		return pathOnceId;
 	}
 	
-	private void loginRedirect(String cookieId,boolean isAjaxAuth,String authId,String callback){
+	private void loginRedirect(String cookieId,boolean isAjaxAuth,String authId){
 		SessionId temporaryId = authorizer.getTemporaryId(authId);
 		if(temporaryId==null){
 			completeResponse("403", "authentication error");
@@ -158,7 +158,7 @@ public class AuthHandler extends WebServerHandler {
 			JSONObject json=new JSONObject();
 			json.put("isRedirect", true);
 			json.put("location", encodeUrl);
-			responseJson(json,callback);
+			responseJson(json);
 			return;
 		}
 		//元のurlに戻るところ
@@ -273,8 +273,27 @@ public class AuthHandler extends WebServerHandler {
 		
 		return mapper.checkCrossDomainProxy(sourceType,isSsl, host, port,originUrl);
 	}
-	private int checkCrossDomainWebWs(Mapper mapper,boolean isSsl,String authPath,String originUrl){
-		return mapper.checkCrossDomainWebWs(isSsl, authPath,originUrl);
+	
+	private int checkCrossDomainWebWs(Mapper mapper,String protocol,String authPath,String originUrl){
+		Mapping.SourceType sourceType;
+		boolean isSsl;
+		if("https:".equals(protocol)){
+			sourceType=Mapping.SourceType.WEB;
+			isSsl=true;
+		}else if("wss:".equals(protocol)){
+			sourceType=Mapping.SourceType.WS;
+			isSsl=true;
+		}else if("http:".equals(protocol)){
+			sourceType=Mapping.SourceType.WEB;
+			isSsl=false;
+		}else if("ws:".equals(protocol)){
+			sourceType=Mapping.SourceType.WS;
+			isSsl=false;
+		}else{
+			logger.warn("protocol format error."+protocol);
+			return Mapper.CHECK_NOT_MATCH;
+		}
+		return mapper.checkCrossDomainWebWs(sourceType,isSsl, authPath,originUrl);
 	}
 	
 	private void checkSession(String cookieId){
@@ -305,10 +324,12 @@ public class AuthHandler extends WebServerHandler {
 			}
 			authUrl=authUrlSb.toString();
 		}else{
-			boolean isSsl="true".equals(parameter.getParameter("isSsl"));
+			//TODO Web Wsの分離,
+//			boolean isSsl="true".equals(parameter.getParameter("isSsl"));
+			String protocol=parameter.getParameter("protocol");
 			String authPath=parameter.getParameter("authPath");
 			//web wsとしてマッチするか？
-			switch(checkCrossDomainWebWs(mapper,isSsl, authPath,originUrl)){
+			switch(checkCrossDomainWebWs(mapper,protocol,authPath,originUrl)){
 			case Mapper.CHECK_MATCH_NO_AUTH://認証の必要がない
 				res.put("result", "secondary");
 				res.put(APP_ID, "NEED_NOT_AUTH");
@@ -322,7 +343,7 @@ public class AuthHandler extends WebServerHandler {
 				return;
 			}
 			StringBuffer sb=new StringBuffer();
-			if(isSsl){
+			if(protocol=="https:"||protocol=="wss:"){
 				sb.append("https://");
 			}else{
 				sb.append("http://");
@@ -357,8 +378,8 @@ public class AuthHandler extends WebServerHandler {
 			res.put("authId", tempraryId.getAuthId());
 			break;
 		}
-		String callback=parameter.getParameter("callback");
-		responseJson(res,callback);
+//		String callback=parameter.getParameter("callback");
+		responseJson(res);
 	}
 	
 	private void cleanupAuthHeader(){
@@ -397,7 +418,7 @@ public class AuthHandler extends WebServerHandler {
 	
 	private void queryAuthCheck(){
 		ParameterParser parameter = getParameterParser();
-		String callback=parameter.getParameter("callback");
+//		String callback=parameter.getParameter("callback");
 		
 		JSONObject json=new JSONObject();
 		HeaderParser requestHeader = getRequestHeader();
@@ -407,7 +428,7 @@ public class AuthHandler extends WebServerHandler {
 		if(cookieId!=null){
 			if(authorizer.isSecondaryId(cookieId)){
 				json.put("result", true);
-				responseJson(json,callback);
+				responseJson(json);
 				return;
 			}
 		}
@@ -425,7 +446,7 @@ public class AuthHandler extends WebServerHandler {
 		String authId=temporaryId.getAuthId();
 		json.put("result", false);
 		json.put(AUTH_ID, authId);
-		responseJson(json,callback);
+		responseJson(json);
 	}
 	private void querySetAuth(){
 		ParameterParser parameter = getParameterParser();
@@ -464,12 +485,12 @@ public class AuthHandler extends WebServerHandler {
 		}
 		url=url.substring(0,pos);
 		JSONObject json=new JSONObject();
-		String callback=parameter.getParameter("callback");
+//		String callback=parameter.getParameter("callback");
 		String cookieId=(String)getRequestAttribute(SessionId.SESSION_ID);
 		String pathOnceId=parameter.getParameter("pathOnceId");
 		if(pathOnceId==null || cookieId==null || authorizer.isTemporaryId(cookieId,url)==false){//pathId,cookieIdいずれかが存在しない
 			json.put("result", false);
-			responseJson(json,callback);
+			responseJson(json);
 			return;
 		}
 		String cookiePath = requestHeader.getPath();
@@ -486,7 +507,7 @@ public class AuthHandler extends WebServerHandler {
 		}else{
 			json.put("result", false);
 		}
-		responseJson(json,callback);
+		responseJson(json);
 	}
 	
 	public void startResponseReqBody() {
@@ -561,7 +582,7 @@ public class AuthHandler extends WebServerHandler {
 			return;
 		}
 		
-		String callback=parameter.getParameter("callback");
+//		String callback=parameter.getParameter("callback");
 		/**
 		 * digest,basic認証の単純なメカニズムではlogoffを実現できない。
 		 * 認証直後にauthenticationヘッダを破壊+cookie付加でlogoffを実現
@@ -598,22 +619,20 @@ public class AuthHandler extends WebServerHandler {
 				allowUrls.add(urlJson);
 			}
 			userJson.put("allowUrls", allowUrls);
-			responseJson(userJson,callback);
+			responseJson(userJson);
 			return;
 		}else if(AJAX_PATHONCEID_PATH.equals(path)){
 			String authId=parameter.getParameter(AUTH_ID);
 			String url = authorizer.getUrlFromTemporaryId(authId);
 			if(url==null){
-				responseJson(false,callback);
+				responseJson(false);
 				return;
 			}
 			SessionId pathOnceId=authorizer.createPathOnceIdByPrimary(url,cookieId);
 			if(pathOnceId==null){//cookieIdが無効な場合つまりprimarySessionがない場合
-				responseJson(false,callback);
-			}else if(callback==null){
-				responseJson(pathOnceId.getId());
+				responseJson(false);
 			}else{
-				responseJson("'"+pathOnceId.getId()+"'",callback);//TODO なんか変
+				responseJson(pathOnceId.getId());
 			}
 			return;
 		}else if(AUTHENTICATE_PATH.equals(path)){
@@ -651,6 +670,6 @@ public class AuthHandler extends WebServerHandler {
 			SessionId temporaryId = authorizer.createTemporaryId(null,authorizer.getAuthPath());
 			authId=temporaryId.getAuthId();
 		}
-		loginRedirect(cookieId,isAjaxAuth,authId,callback);
+		loginRedirect(cookieId,isAjaxAuth,authId);
 	}
 }
