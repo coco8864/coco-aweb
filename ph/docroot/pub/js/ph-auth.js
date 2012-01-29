@@ -74,9 +74,43 @@ window.ph.auth={
 		}else{
 			req.sourceType='web';
 			req.authPath=authUrl;
-			req.isSsl=false;
+			req.protocol=window.location.protocol;
 			if(window.location.protocol=='https:'){
 				req.isSsl=true;
+			}else if(window.location.protocol=='http:'){
+				req.isSsl=false;
+			}else{
+				cb({result:false});
+				return;
+			}
+		}
+		this._order(req,cb);
+	},
+	auth:function(authUrl,isProxy,cb){
+		var ptn=/^(?:([^:\/]+:))?(?:\/\/([^\/]*))?(.*)/
+		var req={type:'getAppId',authUrl:authUrl,originUrl:window.location.href};
+		if(isProxy){
+			req.sourceType='proxy';
+		}
+		authUrl.match(ptn);
+		var protocol=RegExp.$1;
+		var authDomain=RegExp.$2;
+		var authPath=RegExp.$3;
+		//type:proxy|web(ws or http)
+		//isSsl:true|false
+		//protocol:http:,ws:
+		//authDomain:ph.xxx.com...->proxyの場合
+		//authPath->wsの場合
+		req.protocol=protocol;
+		req.authDomain=authDomain;
+		req.authPath=authPath;
+		if(protocol==null || protocol==''){
+//			req.authPath=authUrl;
+			req.protocol=window.location.protocol;
+			req.authDomain=window.location.hostname;
+			if(req.protocol=='http:' || req.protocol=='https:'){
+				cb({result:false});
+				return;
 			}
 		}
 		this._order(req,cb);
