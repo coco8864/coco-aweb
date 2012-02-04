@@ -53,6 +53,7 @@
   * 監視機能の機能強化
     * freeMemoryが少なくなったら（少ない状態を複数回観測したら）自動再起動
     * hungupを検出したらThreadDumpを採取した後、再起動
+    * 定期的にthread dumpを採取
   * ~~!WebSocket,draft-ietf-hybi-thewebsocketprotocol-10対応~~RFC 6455対応
     * ~~いつの間にか!Chromeで!WebSocketが使えなくなった~~trace|check
     * ~~現状実装は、draft-ietf-hybi-thewebsocketprotocol-00~~
