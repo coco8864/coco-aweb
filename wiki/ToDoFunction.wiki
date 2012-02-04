@@ -61,9 +61,11 @@
   * ~~restartを3回繰り返すと終わってしまう問題対応~~
   * コード系の自動判別
     * metaやxml宣言のコードはコンテンツの先頭付近にあるのでそれを利用
-  * coneoleの完全WebSocket化
-    * WebSocketリクエストの方がhttpでのリクエストより柔軟性がある
-  * WebSocketアプリ向けフレームワークが必要
+  * coneoleの完全!WebSocket化
+    * !WebSocketリクエストの方がhttpでのリクエストより柔軟性がある
+  * !WebSocketアプリ向けフレームワークが必要
+    * file upload/download
+
 
 できそうだけど基本やらない方針
   * Java5対応
