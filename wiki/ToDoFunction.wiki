@@ -65,6 +65,8 @@
     * !WebSocketリクエストの方がhttpでのリクエストより柔軟性がある
   * !WebSocketアプリ向けフレームワークが必要
     * file upload/download
+  * 性能基礎データの採取,pahntom proxy|apache|nginx 
+    * グラフ表示
 
 
 できそうだけど基本やらない方針
