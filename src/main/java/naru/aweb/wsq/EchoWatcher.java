@@ -6,8 +6,8 @@ import java.util.List;
  * àÍñ‚àÍìöÅAîÒìØä˙åãâ í ímópwatcher
  * @author Owner
  */
-public class EchoWatcher implements WsqWatcher {
-	private WsqContext wsqContext;
+public class EchoWatcher implements Wsqlet {
+	private WsqController wsqContext;
 	private String wsqName;
 
 	public String getWsqName(){
@@ -15,7 +15,7 @@ public class EchoWatcher implements WsqWatcher {
 	}
 	
 	@Override
-	public void onMessage(WsqFrom fromChid, Object message) {
+	public void onMessage(WsqPeer fromChid, Object message) {
 		wsqContext.publish(message.toString(), fromChid.getChid());
 	}
 	
@@ -24,15 +24,15 @@ public class EchoWatcher implements WsqWatcher {
 	}
 
 	@Override
-	public void onStartQueue(String wsqName, WsqContext wsqContext) {
+	public void onStartQueue(String wsqName, WsqController wsqContext) {
 	}
 
 	@Override
-	public void onSubscribe(WsqFrom from) {
+	public void onSubscribe(WsqPeer from) {
 	}
 
 	@Override
-	public void onUnsubscribe(WsqFrom from) {
+	public void onUnsubscribe(WsqPeer from) {
 	}
 
 	@Override

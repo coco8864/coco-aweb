@@ -170,7 +170,7 @@ public class QueueManager implements Timer{
 	}
 	
 	//リクエスト受付時
-	public void subHandler(WsQueueHandler handler){
+	public void subHandler(WsqHandler handler){
 	}
 	
 	public boolean listUsers(String chId){
@@ -200,7 +200,7 @@ public class QueueManager implements Timer{
 		return queue.getMessages(chId,result);
 	}
 	
-	public boolean subscribeById(String chId,WsQueueHandler handler){
+	public boolean subscribeById(String chId,WsqHandler handler){
 		Queue queue=idQueueMap.get(chId);//getbyid
 		if(queue==null){
 			logger.warn("subscribeById not found queue.chId:"+chId);
