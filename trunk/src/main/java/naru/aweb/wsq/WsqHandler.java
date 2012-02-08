@@ -27,8 +27,8 @@ import org.apache.log4j.Logger;
  * @author Naru
  *
  */
-public class WsQueueHandler extends WebSocketHandler {
-	static private Logger logger=Logger.getLogger(WsQueueHandler.class);
+public class WsqHandler extends WebSocketHandler {
+	static private Logger logger=Logger.getLogger(WsqHandler.class);
 	private static Config config=Config.getConfig();
 	private static QueueManager queueManager=QueueManager.getInstance();
 	
@@ -39,7 +39,7 @@ public class WsQueueHandler extends WebSocketHandler {
 		super.recycle();
 	}
 	
-	private String subscribeById(JSONObject msg,JSONArray responseMsg,WsQueueHandler handler){
+	private String subscribeById(JSONObject msg,JSONArray responseMsg,WsqHandler handler){
 		//subscribeByIdのルート
 		String chId=msg.optString("id");
 		if(handler!=null){
@@ -59,7 +59,7 @@ public class WsQueueHandler extends WebSocketHandler {
 		return chId;
 	}
 	
-	private String subscribeByName(JSONObject msg,JSONArray responseMsg,WsQueueHandler handler){
+	private String subscribeByName(JSONObject msg,JSONArray responseMsg,WsqHandler handler){
 		//subscribeBynameのルート
 		String name=msg.optString("name");
 		String user=msg.optString("user");
@@ -112,7 +112,7 @@ public class WsQueueHandler extends WebSocketHandler {
 	 * @param handler
 	 * @return
 	 */
-	private String subscribe(JSONObject msg,JSONArray responseMsg,WsQueueHandler handler){
+	private String subscribe(JSONObject msg,JSONArray responseMsg,WsqHandler handler){
 		String action=msg.optString("action");
 		if("byId".equals(action)){
 			return subscribeById(msg, responseMsg, handler);
@@ -159,7 +159,7 @@ public class WsQueueHandler extends WebSocketHandler {
 	 * @param wsHandler WebSocketプロトコルを処理しているハンドラ
 	 * @return
 	 */
-	private JSONArray processMessages(JSON json,WsQueueHandler wsHandler){
+	private JSONArray processMessages(JSON json,WsqHandler wsHandler){
 		List<JSONObject> messages=new ArrayList<JSONObject>();
 		parseMessage(json, messages);
 		Iterator<JSONObject> itr=messages.iterator();

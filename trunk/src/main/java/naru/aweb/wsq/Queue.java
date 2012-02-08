@@ -27,15 +27,15 @@ public class Queue extends PoolBase implements Timer{
 	private static class SubscribeInfo{
 		String chId;
 		String user;
-		WsQueueHandler handler;
+		WsqHandler handler;
 		JSONArray msgs;
 		long lastAccess;
 		
-		void setHandler(WsQueueHandler handler){
+		void setHandler(WsqHandler handler){
 			if(handler!=null){
 				handler.ref();
 			}
-			WsQueueHandler orgHandler=handler;
+			WsqHandler orgHandler=handler;
 			this.handler=handler;
 			if(orgHandler!=null){
 				orgHandler.unref();
@@ -136,7 +136,7 @@ public class Queue extends PoolBase implements Timer{
 		}
 	}
 	
-	public synchronized boolean subscribe(String chId,WsQueueHandler handler){
+	public synchronized boolean subscribe(String chId,WsqHandler handler){
 		if(isFin){
 			return false;//èIóπÇµÇƒÇ¢ÇÈ
 		}

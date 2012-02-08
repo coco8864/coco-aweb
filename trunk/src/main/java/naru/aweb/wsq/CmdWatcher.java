@@ -4,7 +4,7 @@ package naru.aweb.wsq;
  * àÍñ‚àÍìöÅAîÒìØä˙åãâ í ímópwatcher
  * @author Owner
  */
-public class CmdWatcher implements WsqWatcher {
+public class CmdWatcher implements Wsqlet {
 	public static String create(long timeout){
 		CmdWatcher watcher=new CmdWatcher();
 		if( WsqManager.createWsq(watcher,null,timeout)==false ){
@@ -13,7 +13,7 @@ public class CmdWatcher implements WsqWatcher {
 		return watcher.getWsqName();
 	}
 	
-	private WsqContext wsqContext;
+	private WsqController wsqContext;
 	private String wsqName;
 	private String chid;
 	private Object result;
@@ -41,7 +41,7 @@ public class CmdWatcher implements WsqWatcher {
 	}
 	
 	@Override
-	public void onStartQueue(String wsqName, WsqContext wsqContext) {
+	public void onStartQueue(String wsqName, WsqController wsqContext) {
 		this.wsqName=wsqName;
 		this.wsqContext=wsqContext;
 		this.chid=null;
@@ -59,7 +59,7 @@ public class CmdWatcher implements WsqWatcher {
 	}
 	
 	@Override
-	public synchronized void onSubscribe(WsqFrom from) {
+	public synchronized void onSubscribe(WsqPeer from) {
 		this.chid=from.getChid();
 		send();
 	}
@@ -69,10 +69,10 @@ public class CmdWatcher implements WsqWatcher {
 	}
 
 	@Override
-	public void onMessage(WsqFrom from, Object message) {
+	public void onMessage(WsqPeer from, Object message) {
 	}
 
 	@Override
-	public void onUnsubscribe(WsqFrom from) {
+	public void onUnsubscribe(WsqPeer from) {
 	}
 }

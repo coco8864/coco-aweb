@@ -12,36 +12,32 @@ import net.sf.json.JSON;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
-public class Wsq extends PoolBase implements WsqContext,Timer{
+public class Wsq extends PoolBase implements WsqController,Timer{
 	
 	/* stress,connection,定期的に情報を発信 */
-	public static Wsq createWsq(Object wsqWatcher,String wsqName,long interval){
+	public static Wsq createWsq(Object wsqlet,String wsqName){
 		Wsq wsq=(Wsq)PoolManager.getInstance(Wsq.class);
 		if(wsqName==null){
 			
 		}else{
 			wsq.wsqName=wsqName;
 		}
-		wsq.watcher=(WsqWatcher)wsqWatcher;
-		wsq.intervalTimer=null;
-		if(interval>0){
-			wsq.intervalTimer=TimerManager.setInterval(interval, wsq, null);
-		}
-		wsq.watcher.onStartQueue(wsq.wsqName,wsq);
+		wsq.wsqlet=(Wsqlet)wsqlet;
+		wsq.wsqlet.onStartQueue(wsq.wsqName,wsq);
+		wsq.onTimer(null);
 		return wsq;
 	}
 	
-	private Map<String,SubscribeInfo> subscribeInfos=new HashMap<String,SubscribeInfo>();
+	private Map<WsqPeer,SubscribeInfo> subscribeInfos=new HashMap<WsqPeer,SubscribeInfo>();
 	private String wsqName;
-	private WsqWatcher watcher;
-	private Object intervalTimer;
+	private Wsqlet wsqlet;
+	private long timerId=-1;
 	
 	private static class SubscribeInfo{
-		WsqFrom from;
-		WsQueueHandler handler;
+		WsqPeer from;
+		WsqHandler handler;
 		JSONArray msgs;
 		long lastAccess;
-		
 		void setMessage(JSONObject msg){
 			if(handler!=null){
 				handler.publish(msg);
@@ -51,8 +47,7 @@ public class Wsq extends PoolBase implements WsqContext,Timer{
 			}
 			msgs.add(msg);
 		}
-		
-		void setHandler(WsQueueHandler handler){
+		void setHandler(WsqHandler handler){
 			if(handler!=null){
 				handler.ref();
 				if(msgs!=null){
@@ -60,7 +55,7 @@ public class Wsq extends PoolBase implements WsqContext,Timer{
 				}
 				msgs=null;
 			}
-			WsQueueHandler orgHandler=handler;
+			WsqHandler orgHandler=handler;
 			this.handler=handler;
 			if(orgHandler!=null){
 				orgHandler.unref();
@@ -72,8 +67,8 @@ public class Wsq extends PoolBase implements WsqContext,Timer{
 		return wsqName;
 	}
 
-	public boolean setHandler(String chid,WsQueueHandler handler){
-		SubscribeInfo info=subscribeInfos.get(chid);
+	public boolean setHandler(WsqPeer from,WsqHandler handler){
+		SubscribeInfo info=subscribeInfos.get(from);
 		if(info==null){
 			return false;
 		}
@@ -83,22 +78,22 @@ public class Wsq extends PoolBase implements WsqContext,Timer{
 		return true;
 	}
 	
-	public boolean subscribe(String chid,WsqFrom from){
+	public boolean subscribe(WsqPeer from){
 		SubscribeInfo info=new SubscribeInfo();
 		info.from=from;
 		info.lastAccess=System.currentTimeMillis();
 		synchronized(subscribeInfos){
-			if(subscribeInfos.get(chid)!=null){
+			if(subscribeInfos.get(from)!=null){
 				return false;//既にsubscribe中
 			}
-			subscribeInfos.put(chid, info);
+			subscribeInfos.put(from, info);
 		}
-		watcher.onSubscribe(info.from);
+		wsqlet.onSubscribe(info.from);
 		return true;
 	}
 	
-	public JSONArray getMessage(String chid){
-		SubscribeInfo info=subscribeInfos.get(chid);
+	public JSONArray getMessage(WsqPeer from){
+		SubscribeInfo info=subscribeInfos.get(from);
 		if(info==null){
 			return null;
 		}
@@ -110,52 +105,64 @@ public class Wsq extends PoolBase implements WsqContext,Timer{
 	}
 	
 	public void onTimer(Object userContext) {
-		if(watcher.onWatch()==false){
-			return;
+		long interval=wsqlet.onWatch();
+		if(interval>0){
+			timerId=TimerManager.setTimeout(interval,this,null);
+		}else{
+			timerId=-1;
 		}
-		publish(watcher);
 	}
 
 	/*---以降watcher側からのリクエスト ---*/
 	@Override
 	public void endQueue() {
-		if(intervalTimer!=null){
-			TimerManager.clearInterval(intervalTimer);
-			intervalTimer=null;
+		if(timerId!=-1){
+			TimerManager.clearTimeout(timerId);
+			timerId=-1;
 		}
 		synchronized(subscribeInfos){
-			for(String chid:subscribeInfos.keySet()){
-				unsubscribe(chid);
+			for(WsqPeer peer:subscribeInfos.keySet()){
+				unsubscribe(peer);
 			}
 		}
-		watcher.onEndQueue();
+		wsqlet.onEndQueue();
 	}
 	
+
 	@Override
-	public long getLastAccess(String chid) {
-		SubscribeInfo info=subscribeInfos.get(chid);
+	public long getLastAccess(WsqPeer peer) {
+		SubscribeInfo info=subscribeInfos.get(peer);
 		if(info==null){
 			return -1;
 		}
 		return info.lastAccess;
 	}
-	
+
 	@Override
-	public int publish(Object message) {
-		// TODO Auto-generated method stub
+	public int message(Object message, List<WsqPeer> peers,List<WsqPeer> dnyPeers) {
 		return 0;
 	}
+
 	@Override
-	public int publish(Object message, List<String> chids) {
-		// TODO Auto-generated method stub
+	public int message(Object message, List<WsqPeer> peers, WsqPeer dnyPeer) {
 		return 0;
 	}
+
 	@Override
-	public int publish(Object message, String dnyChid) {
-		// TODO Auto-generated method stub
+	public int message(Object message, List<WsqPeer> peers) {
 		return 0;
 	}
-	
+
+	@Override
+	public int message(Object message, WsqPeer peer) {
+		return 0;
+	}
+
+	@Override
+	public int message(Object message) {
+		return 0;
+	}
+
 	/*
 	 * 以下２箇所から呼び出される
 	 * 1)WsqWatcher(サーバ処理としてunsubscribe)
@@ -163,16 +170,16 @@ public class Wsq extends PoolBase implements WsqContext,Timer{
 	 * @see naru.aweb.wsq.WsqContext#unsubscribe(java.lang.String)
 	 */
 	@Override
-	public boolean unsubscribe(String chid) {
+	public boolean unsubscribe(WsqPeer peer) {
 		SubscribeInfo info=null;
 		synchronized(subscribeInfos){
-			info=subscribeInfos.remove(chid);
+			info=subscribeInfos.remove(peer);
 		}
 		if(info==null){
 			return false;
 		}
 		synchronized(info){
-			watcher.onUnsubscribe(info.from);
+			wsqlet.onUnsubscribe(info.from);
 			info.setHandler(null);
 		}
 		return true;

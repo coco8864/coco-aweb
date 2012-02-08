@@ -18,25 +18,12 @@ import net.sf.json.JSONArray;
 public class WsqManager {
 	private static Map<String,Wsq> wsqs=new HashMap<String,Wsq>();
 	
-	/* command */
-	public static boolean createWsq(Object wsqWatcher){
-		return createWsq(wsqWatcher,null);
-	}
-	
-	/* chat */
 	public static boolean createWsq(Object wsqWatcher,String wsqName){
-		return createWsq(wsqWatcher,wsqName,0);
-	}
-	
-	/* stress,connection,’èŠú“I‚Éî•ñ‚ğ”­M */
-	public static boolean createWsq(Object wsqWatcher,String wsqName,long interval){
 		synchronized(wsqs){
-			if(wsqName!=null){
-				if(wsqs.get(wsqName)!=null){
-					return false;//Šù‚É“o˜^‚³‚ê‚Ä‚¢‚é
-				}
+			if(wsqs.get(wsqName)!=null){
+				return false;//Šù‚É“o˜^‚³‚ê‚Ä‚¢‚é
 			}
-			Wsq wsq=Wsq.createWsq(wsqWatcher, wsqName, interval);
+			Wsq wsq=Wsq.createWsq(wsqWatcher, wsqName);
 			if(wsq==null){
 				return false;
 			}
@@ -57,25 +44,25 @@ public class WsqManager {
 	}
 	
 	//wsqHandler‚ğ“KØ‚ÈWsq‚É“o˜^‚·‚é
-	public static boolean subscribe(String wsqName,String chid,WsQueueHandler handler){
+	public static boolean subscribe(String wsqName,WsqPeer from,WsqHandler handler){
 		Wsq wsq=wsqs.get(wsqName);
 		if(wsq==null){
 			return false;
 		}
-		if(wsq.subscribe(chid, null)==false){
+		if(wsq.subscribe(from)==false){
 			return false;
 		}
-		wsq.setHandler(chid, handler);
+		wsq.setHandler(from, handler);
 		return true;
 	}
 	
 	//wsqHandler‚É‘Î‰‚·‚éWsq‚©‚çmessage‚ğæ“¾‚·‚é
-	public static JSONArray getMessage(String wsqName,String chid){
+	public static JSONArray getMessage(String wsqName,WsqPeer from){
 		Wsq wsq=wsqs.get(wsqName);
 		if(wsq==null){
 			return null;
 		}
-		return wsq.getMessage(chid);
+		return wsq.getMessage(from);
 	}
 	
 }
