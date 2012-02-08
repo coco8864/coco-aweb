@@ -16,9 +16,14 @@ import net.sf.json.JSONArray;
  *
  */
 public class WsqManager {
-	private static Map<String,Wsq> wsqs=new HashMap<String,Wsq>();
+	private static WsqManager instance=new WsqManager();
+	public static WsqManager getInstance(){
+		return instance;
+	}
 	
-	public static boolean createWsq(Object wsqWatcher,String wsqName){
+	private Map<String,Wsq> wsqs=new HashMap<String,Wsq>();
+	
+	public boolean createWsq(Object wsqWatcher,String wsqName){
 		synchronized(wsqs){
 			if(wsqs.get(wsqName)!=null){
 				return false;//Šù‚É“o˜^‚³‚ê‚Ä‚¢‚é
@@ -32,7 +37,7 @@ public class WsqManager {
 		return true;
 	}
 	
-	public static boolean removeWsq(String wsqName){
+	public boolean removeWsq(String wsqName){
 		synchronized(wsqs){
 			Wsq wsq=wsqs.remove(wsqName);
 			if(wsq==null){
@@ -44,7 +49,7 @@ public class WsqManager {
 	}
 	
 	//wsqHandler‚ğ“KØ‚ÈWsq‚É“o˜^‚·‚é
-	public static boolean subscribe(String wsqName,WsqPeer from,WsqHandler handler){
+	public boolean subscribe(String wsqName,WsqPeer from,WsqHandler handler){
 		Wsq wsq=wsqs.get(wsqName);
 		if(wsq==null){
 			return false;
@@ -57,12 +62,11 @@ public class WsqManager {
 	}
 	
 	//wsqHandler‚É‘Î‰‚·‚éWsq‚©‚çmessage‚ğæ“¾‚·‚é
-	public static JSONArray getMessage(String wsqName,WsqPeer from){
+	public JSONArray getMessage(String wsqName,WsqPeer from){
 		Wsq wsq=wsqs.get(wsqName);
 		if(wsq==null){
 			return null;
 		}
 		return wsq.getMessage(from);
 	}
-	
 }

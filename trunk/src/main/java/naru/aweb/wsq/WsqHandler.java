@@ -30,7 +30,7 @@ import org.apache.log4j.Logger;
 public class WsqHandler extends WebSocketHandler {
 	static private Logger logger=Logger.getLogger(WsqHandler.class);
 	private static Config config=Config.getConfig();
-	private static QueueManager queueManager=QueueManager.getInstance();
+	private static WsqManager wsqManager=WsqManager.getInstance();
 	
 	private Set<String> subscribeChids=new HashSet<String>();
 	@Override
@@ -172,6 +172,8 @@ public class WsqHandler extends WebSocketHandler {
 				if(cid!=null){
 					subscribeIds.add(cid);
 				}
+			}else if("unsubscribe".equals(type)){
+				
 			}else if("publish".equals(type)){
 				publish(msg,responseMsg);
 			}
@@ -183,6 +185,8 @@ public class WsqHandler extends WebSocketHandler {
 	 * WebSocketから受けた直接のメッセージ
 	 */
 	public void onMessage(String msgs){
+		getAuthSession();
+		
 		logger.debug("onMessage.message:"+msgs);
 		JSON json=JSONSerializer.toJSON(msgs);
 		JSONArray responseMsg=processMessages(json,this);
