@@ -28,7 +28,7 @@ import org.apache.log4j.Logger;
  *
  */
 public class WsQueueHandler extends WebSocketHandler {
-	static private Logger logger=Logger.getLogger(WsQueueHandler.class);
+	private static Logger logger=Logger.getLogger(WsQueueHandler.class);
 	private static Config config=Config.getConfig();
 	private static QueueManager queueManager=QueueManager.getInstance();
 	

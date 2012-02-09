@@ -30,7 +30,7 @@ import org.apache.log4j.Logger;
  */
 public abstract class WebSocketHandler extends WebServerHandler implements LogoutEvent{
 	private static Logger logger=Logger.getLogger(WebSocketHandler.class);
-	private boolean isWs;//WebSocketをハンドリングしているか否か
+	protected boolean isWs;//WebSocketをハンドリングしているか否か
 	private boolean isHandshaked;
 	private WsProtocol wsProtocol;
 	private int onMessageCount;

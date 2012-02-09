@@ -1,6 +1,6 @@
 package naru.aweb.wsq;
 
-import java.util.List;
+import java.util.Collection;
 
 public interface WsqController {
 	/**
@@ -10,9 +10,9 @@ public interface WsqController {
 	 * @param dnyChid 送信しないchannel id
 	 * @return
 	 */
-	public int message(Object message,List<WsqPeer> peers, List<WsqPeer> dnyPeers);
+	public int message(Object message,Collection<WsqPeer> peers, Collection<WsqPeer> dnyPeers);
 	
-	public int message(Object message,List<WsqPeer> peers, WsqPeer dnyPeer);
+	public int message(Object message,Collection<WsqPeer> peers, WsqPeer dnyPeer);
 	
 	/**
 	 * 指定したchannelに送信
@@ -20,7 +20,7 @@ public interface WsqController {
 	 * @param chids　送信するchannel id群
 	 * @return 送信しchannel数を返却
 	 */
-	public int message(Object message,List<WsqPeer> peers);
+	public int message(Object message,Collection<WsqPeer> peers);
 
 	public int message(Object message,WsqPeer peer);
 

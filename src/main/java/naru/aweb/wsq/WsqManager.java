@@ -1,9 +1,14 @@
 package naru.aweb.wsq;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
+import net.sf.json.JSON;
 import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 
 /**
  * wsqNameとchidを指定してpulish,subscribeする
@@ -16,12 +21,34 @@ import net.sf.json.JSONArray;
  *
  */
 public class WsqManager {
+	private static Logger logger=Logger.getLogger(WsqManager.class);
 	private static WsqManager instance=new WsqManager();
 	public static WsqManager getInstance(){
 		return instance;
 	}
 	
 	private Map<String,Wsq> wsqs=new HashMap<String,Wsq>();
+	
+	/**
+	 * peerへの送信電文作成
+	 * @param action
+	 * @param chId
+	 * @param name
+	 * @return
+	 */
+	public static JSON makeMessage(String qname,String subscribeId,String type,String action,String message){
+		JSONObject json=new JSONObject();
+		json.put("qname", qname);
+		json.put("subscribeId", "subscribeId");
+		json.put("type", type);
+		json.put("action", action);
+		json.put("message", message);
+		return json;
+	}
+	
+	public Collection<String> getQnames(){
+		return wsqs.keySet();
+	}
 	
 	public boolean createWsq(Object wsqWatcher,String wsqName){
 		synchronized(wsqs){
@@ -32,7 +59,7 @@ public class WsqManager {
 			if(wsq==null){
 				return false;
 			}
-			wsqs.put(wsq.getWsqName(),wsq);
+			wsqs.put(wsq.getQname(),wsq);
 		}
 		return true;
 	}
@@ -48,9 +75,30 @@ public class WsqManager {
 		return true;
 	}
 	
+	public void publish(WsqPeer from,Object message){
+		Wsq wsq=wsqs.get(from.getQname());
+		if(wsq==null){
+			//publishしたがqueueがなかった。
+			logger.warn("publish ignore qname:"+from.getQname());
+			return;
+		}
+		wsq.publish(from, message);
+	}
+	
+	public boolean unsubscribe(WsqPeer from){
+		Wsq wsq=wsqs.get(from.getQname());
+		if(wsq==null){
+			return false;
+		}
+		if(wsq.unsubscribe(from)==false){
+			return false;
+		}
+		return true;
+	}
+	
 	//wsqHandlerを適切なWsqに登録する
-	public boolean subscribe(String wsqName,WsqPeer from,WsqHandler handler){
-		Wsq wsq=wsqs.get(wsqName);
+	public boolean subscribe(WsqPeer from,WsqHandler handler){
+		Wsq wsq=wsqs.get(from.getQname());
 		if(wsq==null){
 			return false;
 		}
@@ -62,11 +110,23 @@ public class WsqManager {
 	}
 	
 	//wsqHandlerに対応するWsqからmessageを取得する
-	public JSONArray getMessage(String wsqName,WsqPeer from){
-		Wsq wsq=wsqs.get(wsqName);
+	public JSONArray getMessage(WsqPeer from){
+		Wsq wsq=wsqs.get(from.getQname());
 		if(wsq==null){
 			return null;
 		}
 		return wsq.getMessage(from);
 	}
+	
+	public boolean setHandler(WsqPeer from,WsqHandler handler){
+		Wsq wsq=wsqs.get(from.getQname());
+		if(wsq==null){
+			return false;
+		}
+		if(wsq.setHandler(from, handler)==false){
+			return false;
+		}
+		return true;
+	}
+	
 }

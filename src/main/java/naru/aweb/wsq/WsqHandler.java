@@ -5,11 +5,12 @@ package naru.aweb.wsq;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
+import naru.async.Timer;
+import naru.async.timer.TimerManager;
+import naru.aweb.auth.AuthSession;
 import naru.aweb.config.Config;
 import naru.aweb.handler.WebSocketHandler;
 import naru.aweb.http.ParameterParser;
@@ -27,115 +28,15 @@ import org.apache.log4j.Logger;
  * @author Naru
  *
  */
-public class WsqHandler extends WebSocketHandler {
-	static private Logger logger=Logger.getLogger(WsqHandler.class);
-	private static Config config=Config.getConfig();
+public class WsqHandler extends WebSocketHandler implements Timer{
+//	private static Config config=Config.getConfig();
+	private static Logger logger=Logger.getLogger(WsqHandler.class);
 	private static WsqManager wsqManager=WsqManager.getInstance();
 	
-	private Set<String> subscribeChids=new HashSet<String>();
+//	private Set<String> subscribeChids=new HashSet<String>();
 	@Override
 	public void recycle() {
-		subscribeChids.clear();
 		super.recycle();
-	}
-	
-	private String subscribeById(JSONObject msg,JSONArray responseMsg,WsqHandler handler){
-		//subscribeByIdのルート
-		String chId=msg.optString("id");
-		if(handler!=null){
-			if( queueManager.subscribeById(chId,handler)==false){//subscribeできなかった
-				responseMsg.add(QueueManager.publishMessage(chId, "error", "fail to subscribe","self"));
-				return null;
-			}
-		}else{
-			if( queueManager.getMessages(chId, responseMsg)==false){//subscribeできなかった
-				responseMsg.add(QueueManager.publishMessage(chId, "error", "fail to subscribe","self"));
-				return null;
-			}
-		}
-		synchronized(subscribeChids){
-			subscribeChids.add(chId);
-		}
-		return chId;
-	}
-	
-	private String subscribeByName(JSONObject msg,JSONArray responseMsg,WsqHandler handler){
-		//subscribeBynameのルート
-		String name=msg.optString("name");
-		String user=msg.optString("user");
-		boolean isNew=msg.optBoolean("isNew", false);//存在しなかった場合、作成するか否か？
-		String comment=msg.optString("comment");//作成する際のQueueのcomment
-		String chId=queueManager.createQueueByName(name, user,isNew,comment);
-		if(chId==null){
-			responseMsg.add(QueueManager.subscribedMessage("error","errorId",name));
-			return null;
-		}
-		msg.put("id", chId);
-		chId=subscribeById(msg,responseMsg,handler);
-		if(chId!=null){
-			responseMsg.add(QueueManager.subscribedMessage("success",chId,name));
-		}
-		return chId;
-	}
-	
-	private void unsubscribe(JSONObject msg){
-		//subscribeBynameのルート
-		String chId=msg.optString("id");
-		queueManager.unsubscribe(chId);
-		synchronized(subscribeChids){
-			subscribeChids.remove(chId);
-		}
-	}
-	
-	private void listUsers(JSONObject msg,JSONArray responseMsg){
-		//subscribeByIdのルート
-		String chId=msg.optString("id");
-		if( queueManager.listUsers(chId)==false){//subscribeできなかった
-			responseMsg.add(QueueManager.publishMessage(chId, "error", "fail to subscribe","self"));
-		}
-	}
-	
-	private void changeUser(JSONObject msg,JSONArray responseMsg){
-		//subscribeByIdのルート
-		String chId=msg.optString("id");
-		String user=msg.optString("user");
-		if( queueManager.changeUser(chId, user)==false){//subscribeできなかった
-			responseMsg.add(QueueManager.publishMessage(chId, "error", "fail to subscribe","self"));
-		}
-	}
-	
-	/**
-	 * handlerをQUEUEに登録したchIdを返却
-	 * 
-	 * @param msg
-	 * @param responseMsg
-	 * @param handler
-	 * @return
-	 */
-	private String subscribe(JSONObject msg,JSONArray responseMsg,WsqHandler handler){
-		String action=msg.optString("action");
-		if("byId".equals(action)){
-			return subscribeById(msg, responseMsg, handler);
-		}else if("byName".equals(action)){
-			return subscribeByName(msg, responseMsg, handler);
-		}else if("changeUser".equals(action)){
-			changeUser(msg, responseMsg);
-		}else if("listUsers".equals(action)){
-			listUsers(msg, responseMsg);
-		}else if("unsubscribe".equals(action)){
-			unsubscribe(msg);
-		}		
-		return null;
-	}
-	
-	private void publish(JSONObject msg,JSONArray responseMsg){
-		String chId=msg.optString("id");
-		Object message=msg.opt("message");
-		boolean echoback=msg.optBoolean("echoback",true);
-		boolean complete=msg.optBoolean("complete",false);
-		if(queueManager.publish(chId, message,echoback,complete)==false){//server再起動でidが古くなりpublishに失敗する場合がある
-			responseMsg.add(QueueManager.publishMessage(chId, "error", "fail to publish","self"));
-		}
 	}
 	
 	private void parseMessage(JSON json,List<JSONObject> result){
@@ -153,104 +54,223 @@ public class WsqHandler extends WebSocketHandler {
 		}
 	}
 	
+	private void subscribe(JSONObject msg,JSONArray ress){
+		String qname=msg.getString("qname");
+		String subscribeId=msg.optString("subscribeId",null);
+		WsqPeer from=WsqPeer.create(authSession,qname,subscribeId);
+//		if(peerQnameMap.get(from)!=null){
+//			continue;//既にsubscribe中
+//		}
+		if( wsqManager.subscribe(from, this) ){
+			if(wsqSession.reg(from)){
+				from.ref();
+			}else{
+				logger.error("aleady in session.",new Exception());
+			}
+		}else{
+			JSON res=WsqManager.makeMessage(qname, subscribeId,"subscribe","error","qname:"+qname);
+			ress.add(res);
+		}
+	}
+	
+	private void unsubscribe(JSONObject msg,JSONArray ress){
+		String qname=msg.getString("qname");
+		String subscribeId=msg.optString("subscribeId",null);
+		if(subscribeId!=null){
+			WsqPeer peer=wsqSession.unreg(qname, subscribeId);
+			if(peer!=null){
+				wsqManager.unsubscribe(peer);
+				peer.unref();
+			}else{
+				JSON res=WsqManager.makeMessage(qname, subscribeId,"unsubscribe","error","qname:"+qname +" subscribeId:"+subscribeId);
+				ress.add(res);
+			}
+		}else{
+			List<WsqPeer> peers=wsqSession.unregs(qname);
+			if(peers==null){
+				JSON res=WsqManager.makeMessage(qname, subscribeId,"unsubscribe","error","qname:"+qname);
+				ress.add(res);
+				return;
+			}
+			for(WsqPeer peer:peers){
+				wsqManager.unsubscribe(peer);
+				peer.unref();
+			}
+		}
+	}
+	
+	private void publish(JSONObject msg,JSONArray ress){
+		String qname=msg.getString("qname");
+		String subscribeId=msg.optString("subscribeId",null);
+		WsqPeer from=WsqPeer.create(authSession,qname,subscribeId);
+		Object message=msg.opt("message");
+		wsqManager.publish(from, message);
+		from.unref();
+	}
+	
+	private void getQnames(JSONArray ress){
+	}
+	
 	/**
 	 * 
 	 * @param json リクエストとして受け取ったjson
 	 * @param wsHandler WebSocketプロトコルを処理しているハンドラ
 	 * @return
 	 */
-	private JSONArray processMessages(JSON json,WsqHandler wsHandler){
+	private void processMessages(JSON json,JSONArray ress){
 		List<JSONObject> messages=new ArrayList<JSONObject>();
 		parseMessage(json, messages);
 		Iterator<JSONObject> itr=messages.iterator();
-		JSONArray responseMsg=new JSONArray();
+//		JSONArray responseMsg=new JSONArray();
 		while(itr.hasNext()){
 			JSONObject msg=itr.next();
-			String type=msg.optString("type");
+			String type=msg.getString("type");
 			if("subscribe".equals(type)){
-				String cid=subscribe(msg, responseMsg, wsHandler);
-				if(cid!=null){
-					subscribeIds.add(cid);
-				}
+				subscribe(msg,ress);
 			}else if("unsubscribe".equals(type)){
-				
+				unsubscribe(msg,ress);
 			}else if("publish".equals(type)){
-				publish(msg,responseMsg);
+				publish(msg,ress);
+			}else if("getQnames".equals(type)){
+				getQnames(ress);
 			}
 		}
-		return responseMsg;
 	}
 	
 	/**
 	 * WebSocketから受けた直接のメッセージ
 	 */
 	public void onMessage(String msgs){
-		getAuthSession();
-		
 		logger.debug("onMessage.message:"+msgs);
 		JSON json=JSONSerializer.toJSON(msgs);
-		JSONArray responseMsg=processMessages(json,this);
-		if(responseMsg.size()>0){
-			publish(responseMsg);
+		JSONArray ress=new JSONArray();
+		processMessages(json,ress);
+		if(ress.size()>0){
+			message(ress);
 		}
 	}
 	
-	void publish(JSON json){
-		postMessage(json.toString());
+	/**
+	 * 端末に送信するメッセージができたところで呼び出される
+	 * @param json
+	 */
+	void message(Object obj){
+		if(isWs){
+			postMessage(obj.toString());
+		}else{
+			if(obj instanceof JSONArray){
+				responseObjs.addAll((JSONArray)obj);
+			}else{
+				responseObjs.add(obj);
+			}
+			if(!isMsgBlock){
+				wsqSession.setHandler(wsqManager, null);
+				isMsgBlock=true;
+				if(timerId!=-1){
+					TimerManager.clearTimeout(timerId);
+				}
+				timerId=TimerManager.setTimeout(10, this,null);
+			}
+		}
 	}
-
-	private Set<String> subscribeIds=new HashSet<String>();
 	
 	@Override
 	public void onWsClose(short code,String reason) {
-		Iterator<String> itr=subscribeIds.iterator();
-		while(itr.hasNext()){
-			String chId=itr.next();
-			queueManager.returnHandler(chId);
-			itr.remove();
+		wsqSession.setHandler(wsqManager, null);
+	}
+	
+	private AuthSession authSession;
+	private WsqSession wsqSession;
+	private JSONArray responseObjs=new JSONArray();
+	private boolean isMsgBlock=false;
+	private boolean isResponse=false;
+	private long timerId;
+	
+	private void setupSession(){
+		authSession=getAuthSession();
+		wsqSession=(WsqSession)authSession.getAttribute("WsqSession");
+		if(wsqSession==null){
+			wsqSession=new WsqSession();
+			authSession.setAttribute("WsqSession", wsqSession);
 		}
+		wsqSession.setHandler(wsqManager, this);
 	}
 
 	@Override
 	public void onWsOpen(String subprotocol) {
-		subscribeIds.clear();
+		//webSocketでの開始
+		setupSession();
 	}
-
+	
 	/**
 	 * HTTP(s)として動作した場合ここでリクエストを受ける
 	@Override
 	*/
 	public void startResponseReqBody() {
+		//xhrからの開始
+		setupSession();
 		ParameterParser parameter=getParameterParser();
 		JSON json=parameter.getJsonObject();
-		JSONArray responseMsg=processMessages(json,null);//HTTPで処理している
-		responseJson(responseMsg);
+		isMsgBlock=false;
+		isResponse=false;
+		processMessages(json,responseObjs);//HTTPで処理している
+		wsqSession.collectMessage(wsqManager,responseObjs);
+		if(responseObjs.size()>0){
+			wsqSession.setHandler(wsqManager, null);
+			isMsgBlock=true;
+			timerId=TimerManager.setTimeout(10, this,null);
+		}else{
+			/* 折り返しにレスポンスするオブジェクトがなければ1秒待つ */
+			timerId=TimerManager.setTimeout(1000, this,null);
+		}
 	}
 	
 	/**
 	 * WebSocketで通信中にセションがログアウトした場合に呼び出される
 	 */
 	public void onLogout(){
-		JSON json=QueueManager.publishMessage(null, "logout", "logout",null);
-		postMessage(json.toString());
+		//logoutによるunsubscribeの実行
+		wsqSession.setHandler(wsqManager, null);
+		List<WsqPeer> peers=wsqSession.unregs();
+		for(WsqPeer peer:peers){
+			wsqManager.unsubscribe(peer);
+			JSON json=WsqManager.makeMessage(peer.getQname(), peer.getSubscribeId(),"subscribe","unsubscribe","logout");
+			postMessage(json.toString());
+			peer.unref();
+		}
 		super.onLogout();
 	}
 
 	@Override
 	public void onMessage(ByteBuffer[] msgs) {
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public void onFinished() {
-		synchronized(subscribeChids){
-			Iterator<String> itr=subscribeChids.iterator();
-			while(itr.hasNext()){
-				String chId=itr.next();
-				queueManager.unsubscribe(chId);
-				itr.remove();
-			}
-		}
 		super.onFinished();
 	}
-	
+
+	/* xhrから利用する場合、メッセージなければしばらく待ってから復帰したいため */
+	public void onTimer(Object userContext) {
+		timerId=-1;
+		if(isMsgBlock){
+			synchronized(this){
+				if(isResponse){
+					return;
+				}
+				isResponse=true;
+			}
+			if(responseObjs.size()>0){
+				responseJson(responseObjs);
+				responseObjs.clear();
+			}else{
+				completeResponse("205");
+			}
+		}else{
+			wsqSession.setHandler(wsqManager, null);
+			isMsgBlock=true;
+			timerId=TimerManager.setTimeout(10, this,null);
+		}
+	}
 }

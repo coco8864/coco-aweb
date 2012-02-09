@@ -1,26 +1,41 @@
 package naru.aweb.wsq;
 
+import java.util.Collections;
 import java.util.List;
 
-public class WsqPeer {
-	private String peerSessionId;
-	private String peerSubscribeId;
+import naru.async.pool.PoolBase;
+import naru.async.pool.PoolManager;
+import naru.aweb.auth.AuthSession;
+import naru.aweb.config.User;
+
+public class WsqPeer extends PoolBase{
+	private String qname;
+	private String authId;
+	private String subscribeId;
 	private String userId;
 	private List<String> roles;
 	
-	public WsqPeer(String peerSessionId,String peerSubscribeId,String userId,List<String>roles){
-		this.peerSessionId=peerSessionId;
-		this.peerSubscribeId=peerSubscribeId;
-		this.userId=userId;
-		this.roles=roles;
+	public static WsqPeer create(AuthSession session,String qname,String subscribeId){
+		WsqPeer peer=(WsqPeer)PoolManager.getInstance(WsqPeer.class);
+		peer.qname=qname;
+		peer.subscribeId=subscribeId;
+		User user=session.getUser();
+		peer.authId=session.getToken();
+		peer.userId=user.getLoginId();
+		peer.roles=Collections.unmodifiableList(user.getRolesList());
+		return peer;
+	}
+	
+	public String getQname() {
+		return qname;
 	}
 
-	public String getPeerSessionId() {
-		return peerSessionId;
+	public String getAuthId() {
+		return authId;
 	}
 
-	public String getPeerSubscribeId() {
-		return peerSubscribeId;
+	public String getSubscribeId() {
+		return subscribeId;
 	}
 
 	public String getUserId() {
@@ -31,36 +46,4 @@ public class WsqPeer {
 		return roles;
 	}
 
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result
-				+ ((peerSessionId == null) ? 0 : peerSessionId.hashCode());
-		result = prime * result
-				+ ((peerSubscribeId == null) ? 0 : peerSubscribeId.hashCode());
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		final WsqPeer other = (WsqPeer) obj;
-		if (peerSessionId == null) {
-			if (other.peerSessionId != null)
-				return false;
-		} else if (!peerSessionId.equals(other.peerSessionId))
-			return false;
-		if (peerSubscribeId == null) {
-			if (other.peerSubscribeId != null)
-				return false;
-		} else if (!peerSubscribeId.equals(other.peerSubscribeId))
-			return false;
-		return true;
-	}
 }
