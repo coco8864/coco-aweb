@@ -35,7 +35,7 @@ public class Queue extends PoolBase implements Timer{
 			if(handler!=null){
 				handler.ref();
 			}
-			WsQueueHandler orgHandler=handler;
+			WsQueueHandler orgHandler=this.handler;
 			this.handler=handler;
 			if(orgHandler!=null){
 				orgHandler.unref();

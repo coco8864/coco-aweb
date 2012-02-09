@@ -965,7 +965,7 @@ public class WebServerHandler extends ServerBaseHandler {
 	 * @param json　toStringがjsonとなるオブジェクト
 	 */
 	public void responseJson(Object json){
-		responseJson(json,null);
+		responseJson(json);
 	}
 	
 	/**
