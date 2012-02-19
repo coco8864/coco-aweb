@@ -365,6 +365,7 @@ public class Mapper {
 			if(mapping.getSourceType()!=sourceType){
 				continue;
 			}
+			//TODO ドメインのチェックもすべき
 //			Mapping.SourceType sourceType=mapping.getSourceType();
 //			if(sourceType!=Mapping.SourceType.WEB&&sourceType!=Mapping.SourceType.WS){
 //				continue;

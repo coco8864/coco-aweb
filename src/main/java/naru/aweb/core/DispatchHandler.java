@@ -589,11 +589,11 @@ public class DispatchHandler extends ServerBaseHandler {
 				keepAliveContext.getRequestContext().allocAccessLog();
 				forwardMapping(null, requestHeader, DispatchResponseHandler.authMapping(), null, false);
 				return;
-			}else if(query.startsWith("PH_AUTH=auth")){
-				setRequestAttribute(AuthHandler.QUERY_AUTH_MARK, AuthHandler.QUERY_AUTH_AUTH);
-				keepAliveContext.getRequestContext().allocAccessLog();
-				forwardMapping(null, requestHeader, DispatchResponseHandler.authMapping(), null, false);
-				return;
+//			}else if(query.startsWith("PH_AUTH=auth")){
+//				setRequestAttribute(AuthHandler.QUERY_AUTH_MARK, AuthHandler.QUERY_AUTH_AUTH);
+//				keepAliveContext.getRequestContext().allocAccessLog();
+//				forwardMapping(null, requestHeader, DispatchResponseHandler.authMapping(), null, false);
+//				return;
 			}
 		}
 		//roleベースの認証は、mapping処理の中で実施
