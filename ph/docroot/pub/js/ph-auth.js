@@ -82,15 +82,19 @@ window.ph.auth={
     if(protocol==null || protocol==''){
       req.protocol=window.location.protocol;
       req.authDomain=window.location.hostname;
-      if(req.protocol=='http:' || req.protocol=='https:'){
-        cb({result:false,reason:'protocol error'});
-        return;
-      }
     }
     this._authCheckReq=req;
     this._authCb=cb;
+    var checkAplUrl;
+    if(req.protocol==='ws:'){
+      checkAplUrl='http://'+req.authDomain+req.authPath;
+    }else if(req.protocol==='wss:'){
+      checkAplUrl='https://'+req.authDomain+req.authPath;
+    }else{
+      checkAplUrl=aplUrl;
+    }
     /* aplUrlにsessionを問い合わせ */
-    this._reqestUrl(aplUrl+this._checkAplQuery,this._aplCheckCb);
+    this._reqestUrl(checkAplUrl+this._checkAplQuery,this._aplCheckCb);
   },
   user:function(authUrl,cb){
     if(this._authCb){
