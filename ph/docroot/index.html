@@ -23,7 +23,7 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 	ph.jQuery(function() {
 		ph.jQuery("#version").text(ph.version);
 		ph.jQuery("#status").text('running');
-		ph.auth.getUser(function(res){
+		ph.auth.user(null,function(res){
 			var user=res.user;
 			var allowUrls=user.allowUrls;
 			var len=allowUrls.length;
@@ -116,13 +116,16 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 		
 	}
 	</script>
-</head> 
-<body> 
-<H1>Phantom Proxy Home</span></H1>
-<div style="text-align:right"><span id="welcome"></span>
+</head>
+<body>
+<div>
+<H1 class="mainTitle" style="float: left;">Phantom Proxy Home</H1>
+<div style="float: right;">
+<span id="welcome"></span>
 <img id="loginout"/>
 </div>
-<hr/>
+</div>
+<hr style="clear: both;"/>
 <H2>Available web link list</H2>
 <ul id="links">
 </ul>
