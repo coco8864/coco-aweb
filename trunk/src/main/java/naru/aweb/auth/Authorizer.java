@@ -337,10 +337,13 @@ public class Authorizer implements Timer{
 		}
 	}
 	
-	public boolean isSecondaryId(String id){
+	public boolean isSecondaryId(String id,StringBuffer appId){
 		SessionId secondaryId = getSessionId(Type.SECONDARY,id);
 		if (secondaryId == null) {
 			return false;
+		}
+		if(appId!=null){
+			appId.append(DataUtil.digestHex(secondaryId.getId().getBytes()));
 		}
 		return true;
 	}

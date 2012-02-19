@@ -35,12 +35,12 @@ public class AuthHandler extends WebServerHandler {
 	public static String APP_ID="appId";//javascript側でセションを識別するID,setAuthメソッド復帰情報、jsonのキーとして使用
 	public static String AUTHORIZE_MARK="ahthorizeMark";//authorize目的で呼び出された場合に付加される。
 	public static String AUTHENTICATE_PATH="/authenticate";//必要があれば認証処理も行うパス
-	public static String AJAX_USER_PATH="/ajaxUser";//ajaxからloginユーザを問い合わせるAPI
+	public static String USER_PATH="/user";//loginユーザおよび使えるWebURLを問い合わせるAPI
 	public static String AJAX_PATHONCEID_PATH="/ajaxPathOnceId";//pathがこれで終わればajaxからの認可
 	public static String AJAX_SETAUTH_PATH="/ajaxSetAuth";//
 	public static String AJAX_AUTHID_PATH="/ajaxAuthId";//認可済みで無い場合、authIdを返却
 	private static String CLEANUP_AUTH_HEADER_PATH="/cleanupAuthHeader";//auth header削除用path
-	private static String AJAX_CHECK_SESSION_PATH="/ajaxCheckSession";//webSocket,ajax api認証を行う場合呼び出す前にこのパスをiframeに表示
+	private static String CHECK_SESSION_PATH="/checkSession";//webSocket,ajax api認証を行う場合呼び出す前にこのパスをiframeに表示
 	private static String LOGOUT_PATH="/logout";//logout用
 	private static String AUTH_PAGE_FILEPATH="/auth";
 	private static String AUTH_ID="authId";//...temporaryIdの別名
@@ -293,93 +293,133 @@ public class AuthHandler extends WebServerHandler {
 			logger.warn("protocol format error."+protocol);
 			return Mapper.CHECK_NOT_MATCH;
 		}
+		//TODO ドメインのチェックもすべき
 		return mapper.checkCrossDomainWebWs(sourceType,isSsl, authPath,originUrl);
 	}
 	
-	private void checkSession(String cookieId){
-		JSONObject res=new JSONObject();
-		ParameterParser parameter = getParameterParser();
-		String sourceType=parameter.getParameter("sourceType");
-		String originUrl=parameter.getParameter("originUrl");
-		String authUrl=null;
-		//TODO authUrlが,mapping対象か否か?
+	private String checkSessionProxyAuthUrl(String protocol,String authDomain,String originUrl,JSONObject res){
+		//proxyとしてマッチするか？
 		Mapper mapper=config.getMapper();
-		if("proxy".equals(sourceType)){
-			String protocol=parameter.getParameter("protocol");
-			String authDomain=parameter.getParameter("authDomain");
-			//proxyとしてマッチするか？
-			StringBuffer authUrlSb=new StringBuffer();
-			switch(checkCrossDomainProxy(mapper,protocol,authDomain,originUrl,authUrlSb)){
-			case Mapper.CHECK_MATCH_NO_AUTH://認証の必要がない
-				res.put("result", "secondary");
-				res.put(APP_ID, "NEED_NOT_AUTH");
-				responseJson(res);
-				return;
-			case Mapper.CHECK_NOT_MATCH:
-				//許されないoriginからのアクセス
-				logger.warn("not allow proxy url."+authDomain);
-				res.put("result", "ng");
-				responseJson(res);
-				return;
-			}
-			authUrl=authUrlSb.toString();
-		}else{
-			//TODO Web Wsの分離,
-//			boolean isSsl="true".equals(parameter.getParameter("isSsl"));
-			String protocol=parameter.getParameter("protocol");
-			String authPath=parameter.getParameter("authPath");
-			//web wsとしてマッチするか？
-			switch(checkCrossDomainWebWs(mapper,protocol,authPath,originUrl)){
-			case Mapper.CHECK_MATCH_NO_AUTH://認証の必要がない
-				res.put("result", "secondary");
-				res.put(APP_ID, "NEED_NOT_AUTH");
-				responseJson(res);
-				return;
-			case Mapper.CHECK_NOT_MATCH:
-				//許されないoriginからのアクセス
-				logger.warn("not allow web url."+authPath);
-				res.put("result", "ng");
-				responseJson(res);
-				return;
-			}
-			StringBuffer sb=new StringBuffer();
-			if(protocol=="https:"||protocol=="wss:"){
-				sb.append("https://");
-			}else{
-				sb.append("http://");
-			}
-			sb.append(config.getSelfDomain());
-			sb.append(":");
-			sb.append(config.getInt(Config.SELF_PORT));
-			sb.append(authPath);
-			authUrl=sb.toString();
+		StringBuffer authUrlSb=new StringBuffer();
+		switch(checkCrossDomainProxy(mapper,protocol,authDomain,originUrl,authUrlSb)){
+		case Mapper.CHECK_MATCH_NO_AUTH://認証の必要がない
+			res.put("result", "secondary");
+			res.put(APP_ID, "NEED_NOT_AUTH");
+			return null;
+		case Mapper.CHECK_NOT_MATCH:
+			//許されないoriginからのアクセス
+			logger.warn("not allow proxy url."+authDomain);
+			res.put("result", "false");
+			res.put("reason", "not allow proxy url");
+			responseJson(res);
+			return null;
 		}
-		
+		return authUrlSb.toString();
+	}
+	
+	private String checkSessionWebWsAuthUrl(String protocol,String authDomain,String authPath,String originUrl,JSONObject res){
+		//TODO Web Wsの分離,
+		//web wsとしてマッチするか？
+		Mapper mapper=config.getMapper();
+		switch(checkCrossDomainWebWs(mapper,protocol,authPath,originUrl)){
+		case Mapper.CHECK_MATCH_NO_AUTH://認証の必要がない
+			res.put("result", "secondary");
+			res.put(APP_ID, "NEED_NOT_AUTH");
+			return null;
+		case Mapper.CHECK_NOT_MATCH:
+			//許されないoriginからのアクセス
+			logger.warn("not allow web url."+authPath);
+			res.put("result", "false");
+			res.put("reason", "not allow web url");
+			return null;
+		}
+		//TODO ドメインのチェックをした場合は、ドメインを設定する
+		//現状WSをmainHost以外で動作させると認証できない
+		StringBuffer sb=new StringBuffer();
+		if(protocol=="https:"||protocol=="wss:"){
+			sb.append("https://");
+		}else{
+			sb.append("http://");
+		}
+		sb.append(config.getSelfDomain());
+		sb.append(":");
+		sb.append(config.getInt(Config.SELF_PORT));
+		sb.append(authPath);
+		return sb.toString();
+	}
+
+	/**
+	 * 認証の状態をチェックする
+	 * CHECK_SECONDARY_OK: Primaryは認証済みだが当該URLには未認証
+	 * CHECK_PRIMARY_ONLY:　当該URLに対して既に認証済み
+	 * CHECK_NO_PRIMARY: Primary認証未実施
+	 * 
+	 * @param cookieId
+	 * @param aplAuthUrl
+	 * @param originUrl
+	 * @return
+	 */
+	private JSONObject checkSessionAuth(String cookieId,String aplAuthUrl,String originUrl,JSONObject res){
 		StringBuffer appId=new StringBuffer();
-		int rc=authorizer.checkSecondarySessionByPrimaryId(cookieId,authUrl,appId);
+		int rc=authorizer.checkSecondarySessionByPrimaryId(cookieId,aplAuthUrl,appId);
 		switch(rc){
 		case Authorizer.CHECK_SECONDARY_OK:
 			res.put("result", "secondary");
 			res.put(APP_ID, appId.toString());
 			break;
 		case Authorizer.CHECK_PRIMARY_ONLY:
-			SessionId pathOnceSession=authorizer.createPathOnceIdByPrimary(authUrl, cookieId);
+			SessionId pathOnceSession=authorizer.createPathOnceIdByPrimary(aplAuthUrl, cookieId);
 			if(pathOnceSession!=null){
 				res.put("result", "primary");
 				res.put("pathOnceId", pathOnceSession.getId());
-				res.put("authEncUrl", authUrl +"?PH_AUTH=setAuth&pathOnceId=" + pathOnceSession.getId());
+				res.put("authEncUrl", aplAuthUrl +"?PH_AUTH=setAuth&pathOnceId=" + pathOnceSession.getId());
 			}else{
 				res.put("result", "ng");
 			}
 			break;
 		case Authorizer.CHECK_NO_PRIMARY:
+			//認証が完了した際に元のURLに戻るためtempraryIdにoriginUrlを保存する
 			SessionId tempraryId=authorizer.createTemporaryId(originUrl,null,true);
 			res.put("result", "redirectAuth");
 			res.put("authId", tempraryId.getAuthId());
 			break;
 		}
-//		String callback=parameter.getParameter("callback");
-		responseJson(res);
+		return res;
+	}
+
+	/**
+	 * @param cookieId
+	 */
+	private void checkSession(String cookieId){
+		ParameterParser parameter = getParameterParser();
+		String sourceType=parameter.getParameter("sourceType");
+		String originUrl=parameter.getParameter("originUrl");
+		String protocol=parameter.getParameter("protocol");
+		String authDomain=parameter.getParameter("authDomain");
+		String authPath=parameter.getParameter("authPath");
+		String isAjax=parameter.getParameter("isAjax");
+		String aplAuthUrl=null;
+		//TODO authUrlが,mapping対象か否か?
+		JSONObject res=new JSONObject();
+		res.put("authUrl",config.getAuthUrl());
+		if("proxy".equals(sourceType)){
+			//proxyとしてマッチするか？
+			aplAuthUrl=checkSessionProxyAuthUrl(protocol, authDomain, originUrl, res);
+		}else{
+			//web wsとしてマッチするか？
+			aplAuthUrl=checkSessionWebWsAuthUrl(protocol, authDomain, authPath, originUrl, res);
+		}
+		/* authUrl=null:認証をチェックする必要がない、urlが不当 or 認証を必要としないurl */
+		if(aplAuthUrl!=null){
+			//認証チェック
+			checkSessionAuth(cookieId, aplAuthUrl, originUrl,res);
+		}
+		if("true".equals(isAjax)){
+			responseJson(res);
+		}else{
+			setRequestAttribute("response", res.toString());
+			forwardAuthPage("/checkSessionCDFrame.vsp");
+		}
 	}
 	
 	private void cleanupAuthHeader(){
@@ -417,18 +457,19 @@ public class AuthHandler extends WebServerHandler {
 	}
 	
 	private void queryAuthCheck(){
-		ParameterParser parameter = getParameterParser();
-//		String callback=parameter.getParameter("callback");
-		
 		JSONObject json=new JSONObject();
+		json.put("authUrl",config.getAuthUrl());
 		HeaderParser requestHeader = getRequestHeader();
 		String cookieId=(String)getRequestAttribute(SessionId.SESSION_ID);
 		//有効なsecondarysessionがあるか？
 		//あれば、result:trueでレスポンス
 		if(cookieId!=null){
-			if(authorizer.isSecondaryId(cookieId)){
+			StringBuffer appId=new StringBuffer();
+			if(authorizer.isSecondaryId(cookieId,appId)){
 				json.put("result", true);
-				responseJson(json);
+				json.put(APP_ID, appId.toString());
+				setRequestAttribute("response", json.toString());
+				forwardAuthPage("/crossDomainFrame.vsp");
 				return;
 			}
 		}
@@ -440,14 +481,16 @@ public class AuthHandler extends WebServerHandler {
 		url=url.substring(0,pos);
 		
 		//AUTH_IDをレスポンス
-		SessionId temporaryId = authorizer.createTemporaryId(url,requestHeader.getPath());
-		String setCookieString = temporaryId.getSetCookieString();
-		setCookie(setCookieString);
-		String authId=temporaryId.getAuthId();
+//		SessionId temporaryId = authorizer.createTemporaryId(url,requestHeader.getPath());
+//		String setCookieString = temporaryId.getSetCookieString();
+//		setCookie(setCookieString);
+//		String authId=temporaryId.getAuthId();
 		json.put("result", false);
-		json.put(AUTH_ID, authId);
-		responseJson(json);
+//		json.put(AUTH_ID, authId);
+		setRequestAttribute("response", json.toString());
+		forwardAuthPage("/crossDomainFrame.vsp");
 	}
+	
 	private void querySetAuth(){
 		ParameterParser parameter = getParameterParser();
 		HeaderParser requestHeader = getRequestHeader();
@@ -458,6 +501,7 @@ public class AuthHandler extends WebServerHandler {
 		}
 		url=url.substring(0,pos);
 		JSONObject json=new JSONObject();
+		json.put("authUrl",config.getAuthUrl());
 		String pathOnceId=parameter.getParameter("pathOnceId");
 		String cookiePath = requestHeader.getPath();
 		String cookieDomain =requestHeader.getServer().toString();
@@ -468,13 +512,15 @@ public class AuthHandler extends WebServerHandler {
 			setCookie(setCookieString);
 			json.put("result", true);
 			json.put(APP_ID,appId.toString());
-		}else{
+		}else{//primaryが有効じゃなくなった等
 			json.put("result", false);
+			json.put("reason", "lost session");
 		}
 		setRequestAttribute("response", json.toString());
 		forwardAuthPage("/crossDomainFrame.vsp");
 	}
 	
+	/* いらないはず */
 	private void queryAuth(){
 		ParameterParser parameter = getParameterParser();
 		HeaderParser requestHeader = getRequestHeader();
@@ -510,6 +556,40 @@ public class AuthHandler extends WebServerHandler {
 		responseJson(json);
 	}
 	
+	//TODO xxx
+	private void user(String cookieId){
+		ParameterParser parameter = getParameterParser();
+		String isAjax=parameter.getParameter("isAjax");
+		User user=authorizer.getUserByPrimaryId(cookieId);
+		List<String> userRoles=null;
+		JSONObject userJson=null;
+		if(user!=null){
+			userRoles=user.getRolesList();
+			userJson=(JSONObject)user.toJson();
+		}else{
+			userRoles=null;
+			userJson=new JSONObject();
+		}
+		//直接使えるWebURLを列挙
+		List<Mapping> allowMappings=config.getMapper().getRoleWebMappings(userRoles);
+		JSONArray allowUrls=new JSONArray();
+		for(Mapping allowMapping:allowMappings){
+			String notes=allowMapping.getNotes();
+			String url=allowMapping.calcSourceUrl();
+			JSONObject urlJson=new JSONObject();
+			urlJson.put("notes", notes);
+			urlJson.put("url", url);
+			allowUrls.add(urlJson);
+		}
+		userJson.put("allowUrls", allowUrls);
+		if("true".equals(isAjax)){
+			responseJson(userJson);
+		}else{
+			setRequestAttribute("response", userJson.toString());
+			forwardAuthPage("/crossDomainFrame.vsp");
+		}
+	}
+	
 	public void startResponseReqBody() {
 		KeepAliveContext keepAliveContext=getKeepAliveContext();
 		keepAliveContext.setKeepAlive(false);
@@ -522,9 +602,9 @@ public class AuthHandler extends WebServerHandler {
 		}else if(QUERY_SETAUTH_AUTH.equals(queryAuth)){
 			querySetAuth();
 			return;
-		}else if(QUERY_AUTH_AUTH.equals(queryAuth)){
-			queryAuth();
-			return;
+//		}else if(QUERY_AUTH_AUTH.equals(queryAuth)){
+//			queryAuth();
+//			return;
 		}
 		String cookieId=(String)getRequestAttribute(SessionId.SESSION_ID);
 		HeaderParser requestHeader = getRequestHeader();
@@ -586,40 +666,17 @@ public class AuthHandler extends WebServerHandler {
 		/**
 		 * digest,basic認証の単純なメカニズムではlogoffを実現できない。
 		 * 認証直後にauthenticationヘッダを破壊+cookie付加でlogoffを実現
-		 * 
 		 * Phase1:Authenticationヘッダを使って認証、scriptを返却
 		 * Phase2:scriptからのリクエストでAuthenticationヘッダをダミーユーザに設定
 		 */
 		if(CLEANUP_AUTH_HEADER_PATH.equals(path)){
 			cleanupAuthHeader();
 			return;
-		}else if(AJAX_CHECK_SESSION_PATH.equals(path)){
+		}else if(CHECK_SESSION_PATH.equals(path)){
 			checkSession(cookieId);
 			return;
-		}else if(AJAX_USER_PATH.equals(path)){
-			User user=authorizer.getUserByPrimaryId(cookieId);
-			List<String> userRoles=null;
-			JSONObject userJson=null;
-			if(user!=null){
-				userRoles=user.getRolesList();
-				userJson=(JSONObject)user.toJson();
-			}else{
-				userRoles=null;
-				userJson=new JSONObject();
-			}
-			//直接使えるWebURLを列挙
-			List<Mapping> allowMappings=config.getMapper().getRoleWebMappings(userRoles);
-			JSONArray allowUrls=new JSONArray();
-			for(Mapping allowMapping:allowMappings){
-				String notes=allowMapping.getNotes();
-				String url=allowMapping.calcSourceUrl();
-				JSONObject urlJson=new JSONObject();
-				urlJson.put("notes", notes);
-				urlJson.put("url", url);
-				allowUrls.add(urlJson);
-			}
-			userJson.put("allowUrls", allowUrls);
-			responseJson(userJson);
+		}else if(USER_PATH.equals(path)){
+			user(cookieId);
 			return;
 		}else if(AJAX_PATHONCEID_PATH.equals(path)){
 			String authId=parameter.getParameter(AUTH_ID);
