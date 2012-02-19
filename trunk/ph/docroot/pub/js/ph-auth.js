@@ -19,8 +19,9 @@ window.ph.auth={
     }
   },
   _userCb:function(resObj){
+    var res=resObj;
     if(typeof resObj.result==="undefined"){
-      var res={result:true,user:resObj};
+      res={result:true,user:resObj};
     }
     var authCb=ph.auth._authCb;
     ph.auth._authCb=null;
