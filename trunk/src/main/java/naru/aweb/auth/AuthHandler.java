@@ -336,7 +336,7 @@ public class AuthHandler extends WebServerHandler {
 		//TODO ドメインのチェックをした場合は、ドメインを設定する
 		//現状WSをmainHost以外で動作させると認証できない
 		StringBuffer sb=new StringBuffer();
-		if(protocol=="https:"||protocol=="wss:"){
+		if("https:".equals(protocol)||"wss:".equals(protocol)){
 			sb.append("https://");
 		}else{
 			sb.append("http://");
