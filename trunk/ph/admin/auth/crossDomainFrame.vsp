@@ -7,11 +7,13 @@
 <meta http-equiv="Cache-Control" content="no-cache"> 
 <meta http-equiv="Expires" content="0"> 
 <script  type="text/javascript"><!--
+function f(){
 parent.postMessage('$esc.javascript(${response})',"*");
-var now = new Date();
-window.location="$esc.javascript(${config.publicWebUrl})" +"check.html?" +now.getTime();
+}
+//var now = new Date();
+//window.location="$esc.javascript(${config.publicWebUrl})" +"check.html?" +now.getTime();
 // --></script>
 </head>
-<body>
+<body onload="f();">
 </body>
 </html>
