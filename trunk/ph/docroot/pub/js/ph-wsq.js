@@ -7,16 +7,15 @@ if(typeof ph == "undefined"){
   }
   var wsq={
     INTERVAL:1000,
-    STAT_INIT:0,
-    STAT_AUTH:1,
-    STAT_IDLE:2,
-    STAT_WS_OPEN:3,
-    STAT_WS_CONNECT:4,
-    STAT_XHR_SEND:5,
-    STAT_CLOSE:9,
-    CB_INIT:0,
-    CB_INFO:1,
-    CB_ERROR:2,
+    STAT_INIT:'INIT',
+    STAT_AUTH:'AUTH',
+    STAT_IDLE:'IDLE',
+    STAT_WS_OPEN:'WS_OPEN',
+    STAT_WS_CONNECT:'WS_CONNECT',
+    STAT_XHR_SEND:'XHR_SEND',
+    STAT_CLOSE:'CLOSE',
+    CB_INFO:'INFO',
+    CB_ERROR:'ERROR',
 //  isStartTimer:false,
     _connections:{},
     /* 接続毎に作られるオブジェクト */
@@ -28,30 +27,43 @@ if(typeof ph == "undefined"){
       this.qnames=[];
 
       /* callback通知情報 */
-      this.cbType=this.CB_INIT;/* INIT|INFO|ERROR */
+      this.message='';
+      this.cbType=null;
       this.cause='';/* 'open','subscribe','unsubscribe','publish','qnames','close','server' */
       this.isFin=false;/* 最終呼び出しか否か */
       this.qname='';
       this.subscribeId=-1;
-      this.message='';
 
       /* 内部制御情報 */
       this._cb=cb;
       this._appId=null;//not authrize yet
       this._errCount=0;/* 連続してerrorになった数 */
       this._poolMsgs=[];
-      this._isCloseRequest;/* close要求を受け付けた */
+      this._isCloseRequest=false;/* close要求を受け付けた */
+      this._openCount=0;
+      this._isOpenCallback=false;
+      this._subscribes={};
     },
     /* */
     open:function(url,cb){/* isSsl,hostPort,cb */
-      if(this._connections[url]){
-        cb({type:'open',message:'aleady opened'});
+      var con=this._connections[url];
+      if(con){
+        if(con._isOpenCallback){
+          con._openCount++;
+          con.cbType=this.CB_INFO;
+          con.message='aleady opened.'+con._openCount;
+        }else{
+          con.cbType=this.CB_ERROR;
+          con.message='aleady openning.';
+        }
+        con.cause='open';
+        cb(con);
         return;
       }
       var con=new ph.wsq._Connection(url,cb);
       ph.wsq._connections[url]=con;
       con.stat=this.STAT_AUTH;/* auth */
-      ph.auth.auth(url,false,function(auth){
+      ph.auth.auth(url,function(auth){
         ph.wsq._authCb(true,con,auth);
       });
     },
@@ -64,8 +76,8 @@ if(typeof ph == "undefined"){
       }
       ph.log('1:appId:'+auth.appId);
       con.stat=this.STAT_IDLE;/* idle */
+      con._opencount++;
       con._setup(auth.appId);
-      this._onTimer();
     },
     //timerハンドラ
     _onTimer:function(){
@@ -73,33 +85,36 @@ if(typeof ph == "undefined"){
       for(var i in cons){
         cons[i]._onTimer();
       }
-      if(cons.length>=1){
-        setTimeout(ph.wsq._onTimer,ph.wsq.INTERVAL);
-      }
+      setTimeout(ph.wsq._onTimer,ph.wsq.INTERVAL);
     }
   }/* end of wsq */
   /* Connection method */
-  /* WebSocket */
-  wsq._Connection.prototype._onOpen=function(){
-    var con=this._connection;
-    con.stat=ph.wsq.STAT_WS_CONNECT;/* connect */
-    var sendText=con._collectMsgsText();
-    if(sendText){
-      this.send(sendText);
+  wsq._Connection.prototype._send=function(jsonText){
+    if(this._isWs){
+      this._ws.send(jsonText);
     }
   };
-  wsq._Connection.prototype._onClose=function(){
-    var con=this.this._connection;
+  /* WebSocket */
+  wsq._Connection.prototype._onWsOpen=function(){
+    var con=this._connection;
+    con.stat=ph.wsq.STAT_WS_CONNECT;/* connect */
+    var jsonText=con._collectMsgsText();
+    if(jsonText){
+      this.send(jsonText);
+    }
+  };
+  wsq._Connection.prototype._onWsClose=function(){
+    var con=this._connection;
     con.stat=ph.wsq.STAT_IDLE;/* idle */
 //    this._errCount++;
   };
-  wsq._Connection.prototype._onError=function(){
-    var con=this.this._connection;
+  wsq._Connection.prototype._onWsError=function(){
+    var con=this._connection;
     con.stat=ph.wsq.STAT_IDLE;/* idle */
     con._errCount++;
   };
-  wsq._Connection.prototype._onMessage=function(){
-    var con=this.this._connection;
+  wsq._Connection.prototype._onWsMessage=function(msg){
+    var con=this._connection;
     con._errCount=0;
     //TODO callback
   };
@@ -107,10 +122,10 @@ if(typeof ph == "undefined"){
     ph.log('Queue WebSocket start');
     this.stat=ph.wsq.STAT_WS_OPEN;/* wsOpen */
     var ws=new WebSocket(this.url);
-    ws.onopen=this._onOpen;
-    ws.onmessage=this._onMessage;
-    ws.onclose=this._onClose;
-    ws.onerror=this._onError;
+    ws.onopen=this._onWsOpen;
+    ws.onmessage=this._onWsMessage;
+    ws.onclose=this._onWsClose;
+    ws.onerror=this._onWsError;
     ws._connection=this;
     this._ws=ws;
   };
@@ -149,7 +164,7 @@ if(typeof ph == "undefined"){
     this._appId=authId;//authrize
     this._ssKey='ph.wsq.' + this.url + '@' +this._appId;
     this._restoreSs();
-    this._callback({type:'open',con:this});/* 以降はtimerからcallbackする */
+//  this._callback(ph.wsq.CB_INFO,'opened',null,false,null,null);/* 以降はtimerからcallbackする */
   };
   wsq._Connection.prototype._restoreSs=function(){
     var subscribesString=sessionStorage[this._ssKey];
@@ -157,7 +172,7 @@ if(typeof ph == "undefined"){
       this._subscribes=ph.JSON.parse(subscribesString);
 //TODO function restore
     }else{
-      _subscribes={};
+      this._subscribes={};
       sessionStorage[this._ssKey]='{}';
     }
   };
@@ -175,8 +190,6 @@ if(typeof ph == "undefined"){
     if(isFin){
       this.isFin=true;
       delete ph.wsq._connections[this.url];
-    }else{
-      this.isFin=false;
     }
     this._cb(this);
   };
@@ -189,27 +202,84 @@ if(typeof ph == "undefined"){
     return ph.JSON.stringify(msgs);
   };
   wsq._Connection.prototype._onTimer=function(){
-    if(this.stat!=ph.wsq.STAT_IDLE){
-      return;
-    }
-    if(this._isCloseRequest){
-      this.stat=ph.wsq.STAT_CLOSE;
-      this._callback({isFin:true});
-    }else if(this._errCount>=3){
-      this._callback({isFin:true,message:'connect retry over error'});
-    }else{
-      if(this.isWs){
-        this._openWebSocket();
+    if(this.stat==ph.wsq.STAT_WS_CONNECT){
+      if(!this._isOpenCallback){
+        this._isOpenCallback=true;
+        this._callback(ph.wsq.CB_INFO,'open','opened',false);
+      }
+    }else if(this.stat==ph.wsq.STAT_IDLE){
+      if(this._isCloseRequest){
+        this.stat=ph.wsq.STAT_CLOSE;
+        this._callback(ph.wsq.CB_INFO,'close','closed',true);
+      }else if(this._errCount>=3){
+        this._callback(ph.wsq.CB_ERROR,'open','connect retry over error',true);
+        this.stat=ph.wsq.STAT_CLOSE;
       }else{
-        this._sendXhr();
+        if(this.isWs){
+          this._openWebSocket();
+        }else{
+          this._sendXhr();
+        }
       }
     }
   };
   /* outer function */
-  wsq._Connection.prototype.close=function(){};
-  wsq._Connection.prototype.subscribe=function(qname,onMessageCb,subscribeId){};
-  wsq._Connection.prototype.unsubscribe=function(qname,subscribeId){};
-  wsq._Connection.prototype.publish=function(qname,obj,subscribeId){};
+  wsq._Connection.prototype.close=function(){
+    this._openCount--;
+    if(this._openCount>0){
+      return;
+    }
+    this._isCloseRequest=true;
+    if(this._ws){
+      this._ws.close();
+    }
+  };
+  wsq._Connection.prototype.subscribe=function(qname,onMessageCb,subscribeId){
+    if(this.stat!=ph.wsq.STAT_WS_CONNECT){
+      this._callback(ph.wsp.CB_ERROR,'subscribe','stat error',false,qname,subscribeId);
+      return;
+    }
+    var callbacks=this._subscribes[qname];
+    if(!callbacks){
+      callbacks={};
+      this._subscribes[qname]=callbacks;
+    }
+    callbacks[subscribeId]=onMessageCb;
+    var sendData={type:'subscribe',qname:qname,subscribeId:subscribeId};
+    this._send(sendData);
+  };
+  wsq._Connection.prototype.unsubscribe=function(qname,subscribeId){
+    var callbacks=this._subscribes[qname];
+    if(!callbacks){
+      this._callback(ph.wsp.CB_ERROR,'unsubscribe','unkown qname',false,qname,subscribeId);
+      return;
+    }
+    if(subscribeId){
+      if(!callbacks[subscribeId]){
+        this._callback(ph.wsp.CB_ERROR,'unsubscribe','unkown subscribeId',false,qname,subscribeId);
+        return;
+      }else{
+        delete callbacks[subscribeId];
+      }
+    }else{
+      delete this._subscribes[qname];
+    }
+    var sendData={type:'unsubscribe',qname:qname,subscribeId:subscribeId};
+    this._send(sendData);
+  };
+  wsq._Connection.prototype.publish=function(qname,message,subscribeId){
+    if(this.stat!=ph.wsq.STAT_WS_CONNECT){
+      this._callback(ph.wsp.CB_ERROR,'publish','stat error',false,qname,subscribeId);
+      return;
+    }
+    var sendData={type:'publish',qname:qname,subscribeId:subscribeId,message:message};
+    this._send(sendData);
+  };
   wsq._Connection.prototype.getQnames=function(qname){};
+  wsq._Connection.prototype._send=function(obj){
+    var text=ph.JSON.stringify(obj);
+    this._ws.send(text);
+  };
   ph.wsq=wsq;
+  setTimeout(ph.wsq._onTimer,ph.wsq.INTERVAL);
 ;})();
