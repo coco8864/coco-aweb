@@ -480,6 +480,9 @@ public class DispatchHandler extends ServerBaseHandler {
 					mapping = DispatchResponseHandler.forbidden("fail to authrize.");
 					return mapping;
 				}
+				
+				//setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CHECK);
+				
 				requestContext.registerAuthSession(authSession);
 				return mapping;
 			}
@@ -576,6 +579,8 @@ public class DispatchHandler extends ServerBaseHandler {
 				keepAliveContext.getRequestContext().allocAccessLog();
 				forwardMapping(null, requestHeader, DispatchResponseHandler.authMapping(), null, false);
 				return;
+			}else if(query.startsWith("PH_AUTH_CHECK")){
+				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CHECK);
 			}
 		}
 		//roleベースの認証は、mapping処理の中で実施

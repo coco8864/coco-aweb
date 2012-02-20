@@ -50,6 +50,11 @@ public class AuthHandler extends WebServerHandler {
 	public static String QUERY_AUTH_AUTH="auth";
 	public static String QUERY_SETAUTH_AUTH="setAuth";
 	
+	public static String AUTH_MARK="authMark";
+	public static String AUTH_CHECK="CHECK";
+	public static String AUTH_AUTHORIZE="AUTHORIZE";
+	public static String AUTH_SET="SET";
+	
 	//admin/auth配下のコンテンツを返却する。
 	public void forwardAuthPage(String fileName){
 		MappingResult mapping=getRequestMapping();
