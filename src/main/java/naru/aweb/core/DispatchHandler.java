@@ -460,10 +460,16 @@ public class DispatchHandler extends ServerBaseHandler {
 		return mapping;
 	}
 	
+	private MappingResult authMarkResponse(String authMark,int condition){
+		return null;
+	}
+	
 	// 認証情報があれば取得してkeepAliveContextに設定する
 	private MappingResult checkPhAuth(HeaderParser requestHeader,
 			KeepAliveContext keepAliveContext,RequestContext requestContext, 
 			MappingResult mapping) {
+		String authMark=(String)getRequestAttribute(AuthHandler.AUTH_MARK);
+		
 		String cookieId=(String)getRequestAttribute(SessionId.SESSION_ID);
 		if(cookieId!=null){
 			//TODO もっと適切な場所がないか？
@@ -477,18 +483,24 @@ public class DispatchHandler extends ServerBaseHandler {
 				if(!authorizer.authorize(mapping.getMapping(),authSession)){
 					authSession.unref();
 					mapping.unref();
+					if(authMark!=null){
+						return authMarkResponse(authMark,1);
+					}
 					mapping = DispatchResponseHandler.forbidden("fail to authrize.");
 					return mapping;
 				}
-				
-				//setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CHECK);
-				
 				requestContext.registerAuthSession(authSession);
+				if(authMark!=null){
+					return authMarkResponse(authMark,2);
+				}
 				return mapping;
 			}
 		}
 		List<String> mappingRoles = mapping.getRolesList();
 		if (mappingRoles.size() == 0) {// 認証を必要としない,/pub,/proxy.pac,/auth
+			if(authMark!=null){
+				return authMarkResponse(authMark,3);
+			}
 			return mapping;
 		}
 		//認可処理
