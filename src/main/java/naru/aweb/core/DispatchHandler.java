@@ -464,12 +464,6 @@ public class DispatchHandler extends ServerBaseHandler {
 	private MappingResult checkPhAuth(HeaderParser requestHeader,
 			KeepAliveContext keepAliveContext,RequestContext requestContext, 
 			MappingResult mapping) {
-		boolean isAuthId=false;
-		if(!requestHeader.isProxy()&&!requestHeader.isWs()){
-			String path=mapping.getResolvePath();
-			isAuthId=AuthHandler.AJAX_AUTHID_PATH.equals(path);
-		}
-		
 		String cookieId=(String)getRequestAttribute(SessionId.SESSION_ID);
 		if(cookieId!=null){
 			//TODO もっと適切な場所がないか？
@@ -487,20 +481,13 @@ public class DispatchHandler extends ServerBaseHandler {
 					return mapping;
 				}
 				requestContext.registerAuthSession(authSession);
-				if(isAuthId){
-					mapping.unref();
-					//javascript側でセションを識別するID
-					mapping = DispatchResponseHandler.ajaxAleadyAuth(DataUtil.digestHex(cookieId.getBytes()));
-				}
 				return mapping;
 			}
 		}
 		List<String> mappingRoles = mapping.getRolesList();
 		if (mappingRoles.size() == 0) {// 認証を必要としない,/pub,/proxy.pac,/auth
-//			keepAliveContext.setAuthSession(AuthSession.UNAUTH_SESSION);
 			return mapping;
 		}
-		
 		//認可処理
 		setRequestAttribute(AuthHandler.AUTHORIZE_MARK, AuthHandler.AUTHORIZE_MARK);
 		mapping.forwardAuth();
@@ -589,11 +576,6 @@ public class DispatchHandler extends ServerBaseHandler {
 				keepAliveContext.getRequestContext().allocAccessLog();
 				forwardMapping(null, requestHeader, DispatchResponseHandler.authMapping(), null, false);
 				return;
-//			}else if(query.startsWith("PH_AUTH=auth")){
-//				setRequestAttribute(AuthHandler.QUERY_AUTH_MARK, AuthHandler.QUERY_AUTH_AUTH);
-//				keepAliveContext.getRequestContext().allocAccessLog();
-//				forwardMapping(null, requestHeader, DispatchResponseHandler.authMapping(), null, false);
-//				return;
 			}
 		}
 		//roleベースの認証は、mapping処理の中で実施

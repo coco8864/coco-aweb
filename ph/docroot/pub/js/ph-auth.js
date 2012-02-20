@@ -10,14 +10,6 @@ window.ph.auth={
   _userPath:'/user',
   _checkAuthPath:'/checkSession?',
   _checkAplQuery:'?PH_AUTH=check',
-  _checkCb:function(res){
-    if(res.result){
-      var authCb=ph.auth._authCb;
-      ph.auth._authCb=null;
-      authCb(res);
-      return;
-    }
-  },
   _userCb:function(resObj){
     var res=resObj;
     if(typeof resObj.result==="undefined"){
@@ -105,9 +97,7 @@ window.ph.auth={
     if(!authUrl){//指定がなければ自分をダウンロードしたauthUrl
       authUrl=ph.authUrl;
     }
-    var req={type:'getUser'};
     this._authCb=cb;
-    this._authCheckReq=req;
     ph.auth._user(authUrl);
   },
   _reqestCb:null,
@@ -115,7 +105,7 @@ window.ph.auth={
   _onMessage:function(ev){
 //  ph.dump1(ev);
     var url=ph.auth._url;
-    if(ev.source.location.href!==url){
+    if(url.lastIndexOf(ev.origin, 0)!=0){
       return;
     }
     var reqestCb=ph.auth._reqestCb;
@@ -149,7 +139,7 @@ ph.jQuery(function(){
   }else if(window.attachEvent){
     window.attachEvent('onmessage',ph.auth._onMessage);
   }
-  ph.jQuery("body").append('<iframe width="0" height="0" frameborder="no" name="' + ph.auth._authFrameName + '" onload=\'setTimeout(ph.auth._frameLoad,1000);\'></iframe>');
+  ph.jQuery("body").append('<iframe width="0" height="0" frameborder="no" name="' + ph.auth._authFrameName + '" onload=\'setTimeout(ph.auth._frameLoad,2000);\'></iframe>');
 });
 
 })();
