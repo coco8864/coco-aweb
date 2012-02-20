@@ -38,7 +38,7 @@ public class AuthHandler extends WebServerHandler {
 	public static String USER_PATH="/user";//loginユーザおよび使えるWebURLを問い合わせるAPI
 	public static String AJAX_PATHONCEID_PATH="/ajaxPathOnceId";//pathがこれで終わればajaxからの認可
 	public static String AJAX_SETAUTH_PATH="/ajaxSetAuth";//
-	public static String AJAX_AUTHID_PATH="/ajaxAuthId";//認可済みで無い場合、authIdを返却
+//	public static String AJAX_AUTHID_PATH="/ajaxAuthId";//認可済みで無い場合、authIdを返却
 	private static String CLEANUP_AUTH_HEADER_PATH="/cleanupAuthHeader";//auth header削除用path
 	private static String CHECK_SESSION_PATH="/checkSession";//webSocket,ajax api認証を行う場合呼び出す前にこのパスをiframeに表示
 	private static String LOGOUT_PATH="/logout";//logout用
@@ -602,9 +602,6 @@ public class AuthHandler extends WebServerHandler {
 		}else if(QUERY_SETAUTH_AUTH.equals(queryAuth)){
 			querySetAuth();
 			return;
-//		}else if(QUERY_AUTH_AUTH.equals(queryAuth)){
-//			queryAuth();
-//			return;
 		}
 		String cookieId=(String)getRequestAttribute(SessionId.SESSION_ID);
 		HeaderParser requestHeader = getRequestHeader();
@@ -619,17 +616,7 @@ public class AuthHandler extends WebServerHandler {
 			String url=requestHeader.getAddressBar(isSsl());
 			String cookiePath=mapping.getSourcePath();
 			String cookieDomain=requestHeader.getServer().toString();
-			if(AJAX_AUTHID_PATH.equals(path)){//WEB && POST
-				url=url.substring(0, url.length()-AJAX_AUTHID_PATH.length());
-				SessionId temporaryId = authorizer.createTemporaryId(url,cookiePath);
-				String setCookieString = temporaryId.getSetCookieString();
-				setCookie(setCookieString);
-				String authId=temporaryId.getAuthId();
-				JSONObject json=new JSONObject();
-				json.put("result", false);
-				json.put(AUTH_ID, authId);
-				responseJson(json);
-			}else if(AJAX_SETAUTH_PATH.equals(path)){//WEB && POST
+			if(AJAX_SETAUTH_PATH.equals(path)){//WEB && POST
 				url=url.substring(0, url.length()-AJAX_SETAUTH_PATH.length());
 				String pathId=parameter.getParameter("pathOnceId");
 				StringBuffer appId=new StringBuffer();
