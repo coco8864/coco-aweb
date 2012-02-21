@@ -493,6 +493,13 @@ public class Authorizer implements Timer{
 		return createPathOnceIdByPrimary(null,cookieId);
 	}
 	
+	/**
+	 * Primary‚ª‚ ‚ê‚Î‘ÎÛURLŒü‚¯‚ÌPathOnceId‚ğì¬
+	 * Primary‚ª‚È‚¯‚ê‚Înull‚ğ•Ô‹p
+	 * @param url
+	 * @param cookieId
+	 * @return
+	 */
 	public SessionId createPathOnceIdByPrimary(String url, String cookieId) {
 		if(cookieId==null){
 			return null;

@@ -192,7 +192,6 @@ public class AuthHandler extends WebServerHandler {
 			forbidden("fail to authorize because of websocket");
 			return;
 		}
-		
 		String urlWithPathId = requestHeader.getAddressBar(isSsl());
 		String url=urlWithPathId;
 		StringBuffer urlSb=new StringBuffer();
@@ -207,7 +206,6 @@ public class AuthHandler extends WebServerHandler {
 		} else {
 			cookiePath = mapping.getSourcePath();
 		}
-		Mapping m=mapping.getMapping();
 		//pathIdがあるか？cookieIdがあるか？有効か？
 		if(pathId==null || cookieId==null || authorizer.isTemporaryId(cookieId,url)==false){//pathId,cookieIdいずれかが存在しない
 			// redirect /auth
@@ -222,6 +220,7 @@ public class AuthHandler extends WebServerHandler {
 		}
 		
 		//有効なPathOnceIdが付加されているか、権限はあるか？
+		Mapping m=mapping.getMapping();
 		String setCookieString=authorizer.createSecondarySetCookieStringFromPathOnceId(pathId,url,m,isSsl(),cookieDomain,cookiePath,null);
 		if(setCookieString==null){
 			forbidden("fail to authorize.");
@@ -614,13 +613,29 @@ public class AuthHandler extends WebServerHandler {
 		
 		//1)他のmappingを使おうとしたが認可が必要だったのでdispatchされた場合
 		//2)認可が終了してsecondaryIdを作成する場合
-		if(getRequestAttribute(AUTHORIZE_MARK)!=null){
+		String authMark=(String)getRequestAttribute(AUTHORIZE_MARK);
+		if(authMark!=null){
 			//認可(authorize)処理
 			MappingResult mapping=getRequestMapping();
 			String path=mapping.getResolvePath();
 			String url=requestHeader.getAddressBar(isSsl());
 			String cookiePath=mapping.getSourcePath();
 			String cookieDomain=requestHeader.getServer().toString();
+			if(authMark.equals(AUTH_CHECK)){
+				//secondaryがないことは判明済み
+				//AUTH_AUTHORIZEにリダイレクト,戻ってくる時のURLがweb直接の場合と違う
+				return;
+			}else if(authMark.equals(AUTH_SET)){
+				String pathId=parameter.getParameter("pathOnceId");
+				Mapping m=mapping.getMapping();
+				String setCookieString=authorizer.createSecondarySetCookieStringFromPathOnceId(pathId,url,m,isSsl(),cookieDomain,cookiePath,null);
+				if(setCookieString==null){
+					//forbidden("fail to authorize.");
+					return;
+				}
+				//成功コンテンツ,appId,AuthUrl,User
+				return;
+			}
 			if(AJAX_SETAUTH_PATH.equals(path)){//WEB && POST
 				url=url.substring(0, url.length()-AJAX_SETAUTH_PATH.length());
 				String pathId=parameter.getParameter("pathOnceId");
@@ -644,6 +659,12 @@ public class AuthHandler extends WebServerHandler {
 			}
 			return;
 		}
+		
+		//AUTH_AUTHORIZEの場合
+		//primaryを探してあればPathOnceIdを作成してAUTH_SETにredirect
+		//primaryがなければ,primaryがない旨のレスポンス、このとき戻り先のURLをAuthIdに埋め込む
+		//checkSessionAuth(String cookieId,String aplAuthUrl,String originUrl,JSONObject res)
+		//の処理
 		
 		//直接呼び出された場合
 		MappingResult mapping=getRequestMapping();

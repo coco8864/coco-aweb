@@ -30,6 +30,7 @@ import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.Mapper;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.util.ServerParser;
+import net.sf.json.JSONObject;
 
 /**
  * DispatchHanderは、リクエストヘッダの解析を専門に行う
@@ -460,8 +461,39 @@ public class DispatchHandler extends ServerBaseHandler {
 		return mapping;
 	}
 	
-	private MappingResult authMarkResponse(String authMark,int condition){
-		return null;
+	private enum AUTH_STAT{
+		SUCCESS,/* 認証済み */
+		FAIL,/* 認証済み */
+		PUBLIC/* 認証の必要なし */
+	}
+	
+	//TODO xxx
+	private MappingResult authMarkResponse(String authMark,AUTH_STAT stat,AuthSession authSession){
+		
+		JSONObject response=new JSONObject();
+		response.element("authUrl",config.getAuthUrl());
+		if(AuthHandler.AUTH_SET.equals(authMark)){
+			/* AUTH_SET時は、まだ未認証のはず */
+			response.element("result", false);
+			response.element("reason", "seequence error");
+		}else{
+			switch(stat){
+			case SUCCESS:
+				User user=authSession.getUser();
+				response.element("result", true);
+				response.element("appId", true);
+				break;
+			case PUBLIC:
+				response.element("result", true);
+				response.element("appId", "public");
+				break;
+			case FAIL:
+				response.element("result", false);
+				response.element("reason", "lack of right");
+				break;
+			}
+		}
+		return DispatchResponseHandler.crossDomainFrame(response);
 	}
 	
 	// 認証情報があれば取得してkeepAliveContextに設定する
@@ -484,14 +516,14 @@ public class DispatchHandler extends ServerBaseHandler {
 					authSession.unref();
 					mapping.unref();
 					if(authMark!=null){
-						return authMarkResponse(authMark,1);
+						return authMarkResponse(authMark,AUTH_STAT.FAIL,authSession);
 					}
-					mapping = DispatchResponseHandler.forbidden("fail to authrize.");
+					mapping = DispatchResponseHandler.forbidden("lack of right");
 					return mapping;
 				}
 				requestContext.registerAuthSession(authSession);
 				if(authMark!=null){
-					return authMarkResponse(authMark,2);
+					return authMarkResponse(authMark,AUTH_STAT.SUCCESS,authSession);
 				}
 				return mapping;
 			}
@@ -499,12 +531,16 @@ public class DispatchHandler extends ServerBaseHandler {
 		List<String> mappingRoles = mapping.getRolesList();
 		if (mappingRoles.size() == 0) {// 認証を必要としない,/pub,/proxy.pac,/auth
 			if(authMark!=null){
-				return authMarkResponse(authMark,3);
+				return authMarkResponse(authMark,AUTH_STAT.PUBLIC,null);
 			}
 			return mapping;
 		}
+		
+		if(authMark==null){
+			authMark=AuthHandler.AUTHORIZE_MARK;
+		}
 		//認可処理
-		setRequestAttribute(AuthHandler.AUTHORIZE_MARK, AuthHandler.AUTHORIZE_MARK);
+		setRequestAttribute(AuthHandler.AUTHORIZE_MARK,authMark);
 		mapping.forwardAuth();
 		return mapping;
 	}
@@ -591,8 +627,12 @@ public class DispatchHandler extends ServerBaseHandler {
 				keepAliveContext.getRequestContext().allocAccessLog();
 				forwardMapping(null, requestHeader, DispatchResponseHandler.authMapping(), null, false);
 				return;
-			}else if(query.startsWith("PH_AUTH_CHECK")){
+			}else if(query.startsWith("__PH_AUTH_CHECK__")){
 				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CHECK);
+			}else if(query.startsWith("__PH_AUTH_SET__")){
+				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_SET);
+//			}else if(query.startsWith("__PH_AUTH_AUTHORIZE__")){
+//				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_AUTHORIZE);
 			}
 		}
 		//roleベースの認証は、mapping処理の中で実施
