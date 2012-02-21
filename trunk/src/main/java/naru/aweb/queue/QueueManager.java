@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.HashMap;
 
 import naru.async.Timer;
+import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
 import naru.async.timer.TimerManager;
 import net.sf.json.JSON;
@@ -70,17 +71,20 @@ public class QueueManager implements Timer{
 		interval=TimerManager.setInterval(QUEUE_CHECK_INTERVAL, this, null);
 	}
 	private String createId(){
-		byte[] bytes=new byte[16];
+		byte[] bytes = (byte[]) PoolManager.getArrayInstance(byte.class, 16);
+		String id;
 		while(true){
 			synchronized(idQueueMap){
 				random.nextBytes(bytes);
-				String id=DataUtil.byteToString(bytes);
+				id=DataUtil.byteToString(bytes);
 				if( idQueueMap.get(id)==null){
-					return id;
+					break;
 				}
 			}
 
 		}
+		PoolManager.poolArrayInstance(bytes);
+		return id;
 	}
 	
 	static QueueManager instance=new QueueManager();

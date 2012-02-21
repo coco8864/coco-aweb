@@ -808,12 +808,9 @@ public class WebServerHandler extends ServerBaseHandler {
 		return forwardHandler(handlerClass, true);
 	}
 
-	public ChannelHandler forwardHandler(Class handlerClass,
-			boolean callStartMethod) {
-		logger.debug("#forwardHandler cid:" + getChannelId() + ":"
-				+ handlerClass.getName());
-		WebServerHandler handler = (WebServerHandler) super
-				.allocHandler(handlerClass);
+	public ChannelHandler forwardHandler(Class handlerClass,boolean callStartMethod) {
+		logger.debug("#forwardHandler cid:" + getChannelId() + ":"+ handlerClass.getName());
+		WebServerHandler handler = (WebServerHandler)super.allocHandler(handlerClass);
 		handler.responseHeader.setAllHeaders(responseHeader);
 		// request body‚ğ‘S•”“Ç‚ñ‚Åfoward‚µ‚æ‚¤‚Æ‚µ‚Ä‚¢‚é‚Ì‚©H“Ç‚Ü‚¸‚Éfoward‚µ‚æ‚¤‚Æ‚µ‚Ä‚¢‚é‚©‚ª–â‘è
 		handler.requestContentLength = requestContentLength;
