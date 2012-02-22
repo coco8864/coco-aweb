@@ -1,6 +1,5 @@
 package naru.aweb.auth;
 
-import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -10,7 +9,6 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 
 import naru.async.pool.PoolBase;
-import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
 import naru.aweb.config.Config;
 import naru.aweb.config.User;
@@ -19,18 +17,21 @@ public class AuthSession extends PoolBase{
 	private static Config config=Config.getConfig();
 	public static AuthSession UNAUTH_SESSION=new AuthSession(new User(),"");
 	private static Logger logger = Logger.getLogger(AuthSession.class);
-	private static final String APPID_RANDOM_ENTOROPY = "appIdRandomEntoropy";
-	private static SecureRandom appIdRandom=config.getRandom(APPID_RANDOM_ENTOROPY);
-	private static String serverId=DataUtil.digestHex(config.getAuthUrl().getBytes());
+	private static String serverId=DataUtil.digestHex(config.getAuthUrl().getBytes())+System.currentTimeMillis()+"#";
+	private static long appIdSeq=0;
 	
 	private User user;
 	private String token;//CSRF対策
-	private String appId;//クライアントでこのセションを識別するID
+	private String appId;//クライアントでこのセションを識別するID,他サーバを含めて一意が理想
 	private Map<String,Object> attribute=new HashMap<String,Object>();//sessionに付随する属性
 	private boolean isLogout=false;
 	private SessionId sessionId;
 	private Set<LogoutEvent> logoutEvents=new HashSet<LogoutEvent>();
 	private Set<AuthSession> secandarySessions=new HashSet<AuthSession>();
+	
+	private synchronized static long getAppIdSeq(){
+		return appIdSeq++;
+	}
 	
 	public void recycle() {
 		Iterator<Object> itr=attribute.values().iterator();
@@ -55,10 +56,7 @@ public class AuthSession extends PoolBase{
 	void init(User user,String token){
 		this.user=user;
 		this.token=token;
-		byte[] bytes = (byte[]) PoolManager.getArrayInstance(byte.class, 16);
-		appIdRandom.nextBytes(bytes);
-		this.appId=serverId+DataUtil.digestHex(bytes);
-		PoolManager.poolArrayInstance(bytes);
+		this.appId=serverId+getAppIdSeq();
 	}
 	
 	public AuthSession createSecondarySession(){

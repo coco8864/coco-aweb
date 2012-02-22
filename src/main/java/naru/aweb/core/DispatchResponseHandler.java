@@ -28,7 +28,7 @@ public class DispatchResponseHandler extends WebServerHandler {
 	private static final String AUTH_HEADER_NAME = "authenticateHeaderName";
 	private static final String AUTH_HEADER = "authenticateHeader";
 	private static final String AJAX_RESPONSE = "ajaxResponse";
-	private static final String RESPONSE_OBJECT = "response";
+	private static final String RESPONSE = "response";
 
 	private enum Type {
 		FORBIDDEN, NOT_FOUND, REDIRECT,AJAX_ALEADY_AUTH,AUTHENTICATE,CROSS_DOMAIN_FRAME
@@ -69,7 +69,7 @@ public class DispatchResponseHandler extends WebServerHandler {
 	
 	public static MappingResult crossDomainFrame(Object response) {
 		MappingResult mapping = createDispatchMapping(Type.CROSS_DOMAIN_FRAME);
-		mapping.setAttribute(RESPONSE_OBJECT, response);
+		mapping.setAttribute(RESPONSE, response);
 		return mapping;
 	}
 	
@@ -139,6 +139,7 @@ public class DispatchResponseHandler extends WebServerHandler {
 		case CROSS_DOMAIN_FRAME:
 			mapping.setResolvePath("/auth/crossDomainFrame.vsp");
 			mapping.setDesitinationFile(config.getAdminDocumentRoot());
+			setRequestAttribute(RESPONSE, mapping.getAttribute(RESPONSE));
 			forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
 			break;
 		default:
