@@ -11,7 +11,6 @@ import org.apache.log4j.Logger;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.async.ssl.SslAdapter;
-import naru.async.store.DataUtil;
 import naru.async.store.Page;
 import naru.async.store.Store;
 import naru.aweb.auth.AuthHandler;
@@ -467,12 +466,10 @@ public class DispatchHandler extends ServerBaseHandler {
 		PUBLIC/* 認証の必要なし */
 	}
 	
-	//TODO xxx
 	private MappingResult authMarkResponse(String authMark,AUTH_STAT stat,AuthSession authSession){
-		
 		JSONObject response=new JSONObject();
 		response.element("authUrl",config.getAuthUrl());
-		if(AuthHandler.AUTH_SET.equals(authMark)){
+		if(AuthHandler.AUTH_CD_SET.equals(authMark)){
 			/* AUTH_SET時は、まだ未認証のはず */
 			response.element("result", false);
 			response.element("reason", "seequence error");
@@ -481,7 +478,8 @@ public class DispatchHandler extends ServerBaseHandler {
 			case SUCCESS:
 				User user=authSession.getUser();
 				response.element("result", true);
-				response.element("appId", true);
+				response.element("appId", authSession.getAppId());
+				response.element("user", user.toJson());
 				break;
 			case PUBLIC:
 				response.element("result", true);
@@ -523,6 +521,7 @@ public class DispatchHandler extends ServerBaseHandler {
 				}
 				requestContext.registerAuthSession(authSession);
 				if(authMark!=null){
+					mapping.unref();
 					return authMarkResponse(authMark,AUTH_STAT.SUCCESS,authSession);
 				}
 				return mapping;
@@ -627,10 +626,10 @@ public class DispatchHandler extends ServerBaseHandler {
 				keepAliveContext.getRequestContext().allocAccessLog();
 				forwardMapping(null, requestHeader, DispatchResponseHandler.authMapping(), null, false);
 				return;
-			}else if(query.startsWith("__PH_AUTH_CHECK__")){
-				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CHECK);
-			}else if(query.startsWith("__PH_AUTH_SET__")){
-				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_SET);
+			}else if(query.startsWith("__PH_AUTH_CD_CHECK__")){
+				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_CHECK);
+			}else if(query.startsWith("__PH_AUTH_CD_SET__")){
+				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_SET);
 //			}else if(query.startsWith("__PH_AUTH_AUTHORIZE__")){
 //				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_AUTHORIZE);
 			}
