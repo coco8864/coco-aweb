@@ -476,10 +476,8 @@ public class DispatchHandler extends ServerBaseHandler {
 		}else{
 			switch(stat){
 			case SUCCESS:
-				User user=authSession.getUser();
 				response.element("result", true);
 				response.element("appId", authSession.getAppId());
-				response.element("user", user.toJson());
 				break;
 			case PUBLIC:
 				response.element("result", true);
@@ -626,10 +624,16 @@ public class DispatchHandler extends ServerBaseHandler {
 				keepAliveContext.getRequestContext().allocAccessLog();
 				forwardMapping(null, requestHeader, DispatchResponseHandler.authMapping(), null, false);
 				return;
-			}else if(query.startsWith("__PH_AUTH_CD_CHECK__")){
+			}else if(query.startsWith(AuthHandler.QUERY_CD_CHECK)){
 				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_CHECK);
-			}else if(query.startsWith("__PH_AUTH_CD_SET__")){
+			}else if(query.startsWith(AuthHandler.QUERY_CD_WS_CHECK)){
+				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_WS_CHECK);
+				isWs=true;
+			}else if(query.startsWith(AuthHandler.QUERY_CD_SET)){
 				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_SET);
+			}else if(query.startsWith(AuthHandler.QUERY_CD_WS_SET)){
+				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_WS_SET);
+				isWs=true;
 //			}else if(query.startsWith("__PH_AUTH_AUTHORIZE__")){
 //				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_AUTHORIZE);
 			}
