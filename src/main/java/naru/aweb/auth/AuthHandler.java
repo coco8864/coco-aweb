@@ -51,8 +51,17 @@ public class AuthHandler extends WebServerHandler {
 	
 	public static String AUTH_MARK="authMark";
 	public static String AUTH_CD_CHECK="crossDomainAuthCheck";
+	public static String AUTH_CD_WS_CHECK="crossDomainAuthWsCheck";
 	public static String AUTH_CD_AUTHORIZE="crossDomainAuthorize";
 	public static String AUTH_CD_SET="crossDomainAuthSet";
+	public static String AUTH_CD_WS_SET="crossDomainAuthWsSet";
+	
+	public static String QUERY_CD_CHECK="__PH_AUTH__=__CD_CHECK__";
+	public static String QUERY_CD_WS_CHECK="__PH_AUTH__=__CD_WS_CHECK__";
+	public static String QUERY_CD_AUTHORIZE="__PH_AUTH__=__CD_AUTHORIZE__";
+	public static String QUERY_CD_SET="__PH_AUTH__=__CD_SET__";
+	public static String QUERY_CD_WS_SET="__PH_AUTH__=__CD_WS_SET__";
+	
 	
 	//admin/auth配下のコンテンツを返却する。
 	public void forwardAuthPage(String fileName){
@@ -186,63 +195,74 @@ public class AuthHandler extends WebServerHandler {
 		crossDomainResponse(response,setCookieString);
 	}
 	
-	private void crossDomainCheck(HeaderParser requestHeader,MappingResult mapping){
+	private String getCrossDomainAplUrl(boolean isWs,HeaderParser requestHeader,String cookiePath){
 		StringBuffer url=new StringBuffer();
 		if(isSsl()){
-			url.append("https://");
+			if(isWs){
+				url.append("wss://");
+			}else{
+				url.append("https://");
+			}
 		}else{
-			url.append("http://");
+			if(isWs){
+				url.append("ws://");
+			}else{
+				url.append("http://");
+			}
 		}
 		url.append(requestHeader.getServer().toString());
-		String cookiePath = null;
-		if (requestHeader.isProxy()) {
-			cookiePath = "/";
-		} else {
-			cookiePath = mapping.getSourcePath();
+		if (!requestHeader.isProxy()) {
 			url.append(cookiePath);
 		}
 		url.append("/");
-		SessionId temporaryId = authorizer.createTemporaryId(url.toString(),cookiePath);
+		return url.toString();
+	}
+	
+	private String getCrossDomainCookiePath(HeaderParser requestHeader,MappingResult mapping){
+		if (requestHeader.isProxy()) {
+			return "/";
+		} else {
+			return mapping.getSourcePath();
+		}
+	}
+	
+	private void crossDomainCheck(boolean isWs,HeaderParser requestHeader,MappingResult mapping){
+		String cookiePath=getCrossDomainCookiePath(requestHeader, mapping);
+		String aplUrl=getCrossDomainAplUrl(isWs,requestHeader, cookiePath);
+		
+		SessionId temporaryId = authorizer.createTemporaryId(aplUrl,cookiePath);
 		String setCookieString = temporaryId.getSetCookieString();
 		String authId=temporaryId.getAuthId();
 		
 		StringBuffer sb=new StringBuffer(authorizer.getAuthUrl());
 		sb.append(AUTHENTICATE_PATH);
-		sb.append("?__PH_AUTH_CD_AUTHORIZE__&");
+		sb.append("?");
+		sb.append(QUERY_CD_AUTHORIZE);
+		sb.append("&");
 		sb.append(AUTH_ID);
 		sb.append('=');
 		sb.append(authId);
 		crossDomainRedirect(sb.toString(),setCookieString);
 	}
 	
-	private void crossDomainSet(HeaderParser requestHeader,MappingResult mapping,String pathId,String cookieId){
+	private void crossDomainSet(boolean isWs,HeaderParser requestHeader,MappingResult mapping,String pathId,String cookieId){
 		JSONObject response=new JSONObject();
 		response.element("authUrl", config.getAuthUrl());
-		String urlWithPathId = requestHeader.getAddressBar(isSsl());
-		String url=urlWithPathId;
-		StringBuffer urlSb=new StringBuffer();
-//		String pathId=SessionId.getPathId(urlWithPathId,urlSb);
-//		if(pathId!=null){
-//			url=urlSb.toString();
-//		}
-		String cookiePath = null;
+		
+		String cookiePath=getCrossDomainCookiePath(requestHeader, mapping);
+		String aplUrl=getCrossDomainAplUrl(isWs,requestHeader, cookiePath);
 		String cookieDomain =requestHeader.getServer().toString();
-		if (requestHeader.isProxy()) {
-			cookiePath = "/";
-		} else {
-			cookiePath = mapping.getSourcePath();
-		}
+		
 		//pathIdがあるか？cookieIdがあるか？有効か？
-		if(pathId==null || cookieId==null || authorizer.isTemporaryId(cookieId,url)==false){//pathId,cookieIdいずれかが存在しない
+		if(pathId==null || cookieId==null || authorizer.isTemporaryId(cookieId,aplUrl)==false){//pathId,cookieIdいずれかが存在しない
 			response.element("result", false);
 			response.element("reason", "lack of set auth");
 			crossDomainResponse(response,null);
 			return;
 		}
-		
 		//有効なPathOnceIdが付加されているか、権限はあるか？
 		Mapping m=mapping.getMapping();
-		SessionId secondaryId=authorizer.createSecondarySetCookieStringFromPathOnceId(pathId,url,m,isSsl(),cookieDomain,cookiePath,null);
+		SessionId secondaryId=authorizer.createSecondarySetCookieStringFromPathOnceId(pathId,aplUrl,m,isSsl(),cookieDomain,cookiePath,null);
 		if(secondaryId==null){
 			response.element("result", false);
 			response.element("reason", "logoffed");
@@ -251,8 +271,7 @@ public class AuthHandler extends WebServerHandler {
 		}
 		response.element("result", true);
 		response.element("appId", secondaryId.getAuthSession().getAppId());
-		response.element("user", secondaryId.getAuthSession().getUser().toJson());
-		crossDomainResponse(response,null);
+		crossDomainResponse(response,secondaryId.getSetCookieString());
 	}
 	
 	private void crossDomainAuthorize(String cookieId,String authId,String originUrl){
@@ -275,7 +294,12 @@ public class AuthHandler extends WebServerHandler {
 		case Authorizer.CHECK_PRIMARY_ONLY:
 			SessionId pathOnceSession=authorizer.createPathOnceIdByPrimary(url, cookieId);
 			if(pathOnceSession!=null){
-				crossDomainRedirect(url +"?__PH_AUTH_CD_SET__&pathOnceId=" + pathOnceSession.getId(), null);
+				if(url.startsWith("ws")){
+					url=url.replaceAll("^ws", "http");
+					crossDomainRedirect(url +"?" + QUERY_CD_WS_SET + "&pathOnceId=" + pathOnceSession.getId(), null);
+				}else{
+					crossDomainRedirect(url +"?" + QUERY_CD_SET + "&pathOnceId=" + pathOnceSession.getId(), null);
+				}
 				return;
 			}else{
 				response.element("result", false);
@@ -286,7 +310,8 @@ public class AuthHandler extends WebServerHandler {
 			//認証が完了した際に元のURLに戻るためtempraryIdにoriginUrlを保存する,この場合originUrlは関係のない別ドメインの可能性あり
 			SessionId tempraryId=authorizer.createTemporaryId(originUrl,null,true);
 			response.element("result", "redirectForAuthorizer");
-			response.put("authId", tempraryId.getAuthId());
+			response.element("location", config.getAuthUrl()+"?authId="+tempraryId.getAuthId());
+//			response.put("authId", tempraryId.getAuthId());
 			break;
 		}
 		crossDomainResponse(response,null);
@@ -749,11 +774,17 @@ public class AuthHandler extends WebServerHandler {
 			if(authMark.equals(AUTH_CD_CHECK)){
 				//secondaryがないことは判明済み
 				//AUTH_AUTHORIZEにリダイレクト
-				crossDomainCheck(requestHeader, mapping);
+				crossDomainCheck(false,requestHeader, mapping);
 				return;
+			}else if(authMark.equals(AUTH_CD_WS_CHECK)){
+				crossDomainCheck(true,requestHeader, mapping);
 			}else if(authMark.equals(AUTH_CD_SET)){
 				String authId=parameter.getParameter("pathOnceId");
-				crossDomainSet(requestHeader, mapping,authId,cookieId);
+				crossDomainSet(false,requestHeader, mapping,authId,cookieId);
+				return;
+			}else if(authMark.equals(AUTH_CD_WS_SET)){
+				String authId=parameter.getParameter("pathOnceId");
+				crossDomainSet(true,requestHeader, mapping,authId,cookieId);
 				return;
 			}
 			if(AJAX_SETAUTH_PATH.equals(path)){//WEB && POST
@@ -781,9 +812,9 @@ public class AuthHandler extends WebServerHandler {
 		}
 		
 		String query=requestHeader.getQuery();
-		if(query!=null && query.startsWith("__PH_AUTH_CD_AUTHORIZE__")){
+		if(query!=null && query.startsWith(QUERY_CD_AUTHORIZE)){
 			String authId=parameter.getParameter(AUTH_ID);
-			String originUrl=parameter.getParameter(AUTH_ID);//TODO
+			String originUrl=parameter.getParameter("originUrl");//TODO
 			crossDomainAuthorize(cookieId,authId,originUrl);
 			return;
 		}
