@@ -23,11 +23,18 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 	ph.jQuery(function() {
 		ph.jQuery("#version").text(ph.version);
 		ph.jQuery("#status").text('running');
-		ph.auth.user(null,function(res){
+		ph.auth.info(null,function(res){
+            if(!res.result){
+              alert('fail to auth.info.'+res.reason);
+              return;
+            }
 			var user=res.user;
-			var allowUrls=user.allowUrls;
+			var allowUrls=res.allowUrls;
 			var len=allowUrls.length;
 			for(var i=0;i<len;i++){
+                if(allowUrls[i].url.lastIndexOf('http',0)!=0){
+                  continue;
+                }
 				var liTag="<li><a href='#' onclick='checkGo(\"" +allowUrls[i].url+ "\")'>"+allowUrls[i].notes+"</a></li>"
 				ph.jQuery("#links").append(liTag);
 			}

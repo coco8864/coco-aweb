@@ -5,59 +5,48 @@ if(window.ph.auth){
 window.ph.auth={
   _authFrameName:'_phAuthFrame',
   _urlPtn:/^(?:([^:\/]+:))?(?:\/\/([^\/]*))?(.*)/,
-  _authCheckReq:null,
-  _authCb:null,
-  _userPath:'/user',
-  _checkAuthPath:'/checkSession?',
-  _checkAplQuery:'?PH_AUTH=check',
-  _userCb:function(resObj){
-    var res=resObj;
-    if(typeof resObj.result==="undefined"){
-      res={result:true,user:resObj};
-    }
-    var authCb=ph.auth._authCb;
-    ph.auth._authCb=null;
-    authCb(res);
+  _cb:null,
+  _callback:function(res){
+    var cb=this._cb;
+    this._cb=null;
+    cb(res);
   },
-  _user:function(authUrl){
-    var url=authUrl+this._userPath;
-    this._reqestUrl(url,this._userCb);
+  _infoPath:'/info',
+  _checkAplQuery:'?__PH_AUTH__=__CD_CHECK__',
+  _checkWsAplQuery:'?__PH_AUTH__=__CD_WS_CHECK__',
+  _infoCb:function(res){
+    ph.auth._callback(res);
   },
   _authCheckCb:function(res){
-    var authCb=ph.auth._authCb;
-    ph.auth._authCb=null;
-    if('redirect'==res.result){
-      //primaryがない場合は、redirectして認証する
+    if(res.result=='redirect'){
+      /* authUrlにsessionを問い合わせ */
+      ph.auth._authCheck(res.location);
+      return;
+    }else if(res.result=='redirectForAuthorizer'){
+//      alert(ph.JSON.stringify(res));
       window.location.href=res.location;
       return;
     }
-    authCb(res);
+    ph.auth._callback(res);
   },
   _authCheck:function(authUrl){
-    var url=authUrl+this._checkAuthPath+ph.jQuery.param(this._authCheckReq);
-    this._reqestUrl(url,this._authCheckCb);
+    this._reqestUrl(authUrl,this._authCheckCb);
   },
   _aplCheckCb:function(res){
-    if(res.result || 'url error'===res.reason){
-      var authCb=ph.auth._authCb;
-      ph.auth._authCb=null;
-      authCb(res);
+    if(res.result=='redirect'){
+      /* authUrlにsessionを問い合わせ */
+      ph.auth._authCheck(res.location+'&originUrl='+window.location.href);
       return;
     }
-    /* authUrlにsessionを問い合わせ */
-    ph.auth._authCheck(res.authUrl);
+    ph.auth._callback(res);
   },
   /*authUrl固有のappIdを取得する、以下のパターンがある
   1)secondary既に認可されている
   2)primaryは認証済みだがsecondaryが未=>認可してappIdを作成
   3)primaryは認証未=>このメソッドは復帰せず認証画面に遷移
   */
-  getAppId:function(path,cb){
-    var url=window.location.protocol+"//"+window.location.host+path;
-    this.auth(url,cb,false);
-  },
-  auth:function(aplUrl,cb,isProxy){
-    if(this._authCb){
+  auth:function(aplUrl,cb){
+    if(this._cb){
       cb({result:false,reason:'duplicate call error'});
       return;
     }
@@ -65,44 +54,36 @@ window.ph.auth={
     var protocol=RegExp.$1;
     var authDomain=RegExp.$2;
     var authPath=RegExp.$3;
-    var req={type:'getAppId',aplUrl:aplUrl,originUrl:window.location.href};
-    if(isProxy){
-      req.sourceType='proxy';
-    }
-    req.protocol=protocol;
-    req.authDomain=authDomain;
-    req.authPath=authPath;
-    if(protocol==null || protocol==''){
-      req.protocol=window.location.protocol;
-      req.authDomain=window.location.hostname;
-    }
-    this._authCheckReq=req;
-    this._authCb=cb;
+    this._cb=cb;
     var checkAplUrl;
-    if(req.protocol==='ws:'){
-      checkAplUrl='http://'+req.authDomain+req.authPath;
-    }else if(req.protocol==='wss:'){
-      checkAplUrl='https://'+req.authDomain+req.authPath;
-    }else{
-      checkAplUrl=aplUrl;
+    if(protocol==='ws:'){
+      checkAplUrl='http://'+authDomain+authPath+this._checkWsAplQuery;
+    }else if(protocol==='wss:'){
+      checkAplUrl='https://'+authDomain+authPath+this._checkWsAplQuery;
+    }else if(protocol==null || protocol==''){
+      checkAplUrl=window.location.protocol+'//'+window.location.host+authPath+this._checkWsAplQuery;
+    }else{//http or https
+      checkAplUrl=aplUrl+this._checkAplQuery;
     }
     /* aplUrlにsessionを問い合わせ */
-    this._reqestUrl(checkAplUrl+this._checkAplQuery,this._aplCheckCb);
+    this._reqestUrl(checkAplUrl,this._aplCheckCb);
   },
-  user:function(authUrl,cb){
-    if(this._authCb){
+  info:function(authUrl,cb){
+    if(this._cb){
       cb({result:false,reason:'duplicate call error'});
       return;
     }
     if(!authUrl){//指定がなければ自分をダウンロードしたauthUrl
       authUrl=ph.authUrl;
     }
-    this._authCb=cb;
-    ph.auth._user(authUrl);
+    this._cb=cb;
+    var url=authUrl+this._infoPath;
+    this._reqestUrl(url,this._infoCb);
   },
   _reqestCb:null,
   _url:null,
   _onMessage:function(ev){
+ph.log("_onMessage:"+ev.origin);
 //  ph.dump1(ev);
     var url=ph.auth._url;
     if(url.lastIndexOf(ev.origin, 0)!=0){
@@ -115,6 +96,7 @@ window.ph.auth={
     reqestCb(res);
   },
   _reqestUrl:function(url,cb){
+ph.log("_reqestUrl:"+url);
     var origin=encodeURIComponent(location.protocol+'//'+location.host);
     this._url=url;
     this._reqestCb=cb;
@@ -123,6 +105,7 @@ window.ph.auth={
   _frameLoad:function(){
     var reqestCb=ph.auth._reqestCb;
     if(reqestCb!=null){//frameにloadされたがmessageが来ない
+ph.log("_frameLoad timeout:"+this._url);
       ph.auth._reqestCb=null;
       reqestCb({result:false,reason:'url error'});
     }
