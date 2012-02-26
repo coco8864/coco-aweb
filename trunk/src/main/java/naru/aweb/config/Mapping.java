@@ -958,17 +958,29 @@ public class Mapping{
 	
 	//Ç±ÇÃMappingÇåƒÇ—èoÇ∑ÇΩÇﬂÇÃURL
 	public String calcSourceUrl(){
-		if(sourceType!=SourceType.WEB){
-			return null;
-		}
 		StringBuffer sb=new StringBuffer();
 		int defaultPort;
-		if(secureType==SecureType.PLAIN){
-			sb.append("http://");
-			defaultPort=80;
-		}else{
-			sb.append("https://");
-			defaultPort=443;
+		switch(sourceType){
+		case WEB:
+			if(secureType==SecureType.PLAIN){
+				sb.append("http://");
+				defaultPort=80;
+			}else{
+				sb.append("https://");
+				defaultPort=443;
+			}
+			break;
+		case WS:
+			if(secureType==SecureType.PLAIN){
+				sb.append("ws://");
+				defaultPort=80;
+			}else{
+				sb.append("wss://");
+				defaultPort=443;
+			}
+			break;
+		default:
+			return null;
 		}
 		if(sourceServer!=null && !"".equals(sourceServer)){
 			sb.append(sourceServer);
