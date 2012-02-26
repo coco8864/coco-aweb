@@ -134,6 +134,10 @@ public class FileCache implements Timer{
 			}else{
 				buffers=readFile();
 			}
+			if(true){
+				//TODO cacheを効かなくする方法 contentsを設定しなければ場合毎回ファイルから読み込む
+				return buffers;
+			}
 			if(length>=FILE_MAX_SIZE){
 				return buffers;
 			}else{

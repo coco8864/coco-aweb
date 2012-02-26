@@ -614,17 +614,7 @@ public class DispatchHandler extends ServerBaseHandler {
 		}
 		String query=requestHeader.getQuery();
 		if(isWs==false && query!=null){
-			if(query.startsWith("PH_AUTH=check")){
-				setRequestAttribute(AuthHandler.QUERY_AUTH_MARK, AuthHandler.QUERY_AUTH_CHECK);
-				keepAliveContext.getRequestContext().allocAccessLog();
-				forwardMapping(null, requestHeader, DispatchResponseHandler.authMapping(), null, false);
-				return;
-			}else if(query.startsWith("PH_AUTH=setAuth")){
-				setRequestAttribute(AuthHandler.QUERY_AUTH_MARK, AuthHandler.QUERY_SETAUTH_AUTH);
-				keepAliveContext.getRequestContext().allocAccessLog();
-				forwardMapping(null, requestHeader, DispatchResponseHandler.authMapping(), null, false);
-				return;
-			}else if(query.startsWith(AuthHandler.QUERY_CD_CHECK)){
+			if(query.startsWith(AuthHandler.QUERY_CD_CHECK)){
 				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_CHECK);
 			}else if(query.startsWith(AuthHandler.QUERY_CD_WS_CHECK)){
 				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_WS_CHECK);

@@ -447,7 +447,11 @@ public class Mapper {
 	public List<Mapping> getRoleWebMappings(List<String> userRoles){
 		List<Mapping> mappings=new ArrayList<Mapping>();
 		for(Mapping mapping:activeMappings){
-			if(!(mapping.getSourceType()==Mapping.SourceType.WEB)){
+			switch(mapping.getSourceType()){
+			case WEB:
+			case WS:
+				break;
+			default:
 				continue;
 			}
 			if( Boolean.FALSE.equals(mapping.getOption("listing")) ){
