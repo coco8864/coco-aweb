@@ -142,7 +142,8 @@ if(typeof ph == "undefined"){
 					this.url=window.location.protocol + "//";
 				}
 				this.url+=window.location.host + path;
-				ph.auth.getAppId(path,function(res/*isAuth,appId*/){
+//				ph.auth.getAppId(path,function(res/*isAuth,appId*/){
+				ph.auth.auth(path,function(res/*isAuth,appId*/){
 //alert("queue auth:"+isAuth);
 					if(res.result){
 						ph.log('1:appId:'+res.appId);
