@@ -1,5 +1,5 @@
 if(typeof ph == "undefined"){
-    ph={};
+  ph={};
 }
 (function () {
   if(ph.wsq){
