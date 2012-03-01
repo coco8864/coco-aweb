@@ -21,16 +21,27 @@ import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.async.timer.TimerManager;
 
+/*
+ * cacheの操作
+ * *on/off
+ * *size/maxSize
+ * *count/maxCount
+ * *破棄
+ */
 public class FileCache implements Timer{
 	private static Logger logger=Logger.getLogger(FileCache.class);
 	private static final long INTERVAL = 60000;
-	private static final long FILE_MAX_SIZE=4*1024*1024;
-	private static final long TOTAL_MAX_SIZE=64*1024*1024;
-	private static final int MAX_COUNT=256;
+	private static final long FILE_SIZE_MAX=4*1024*1024;
+	private static final long TOTAL_SIZE_MAX=64*1024*1024;
+	private static final int COUNT_MAX=256;
 	
-	private boolean newEntry=true;
-//	private long totalSize=0;
-	private int cacheCount=0;
+	private boolean isChache;//新規にchacheするか否か
+	private boolean isFlush;//既存chacheを初期化するか否か
+	private long totalSize;//現在chacheサイズ
+	private long totalSizeMax;//checheサイズ上限
+	private long totalCount;//現在cheche数
+	private long totalCountMax;//cheche数上限
+	private long fileSizeMax;//ファイルサイズ上限
 
 	private List<FileCacheInfo> pool=new LinkedList<FileCacheInfo>();
 	private Map<File,FileCacheInfo> cache=new HashMap<File,FileCacheInfo>();
@@ -134,11 +145,7 @@ public class FileCache implements Timer{
 			}else{
 				buffers=readFile();
 			}
-			if(true){
-				//TODO cacheを効かなくする方法 contentsを設定しなければ場合毎回ファイルから読み込む
-				return buffers;
-			}
-			if(length>=FILE_MAX_SIZE){
+			if(length>=fileSizeMax){
 				return buffers;
 			}else{
 				contents=buffers;
@@ -376,7 +383,7 @@ public class FileCache implements Timer{
 
 	private void addPool(FileCacheInfo info){
 		info.clear();
-		if(pool.size()>MAX_COUNT){
+		if(pool.size()>COUNT_MAX){
 			return;
 		}
 		synchronized(pool){
@@ -389,9 +396,10 @@ public class FileCache implements Timer{
 			addPool(info);
 			return;
 		}
-		cacheCount++;
-		if(cacheCount>=MAX_COUNT){
-			newEntry=false;
+		totalCount++;
+		totalSize+=info.length();
+		if(totalCount>=totalCountMax){
+			isChache=false;
 		}
 		info.isInCache=true;
 		cache.put(info.base,info);
@@ -409,9 +417,10 @@ public class FileCache implements Timer{
 			addPool(info);
 			return;
 		}
-		cacheCount++;
-		if(cacheCount>=MAX_COUNT){
-			newEntry=false;
+		totalCount++;
+		totalSize+=info.length();
+		if(totalCount>=totalCountMax){
+			isChache=false;
 		}
 		info.isInCache=true;
 		parent.children.put(info.path, info);
@@ -420,11 +429,28 @@ public class FileCache implements Timer{
 	
 	public void onTimer(Object userContext) {
 		//cacheコンテンツに変更がないかを確認
-		for(File file:cache.keySet()){
+		Iterator<File> itr=cache.keySet().iterator();
+		boolean isFlush=this.isFlush;
+		this.isFlush=false;
+		while(itr.hasNext()){
+			File file=itr.next();
 			FileCacheInfo fileInfo=cache.get(file);
-			fileInfo.check(false);
 			for(FileCacheInfo childFileInfo:fileInfo.children.values()){
-				childFileInfo.check(false);
+				if(isFlush){
+					this.totalCount--;
+					this.totalSize-=childFileInfo.length();
+					addPool(childFileInfo);
+				}else{
+					childFileInfo.check(false);
+				}
+			}
+			if(isFlush){
+				this.totalCount--;
+				this.totalSize-=fileInfo.length();
+				addPool(fileInfo);
+				itr.remove();
+			}else{
+				fileInfo.check(false);
 			}
 		}
 		//新たなcache候補を取り込み
@@ -434,10 +460,9 @@ public class FileCache implements Timer{
 			queue.clear();
 		}
 		for(FileCacheInfo info:queueInfos){
-			if(!newEntry){
+			if(!isChache){
 				addPool(info);
-			}
-			if(info.parent==null){
+			}else if(info.parent==null){
 				addCache(info);
 			}else{
 				addParentCache(info);
@@ -452,11 +477,21 @@ public class FileCache implements Timer{
 		return filecache;
 	}
 	
+	private FileCache(){
+		isChache=true;//新規にchacheするか否か
+		isFlush=false;//既存chacheを初期化するか否か
+		totalSize=0;//現在chacheサイズ
+		totalSizeMax=TOTAL_SIZE_MAX;//checheサイズ上限
+		totalCount=0;//現在cheche数
+		totalCountMax=COUNT_MAX;//cheche数上限
+		fileSizeMax=FILE_SIZE_MAX;//ファイルサイズ上限
+	}
+	
 	public void term(){
 		if(intervalObj!=null){
 			TimerManager.clearInterval(intervalObj);
 		}
-		logger.info("FileCache term.cacheCount:"+cacheCount);
+		logger.info("FileCache term.cacheCount:"+totalCount);
 		Iterator<File> fileItr=cache.keySet().iterator();
 		while(fileItr.hasNext()){
 			File file=fileItr.next();
@@ -470,6 +505,54 @@ public class FileCache implements Timer{
 			fileInfo.clear();
 			fileItr.remove();
 		}
+	}
+
+	public boolean isChache() {
+		return isChache;
+	}
+
+	public void setChache(boolean isChache) {
+		this.isChache = isChache;
+	}
+
+	public boolean isFlush() {
+		return isFlush;
+	}
+
+	public void setFlush(boolean isFlush) {
+		this.isFlush = isFlush;
+	}
+
+	public long getTotalSizeMax() {
+		return totalSizeMax;
+	}
+
+	public void setTotalSizeMax(long totalSizeMax) {
+		this.totalSizeMax = totalSizeMax;
+	}
+
+	public long getTotalCountMax() {
+		return totalCountMax;
+	}
+
+	public void setTotalCountMax(long totalCountMax) {
+		this.totalCountMax = totalCountMax;
+	}
+
+	public long getFileSizeMax() {
+		return fileSizeMax;
+	}
+
+	public void setFileSizeMax(long fileSizeMax) {
+		this.fileSizeMax = fileSizeMax;
+	}
+
+	public long getTotalSize() {
+		return totalSize;
+	}
+
+	public long getTotalCount() {
+		return totalCount;
 	}
 
 }

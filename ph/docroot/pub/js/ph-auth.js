@@ -3,20 +3,33 @@ if(window.ph.auth){
   return;
 }
 window.ph.auth={
-  _authFrameName:'_phAuthFrame',
+  _authFrameName:'__phAuthFrame',
   _urlPtn:/^(?:([^:\/]+:))?(?:\/\/([^\/]*))?(.*)/,
+  /* 呼び出しをqueueして順次処理する仕組み */
+  _callQueue:[],
   _cb:null,
   _callback:function(res){
     var cb=this._cb;
     this._cb=null;
     cb(res);
+    this._call();
+  },
+  _callRequest:function(url,urlCb,cb){
+    var req={url:url,urlCb:urlCb,cb:cb};
+    this._callQueue.push(req);
+    this._call();
+  },
+  _call:function(){
+    if(this._cb!=null||this._callQueue.length==0){
+      return;
+    }
+    var req=this._callQueue.pop();
+    this._cb=req.cb;
+    this._reqestUrl(req.url,req.urlCb);
   },
   _infoPath:'/info',
   _checkAplQuery:'?__PH_AUTH__=__CD_CHECK__',
   _checkWsAplQuery:'?__PH_AUTH__=__CD_WS_CHECK__',
-  _infoCb:function(res){
-    ph.auth._callback(res);
-  },
   _authCheckCb:function(res){
     if(res.result=='redirect'){
       /* authUrlにsessionを問い合わせ */
@@ -46,15 +59,14 @@ window.ph.auth={
   3)primaryは認証未=>このメソッドは復帰せず認証画面に遷移
   */
   auth:function(aplUrl,cb){
-    if(this._cb){
-      cb({result:false,reason:'duplicate call error'});
-      return;
-    }
+//    if(this._cb){
+//      cb({result:false,reason:'duplicate call error'});
+//      return;
+//    }
     aplUrl.match(this._urlPtn);
     var protocol=RegExp.$1;
     var authDomain=RegExp.$2;
     var authPath=RegExp.$3;
-    this._cb=cb;
     var checkAplUrl;
     if(protocol==='ws:'){
       checkAplUrl='http://'+authDomain+authPath+this._checkWsAplQuery;
@@ -66,19 +78,19 @@ window.ph.auth={
       checkAplUrl=aplUrl+this._checkAplQuery;
     }
     /* aplUrlにsessionを問い合わせ */
-    this._reqestUrl(checkAplUrl,this._aplCheckCb);
+//    this._cb=cb;
+//    this._reqestUrl(checkAplUrl,this._aplCheckCb);
+    this._callRequest(checkAplUrl,this._aplCheckCb,cb);
+  },
+  _infoCb:function(res){
+    ph.auth._callback(res);
   },
   info:function(authUrl,cb){
-    if(this._cb){
-      cb({result:false,reason:'duplicate call error'});
-      return;
-    }
     if(!authUrl){//指定がなければ自分をダウンロードしたauthUrl
       authUrl=ph.authUrl;
     }
-    this._cb=cb;
     var url=authUrl+this._infoPath;
-    this._reqestUrl(url,this._infoCb);
+    this._callRequest(url,this._infoCb,cb);
   },
   _reqestCb:null,
   _url:null,
@@ -87,6 +99,9 @@ ph.log("_onMessage:"+ev.origin);
 //  ph.dump1(ev);
     var url=ph.auth._url;
     if(url.lastIndexOf(ev.origin, 0)!=0){
+      return;
+    }
+    if(ev.source!==window[ph.auth._authFrameName]){
       return;
     }
     var reqestCb=ph.auth._reqestCb;
@@ -113,9 +128,6 @@ ph.log("_frameLoad timeout:"+this._url);
 };
 
 ph.jQuery(function(){
-//if(!ph.isUseCrossDomain){
-//  return;
-//}
 //server側authと通信するiframeを作成
   if(window.addEventListener){
     window.addEventListener('message',ph.auth._onMessage, false);
