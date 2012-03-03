@@ -97,11 +97,14 @@ window.ph.auth={
   _onMessage:function(ev){
 ph.log("_onMessage:"+ev.origin);
 //  ph.dump1(ev);
-    var url=ph.auth._url;
-    if(url.lastIndexOf(ev.origin, 0)!=0){
+    if(ev.source!==window[ph.auth._authFrameName]){
       return;
     }
-    if(ev.source!==window[ph.auth._authFrameName]){
+    var url=ph.auth._url;
+    if(!url){
+      return;
+    }
+    if(url.lastIndexOf(ev.origin, 0)!=0){
       return;
     }
     var reqestCb=ph.auth._reqestCb;

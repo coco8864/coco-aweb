@@ -27,7 +27,14 @@ window.ph={
  dump:function(data){ph.log(ph.JSON.stringify(data))},
  dump1:function(data){
   for(var i in data){
-   ph.log(i+':'+data[i]);
+   if(typeof(data[i]) == 'function'){
+     continue;
+   }
+   if(ph.jQuery.isArray(data[i])){
+     ph.log(i+':['+data[i] +']');
+   }else{
+     ph.log(i+':'+data[i]);
+   }
   }
  },
  log:function(text){
