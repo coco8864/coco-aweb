@@ -5,13 +5,13 @@ package naru.aweb.wsq;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
 import naru.async.Timer;
 import naru.async.timer.TimerManager;
 import naru.aweb.auth.AuthSession;
-import naru.aweb.config.Config;
 import naru.aweb.handler.WebSocketHandler;
 import naru.aweb.http.ParameterParser;
 import net.sf.json.JSON;
@@ -57,7 +57,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 	private void subscribe(JSONObject msg,JSONArray ress){
 		String qname=msg.getString("qname");
 		String subId=msg.optString("subId",null);
-		WsqPeer from=WsqPeer.create(authSession,qname,subId);
+		WsqPeer from=WsqPeer.create(authSession,srcPath,qname,subId);
 //		if(peerQnameMap.get(from)!=null){
 //			continue;//Šù‚Ésubscribe’†
 //		}
@@ -106,13 +106,16 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 	private void publish(JSONObject msg,JSONArray ress){
 		String qname=msg.getString("qname");
 		String subId=msg.optString("subId",null);
-		WsqPeer from=WsqPeer.create(authSession,qname,subId);
+		WsqPeer from=WsqPeer.create(authSession,srcPath,qname,subId);
 		Object message=msg.opt("message");
 		wsqManager.publish(from, message);
 		from.unref();
 	}
 	
 	private void getQnames(JSONArray ress){
+		Collection<String> qnames=wsqManager.getQnames(srcPath);
+		JSON res=WsqManager.makeMessage(WsqManager.CB_TYPE_INFO,null, null,"qnames",qnames);
+		ress.add(res);
 	}
 	
 	/**
@@ -135,7 +138,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 				unsubscribe(msg,ress);
 			}else if("publish".equals(type)){
 				publish(msg,ress);
-			}else if("getQnames".equals(type)){
+			}else if("qnames".equals(type)){
 				getQnames(ress);
 			}
 		}
@@ -189,6 +192,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 	private boolean isMsgBlock=false;
 	private boolean isResponse=false;
 	private long timerId;
+	private String srcPath;
 	
 	private void setupSession(){
 		authSession=getAuthSession();
@@ -198,6 +202,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 			authSession.setAttribute("WsqSession", wsqSession);
 		}
 		wsqSession.setHandler(wsqManager, this);
+		srcPath=getRequestMapping().getSourcePath();
 	}
 
 	@Override

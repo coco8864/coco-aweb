@@ -28,11 +28,12 @@ public class WsqManager {
 	
 	private static WsqManager instance=new WsqManager();
 	public static WsqManager getInstance(){
-		instance.createWsq(new SampleWsqlet(), "test");
+		instance.createWsq(new SampleWsqlet(),"/wsq","test");
 		return instance;
 	}
 	
-	private Map<String,Wsq> wsqs=new HashMap<String,Wsq>();
+	/*/path,qname */
+	private Map<String,Map<String,Wsq>> wsqs=new HashMap<String,Map<String,Wsq>>();
 	
 	/**
 	 * peer‚Ö‚Ì‘—M“d•¶ì¬
@@ -51,27 +52,40 @@ public class WsqManager {
 		return json;
 	}
 	
-	public Collection<String> getQnames(){
-		return wsqs.keySet();
+	public Collection<String> getQnames(String srcPath){
+		Map<String,Wsq> qmap=wsqs.get(srcPath);
+		if(qmap==null){
+			return null;
+		}
+		return qmap.keySet();
 	}
 	
-	public boolean createWsq(Object wsqWatcher,String wsqName){
+	public boolean createWsq(Object wsqWatcher,String srcPath,String wsqName){
 		synchronized(wsqs){
-			if(wsqs.get(wsqName)!=null){
+			Map<String,Wsq> qmap=wsqs.get(srcPath);
+			if(qmap==null){
+				qmap=new HashMap<String,Wsq>();
+				wsqs.put(srcPath, qmap);
+			}
+			if(qmap.get(wsqName)!=null){
 				return false;//Šù‚É“o˜^‚³‚ê‚Ä‚¢‚é
 			}
 			Wsq wsq=Wsq.createWsq(wsqWatcher, wsqName);
 			if(wsq==null){
 				return false;
 			}
-			wsqs.put(wsq.getQname(),wsq);
+			qmap.put(wsqName,wsq);
 		}
 		return true;
 	}
 	
-	public boolean removeWsq(String wsqName){
+	public boolean removeWsq(String srcPath,String wsqName){
 		synchronized(wsqs){
-			Wsq wsq=wsqs.remove(wsqName);
+			Map<String,Wsq> qmap=wsqs.get(srcPath);
+			if(qmap==null){
+				return false;
+			}
+			Wsq wsq=qmap.remove(wsqName);
 			if(wsq==null){
 				return false;
 			}
@@ -80,8 +94,21 @@ public class WsqManager {
 		return true;
 	}
 	
+	
+	private Wsq getWsqFromPeer(WsqPeer peer){
+		Map<String,Wsq> qmap=wsqs.get(peer.getSrcPath());
+		if(qmap==null){
+			return null;
+		}
+		Wsq wsq=qmap.get(peer.getQname());
+		if(wsq==null){
+			return null;
+		}
+		return wsq;
+	}
+	
 	public void publish(WsqPeer from,Object message){
-		Wsq wsq=wsqs.get(from.getQname());
+		Wsq wsq=getWsqFromPeer(from);
 		if(wsq==null){
 			//publish‚µ‚½‚ªqueue‚ª‚È‚©‚Á‚½B
 			logger.warn("publish ignore qname:"+from.getQname());
@@ -91,7 +118,7 @@ public class WsqManager {
 	}
 	
 	public boolean unsubscribe(WsqPeer from){
-		Wsq wsq=wsqs.get(from.getQname());
+		Wsq wsq=getWsqFromPeer(from);
 		if(wsq==null){
 			return false;
 		}
@@ -103,7 +130,7 @@ public class WsqManager {
 	
 	//wsqHandler‚ğ“KØ‚ÈWsq‚É“o˜^‚·‚é
 	public boolean subscribe(WsqPeer from,WsqHandler handler){
-		Wsq wsq=wsqs.get(from.getQname());
+		Wsq wsq=getWsqFromPeer(from);
 		if(wsq==null){
 			return false;
 		}
@@ -116,7 +143,7 @@ public class WsqManager {
 	
 	//wsqHandler‚É‘Î‰‚·‚éWsq‚©‚çmessage‚ğæ“¾‚·‚é
 	public JSONArray getMessage(WsqPeer from){
-		Wsq wsq=wsqs.get(from.getQname());
+		Wsq wsq=getWsqFromPeer(from);
 		if(wsq==null){
 			return null;
 		}
@@ -124,7 +151,7 @@ public class WsqManager {
 	}
 	
 	public boolean setHandler(WsqPeer from,WsqHandler handler){
-		Wsq wsq=wsqs.get(from.getQname());
+		Wsq wsq=getWsqFromPeer(from);
 		if(wsq==null){
 			return false;
 		}
