@@ -10,12 +10,13 @@ if(typeof ph == "undefined"){
     STAT_INIT:'INIT',
     STAT_AUTH:'AUTH',
     STAT_IDLE:'IDLE',
-    STAT_WS_OPEN:'WS_OPEN',
-    STAT_WS_CONNECT:'WS_CONNECT',
-    STAT_XHR_SEND:'XHR_SEND',
+    STAT_OPEN:'OPEN',
+    STAT_CONNECT:'CONNECT',
     STAT_CLOSE:'CLOSE',
     CB_INFO:'INFO',
     CB_ERROR:'ERROR',
+    CB_MESSAGE:'MESSAGE',
+    DEFAULT_SUB_ID:'DEFAULT_SUB_ID',
 //  isStartTimer:false,
     _connections:{},
     /* 接続毎に作られるオブジェクト */
@@ -27,12 +28,12 @@ if(typeof ph == "undefined"){
       this.qnames=[];
 
       /* callback通知情報 */
-      this.message='';
       this.cbType=null;
+      this.message='';
       this.cause='';/* 'open','subscribe','unsubscribe','publish','qnames','close','server' */
       this.isFin=false;/* 最終呼び出しか否か */
       this.qname='';
-      this.subscribeId=-1;
+      this.subId='';
 
       /* 内部制御情報 */
       this._cb=cb;
@@ -46,6 +47,7 @@ if(typeof ph == "undefined"){
     },
     /* */
     open:function(url,cb){/* isSsl,hostPort,cb */
+      //webSocketが使えなくてurlがws://だったらhttp://に変更
       var con=this._connections[url];
       if(con){
         if(con._isOpenCallback){
@@ -71,13 +73,13 @@ if(typeof ph == "undefined"){
     _authCb:function(isOpen,con,auth){
       if(!auth.result){
         con.stat=0;
-        con._callback(ph.wsp.CB_ERROR,'open','fail to auth',true);
+        con._callback(ph.wsq.CB_ERROR,'open','fail to auth',true);
         return;
       }
       ph.log('1:appId:'+auth.appId);
       con.stat=this.STAT_IDLE;/* idle */
       con._opencount++;
-      con._setup(auth.appId);
+      con._appId=auth.appId;
     },
     //timerハンドラ
     _onTimer:function(){
@@ -92,21 +94,23 @@ if(typeof ph == "undefined"){
   wsq._Connection.prototype._send=function(jsonText){
     if(this._isWs){
       this._ws.send(jsonText);
+    }else{
+      //postMessage();
     }
   };
   /* WebSocket */
   wsq._Connection.prototype._onWsOpen=function(){
     var con=this._connection;
-    con.stat=ph.wsq.STAT_WS_CONNECT;/* connect */
+    con.stat=ph.wsq.STAT_CONNECT;/* connect */
     var jsonText=con._collectMsgsText();
     if(jsonText){
-      this.send(jsonText);
+      this._send(jsonText);
     }
   };
   wsq._Connection.prototype._onWsClose=function(){
     var con=this._connection;
     con.stat=ph.wsq.STAT_IDLE;/* idle */
-//    this._errCount++;
+    con._errCount++;
   };
   wsq._Connection.prototype._onWsError=function(){
     var con=this._connection;
@@ -116,11 +120,12 @@ if(typeof ph == "undefined"){
   wsq._Connection.prototype._onWsMessage=function(msg){
     var con=this._connection;
     con._errCount=0;
-    //TODO callback
+    con._onMessageText(msg.data);
   };
   wsq._Connection.prototype._openWebSocket=function(){
     ph.log('Queue WebSocket start');
-    this.stat=ph.wsq.STAT_WS_OPEN;/* wsOpen */
+    this.stat=ph.wsq.STAT_OPEN;/* wsOpen */
+
     var ws=new WebSocket(this.url);
     ws.onopen=this._onWsOpen;
     ws.onmessage=this._onWsMessage;
@@ -160,33 +165,51 @@ if(typeof ph == "undefined"){
   };
 
   /* */
-  wsq._Connection.prototype._setup=function(authId){
-    this._appId=authId;//authrize
-    this._ssKey='ph.wsq.' + this.url + '@' +this._appId;
-    this._restoreSs();
-//  this._callback(ph.wsq.CB_INFO,'opened',null,false,null,null);/* 以降はtimerからcallbackする */
-  };
-  wsq._Connection.prototype._restoreSs=function(){
-    var subscribesString=sessionStorage[this._ssKey];
-    if(subscribesString){
-      this._subscribes=ph.JSON.parse(subscribesString);
-//TODO function restore
-    }else{
-      this._subscribes={};
-      sessionStorage[this._ssKey]='{}';
+  wsq._Connection.prototype._onMessage=function(msg){
+    if(msg.type==ph.wsq.CB_MESSAGE){
+      var callbacks=this._subscribes[msg.qname];
+      if(!callbacks){//serverからsubscribeした覚えがないqnameにmessageが来た
+        this._callback(ph.wsq.CB_ERROR,'server',msg.message,false,msg.qname,msg.subId);
+        return;
+      }
+      var cb=callbacks[msg.subId]
+      if(!cb){//serverからsubscribeした覚えがないsubIdにmessageが来た
+        this._callback(ph.wsq.CB_ERROR,'server',msg.message,false,msg.qname,msg.subId);
+        return;
+      }
+      cb(msg.message,this);
+      return;
+    }else if(msg.type==ph.wsq.CB_ERROR && msg.cause=='subscribe'){//subscribe失敗
+      var callbacks=this._subscribes[msg.qname];
+      if(callbacks){
+        delete callbacks[msg.subId];
+      }
+    }else if(msg.type==ph.wsq.CB_INFO && msg.cause=='unsubscribe'){//正常にunsubscribe
+      var callbacks=this._subscribes[msg.qname];
+      if(callbacks){
+        delete callbacks[msg.subId];
+      }
+    }else if(msg.type==ph.wsq.CB_INFO && msg.cause=='qnames'){//正常にqnames
+      this.qnames=msg.message;
+    }
+    this._callback(msg.type,msg.cause,msg.message,false,msg.qname,msg.subId);
+  }
+  wsq._Connection.prototype._onMessageText=function(messageText){
+    var message=ph.JSON.parse(messageText);
+    if(!ph.jQuery.isArray(message)){
+      this._onMessage(message);
+      return;
+    }
+    for(var i in message){
+      this._onMessage(message[i]);
     }
   };
-  wsq._Connection.prototype._storeSs=function(){
-//TODO function store
-    var subscribesString=ph.JSON.stringify(this._subscribes);
-    sessionStorage[this._ssKey]=subscribesString;
-  };
-  wsq._Connection.prototype._callback=function(cbType,cause,message,isFin,qname,subscribeId){
+  wsq._Connection.prototype._callback=function(cbType,cause,message,isFin,qname,subId){
     this.cbType=cbType;
     this.cause=cause;
     this.message=message;
     this.qname=qname;
-    this.subscribeId=subscribeId;
+    this.subId=subId;
     if(isFin){
       this.isFin=true;
       delete ph.wsq._connections[this.url];
@@ -202,7 +225,7 @@ if(typeof ph == "undefined"){
     return ph.JSON.stringify(msgs);
   };
   wsq._Connection.prototype._onTimer=function(){
-    if(this.stat==ph.wsq.STAT_WS_CONNECT){
+    if(this.stat==ph.wsq.STAT_CONNECT){
       if(!this._isOpenCallback){
         this._isOpenCallback=true;
         this._callback(ph.wsq.CB_INFO,'open','opened',false);
@@ -223,6 +246,21 @@ if(typeof ph == "undefined"){
       }
     }
   };
+  wsq._Connection.prototype._getOnlySubId=function(qname){
+    var callbacks=this._subscribes[qname];
+    if(!callbacks){
+      return null;
+    }
+    var count=0;
+    var subId;
+    for(subId in callbacks){
+      count++;
+    }
+    if(count!=1){
+      return null;
+    }
+    return subId;
+  };
   /* outer function */
   wsq._Connection.prototype.close=function(){
     this._openCount--;
@@ -234,48 +272,68 @@ if(typeof ph == "undefined"){
       this._ws.close();
     }
   };
-  wsq._Connection.prototype.subscribe=function(qname,onMessageCb,subscribeId){
-    if(this.stat!=ph.wsq.STAT_WS_CONNECT){
-      this._callback(ph.wsp.CB_ERROR,'subscribe','stat error',false,qname,subscribeId);
-      return;
+  wsq._Connection.prototype.subscribe=function(qname,onMessageCb,subId){
+    if(this.stat!=ph.wsq.STAT_CONNECT){
+      this._callback(ph.wsq.CB_ERROR,'subscribe','stat error',false,qname,subId);
+      return undefined;
+    }
+    if(!subId){
+      subId=ph.wsq.DEFAULT_SUB_ID;
     }
     var callbacks=this._subscribes[qname];
     if(!callbacks){
       callbacks={};
       this._subscribes[qname]=callbacks;
     }
-    callbacks[subscribeId]=onMessageCb;
-    var sendData={type:'subscribe',qname:qname,subscribeId:subscribeId};
+    callbacks[subId]=onMessageCb;
+    var sendData={type:'subscribe',qname:qname,subId:subId};
     this._send(sendData);
+    return subId;
   };
-  wsq._Connection.prototype.unsubscribe=function(qname,subscribeId){
+  wsq._Connection.prototype.unsubscribe=function(qname,subId){
     var callbacks=this._subscribes[qname];
     if(!callbacks){
-      this._callback(ph.wsp.CB_ERROR,'unsubscribe','unkown qname',false,qname,subscribeId);
+      this._callback(ph.wsq.CB_ERROR,'unsubscribe','unkown qname',false,qname,subId);
       return;
     }
-    if(subscribeId){
-      if(!callbacks[subscribeId]){
-        this._callback(ph.wsp.CB_ERROR,'unsubscribe','unkown subscribeId',false,qname,subscribeId);
-        return;
-      }else{
-        delete callbacks[subscribeId];
+    if(!subId){
+      subId=this._getOnlySubId(qname);
+      if(!subId){
+        this._callback(ph.wsq.CB_ERROR,'unsubscribe','unkown qname',false,qname,subId);
       }
-    }else{
-      delete this._subscribes[qname];
     }
-    var sendData={type:'unsubscribe',qname:qname,subscribeId:subscribeId};
-    this._send(sendData);
-  };
-  wsq._Connection.prototype.publish=function(qname,message,subscribeId){
-    if(this.stat!=ph.wsq.STAT_WS_CONNECT){
-      this._callback(ph.wsp.CB_ERROR,'publish','stat error',false,qname,subscribeId);
+    if(!callbacks[subId]){
+      this._callback(ph.wsq.CB_ERROR,'unsubscribe','unkown subId',false,qname,subId);
       return;
     }
-    var sendData={type:'publish',qname:qname,subscribeId:subscribeId,message:message};
+    var sendData={type:'unsubscribe',qname:qname,subId:subId};
     this._send(sendData);
   };
-  wsq._Connection.prototype.getQnames=function(qname){};
+  wsq._Connection.prototype.publish=function(qname,message,subId){
+    if(this.stat!=ph.wsq.STAT_CONNECT){
+      this._callback(ph.wsq.CB_ERROR,'publish','stat error',false,qname,subId);
+      return;
+    }
+    var sendData={type:'publish',qname:qname,subId:subId,message:message};
+    if(subId===null){//明示的にsubIdにnullを指定,唯一のsubId指定とみなす
+      subId=this._getOnlySubId(qname);
+      if(!subId){
+        this._callback(ph.wsq.CB_ERROR,'publish','unkown subId',false,qname,subId);
+      }
+      sendData={type:'publish',qname:qname,subId:subId,message:message};
+    }else if(!subId){//省略した場合
+      sendData={type:'publish',qname:qname,message:message};
+    }
+    this._send(sendData);
+  };
+  wsq._Connection.prototype.getQnames=function(){
+    if(this.stat!=ph.wsq.STAT_CONNECT){
+      this._callback(ph.wsq.CB_ERROR,'getQnames','stat error',false,null,null);
+      return;
+    }
+    var sendData={type:'qnames'};
+    this._send(sendData);
+  };
   wsq._Connection.prototype._send=function(obj){
     var text=ph.JSON.stringify(obj);
     this._ws.send(text);
