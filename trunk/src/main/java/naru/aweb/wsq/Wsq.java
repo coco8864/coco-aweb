@@ -38,13 +38,20 @@ public class Wsq extends PoolBase implements WsqController,Timer{
 		JSONArray msgs;
 		long lastAccess;
 		void setMessage(Object msg){
+			Object sendMsg=WsqManager.makeMessage(
+					WsqManager.CB_TYPE_MESSAGE,
+					from.getQname(),
+					from.getSubId(),
+					null,
+					msg
+			);
 			if(handler!=null){
-				handler.message(msg);
+				handler.message(sendMsg);
 				return;
 			}else if(msgs==null){
 				msgs=new JSONArray();
 			}
-			msgs.add(msg);
+			msgs.add(sendMsg);
 		}
 		void setHandler(WsqHandler handler){
 			if(handler!=null){
@@ -83,7 +90,7 @@ public class Wsq extends PoolBase implements WsqController,Timer{
 		info.lastAccess=System.currentTimeMillis();
 		synchronized(subscribeInfos){
 			if(subscribeInfos.get(from)!=null){
-				return false;//Šù‚Ésubscribe’†
+				return true;//Šù‚Ésubscribe’†
 			}
 			subscribeInfos.put(from, info);
 		}

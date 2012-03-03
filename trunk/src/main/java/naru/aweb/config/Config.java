@@ -40,6 +40,7 @@ import naru.aweb.secure.SslContextPool;
 import naru.aweb.util.JdoUtil;
 import naru.aweb.util.JsonUtil;
 import naru.aweb.util.ServerParser;
+import naru.aweb.wsq.WsqManager;
 import naru.queuelet.QueueletContext;
 import net.sf.json.JSON;
 import net.sf.json.JSONArray;
@@ -745,6 +746,8 @@ public class Config {
 		// proxyœŠOƒŠƒXƒg‚Ì‰Šú‰»
 		updateProxyFinder(pacUrl,proxyServer,sslProxyServer,exceptProxyDomains);
 		broadcaster=new Broadcaster(this);
+		
+		WsqManager wsqManager=WsqManager.getInstance();
 		return true;
 	}
 	

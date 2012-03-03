@@ -22,8 +22,13 @@ import net.sf.json.JSONObject;
  */
 public class WsqManager {
 	private static Logger logger=Logger.getLogger(WsqManager.class);
+	public static String CB_TYPE_ERROR="ERROR";
+	public static String CB_TYPE_MESSAGE="MESSAGE";
+	public static String CB_TYPE_INFO="INFO";
+	
 	private static WsqManager instance=new WsqManager();
 	public static WsqManager getInstance(){
+		instance.createWsq(new SampleWsqlet(), "test");
 		return instance;
 	}
 	
@@ -36,12 +41,12 @@ public class WsqManager {
 	 * @param name
 	 * @return
 	 */
-	public static JSON makeMessage(String qname,String subscribeId,String type,String action,String message){
+	public static JSON makeMessage(String type,String qname,String subId,String cause,Object message){
 		JSONObject json=new JSONObject();
-		json.put("qname", qname);
-		json.put("subscribeId", "subscribeId");
 		json.put("type", type);
-		json.put("action", action);
+		json.put("qname", qname);
+		json.put("subId", subId);
+		json.put("cause", cause);
 		json.put("message", message);
 		return json;
 	}
