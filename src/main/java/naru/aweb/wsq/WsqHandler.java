@@ -56,8 +56,8 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 	
 	private void subscribe(JSONObject msg,JSONArray ress){
 		String qname=msg.getString("qname");
-		String subscribeId=msg.optString("subscribeId",null);
-		WsqPeer from=WsqPeer.create(authSession,qname,subscribeId);
+		String subId=msg.optString("subId",null);
+		WsqPeer from=WsqPeer.create(authSession,qname,subId);
 //		if(peerQnameMap.get(from)!=null){
 //			continue;//Šù‚Ésubscribe’†
 //		}
@@ -68,41 +68,45 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 				logger.error("aleady in session.",new Exception());
 			}
 		}else{
-			JSON res=WsqManager.makeMessage(qname, subscribeId,"subscribe","error","qname:"+qname);
+			JSON res=WsqManager.makeMessage(WsqManager.CB_TYPE_ERROR,qname,subId,"subscribe","not found qname:"+qname);
 			ress.add(res);
 		}
 	}
 	
 	private void unsubscribe(JSONObject msg,JSONArray ress){
 		String qname=msg.getString("qname");
-		String subscribeId=msg.optString("subscribeId",null);
-		if(subscribeId!=null){
-			WsqPeer peer=wsqSession.unreg(qname, subscribeId);
+		String subId=msg.optString("subId",null);
+		JSON res=null;
+		if(subId!=null){
+			WsqPeer peer=wsqSession.unreg(qname, subId);
 			if(peer!=null){
 				wsqManager.unsubscribe(peer);
 				peer.unref();
+				res=WsqManager.makeMessage(WsqManager.CB_TYPE_INFO,qname, subId,"unsubscribe","unsubscribed");
 			}else{
-				JSON res=WsqManager.makeMessage(qname, subscribeId,"unsubscribe","error","qname:"+qname +" subscribeId:"+subscribeId);
-				ress.add(res);
+				res=WsqManager.makeMessage(WsqManager.CB_TYPE_ERROR,qname, subId,"unsubscribe","not subscribed");
 			}
+			ress.add(res);
 		}else{
 			List<WsqPeer> peers=wsqSession.unregs(qname);
 			if(peers==null){
-				JSON res=WsqManager.makeMessage(qname, subscribeId,"unsubscribe","error","qname:"+qname);
+				res=WsqManager.makeMessage(WsqManager.CB_TYPE_ERROR,qname, subId,"unsubscribe","not subscribed");
 				ress.add(res);
 				return;
 			}
 			for(WsqPeer peer:peers){
 				wsqManager.unsubscribe(peer);
 				peer.unref();
+				res=WsqManager.makeMessage(WsqManager.CB_TYPE_INFO,qname,peer.getSubId(),"unsubscribe","unsubscribed");
+				ress.add(res);
 			}
 		}
 	}
 	
 	private void publish(JSONObject msg,JSONArray ress){
 		String qname=msg.getString("qname");
-		String subscribeId=msg.optString("subscribeId",null);
-		WsqPeer from=WsqPeer.create(authSession,qname,subscribeId);
+		String subId=msg.optString("subId",null);
+		WsqPeer from=WsqPeer.create(authSession,qname,subId);
 		Object message=msg.opt("message");
 		wsqManager.publish(from, message);
 		from.unref();
@@ -234,7 +238,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 		List<WsqPeer> peers=wsqSession.unregs();
 		for(WsqPeer peer:peers){
 			wsqManager.unsubscribe(peer);
-			JSON json=WsqManager.makeMessage(peer.getQname(), peer.getSubscribeId(),"subscribe","unsubscribe","logout");
+			JSON json=WsqManager.makeMessage(peer.getQname(), peer.getSubId(),"subscribe","unsubscribe","logout");
 			postMessage(json.toString());
 			peer.unref();
 		}

@@ -24,7 +24,7 @@ public class WsqSession {
 			subscribePeers=new HashMap<String,WsqPeer>();
 			qnamePeerMap.put(qname, subscribePeers);
 		}
-		subscribePeers.put(peer.getSubscribeId(),peer);
+		subscribePeers.put(peer.getSubId(),peer);
 		return true;
 	}
 	
