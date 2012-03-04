@@ -113,10 +113,50 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 		from.unref();
 	}
 	
+	private void close(JSONArray ress){
+		JSON res=null;
+		List<WsqPeer> peers=wsqSession.unregs();
+		for(WsqPeer peer:peers){
+			wsqManager.unsubscribe(peer);
+			peer.unref();
+			res=WsqManager.makeMessage(WsqManager.CB_TYPE_INFO,peer.getQname(),peer.getSubId(),"unsubscribe","unsubscribed");
+			ress.add(res);
+		}
+		res=WsqManager.makeMessage(WsqManager.CB_TYPE_INFO,null,null,"close","closed");
+		ress.add(res);
+	}
+	
 	private void getQnames(JSONArray ress){
 		Collection<String> qnames=wsqManager.getQnames(srcPath);
 		JSON res=WsqManager.makeMessage(WsqManager.CB_TYPE_INFO,null, null,"getQnames",qnames);
 		ress.add(res);
+	}
+	
+	private void deploy(String qname,String className,JSONArray ress){
+		JSON res=null;
+		if( !getAuthSession().getUser().getRoles().contains("admin")){//TODO admin name
+			res=WsqManager.makeMessage(WsqManager.CB_TYPE_ERROR,null, null,"deploy","not admin");
+			ress.add(res);
+			return;
+		}
+		Throwable t;
+		try {
+			Class clazz=Class.forName(className);
+			Object wsqlet=clazz.newInstance();
+			wsqManager.createWsq(wsqlet, srcPath, qname);
+			res=WsqManager.makeMessage(WsqManager.CB_TYPE_INFO,null, null,"deploy","deployed");
+			ress.add(res);
+			return;
+		} catch (ClassNotFoundException e) {
+			t=e;
+		} catch (InstantiationException e) {
+			t=e;
+		} catch (IllegalAccessException e) {
+			t=e;
+		}
+		res=WsqManager.makeMessage(WsqManager.CB_TYPE_ERROR,null, null,"deploy","class error");
+		ress.add(res);
+		logger.error("fail to deploy.",t);
 	}
 	
 	/**
@@ -129,7 +169,6 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 		List<JSONObject> messages=new ArrayList<JSONObject>();
 		parseMessage(json, messages);
 		Iterator<JSONObject> itr=messages.iterator();
-//		JSONArray responseMsg=new JSONArray();
 		while(itr.hasNext()){
 			JSONObject msg=itr.next();
 			String type=msg.getString("type");
@@ -139,8 +178,14 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 				unsubscribe(msg,ress);
 			}else if("publish".equals(type)){
 				publish(msg,ress);
+			}else if("close".equals(type)){
+				close(ress);
 			}else if("getQnames".equals(type)){
 				getQnames(ress);
+			}else if("deploy".equals(type)){
+				String qname=msg.getString("qname");
+				String className=msg.getString("className");
+				deploy(qname,className,ress);
 			}
 		}
 	}
@@ -230,10 +275,10 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 			forwardHandler(Mapping.FILE_SYSTEM_HANDLER);
 			return;
 		}
+		ParameterParser parameter=getParameterParser();
 		
 		//xhr‚©‚ç‚ÌŠJŽn
 		setupSession();
-		ParameterParser parameter=getParameterParser();
 		JSON json=parameter.getJsonObject();
 		isMsgBlock=false;
 		isResponse=false;
