@@ -25,6 +25,7 @@ public class WsqSession {
 			qnamePeerMap.put(qname, subscribePeers);
 		}
 		subscribePeers.put(peer.getSubId(),peer);
+		peers.add(peer);
 		return true;
 	}
 	
@@ -92,6 +93,9 @@ public class WsqSession {
 		while(itr.hasNext()){
 			WsqPeer peer=itr.next();
 			JSONArray array=wsqManager.getMessage(peer);
+			if(array==null){
+				continue;
+			}
 			for(int i=0;i<array.size();i++){
 				result.add(array.get(i));
 			}
