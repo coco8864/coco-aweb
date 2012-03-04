@@ -12,8 +12,11 @@ import java.util.List;
 import naru.async.Timer;
 import naru.async.timer.TimerManager;
 import naru.aweb.auth.AuthSession;
+import naru.aweb.config.Config;
+import naru.aweb.config.Mapping;
 import naru.aweb.handler.WebSocketHandler;
 import naru.aweb.http.ParameterParser;
+import naru.aweb.mapping.MappingResult;
 import net.sf.json.JSON;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -29,8 +32,9 @@ import org.apache.log4j.Logger;
  *
  */
 public class WsqHandler extends WebSocketHandler implements Timer{
-//	private static Config config=Config.getConfig();
+	private static Config config = Config.getConfig();
 	private static Logger logger=Logger.getLogger(WsqHandler.class);
+	private static final String WSQ_PAGE_FILEPATH="/wsq";
 	private static WsqManager wsqManager=WsqManager.getInstance();
 	
 //	private Set<String> subscribeChids=new HashSet<String>();
@@ -58,9 +62,6 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 		String qname=msg.getString("qname");
 		String subId=msg.optString("subId",null);
 		WsqPeer from=WsqPeer.create(authSession,srcPath,qname,subId);
-//		if(peerQnameMap.get(from)!=null){
-//			continue;//既にsubscribe中
-//		}
 		if( wsqManager.subscribe(from, this) ){
 			if(wsqSession.reg(from)){
 				from.ref();
@@ -114,7 +115,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 	
 	private void getQnames(JSONArray ress){
 		Collection<String> qnames=wsqManager.getQnames(srcPath);
-		JSON res=WsqManager.makeMessage(WsqManager.CB_TYPE_INFO,null, null,"qnames",qnames);
+		JSON res=WsqManager.makeMessage(WsqManager.CB_TYPE_INFO,null, null,"getQnames",qnames);
 		ress.add(res);
 	}
 	
@@ -138,7 +139,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 				unsubscribe(msg,ress);
 			}else if("publish".equals(type)){
 				publish(msg,ress);
-			}else if("qnames".equals(type)){
+			}else if("getQnames".equals(type)){
 				getQnames(ress);
 			}
 		}
@@ -216,6 +217,20 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 	@Override
 	*/
 	public void startResponseReqBody() {
+		//xhrFrameのコンテンツ処理
+		MappingResult mapping=getRequestMapping();
+		String path=mapping.getResolvePath();
+		if(path.endsWith(".html")||path.endsWith(".vsp")||path.endsWith(".vsf")){
+			if(path.startsWith("/")){
+				mapping.setResolvePath(WSQ_PAGE_FILEPATH + path);
+			}else{
+				mapping.setResolvePath(WSQ_PAGE_FILEPATH + "/" +path);
+			}
+			mapping.setDesitinationFile(config.getAdminDocumentRoot());
+			forwardHandler(Mapping.FILE_SYSTEM_HANDLER);
+			return;
+		}
+		
 		//xhrからの開始
 		setupSession();
 		ParameterParser parameter=getParameterParser();
