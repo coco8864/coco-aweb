@@ -28,7 +28,6 @@ public class WsqManager {
 	
 	private static WsqManager instance=new WsqManager();
 	public static WsqManager getInstance(){
-		instance.createWsq(new SampleWsqlet(),"/wsq","test");
 		return instance;
 	}
 	
@@ -60,21 +59,21 @@ public class WsqManager {
 		return qmap.keySet();
 	}
 	
-	public boolean createWsq(Object wsqWatcher,String srcPath,String wsqName){
+	public boolean createWsq(Object wsqlet,String srcPath,String qname){
 		synchronized(wsqs){
 			Map<String,Wsq> qmap=wsqs.get(srcPath);
 			if(qmap==null){
 				qmap=new HashMap<String,Wsq>();
 				wsqs.put(srcPath, qmap);
 			}
-			if(qmap.get(wsqName)!=null){
+			if(qmap.get(qname)!=null){
 				return false;//Šù‚É“o˜^‚³‚ê‚Ä‚¢‚é
 			}
-			Wsq wsq=Wsq.createWsq(wsqWatcher, wsqName);
+			Wsq wsq=Wsq.createWsq(wsqlet, qname);
 			if(wsq==null){
 				return false;
 			}
-			qmap.put(wsqName,wsq);
+			qmap.put(qname,wsq);
 		}
 		return true;
 	}
