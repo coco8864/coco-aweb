@@ -20,6 +20,7 @@ if(typeof ph == "undefined"){
     _XHR_FRAME_NAME_PREFIX:'__wsq_',
     _XHR_FRAME_URL:'/xhrFrame.html',
     _connections:{},
+    _frameNo:1,
     /* 接続毎に作られるオブジェクト */
     _Connection:function(url,cb){
       /* callback通知情報 */
@@ -35,7 +36,7 @@ if(typeof ph == "undefined"){
       /* callback通知情報 */
       this.cbType=null;
       this.message='';
-      this.cause='';/* 'open','subscribe','unsubscribe','publish','qnames','close','server' */
+      this.cause='';/* 'open','subscribe','unsubscribe','publish','qnames','deploy','close','server' */
       this.isFin=false;/* 最終呼び出しか否か */
       this.qname='';
       this.subId='';
@@ -49,7 +50,8 @@ if(typeof ph == "undefined"){
       this._openCount=0;
       this._isOpenCallback=false;
       this._subscribes={};
-      this._xhrFrameName=null;/*xhr使用時frame名 */
+      this._xhrFrameName=null;/*xhr使用時frame名,URLを子frmeに伝える */
+      this._xhrFrameId=null;/*xhr使用時frame Id */
     },
     /* */
     open:function(url,cb){/* isSsl,hostPort,cb */
@@ -135,7 +137,6 @@ if(typeof ph == "undefined"){
     if(this.isWs){
       this._ws.send(jsonText);
     }else{
-//      alert(window.frames[this._xhrFrameName]);
       window.frames[this._xhrFrameName].postMessage(jsonText,"*");
     }
   };
@@ -184,8 +185,13 @@ if(typeof ph == "undefined"){
     ph.log('Queue Xhr start');
     this.stat=ph.wsq.STAT_OPEN;/* wsOpen */
     this._xhrFrameName=ph.wsq._XHR_FRAME_NAME_PREFIX + this.url;
+    this._xhrFrameId=ph.wsq._XHR_FRAME_NAME_PREFIX +ph.wsq._frameNo;
+    ph.wsq._frameNo++;
     ph.jQuery("body").append('<iframe width="0" height="0" frameborder="no" name="' +
+//    ph.jQuery("body").append('<iframe name="' +
       this._xhrFrameName + 
+      '" id="' + 
+      this._xhrFrameId + 
       '" onload=\'ph.wsq._xhrLoad(this.name);\' src="' + 
       this.url + ph.wsq._XHR_FRAME_URL +
       '"></iframe>');
@@ -217,6 +223,13 @@ if(typeof ph == "undefined"){
       }
     }else if(msg.type==ph.wsq.CB_INFO && msg.cause=='getQnames'){//正常にgetQnames
       this.qnames=msg.message;
+    }else if(msg.type==ph.wsq.CB_INFO && msg.cause=='close'){//正常にclose
+      if(this.isWs){
+        this._ws.close();
+        this._ws=null;
+      }else{
+        ph.jQuery("#" + this._xhrFrameId).remove();
+      }
     }
     this._callback(msg.type,msg.cause,msg.message,false,msg.qname,msg.subId);
   }
@@ -298,9 +311,7 @@ if(typeof ph == "undefined"){
       return;
     }
     this._isCloseRequest=true;
-    if(this._ws){
-      this._ws.close();
-    }
+    this._send({type:'close'});
   };
   wsq._Connection.prototype.subscribe=function(qname,onMessageCb,subId){
     if(this.stat!=ph.wsq.STAT_CONNECT){
@@ -362,6 +373,14 @@ if(typeof ph == "undefined"){
       return;
     }
     var sendData={type:'getQnames'};
+    this._send(sendData);
+  };
+  wsq._Connection.prototype.deploy=function(qname,className){
+    if(this.stat!=ph.wsq.STAT_CONNECT){
+      this._callback(ph.wsq.CB_ERROR,'deploy','stat error',false,null,null);
+      return;
+    }
+    var sendData={type:'deploy',qname:qname,className:className};
     this._send(sendData);
   };
   ph.wsq=wsq;
