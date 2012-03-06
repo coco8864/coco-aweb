@@ -63,14 +63,14 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 		String subId=msg.optString("subId",null);
 		WsqPeer from=WsqPeer.create(authSession,srcPath,qname,subId);
 		if( wsqManager.subscribe(from, this) ){
-			if(wsqSession.reg(from)){
-				from.ref();
-			}else{
-				logger.error("aleady in session.",new Exception());
+			if(!wsqSession.reg(from)){
+				logger.warn("aleady in session.",new Exception());
+				from.unref();
 			}
 		}else{
 			JSON res=WsqManager.makeMessage(WsqManager.CB_TYPE_ERROR,qname,subId,"subscribe","not found qname:"+qname);
 			ress.add(res);
+			from.unref();
 		}
 	}
 	
@@ -134,7 +134,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 	
 	private void deploy(String qname,String className,JSONArray ress){
 		JSON res=null;
-		if( !getAuthSession().getUser().getRoles().contains("admin")){//TODO admin name
+		if( !roles.contains("admin")){//TODO admin name
 			res=WsqManager.makeMessage(WsqManager.CB_TYPE_ERROR,null, null,"deploy","not admin");
 			ress.add(res);
 			return;
@@ -233,6 +233,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 	}
 	
 	private AuthSession authSession;
+	private List<String> roles;
 	private WsqSession wsqSession;
 	private JSONArray responseObjs=new JSONArray();
 	private boolean isMsgBlock=false;
@@ -242,6 +243,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 	
 	private void setupSession(){
 		authSession=getAuthSession();
+		roles=authSession.getUser().getRolesList();
 		wsqSession=(WsqSession)authSession.getAttribute("WsqSession");
 		if(wsqSession==null){
 			wsqSession=new WsqSession();

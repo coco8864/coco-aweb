@@ -92,6 +92,7 @@
 									<include name="auth/digestForm.vsp" />
 									<include name="auth/webAuthenticate.vsp" />
 									<include name="fileSystem/listing.vsp" />
+									<include name="wsq/xhrFrame.html" />
 								</fileset>
 							</copy>
 							<copy todir="pack/phantom/ph/setting/">
@@ -122,6 +123,7 @@
 									<include name="pub/js/ph-jqnoconflict.js" />
 									<include name="pub/js/ph-history.js" />
 									<include name="pub/js/ph-injection.js" />
+									<include name="pub/js/ph-wsq.js" />
 								</fileset>
 							</copy>
 							<copy todir="pack/phantom/ph/lib/">
