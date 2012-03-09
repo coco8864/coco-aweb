@@ -6,7 +6,7 @@ public interface WsqController {
 	/**
 	 * 指定したchannel以外のchannelに送信
 	 * echobackしないため
-	 * @param message(JSON or String)
+	 * @param message(JSON or String or BinaryMessage)
 	 * @param dnyChid 送信しないchannel id
 	 * @return
 	 */
@@ -16,7 +16,7 @@ public interface WsqController {
 	
 	/**
 	 * 指定したchannelに送信
-	 * @param message(JSON or String)
+	 * @param message(JSON or String or BinaryMessage)
 	 * @param chids　送信するchannel id群
 	 * @return 送信しchannel数を返却
 	 */
@@ -26,7 +26,7 @@ public interface WsqController {
 
 	/**
 	 * 接続しているchannel全部に送信
-	 * @param message(JSON or String)
+	 * @param message(JSON or String or BinaryMessage)
 	 * @return 送信しchannel数を返却
 	 */
 	public int message(Object message);
