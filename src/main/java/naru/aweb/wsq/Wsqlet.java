@@ -18,7 +18,7 @@ public interface Wsqlet {
 	/**
 	 * 端末からのデータ送信を通知
 	 * @param from 送信元
-	 * @param message(JSON or String)
+	 * @param message(String or BinaryMessage)
 	 */
 	public void onPublish(WsqPeer from,Object message);
 	public void onSubscribe(WsqPeer from);
