@@ -8,12 +8,12 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 public class BlobMessage {
-	private String message;
+	private Object message;
 	private JSONObject meta;
 	private List<Blob> blobs=new ArrayList<Blob>();
 	
 	public static BlobMessage create(JSONObject meta,ByteBuffer[] msgs){
-		String message=meta.optString("message");
+		Object message=meta.get("message");//message ‚ÍString or JSON
 		BlobMessage result=new BlobMessage(message);
 		result.setMeta(meta);
 		if(meta.getInt("totalLength")!=0){
@@ -34,7 +34,7 @@ public class BlobMessage {
 		return result;
 	}
 	
-	public BlobMessage(String message){
+	public BlobMessage(Object message){
 		this.message=message;
 	}
 	
@@ -45,14 +45,18 @@ public class BlobMessage {
 		this.meta=meta;
 	}
 	
-	public Blob getBlobs(int index) {
+	public int blobCount(){
+		return blobs.size();
+	}
+	
+	public Blob getBlob(int index) {
 		return blobs.get(index);
 	}
 	public void addBlob(Blob blob){
 		blobs.add(blob);
 	}
 
-	public String getMessage() {
+	public Object getMessage() {
 		return message;
 	}
 

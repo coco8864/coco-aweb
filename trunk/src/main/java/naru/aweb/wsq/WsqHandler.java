@@ -264,12 +264,12 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 		}
 		JSONObject metaObj=(JSONObject)JSONSerializer.toJSON(meta);
 		BlobMessage blobMessage=BlobMessage.create(metaObj, msgs);
-		JSONArray ress=new JSONArray();
-		metaObj.element("message", blobMessage);
-		publish(metaObj,ress);
-		if(ress.size()>0){
-			message(ress);
-		}
+		
+		String qname=metaObj.getString("qname");
+		String subId=metaObj.optString("subId",null);
+		WsqPeer from=WsqPeer.create(authSession,srcPath,qname,subId);
+		wsqManager.publish(from, blobMessage);
+		from.unref();
 	}
 	
 	@Override
