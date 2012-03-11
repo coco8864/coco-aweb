@@ -1,5 +1,7 @@
 package naru.aweb.wsq;
 
+import java.nio.ByteBuffer;
+
 import net.sf.json.JSON;
 
 import org.apache.log4j.Logger;
@@ -33,6 +35,8 @@ public class SampleWsqlet implements Wsqlet {
 	@Override
 	public void onPublish(WsqPeer from, BlobMessage message) {
 		logger.info("onPublish:"+from);
+		Blob blob=message.getBlob(0);
+		ByteBuffer[] buf=blob.read();
 		controller.message(message);//来たメッセージをecho back
 	}
 

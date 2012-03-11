@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 import naru.async.Timer;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
@@ -13,6 +15,7 @@ import net.sf.json.JSON;
 import net.sf.json.JSONArray;
 
 public class Wsq extends PoolBase implements WsqController,Timer{
+	private static Logger logger=Logger.getLogger(Wsq.class);
 	
 	/* stress,connection,’èŠú“I‚Éî•ñ‚ğ”­M */
 	public static Wsq createWsq(Object wsqlet,String qname){

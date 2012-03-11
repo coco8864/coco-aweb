@@ -90,10 +90,7 @@ public class BlobFile {
 		if(cache==null){
 			readFile();
 		}
-		BuffersUtil.mark(cache);
-		BuffersUtil.slice(cache, offset, length);
-		ByteBuffer[] result=BuffersUtil.dupBuffers(cache);
-		BuffersUtil.reset(cache);
+		ByteBuffer[] result=BuffersUtil.slice(cache, offset, length);
 		return result;
 	}
 	
