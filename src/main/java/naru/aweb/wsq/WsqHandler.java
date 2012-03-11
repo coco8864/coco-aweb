@@ -3,18 +3,22 @@
  */
 package naru.aweb.wsq;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
 import naru.async.Timer;
+import naru.async.pool.PoolManager;
 import naru.async.timer.TimerManager;
 import naru.aweb.auth.AuthSession;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
 import naru.aweb.handler.WebSocketHandler;
+import naru.aweb.http.GzipContext;
 import naru.aweb.http.ParameterParser;
 import naru.aweb.mapping.MappingResult;
 import net.sf.json.JSON;
@@ -159,6 +163,28 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 		logger.error("fail to deploy.",t);
 	}
 	
+	
+	private void dispatchMessage(JSONObject msg,JSONArray ress){
+		String type=msg.getString("type");
+		if("subscribe".equals(type)){
+			subscribe(msg,ress);
+		}else if("unsubscribe".equals(type)){
+			unsubscribe(msg,ress);
+		}else if("publish".equals(type)){
+			publish(msg,ress);
+		}else if("close".equals(type)){
+			close(ress);
+		}else if("getQnames".equals(type)){
+			getQnames(ress);
+		}else if("deploy".equals(type)){
+			String qname=msg.getString("qname");
+			String className=msg.getString("className");
+			deploy(qname,className,ress);
+		}else{
+			logger.warn("unsuppoerted tyep:"+type);
+		}
+	}
+	
 	/**
 	 * 
 	 * @param json リクエストとして受け取ったjson
@@ -166,27 +192,16 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 	 * @return
 	 */
 	private void processMessages(JSON json,JSONArray ress){
+		if(!json.isArray()){
+			dispatchMessage((JSONObject)json,ress);
+			return;
+		}
 		List<JSONObject> messages=new ArrayList<JSONObject>();
 		parseMessage(json, messages);
 		Iterator<JSONObject> itr=messages.iterator();
 		while(itr.hasNext()){
 			JSONObject msg=itr.next();
-			String type=msg.getString("type");
-			if("subscribe".equals(type)){
-				subscribe(msg,ress);
-			}else if("unsubscribe".equals(type)){
-				unsubscribe(msg,ress);
-			}else if("publish".equals(type)){
-				publish(msg,ress);
-			}else if("close".equals(type)){
-				close(ress);
-			}else if("getQnames".equals(type)){
-				getQnames(ress);
-			}else if("deploy".equals(type)){
-				String qname=msg.getString("qname");
-				String className=msg.getString("className");
-				deploy(qname,className,ress);
-			}
+			dispatchMessage(msg,ress);
 		}
 	}
 	
@@ -224,6 +239,36 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 				}
 				timerId=TimerManager.setTimeout(10, this,null);
 			}
+		}
+	}
+	
+	@Override
+	public void onMessage(ByteBuffer[] msgs) {
+		//metaまでは、msg[0]にある事を前提 TODO 改善要
+		ByteBuffer topBuf=msgs[0];
+		topBuf.order(ByteOrder.LITTLE_ENDIAN);
+		int metaLength=topBuf.getInt();
+		byte[] array=topBuf.array();
+		int pos=topBuf.position();
+		if((pos+metaLength)>topBuf.limit()){
+			logger.warn("meta length error");
+			return;
+		}
+		String meta;
+		try {
+			meta=new String(array,pos,metaLength,"UTF-8");
+			topBuf.position(pos+metaLength);
+		} catch (UnsupportedEncodingException e) {
+			logger.error("encode error");
+			return;
+		}
+		JSONObject metaObj=(JSONObject)JSONSerializer.toJSON(meta);
+		BlobMessage blobMessage=BlobMessage.create(metaObj, msgs);
+		JSONArray ress=new JSONArray();
+		metaObj.element("message", blobMessage);
+		publish(metaObj,ress);
+		if(ress.size()>0){
+			message(ress);
 		}
 	}
 	
@@ -310,11 +355,6 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 			peer.unref();
 		}
 		super.onLogout();
-	}
-
-	@Override
-	public void onMessage(ByteBuffer[] msgs) {
-		throw new UnsupportedOperationException();
 	}
 
 	@Override

@@ -9,6 +9,7 @@ import naru.async.Timer;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.async.timer.TimerManager;
+import net.sf.json.JSON;
 import net.sf.json.JSONArray;
 
 public class Wsq extends PoolBase implements WsqController,Timer{
@@ -99,7 +100,15 @@ public class Wsq extends PoolBase implements WsqController,Timer{
 	}
 	
 	public void publish(WsqPeer from,Object message){
-		wsqlet.onPublish(from, message);
+		if(message instanceof String){
+			wsqlet.onPublish(from, (String)message);
+		}else if(message instanceof JSON){
+			wsqlet.onPublish(from, (JSON)message);
+		}else if(message instanceof BlobMessage){
+			wsqlet.onPublish(from, (BlobMessage)message);
+		}else{
+			logger.error("publish type error");
+		}
 	}
 	
 	public JSONArray getMessage(WsqPeer from){

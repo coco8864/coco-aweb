@@ -1,5 +1,7 @@
 package naru.aweb.wsq;
 
+import net.sf.json.JSON;
+
 import org.apache.log4j.Logger;
 
 public class SampleWsqlet implements Wsqlet {
@@ -19,7 +21,17 @@ public class SampleWsqlet implements Wsqlet {
 	}
 
 	@Override
-	public void onPublish(WsqPeer from, Object message) {
+	public void onPublish(WsqPeer from, String message) {
+		logger.info("onPublish:"+from);
+		controller.message(message);//来たメッセージをecho back
+	}
+	@Override
+	public void onPublish(WsqPeer from, JSON message) {
+		logger.info("onPublish:"+from);
+		controller.message(message);//来たメッセージをecho back
+	}
+	@Override
+	public void onPublish(WsqPeer from, BlobMessage message) {
 		logger.info("onPublish:"+from);
 		controller.message(message);//来たメッセージをecho back
 	}

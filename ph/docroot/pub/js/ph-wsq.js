@@ -20,6 +20,8 @@ if(typeof ph == "undefined"){
     _XHR_FRAME_NAME_PREFIX:'__wsq_',
     _XHR_FRAME_URL:'/xhrFrame.html',
     _RETRY_COUNT:3,
+    _isBlobMessage:true,/* Blobメッセージを使うか否か */
+    _isGz:true,/* Blobメッセージにgzipを使うか否か */
     _connections:{},
     /* 接続毎に作られるオブジェクト */
     _Connection:function(url,cb){
@@ -126,6 +128,91 @@ if(typeof ph == "undefined"){
       }else{
         con._onXhrMessage(event);
       }
+    },
+    _readBlobs:function(meta,data,con){
+      if(!ph.jQuery.isArray(data)){
+        data=[data];
+      }
+      meta.dataMetas=[];
+      meta.dataCount=0;
+      meta.totalLength=0;
+      var results=[];//ArrayBufferの列に変換する
+      var readCount=0;
+      for(var i in data){
+        var dataMetas={};
+        var d=data[i];
+        meta.dataMetas[i]=dataMetas;
+        if(d instanceof ArrayBuffer){
+          meta.dataCount++;
+          dataMetas.jsType='ArrayBuffer';
+          dataMetas.length=d.byteLength;
+          results[i]=b;
+          meta.totalLength+=dataMetas.length;
+          continue;
+        }else if(typeof d==='string'){
+          meta.dataCount++;
+          dataMetas.jsType='string';
+          results[i]=jz.utils.stringToArrayBuffer(d);
+          dataMetas.length=results[i].byteLength;
+          meta.totalLength+=dataMetas.length;
+          continue;
+        }else if(!(d instanceof Blob)){
+          meta.dataCount++;
+          dataMetas.jsType='object';
+          var dText=ph.JSON.stringify(d);
+          results[i]=jz.utils.stringToArrayBuffer(dText);
+          dataMetas.length=results[i].byteLength;
+          meta.totalLength+=dataMetas.length;
+          continue;
+        }
+        dataMetas.mimeType=d.type;
+        dataMetas.jsType='Blob';
+        dataMetas.name=d.name;
+        var fr=new FileReader();
+        fr._i=i;
+        fr.onload=function(e){
+          results[this._i]=e.target.result;
+          dataMetas.length=e.target.result.byteLength;
+          meta.dataCount++;
+          meta.totalLength+=dataMetas.length;
+          if(meta.dataCount===data.length){//複数のblobを全て読みきったら
+            ph.wsq._sendBinMessage(meta,results,con);
+          }
+        }
+        fr.readAsArrayBuffer(d);
+      }
+      if(meta.dataCount===data.length){//Blobは無かった
+        ph.wsq._sendBinMessage(meta,results,con);
+      }
+    },
+    _sendBinMessage:function(meta,data,con){
+      var payloadGzBuf=null;
+      var payloadBuf=new ArrayBuffer(meta.totalLength);
+      var payloadBufA=new Uint8Array(payloadBuf);
+      var pos=0;
+      for(var i in data){
+        var len=data[i].byteLength;
+        payloadBufA.set(new Uint8Array(data[i]),pos,len);
+        pos+=len;
+      }
+      if(ph.wsq._isGz){
+        meta.isGz=true;
+        payloadBuf=jz.gz.compress(payloadBuf);
+      }else{
+        meta.isGz=false;
+      }
+      var BlobBuilder = window.MozBlobBuilder || window.WebKitBlobBuilder;
+      var bb=new BlobBuilder();
+      var headerBuf=new ArrayBuffer(4);
+      var metaText=ph.JSON.stringify(meta);
+      var metaBuf=jz.utils.stringToArrayBuffer(metaText);
+      /* ヘッダ(4):meta長 */
+      var header=new Uint32Array(headerBuf);
+      header[0]=metaBuf.byteLength;//metaサイズ
+      bb.append(headerBuf);
+      bb.append(metaBuf);
+      bb.append(payloadBuf);
+      con._ws.send(bb.getBlob());
     }
   }/* end of wsq */
   /* Connection method */
@@ -372,7 +459,7 @@ if(typeof ph == "undefined"){
     }
     this._send(sendData);
   };
-  wsq._Connection.prototype.publishBinary=function(qname,message,subId){
+  wsq._Connection.prototype.publishBinary=function(qname,message,data,subId){
     if(!this._ws){
         this._callback(ph.wsq.CB_ERROR,'publishBinary','unsuppoert publish need WebSocket',false,qname,subId);
         return;
@@ -384,34 +471,13 @@ if(typeof ph == "undefined"){
         this._callback(ph.wsq.CB_ERROR,'publish','unkown subId',false,qname,subId);
         return;
       }
-      sendData={type:'publish',qname:qname,subId:subId,message:message.meta};
+      sendData={type:'publish',qname:qname,subId:subId,message:message};
     }else if(!subId){//省略した場合
-      sendData={type:'publish',qname:qname,message:message.meta};
+      sendData={type:'publish',qname:qname,message:message};
     }else{
-      sendData={type:'publish',qname:qname,subId:subId,message:message.meta};
+      sendData={type:'publish',qname:qname,subId:subId,message:message};
     }
-    var metaText=ph.JSON.stringify(sendData);
-    var blob = jz.zip.compress([
-      {name: 'meta', str: "dummy dummy"+metaText}
-    ]);
-    var meta=jz.utils.stringToArrayBuffer(metaText);
-    var frame=new ArrayBuffer(8+meta.byteLength+blob.size);
-    var header=new Uint32Array(frame,0,8);
-    /* ヘッダ(8) 全体長、meta長 */
-    header[0]=8+meta.byteLength+blob.size;//全体長
-    header[1]=meta.byteLength;//metaサイズ
-    /* meta情報 */
-    var frameMeta=new Uint8Array(frame,8,meta.byteLength);
-    frameMeta.set(new Uint8Array(meta));
-    var fr=new FileReader();
-    fr._ws=this._ws;
-    fr.onload=function(e){
-      /* 圧縮データ */
-      var frameZipBuf=new Uint8Array(frame,8+meta.byteLength,blob.size);
-      frameZipBuf.set(new Uint8Array(e.target.result));
-      this._ws.send(frame);
-    };
-    fr.readAsArrayBuffer(blob);
+    ph.wsq._readBlobs(sendData,data,this);
   };
   wsq._Connection.prototype.getQnames=function(){
     if(this.stat!=ph.wsq.STAT_CONNECT){
