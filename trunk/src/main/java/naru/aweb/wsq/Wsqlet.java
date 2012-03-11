@@ -1,5 +1,7 @@
 package naru.aweb.wsq;
 
+import net.sf.json.JSON;
+
 /**
  * form
  *  chid:brawserë§Ç≈çÃî‘Ç∑ÇÈid
@@ -20,7 +22,10 @@ public interface Wsqlet {
 	 * @param from ëóêMå≥
 	 * @param message(String or BinaryMessage)
 	 */
-	public void onPublish(WsqPeer from,Object message);
+	public void onPublish(WsqPeer from,String message);
+	public void onPublish(WsqPeer from,JSON message);
+	public void onPublish(WsqPeer from,BlobMessage message);
+	
 	public void onSubscribe(WsqPeer from);
 	public void onUnsubscribe(WsqPeer from);
 	

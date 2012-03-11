@@ -218,13 +218,15 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	
 	/* このクラスを継承したapplicationから呼び出される */
 	/* メッセージを送信する場合(text) */
-	protected void postMessage(String message){
+	/* 同時にpostMessageを受け付ける事はできないのでsynchronized */
+	protected synchronized void postMessage(String message){
 		tracePostMessage(message);
 		wsProtocol.postMessage(message);
 	}
 	
 	/* メッセージを送信する場合(binary) */
-	protected void postMessage(ByteBuffer[] message){
+	/* 同時にpostMessageを受け付ける事はできないのでsynchronized */
+	protected synchronized void postMessage(ByteBuffer[] message){
 		tracePostMessage(message);
 		wsProtocol.postMessage(message);
 	}
