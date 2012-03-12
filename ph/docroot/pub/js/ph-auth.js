@@ -94,8 +94,10 @@ window.ph.auth={
   },
   _reqestCb:null,
   _url:null,
+  _res:null,
+  _timerId:null,
   _onMessage:function(ev){
-ph.log("_onMessage:"+ev.origin);
+//ph.log("_onMessage:"+ev.origin +":"+(new Date()).getTime());
 //  ph.dump1(ev);
     if(ev.source!==window[ph.auth._authFrameName]){
       return;
@@ -107,24 +109,46 @@ ph.log("_onMessage:"+ev.origin);
     if(url.lastIndexOf(ev.origin, 0)!=0){
       return;
     }
-    var reqestCb=ph.auth._reqestCb;
-    ph.auth._url=null;
-    ph.auth._reqestCb=null;
-    var res=ph.JSON.parse(ev.data);
-    reqestCb(res);
+    ph.auth._res=ph.JSON.parse(ev.data);
   },
   _reqestUrl:function(url,cb){
-ph.log("_reqestUrl:"+url);
+//ph.log("_reqestUrl:"+url +":"+(new Date()).getTime());
     var origin=encodeURIComponent(location.protocol+'//'+location.host);
     this._url=url;
     this._reqestCb=cb;
     window[this._authFrameName].location.href=url;
   },
-  _frameLoad:function(){
+  _reqestCallback:function(){
+    var reqestCb=ph.auth._reqestCb;
+    var res=ph.auth._res;
+    ph.auth._url=null;
+    ph.auth._reqestCb=null;
+    ph.auth._res=null;
+    reqestCb(res);
+  },
+  _frameLoad:function(x){
+    ph.log('_frameLoad:'+(new Date()).getTime());
+    if(ph.auth._res){
+      ph.auth._reqestCallback();
+      return;
+    }
+    if(!ph.auth._reqestCb){
+      return;
+    }
+    ph.auth._timerId=setTimeout(ph.auth._frameLoad2,100);
+  },
+  _frameLoad2:function(){
+//ph.log("_frameLoad2:"+(new Date()).getTime());
+    if(ph.auth._res){
+      ph.auth._timerId=null;
+      ph.auth._reqestCallback();
+      return;
+    }
     var reqestCb=ph.auth._reqestCb;
     if(reqestCb!=null){//frameにloadされたがmessageが来ない
-ph.log("_frameLoad timeout:"+this._url);
+//ph.log("_frameLoad timeout:"+this._url);
       ph.auth._reqestCb=null;
+      ph.auth._url=null;
       reqestCb({result:false,reason:'url error'});
     }
   }
@@ -137,7 +161,7 @@ ph.jQuery(function(){
   }else if(window.attachEvent){
     window.attachEvent('onmessage',ph.auth._onMessage);
   }
-  ph.jQuery("body").append('<iframe width="0" height="0" frameborder="no" name="' + ph.auth._authFrameName + '" onload=\'setTimeout(ph.auth._frameLoad,2000);\'></iframe>');
+  ph.jQuery("body").append('<iframe width="0" height="0" frameborder="no" name="' + ph.auth._authFrameName + '" onload=\'ph.auth._frameLoad(this);\'></iframe>');
 });
 
 })();

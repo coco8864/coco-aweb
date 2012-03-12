@@ -168,13 +168,13 @@ if(typeof ph == "undefined"){
         dataMetas.mimeType=d.type;
         dataMetas.jsType='Blob';
         dataMetas.name=d.name;
+        dataMetas.length=d.size;
+        meta.totalLength+=dataMetas.length;
         var fr=new FileReader();
         fr._i=i;
         fr.onload=function(e){
           results[this._i]=e.target.result;
-          dataMetas.length=e.target.result.byteLength;
           meta.dataCount++;
-          meta.totalLength+=dataMetas.length;
           if(meta.dataCount===data.length){//複数のblobを全て読みきったら
             ph.wsq._sendBinMessage(meta,results,con);
           }
