@@ -42,6 +42,12 @@ public class Wsq extends PoolBase implements WsqController,Timer{
 		JSONArray msgs;
 		long lastAccess;
 		void setMessage(Object msg){
+			if(msg instanceof BlobMessage){
+				if(from.isAllowBlob()){
+				}else{
+				}
+				return;
+			}
 			Object sendMsg=WsqManager.makeMessage(
 					WsqManager.CB_TYPE_MESSAGE,
 					from.getQname(),
@@ -226,6 +232,9 @@ public class Wsq extends PoolBase implements WsqController,Timer{
 	}
 
 	private int messageInternal(Object message, Collection<SubscribeInfo> infos){
+		if(message instanceof BlobMessage){
+			
+		}
 		int count=0;
 		for(SubscribeInfo info:infos){
 			info.setMessage(message);

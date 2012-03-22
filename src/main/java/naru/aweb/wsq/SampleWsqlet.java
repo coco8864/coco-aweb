@@ -56,4 +56,14 @@ public class SampleWsqlet implements Wsqlet {
 		return 0;
 	}
 
+	@Override
+	public boolean isBlobMessageOnly() {
+		return true;
+	}
+
+	@Override
+	public boolean useBlob() {
+		return true;
+	}
+
 }

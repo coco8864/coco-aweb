@@ -13,12 +13,12 @@ import java.util.List;
 
 import naru.async.Timer;
 import naru.async.pool.PoolManager;
+import naru.async.store.Page;
 import naru.async.timer.TimerManager;
 import naru.aweb.auth.AuthSession;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
 import naru.aweb.handler.WebSocketHandler;
-import naru.aweb.http.GzipContext;
 import naru.aweb.http.ParameterParser;
 import naru.aweb.mapping.MappingResult;
 import net.sf.json.JSON;
@@ -65,6 +65,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 	private void subscribe(JSONObject msg,JSONArray ress){
 		String qname=msg.getString("qname");
 		String subId=msg.optString("subId",null);
+		boolean isAllowBlob=msg.optBoolean("isAllowBlob", false);
 		WsqPeer from=WsqPeer.create(authSession,srcPath,qname,subId);
 		if( wsqManager.subscribe(from, this) ){
 			if(!wsqSession.reg(from)){
