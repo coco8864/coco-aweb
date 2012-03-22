@@ -5,9 +5,9 @@ import java.util.Collection;
 public interface WsqController {
 	/**
 	 * 指定したchannel以外のchannelに送信
-	 * echobackしないため
+	 * echobackしないためにdnyPeersを利用
 	 * @param message(JSON or String or BinaryMessage)
-	 * @param dnyChid 送信しないchannel id
+	 * @param dnyPeers 送信しないchannel id
 	 * @return
 	 */
 	public int message(Object message,Collection<WsqPeer> peers, Collection<WsqPeer> dnyPeers);

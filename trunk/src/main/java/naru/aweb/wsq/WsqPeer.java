@@ -15,8 +15,12 @@ public class WsqPeer extends PoolBase{
 	private String subId;
 	private String userId;
 	private List<String> roles;
-	
+	private boolean isAllowBlob;
 	public static WsqPeer create(AuthSession session,String srcPath,String qname,String subId){
+		return create(session, srcPath, qname, subId,false);
+	}
+	
+	public static WsqPeer create(AuthSession session,String srcPath,String qname,String subId,boolean isAllowBlob){
 		WsqPeer peer=(WsqPeer)PoolManager.getInstance(WsqPeer.class);
 		peer.srcPath=srcPath;
 		peer.qname=qname;
@@ -25,6 +29,7 @@ public class WsqPeer extends PoolBase{
 		peer.authId=session.getToken();
 		peer.userId=user.getLoginId();
 		peer.roles=Collections.unmodifiableList(user.getRolesList());
+		peer.isAllowBlob=isAllowBlob;
 		return peer;
 	}
 	
@@ -93,6 +98,10 @@ public class WsqPeer extends PoolBase{
 		} else if (!subId.equals(other.subId))
 			return false;
 		return true;
+	}
+
+	public boolean isAllowBlob() {
+		return isAllowBlob;
 	}
 
 

@@ -43,7 +43,7 @@
 <script type="text/javascript"><!--
 jQuery(function(){
     // ドラッグドロップからの入力
-    $("#target").bind("drop", function (e) {
+    $("body").bind("drop", function (e) {
         // ドラッグされたファイル情報を取得
         var files = e.originalEvent.dataTransfer.files;
 	var data=[];

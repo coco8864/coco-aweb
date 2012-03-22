@@ -3,14 +3,9 @@ package naru.aweb.wsq;
 import net.sf.json.JSON;
 
 /**
- * form
- *  chid:brawser側で採番するid
- *  user:userName
- *  roles:userが持つroleリスト
- * 
  * wsqに登録するオブジェクト
  * TODO:すべてのメソッドを記述する必要はなく、必要なメソッドのみでよいようにしたい
- * @author Owner
+ * @author Naru
  *
  */
 public interface Wsqlet {
@@ -30,8 +25,21 @@ public interface Wsqlet {
 	public void onUnsubscribe(WsqPeer from);
 	
 	/**
-	 * 監視定義を行った場合、呼び出される
+	 * メッセージを定期配信する場合に利用
 	 * @return　次回呼び出しまでの間隔
 	 */
 	public long onWatch();
+	
+	/**
+	 * このwsqletでBlobMessageを利用するか否か
+	 * @return true BlobMessageを使う
+	 */
+	public boolean useBlob();
+	
+	/**
+	 * useBlobがtrueの場合有効
+	 * ブラウザ側がBlobが利用できない場合の挙動を決める
+	 * @return true BlobMessageを許容しないブラウザにmessageのみを送信する
+	 */
+	public boolean isBlobMessageOnly();
 }
