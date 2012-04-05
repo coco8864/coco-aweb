@@ -311,9 +311,9 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 		closeStore(false);
 	}
 
-	public void onBufferFailure(Object userContext, Throwable falure) {
+	public void onBufferFailure(Object userContext, Throwable failure) {
 		closeStore();
-		logger.error("onGotFailure error.", falure);
+		logger.error("onGotFailure error.", failure);
 		responseEnd();
 //		onBufferFailure‚ª’Ê’m‚³‚ê‚½‚Æ‚¢‚¤–‚ÍAstore‚ÍŠJ•ú‚³‚ê‚Ä‚¢‚é
 		closeStore(false);
