@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import naru.async.cache.FileCache;
 import naru.async.core.ChannelContext;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
@@ -19,7 +20,6 @@ import naru.aweb.auth.Authorizer;
 import naru.aweb.auth.LogoutEvent;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
-import naru.aweb.config.FileCache;
 import naru.aweb.config.Mapping;
 import naru.aweb.core.Main;
 import naru.aweb.handler.ws.WsProtocol;
@@ -404,9 +404,9 @@ public class AdminHandler extends WebServerHandler{
 		}else if("setFileCache".equals(cmd)){
 			String isChache=parameter.getParameter("isChache");
 			String isFlush=parameter.getParameter("isFlush");
-			FileCache fileCache=config.getFileCache();
-			fileCache.setChache("true".equalsIgnoreCase(isChache));
-			fileCache.setFlush("true".equalsIgnoreCase(isFlush));
+			FileCache fileCache=FileCache.getInstance();
+			fileCache.setUseCache("true".equalsIgnoreCase(isChache));
+			fileCache.setFlushCache("true".equalsIgnoreCase(isFlush));
 			responseJson(true);
 		}else if("setAuth".equals(cmd)){
 			String scheme=parameter.getParameter("scheme");
