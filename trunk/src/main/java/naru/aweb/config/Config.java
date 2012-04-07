@@ -3,7 +3,6 @@ package naru.aweb.config;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -27,6 +26,7 @@ import java.util.Set;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
+import naru.async.cache.FileCache;
 import naru.aweb.auth.Authenticator;
 import naru.aweb.auth.Authorizer;
 import naru.aweb.core.Main;
@@ -257,6 +257,10 @@ public class Config {
 		}
 		random.setSeed(entoropy.getBytes());
 		return random;
+	}
+	
+	public FileCache getFileCache() {
+		return FileCache.getInstance();
 	}
 
 	public Authenticator getAuthenticator() {
