@@ -673,8 +673,7 @@ public class WebServerHandler extends ServerBaseHandler {
 		setupResponseHeader();
 
 		/* body‚ðŠm’è‚·‚é */
-		ByteBuffer[] bodyBuffers = BuffersUtil.concatenate(firstBody,
-				secondBody);
+		ByteBuffer[] bodyBuffers = BuffersUtil.concatenate(firstBody,secondBody);
 		long commitContentLength = -1;
 		if (secondBody == null) {
 			bodyBuffers = zipedIfNeed(true, bodyBuffers);

@@ -459,6 +459,7 @@ public class AuthHandler extends WebServerHandler {
 				return;
 			}else if(authMark.equals(AUTH_CD_WS_CHECK)){
 				crossDomainCheck(true,requestHeader, mapping);
+				return;
 			}else if(authMark.equals(AUTH_CD_SET)){
 				String authId=parameter.getParameter("pathOnceId");
 				crossDomainSet(false,requestHeader, mapping,authId,cookieId);
