@@ -108,7 +108,6 @@ public class Config {
 	private Authorizer authorizer;
 	private LogPersister logPersister;
 	private SslContextPool sslContextPool;
-	private FileCache fileCache;
 	private ReplayHelper replayHelper;
 	private FilterHelper filterHelper;
 	private InjectionHelper injectionHelper;
@@ -515,9 +514,6 @@ public class Config {
 			return;
 		}
 		isAleadyTerm = true;
-		if(fileCache!=null){
-			fileCache.term();
-		}
 		if(broadcaster!=null){//init‚Ì“r’†‚Å—áŠO‚µ‚½ê‡broadcaster‚Ì‰Â”\«‚ª‚ ‚éB
 			broadcaster.term();
 			broadcaster=null;
@@ -668,7 +664,6 @@ public class Config {
 		logPersister = new LogPersister(this);
 		sslContextPool = new SslContextPool(this);
 		sslContext = sslContextPool.getSSLContext(getSelfDomain());
-		fileCache=FileCache.create();
 
 		String[] hostsArray = Config.getStringArray(configuration, REAL_HOSTS);
 		for (int i = 0; i < hostsArray.length; i++) {
@@ -1142,10 +1137,6 @@ public class Config {
 
 	public LogPersister getLogPersister() {
 		return logPersister;
-	}
-
-	public FileCache getFileCache(){
-		return fileCache;
 	}
 	
 	public ReplayHelper getReplayHelper() {

@@ -1,13 +1,9 @@
 package naru.aweb.handler;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.channels.ReadableByteChannel;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,10 +11,7 @@ import java.util.Map;
 import naru.async.BufferGetter;
 import naru.async.cache.AsyncFile;
 import naru.async.cache.FileInfo;
-import naru.async.pool.BuffersUtil;
-import naru.async.pool.PoolManager;
 import naru.aweb.config.Config;
-import naru.aweb.config.FileCache;
 import naru.aweb.config.Mapping; //import naru.aweb.config.FileCache.FileCacheInfo;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.WebServerHandler;
@@ -34,7 +27,6 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 	private static String LISTING_PAGE = "/fileSystem/listing.vsp";
 	private static Configuration contentTypeConfig = null;// config.getConfiguration("ContentType");
 	private static Map<String, String> contentTypeMap = new HashMap<String, String>();
-	private static FileCache fileCache = null;
 
 	private static Config getConfig() {
 		if (config == null) {
@@ -61,13 +53,6 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 			contentTypeMap.put(ext, contentType);
 		}
 		return contentType;
-	}
-
-	private static FileCache getFileCache() {
-		if (fileCache == null) {
-			fileCache = getConfig().getFileCache();
-		}
-		return fileCache;
 	}
 
 	// TODO adminSettingからデフォルト値を取得する
@@ -373,7 +358,9 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 
 	public void onWrittenBody() {
 		logger.debug("#writtenBody.cid:" + getChannelId());
-		asyncFile.asyncRead(this, asyncFile);
+		if(asyncFile!=null){
+			asyncFile.asyncRead(this, asyncFile);
+		}
 		super.onWrittenBody();
 	}
 
@@ -384,14 +371,18 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 
 	public void onBufferEnd(Object userContext) {
 		responseEnd();
-		asyncFile.close();
-		asyncFile = null;
+		if(asyncFile!=null){
+			asyncFile.close();
+			asyncFile = null;
+		}
 	}
 
 	public void onBufferFailure(Object userContext, Throwable failure) {
 		logger.error("onGotFailure error.", failure);
 		responseEnd();
-		asyncFile.close();
-		asyncFile = null;
+		if(asyncFile!=null){
+			asyncFile.close();
+			asyncFile = null;
+		}
 	}
 }
