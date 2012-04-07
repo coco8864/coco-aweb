@@ -397,17 +397,10 @@ checked="checked"
 <H2 onclick="ph.jQuery('#fileCache').toggle();">+FileCache設定</H2>
 <div class="settingItem" id="fileCache">
 file cache:<input type="checkBox" name="isFileCache" id="isFileCache"
-#if(${config.fileCache.isChache()})
+#if(${config.fileCache.useCache()})
 checked="checked"
 #end
  onclick='setFileCache();' /><br>
-isChache:${config.fileCache.isChache()}</br>
-isFlush:${config.fileCache.isFlush()}</br>
-totalSize:${config.fileCache.totalSize}</br>
-totalSizeMax:${config.fileCache.totalSizeMax}</br>
-totalCount:${config.fileCache.totalCount}</br>
-totalCountMax:${config.fileCache.totalCountMax}</br>
-fileSizeMax:${config.fileCache.fileSizeMax}</br>
 </div>
 
 <Hr/>
