@@ -247,12 +247,20 @@ public abstract class WsProtocol extends PoolBase{
 		}
 	}
 	
+	public void postMessage(ByteBuffer[] message){
+		postMessage(message,true);
+	}
+	
 	/* handshakeに失敗した場合は、このメソッドで,httpとしてリクエストを完了させる */
 	public abstract boolean onHandshake(HeaderParser requestHeader,String subProtocol);
 	public abstract void onBuffer(ByteBuffer[] data);
 	public abstract void onClose(short code,String reason);/* 回線が切断した or アプリがcloseWebSocketを呼び出した */
 	public abstract void postMessage(String message);
-	public abstract void postMessage(ByteBuffer[] message);
+	/**
+	 * @param message
+	 * @param isFin 継続messageの場合falseに設定
+	 */
+	public abstract void postMessage(ByteBuffer[] message,boolean isFin);
 	public abstract void onReadTimeout();/* 回線readがタイムアウトした */
 	public abstract String getWsProtocolName();
 	public abstract String getRequestSubProtocols(HeaderParser requestHeader);
