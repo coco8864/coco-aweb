@@ -42,6 +42,8 @@ public class Wsq extends PoolBase implements WsqController,Timer{
 		JSONArray msgs;
 		long lastAccess;
 		void setMessage(Object msg){
+			//TODO BlobMessageの場合は、ヘッダを最初に送信、後はAsyncFileを使って順次送信する
+			//
 			if(msg instanceof BlobMessage){
 				if(from.isAllowBlob()){
 				}else{
@@ -232,9 +234,6 @@ public class Wsq extends PoolBase implements WsqController,Timer{
 	}
 
 	private int messageInternal(Object message, Collection<SubscribeInfo> infos){
-		if(message instanceof BlobMessage){
-			
-		}
 		int count=0;
 		for(SubscribeInfo info:infos){
 			info.setMessage(message);
