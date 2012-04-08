@@ -103,7 +103,7 @@ public class WsHybiFrame {
 	}
 	
 	public static ByteBuffer[] createFinFrame(byte pcode) {
-		return createFinFrame(pcode, false, (ByteBuffer[])null);
+		return createFrame(true,pcode, false, (ByteBuffer[])null);
 	}
 	
 	public static ByteBuffer[] createFinFrame(byte pcode,boolean isMask, String payload) {
@@ -123,10 +123,10 @@ public class WsHybiFrame {
 		}else{
 			isMask=false;//payload‚ª‚È‚¢‚È‚çmask‚à‚È‚¢
 		}
-		return createFinFrame(pcode, isMask, payloadBuffers);
+		return createFrame(true,pcode, isMask, payloadBuffers);
 	}
 	
-	public static ByteBuffer[] createFinFrame(byte pcode,boolean isMask, ByteBuffer[] payloadBuffers) {
+	public static ByteBuffer[] createFrame(boolean isFin,byte pcode,boolean isMask, ByteBuffer[] payloadBuffers) {
 		ByteBuffer[] framedBuffers=null;
 		int length;
 		if(payloadBuffers!=null){
@@ -150,7 +150,7 @@ public class WsHybiFrame {
 				pos=maskBuffer(pos,maskBytes,framedBuffers[i]);
 			}
 		}
-		framedBuffers[0]=fillFrame(true,pcode,isMask,length,maskBytes);
+		framedBuffers[0]=fillFrame(isFin,pcode,isMask,length,maskBytes);
 		return framedBuffers;
 	}
 	
@@ -158,8 +158,8 @@ public class WsHybiFrame {
 		return createFinFrame(PCODE_TEXT, isMask, message);
 	}
 	
-	public static ByteBuffer[] createBinaryFrame(boolean isMask, ByteBuffer[] message) {
-		return createFinFrame(PCODE_BINARY, isMask, message);
+	public static ByteBuffer[] createBinaryFrame(boolean isFin,boolean isMask, ByteBuffer[] message) {
+		return createFrame(isFin,PCODE_BINARY, isMask, message);
 	}
 	
 	public static ByteBuffer[] createPingFrame(boolean isMask, String message) {
@@ -167,7 +167,7 @@ public class WsHybiFrame {
 	}
 
 	public static ByteBuffer[] createPongFrame(boolean isMask, ByteBuffer[] message) {
-		return createFinFrame(PCODE_PONG, isMask, message);
+		return createFrame(true,PCODE_PONG, isMask, message);
 	}
 	
 	public static ByteBuffer[] createCloseFrame(boolean isMask, short code,String reason) {
@@ -182,7 +182,7 @@ public class WsHybiFrame {
 			throw new RuntimeException();
 		}
 		buffer.flip();
-		return createFinFrame(PCODE_CLOSE, isMask, BuffersUtil.toByteBufferArray(buffer));
+		return createFrame(true,PCODE_CLOSE, isMask, BuffersUtil.toByteBufferArray(buffer));
 	}
 	
 	private enum ParseStat{
@@ -480,5 +480,4 @@ public class WsHybiFrame {
 	public String getCloseReason() {
 		return closeReason;
 	}
-	
 }

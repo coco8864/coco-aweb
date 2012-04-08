@@ -182,7 +182,7 @@ public class WsHixie75 extends WsProtocol {
 
 	/* ƒAƒvƒŠ‚ªpostMessage‚ğŒÄ‚Ño‚µ‚½ */
 	@Override
-	public void postMessage(ByteBuffer[] message) {
+	public void postMessage(ByteBuffer[] message,boolean isFin) {
 		logger.debug("WsHiXie75#postMessage(bin) cid:"+handler.getChannelId());
 		throw new UnsupportedOperationException("postMessage binary mode");
 	}

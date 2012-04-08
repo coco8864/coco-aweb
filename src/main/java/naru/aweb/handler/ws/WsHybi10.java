@@ -209,9 +209,9 @@ public class WsHybi10 extends WsProtocol {
 
 	/* ƒAƒvƒŠ‚ªpostMessage‚ğŒÄ‚Ño‚µ‚½ */
 	@Override
-	public void postMessage(ByteBuffer[] message) {
+	public void postMessage(ByteBuffer[] message,boolean isFin) {
 		logger.debug("WsHybi10#postMessage(bin) cid:"+handler.getChannelId());
-		ByteBuffer[] buffers=WsHybiFrame.createBinaryFrame(isWebSocketResponseMask(), message);
+		ByteBuffer[] buffers=WsHybiFrame.createBinaryFrame(isFin,isWebSocketResponseMask(), message);
 		handler.asyncWrite(null, buffers);
 	}
 	

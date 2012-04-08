@@ -432,7 +432,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 	}
 	
 	public final void postMessage(ByteBuffer[] message){
-		ByteBuffer[] buffers=WsHybiFrame.createBinaryFrame(true, message);
+		ByteBuffer[] buffers=WsHybiFrame.createBinaryFrame(true,true, message);
 		asyncWrite(CONTEXT_MESSAGE,buffers);
 	}
 
