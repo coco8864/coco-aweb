@@ -6,6 +6,7 @@ import java.util.ArrayList;
 
 import org.apache.log4j.Logger;
 
+import naru.async.cache.AsyncFile;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
@@ -20,7 +21,8 @@ public class WsHybi10 extends WsProtocol {
 	private boolean isSendClose=false;
 	private byte continuePcode;
 	private int continuePayloadLength=0;
-	private List<ByteBuffer> continuePayload=new ArrayList<ByteBuffer>();
+//	private List<ByteBuffer> continuePayload=new ArrayList<ByteBuffer>();
+	private AsyncFile payloadFile;
 	private WsHybiFrame frame=new WsHybiFrame();
 
 	@Override
@@ -28,7 +30,11 @@ public class WsHybi10 extends WsProtocol {
 		isSendClose=false;
 		continuePcode=-1;
 		continuePayloadLength=0;
-		PoolManager.poolBufferInstance(continuePayload);
+//		PoolManager.poolBufferInstance(continuePayload);
+		if(payloadFile!=null){
+			payloadFile.unref();
+			payloadFile=null;
+		}
 		frame.init();
 		super.recycle();
 	}
@@ -82,17 +88,18 @@ public class WsHybi10 extends WsProtocol {
 	private void doFrame(){
 		logger.debug("WsHybi10#doFrame cid:"+handler.getChannelId());
 		byte pcode=frame.getPcode();
+		if(payloadFile==null){
+			payloadFile=AsyncFile.open();
+		}
 		ByteBuffer[] payloadBuffers=frame.getPayloadBuffers();
 		if(!frame.isFin()){//最終Frameじゃない
 			logger.debug("WsHybi10#doFrame not isFin");
 			if(pcode!=WsHybiFrame.PCODE_CONTINUE){
 				continuePcode=pcode;
 			}
-			for(ByteBuffer buffer:payloadBuffers){
-				continuePayload.add(buffer);
-				continuePayloadLength+=buffer.remaining();
-			}
-			PoolManager.poolArrayInstance(payloadBuffers);
+			continuePayloadLength+=BuffersUtil.remaining(payloadBuffers);
+			payloadFile.write(payloadBuffers);
+//			PoolManager.poolArrayInstance(payloadBuffers);
 			if(continuePayloadLength>=getWebSocketMessageLimit()){
 				logger.debug("WsHybi10#doFrame too long frame.continuePayloadLength:"+continuePayloadLength);
 				sendClose(WsHybiFrame.CLOSE_MESSAGE_TOO_BIG,"too long frame");
@@ -103,16 +110,17 @@ public class WsHybi10 extends WsProtocol {
 			//1つのメッセージが複数のFrameからできている場合
 			logger.debug("WsHybi10#doFrame pcode CONTINUE");
 			pcode=continuePcode;
-			for(ByteBuffer buffer:payloadBuffers){
-				continuePayload.add(buffer);
-			}
-			PoolManager.poolArrayInstance(payloadBuffers);
-			int size=continuePayload.size();
-			payloadBuffers=BuffersUtil.newByteBufferArray(size);
-			for(int i=0;i<size;i++){
-				payloadBuffers[i]=continuePayload.get(i);
-			}
-			continuePayload.clear();
+			payloadFile.write(payloadBuffers);
+//			for(ByteBuffer buffer:payloadBuffers){
+//				continuePayload.add(buffer);
+//			}
+//			PoolManager.poolArrayInstance(payloadBuffers);
+//			int size=continuePayload.size();
+//			payloadBuffers=BuffersUtil.newByteBufferArray(size);
+//			for(int i=0;i<size;i++){
+//				payloadBuffers[i]=continuePayload.get(i);
+//			}
+//			continuePayload.clear();
 			continuePayloadLength=0;
 			continuePcode=-1;
 		}
