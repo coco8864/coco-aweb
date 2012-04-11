@@ -2,6 +2,7 @@ package naru.aweb.handler;
 
 import java.nio.ByteBuffer;
 
+import naru.async.cache.AsyncFile;
 import naru.aweb.config.Config;
 import naru.aweb.handler.ws.WsProtocol;
 import naru.aweb.http.HeaderParser;
@@ -45,7 +46,7 @@ public class WSConnectionHandler extends WebSocketHandler {
 	}
 
 	@Override
-	public void onMessage(ByteBuffer[] msgs) {
+	public void onMessage(AsyncFile msgs) {
 		logger.debug("#message bin cid:"+getChannelId());
 	}
 

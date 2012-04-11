@@ -9,6 +9,7 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 
+import naru.async.cache.AsyncFile;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.aweb.config.Config;
@@ -192,11 +193,11 @@ public abstract class WsProtocol extends PoolBase{
 		}
 	}
 	
-	protected void callBinaryOnMessage(ByteBuffer[] buffers){
+	protected void callBinaryOnMessage(AsyncFile message){
 		try {
 			//traceOnMessage‚ÍAbuffers‚ğÁ”ï‚µ‚È‚¢
-			handler.traceOnMessage(buffers);
-			handler.onMessage(buffers);
+			handler.traceOnMessage(message.getTopBuffer());//TODO •¡”buffer‚É‚È‚Á‚½ê‡
+			handler.onMessage(message);
 		} catch (Throwable e) {
 			logger.warn("callBinaryOnMessage handler exception.",e);
 		}

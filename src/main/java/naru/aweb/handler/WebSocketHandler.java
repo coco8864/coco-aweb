@@ -6,6 +6,7 @@ package naru.aweb.handler;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
+import naru.async.cache.AsyncFile;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.async.store.Store;
@@ -253,7 +254,8 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	public abstract void onWsOpen(String subprotocol);
 	public abstract void onWsClose(short code,String reason);
 	public abstract void onMessage(String msgs);
-	public abstract void onMessage(ByteBuffer[] msgs);
+//	public abstract void onMessage(ByteBuffer[] msgs);
+	public abstract void onMessage(AsyncFile msgs);
 	
 	/**
 	 * WebSocketÚ‘±’†‚ÉƒZƒVƒ‡ƒ“‚«‚ê‚½ê‡‚Ì’Ê’m
