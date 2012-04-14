@@ -122,6 +122,8 @@ public class Config {
 	private DiskFileItemFactory uploadItemFactory;
 	private File settingDir;
 	
+	private WsqManager wsqManager;
+	
 	/* コンテンツエンコードに何を許すか?実際zgip or not */
 	// private String contentEncoding;
 	/* keepAlive関連 */
@@ -518,6 +520,10 @@ public class Config {
 			return;
 		}
 		isAleadyTerm = true;
+		if(wsqManager!=null){
+			wsqManager.term();
+			wsqManager=null;
+		}
 		if(broadcaster!=null){//initの途中で例外した場合broadcasterの可能性がある。
 			broadcaster.term();
 			broadcaster=null;
@@ -745,8 +751,7 @@ public class Config {
 		// proxy除外リストの初期化
 		updateProxyFinder(pacUrl,proxyServer,sslProxyServer,exceptProxyDomains);
 		broadcaster=new Broadcaster(this);
-		
-		WsqManager wsqManager=WsqManager.getInstance();
+		wsqManager=WsqManager.getInstance();
 		return true;
 	}
 	

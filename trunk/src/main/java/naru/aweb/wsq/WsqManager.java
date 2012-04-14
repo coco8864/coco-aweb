@@ -59,6 +59,10 @@ public class WsqManager {
 		return qmap.keySet();
 	}
 	
+	public void term(){
+	}
+	
+	
 	public boolean createWsq(Object wsqlet,String srcPath,String qname){
 		synchronized(wsqs){
 			Map<String,Wsq> qmap=wsqs.get(srcPath);

@@ -124,6 +124,7 @@ public class WsHybi10 extends WsProtocol {
 			continuePcode=-1;
 		}
 		payloadBuffer.putBuffer(payloadBuffers);
+		payloadBuffer.flip();
 		switch(pcode){
 		case WsHybiFrame.PCODE_TEXT:
 			logger.debug("WsHybi10#doFrame pcode TEXT");
@@ -141,6 +142,7 @@ public class WsHybi10 extends WsProtocol {
 		case WsHybiFrame.PCODE_BINARY:
 			logger.debug("WsHybi10#doFrame pcode BINARY");
 			callBinaryOnMessage(payloadBuffer);
+			payloadBuffer=null;
 			break;
 		case WsHybiFrame.PCODE_CLOSE:
 			logger.debug("WsHybi10#doFrame pcode CLOSE");
@@ -160,6 +162,10 @@ public class WsHybi10 extends WsProtocol {
 			PoolManager.poolBufferInstance(payloadBuffers);
 			//do nothing
 			break;
+		}
+		if(payloadBuffer!=null){
+			payloadBuffer.unref();
+			payloadBuffer=null;
 		}
 		if( frame.parseNextFrame() ){
 			doFrame();
