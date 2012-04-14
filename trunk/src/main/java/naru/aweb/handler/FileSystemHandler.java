@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import naru.async.BufferGetter;
-import naru.async.cache.AsyncFile;
+import naru.async.cache.AsyncBuffer;
 import naru.async.cache.FileInfo;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping; //import naru.aweb.config.FileCache.FileCacheInfo;
@@ -139,13 +139,13 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		return fileLength;
 	}
 
-	private void responseBodyFromFile(AsyncFile asyncFile) {
+	private void responseBodyFromFile(AsyncBuffer asyncFile) {
 		Long offset = (Long) getRequestAttribute(ATTRIBUTE_STORE_OFFSET);
 		if (offset != null) {
 			asyncFile.position(offset);
 		}
 		this.asyncFile = asyncFile;
-		asyncFile.asyncRead(this, asyncFile);
+		asyncFile.asyncGet(this, asyncFile);
 	}
 
 	// 存在確認済みのディレクトリを一覧レスポンスする。
@@ -167,7 +167,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 
 	// 存在確認済みのファイルをレスポンスする。
 	private boolean sendFile(MappingResult mapping, File baseDirectory,
-			String path, String ifModifiedSince, AsyncFile asyncFile) {
+			String path, String ifModifiedSince, AsyncBuffer asyncFile) {
 		if (isVelocityUse(mapping, path)) {
 			// TODO ちゃんとする
 			mapping.setResolvePath(path);// 加工後のpathを設定
@@ -218,10 +218,10 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		}
 	}
 
-	private AsyncFile welcomPage(File dir,String[] welcomlist){
-		AsyncFile asyncFile=null;
+	private AsyncBuffer welcomPage(File dir,String[] welcomlist){
+		AsyncBuffer asyncFile=null;
 		for(String welcom:welcomlist){
-			asyncFile=AsyncFile.open(new File(dir,welcom));
+			asyncFile=AsyncBuffer.open(new File(dir,welcom));
 			FileInfo info=asyncFile.getFileInfo();
 			if(info.exists()&&info.canRead()&&info.isFile()){
 				return asyncFile;
@@ -245,7 +245,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 			if (getRequestAttribute(ATTRIBUTE_RESPONSE_FILE_NOT_USE_CACHE) == null) {
 				useCache = false;
 			}
-			AsyncFile asyncFile = AsyncFile.open(file, useCache);
+			AsyncBuffer asyncFile = AsyncBuffer.open(file, useCache);
 			FileInfo fileInfo = asyncFile.getFileInfo();
 			if (!fileInfo.exists()) {
 				logger.debug("Not found." + file.getAbsolutePath());
@@ -270,7 +270,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		}
 
 		File baseDirectory = mapping.getDestinationFile();
-		AsyncFile asyncFile = AsyncFile.open(new File(baseDirectory, path));
+		AsyncBuffer asyncFile = AsyncBuffer.open(new File(baseDirectory, path));
 		FileInfo info = asyncFile.getFileInfo();
 		if (info.isError()) {
 			logger.warn("fail to getCanonicalPath.");
@@ -354,12 +354,12 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 	}
 
 	/* asyncFileからのダウンロード */
-	private AsyncFile asyncFile;
+	private AsyncBuffer asyncFile;
 
 	public void onWrittenBody() {
 		logger.debug("#writtenBody.cid:" + getChannelId());
 		if(asyncFile!=null){
-			asyncFile.asyncRead(this, asyncFile);
+			asyncFile.asyncGet(this, asyncFile);
 		}
 		super.onWrittenBody();
 	}

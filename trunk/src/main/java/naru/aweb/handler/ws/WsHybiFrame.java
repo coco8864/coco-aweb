@@ -9,6 +9,7 @@ import java.util.Random;
 
 import org.apache.log4j.Logger;
 
+import naru.async.cache.AsyncBuffer;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.aweb.config.Config;
@@ -158,8 +159,9 @@ public class WsHybiFrame {
 		return createFinFrame(PCODE_TEXT, isMask, message);
 	}
 	
-	public static ByteBuffer[] createBinaryFrame(boolean isFin,boolean isMask, ByteBuffer[] message) {
-		return createFrame(isFin,PCODE_BINARY, isMask, message);
+	public static ByteBuffer[] createBinaryFrame(boolean isFin,boolean isMask, AsyncBuffer message) {
+		//TODO imple
+		return createFrame(isFin,PCODE_BINARY, isMask, null);
 	}
 	
 	public static ByteBuffer[] createPingFrame(boolean isMask, String message) {

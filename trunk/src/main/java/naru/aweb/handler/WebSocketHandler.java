@@ -6,7 +6,7 @@ package naru.aweb.handler;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
-import naru.async.cache.AsyncFile;
+import naru.async.cache.AsyncBuffer;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.async.store.Store;
@@ -140,7 +140,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		wsPostTrace("text/plain",messageBuffers);
 	}
 	
-	public void tracePostMessage(ByteBuffer[] message){
+	public void tracePostMessage(AsyncBuffer message){
 		postMessageCount++;
 		ByteBuffer [] messageBuffers=null;
 		switch(logType){
@@ -151,7 +151,8 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 			break;
 		case REQUEST_TRACE:
 		case TRACE:
-			messageBuffers=PoolManager.duplicateBuffers(message);
+			//TODO dump all data
+			messageBuffers=PoolManager.duplicateBuffers(message.popTopBuffer());
 			break;
 		}
 		wsPostTrace("application/octet-stream",messageBuffers);
@@ -227,7 +228,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	
 	/* メッセージを送信する場合(binary) */
 	/* 同時にpostMessageを受け付ける事はできないのでsynchronized */
-	protected synchronized void postMessage(ByteBuffer[] message){
+	protected synchronized void postMessage(AsyncBuffer message){
 		tracePostMessage(message);
 		wsProtocol.postMessage(message);
 	}
@@ -255,7 +256,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	public abstract void onWsClose(short code,String reason);
 	public abstract void onMessage(String msgs);
 //	public abstract void onMessage(ByteBuffer[] msgs);
-	public abstract void onMessage(AsyncFile msgs);
+	public abstract void onMessage(AsyncBuffer msgs);
 	
 	/**
 	 * WebSocket接続中にセションきれた場合の通知

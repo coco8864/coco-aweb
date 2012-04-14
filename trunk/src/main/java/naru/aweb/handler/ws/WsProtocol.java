@@ -9,7 +9,7 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 
-import naru.async.cache.AsyncFile;
+import naru.async.cache.AsyncBuffer;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.aweb.config.Config;
@@ -193,10 +193,10 @@ public abstract class WsProtocol extends PoolBase{
 		}
 	}
 	
-	protected void callBinaryOnMessage(AsyncFile message){
+	protected void callBinaryOnMessage(AsyncBuffer message){
 		try {
 			//traceOnMessageは、buffersを消費しない
-			handler.traceOnMessage(message.getTopBuffer());//TODO 複数bufferになった場合
+			handler.traceOnMessage(message.popTopBuffer());//TODO 複数bufferになった場合
 			handler.onMessage(message);
 		} catch (Throwable e) {
 			logger.warn("callBinaryOnMessage handler exception.",e);
@@ -248,7 +248,7 @@ public abstract class WsProtocol extends PoolBase{
 		}
 	}
 	
-	public void postMessage(ByteBuffer[] message){
+	public void postMessage(AsyncBuffer message){
 		postMessage(message,true);
 	}
 	
@@ -261,7 +261,7 @@ public abstract class WsProtocol extends PoolBase{
 	 * @param message
 	 * @param isFin 継続messageの場合falseに設定
 	 */
-	public abstract void postMessage(ByteBuffer[] message,boolean isFin);
+	public abstract void postMessage(AsyncBuffer message,boolean isFin);
 	public abstract void onReadTimeout();/* 回線readがタイムアウトした */
 	public abstract String getWsProtocolName();
 	public abstract String getRequestSubProtocols(HeaderParser requestHeader);
