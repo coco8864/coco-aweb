@@ -196,7 +196,7 @@ public abstract class WsProtocol extends PoolBase{
 	protected void callBinaryOnMessage(AsyncBuffer message){
 		try {
 			//traceOnMessage‚ÍAbuffers‚ğÁ”ï‚µ‚È‚¢
-			handler.traceOnMessage(message.popTopBuffer());//TODO •¡”buffer‚É‚È‚Á‚½ê‡
+//			handler.traceOnMessage(message.popTopBuffer());//TODO •¡”buffer‚É‚È‚Á‚½ê‡
 			handler.onMessage(message);
 		} catch (Throwable e) {
 			logger.warn("callBinaryOnMessage handler exception.",e);

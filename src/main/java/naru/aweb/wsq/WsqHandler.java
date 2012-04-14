@@ -251,9 +251,11 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 		//meta‚Ü‚Å‚ÍAmsg[0]‚É‚ ‚é–‚ğ‘O’ñ TODO ‰ü‘P—v
 		if(!message.isInTopBuffer()){
 			//TODO suppert big data
+			message.unref();
 			throw new UnsupportedOperationException("WsqHandler onMessage");
 		}
 		ByteBuffer[] msgs=message.popTopBuffer();
+		message.unref();
 		ByteBuffer topBuf=msgs[0];
 		topBuf.order(ByteOrder.LITTLE_ENDIAN);
 		int metaLength=topBuf.getInt();

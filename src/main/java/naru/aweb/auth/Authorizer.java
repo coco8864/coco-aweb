@@ -71,7 +71,7 @@ public class Authorizer implements Timer{
 			}
 			count+=id.remove(idString);
 		}
-		count+=freeIds(ids);
+//		count+=freeIds(ids);
 		return count;
 	}
 	
