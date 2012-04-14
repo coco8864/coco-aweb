@@ -13,6 +13,8 @@ import java.util.List;
 
 import naru.async.Timer;
 import naru.async.cache.AsyncBuffer;
+import naru.async.pool.BuffersUtil;
+import naru.async.pool.PoolManager;
 import naru.async.timer.TimerManager;
 import naru.aweb.auth.AuthSession;
 import naru.aweb.config.Config;
@@ -255,7 +257,10 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 			throw new UnsupportedOperationException("WsqHandler onMessage");
 		}
 		ByteBuffer[] msgs=message.popTopBuffer();
+		System.out.println("message:"+BuffersUtil.toStringFromBuffer(msgs[0],"utf-8"));
+		PoolManager.poolBufferInstance(msgs);
 		message.unref();
+		/*
 		ByteBuffer topBuf=msgs[0];
 		topBuf.order(ByteOrder.LITTLE_ENDIAN);
 		int metaLength=topBuf.getInt();
@@ -281,6 +286,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 		WsqPeer from=WsqPeer.create(authSession,srcPath,qname,subId);
 		wsqManager.publish(from, blobMessage);
 		from.unref();
+		*/
 	}
 	
 	@Override

@@ -3,6 +3,7 @@ package naru.aweb.handler.ws;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -358,14 +359,17 @@ public class WsHybiFrame {
 				PoolManager.poolBufferInstance(buffer);
 				return false;
 			}
+			readBuffer.order(ByteOrder.BIG_ENDIAN);
 			payloadLength=(int)readBuffer.getShort();
 		}else if(rawLen==0x7F){
-			ByteBuffer readBuffer=fillBuffer(buffer,4);
+			ByteBuffer readBuffer=fillBuffer(buffer,8);
 			if(readBuffer==null){
 				PoolManager.poolBufferInstance(buffer);
 				return false;
 			}
-			payloadLength=readBuffer.getInt();
+			//TODO overflow check
+			readBuffer.order(ByteOrder.BIG_ENDIAN);
+			payloadLength=(int)readBuffer.getLong();
 		}
 		if(payloadLength>webSocketMessageLimit){
 			parseStat=ParseStat.ERROR;//パケットが長すぎる
