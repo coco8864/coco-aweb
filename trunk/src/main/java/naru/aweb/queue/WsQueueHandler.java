@@ -235,6 +235,7 @@ public class WsQueueHandler extends WebSocketHandler {
 
 	@Override
 	public void onMessage(AsyncBuffer msgs) {
+		msgs.unref();
 	}
 
 	@Override

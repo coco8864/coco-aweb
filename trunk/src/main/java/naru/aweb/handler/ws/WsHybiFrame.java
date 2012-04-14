@@ -161,7 +161,12 @@ public class WsHybiFrame {
 	
 	public static ByteBuffer[] createBinaryFrame(boolean isFin,boolean isMask, AsyncBuffer message) {
 		//TODO imple
-		return createFrame(isFin,PCODE_BINARY, isMask, null);
+		if(!message.isInTopBuffer()){
+			message.unref();
+			throw new UnsupportedOperationException("createBinaryFrame big bin");
+		}
+		message.unref();
+		return createFrame(isFin,PCODE_BINARY, isMask, message.popTopBuffer());
 	}
 	
 	public static ByteBuffer[] createPingFrame(boolean isMask, String message) {
