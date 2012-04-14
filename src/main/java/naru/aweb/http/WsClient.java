@@ -2,6 +2,8 @@ package naru.aweb.http;
 
 import java.nio.ByteBuffer;
 
+import naru.async.cache.AsyncBuffer;
+
 
 /**
  * Webクライアントの通知インタフェース
@@ -29,7 +31,7 @@ public interface WsClient {
 	//メッセージ受信時
 	public void onWcMessage(Object userContext,String message);
 	//メッセージ受信時
-	public void onWcMessage(Object userContext,ByteBuffer[] message);
+	public void onWcMessage(Object userContext,AsyncBuffer message);
 	//header書き込みが完了した時
 	public void onWcWrittenHeader(Object userContext);
 }

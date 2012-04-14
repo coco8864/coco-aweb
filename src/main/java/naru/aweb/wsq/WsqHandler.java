@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import naru.async.Timer;
+import naru.async.cache.AsyncBuffer;
 import naru.async.pool.PoolManager;
 import naru.async.store.Page;
 import naru.async.timer.TimerManager;
@@ -248,8 +249,13 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 	}
 	
 	@Override
-	public void onMessage(ByteBuffer[] msgs) {
+	public void onMessage(AsyncBuffer message) {
 		//meta‚Ü‚Å‚ÍAmsg[0]‚É‚ ‚é–‚ğ‘O’ñ TODO ‰ü‘P—v
+		if(!message.isInTopBuffer()){
+			//TODO suppert big data
+			throw new UnsupportedOperationException("WsqHandler onMessage");
+		}
+		ByteBuffer[] msgs=message.popTopBuffer();
 		ByteBuffer topBuf=msgs[0];
 		topBuf.order(ByteOrder.LITTLE_ENDIAN);
 		int metaLength=topBuf.getInt();

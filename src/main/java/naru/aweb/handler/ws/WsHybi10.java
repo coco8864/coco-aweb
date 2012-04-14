@@ -6,7 +6,7 @@ import java.util.ArrayList;
 
 import org.apache.log4j.Logger;
 
-import naru.async.cache.AsyncFile;
+import naru.async.cache.AsyncBuffer;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
@@ -22,7 +22,7 @@ public class WsHybi10 extends WsProtocol {
 	private byte continuePcode;
 	private int continuePayloadLength=0;
 //	private List<ByteBuffer> continuePayload=new ArrayList<ByteBuffer>();
-	private AsyncFile payloadFile;
+	private AsyncBuffer payloadFile;
 	private WsHybiFrame frame=new WsHybiFrame();
 
 	@Override
@@ -89,7 +89,7 @@ public class WsHybi10 extends WsProtocol {
 		logger.debug("WsHybi10#doFrame cid:"+handler.getChannelId());
 		byte pcode=frame.getPcode();
 		if(payloadFile==null){
-			payloadFile=AsyncFile.open();
+			payloadFile=AsyncBuffer.open();
 		}
 		ByteBuffer[] payloadBuffers=frame.getPayloadBuffers();
 		if(!frame.isFin()){//最終Frameじゃない
@@ -98,7 +98,7 @@ public class WsHybi10 extends WsProtocol {
 				continuePcode=pcode;
 			}
 			continuePayloadLength+=BuffersUtil.remaining(payloadBuffers);
-			payloadFile.write(payloadBuffers);
+			payloadFile.putBuffer(payloadBuffers);
 //			PoolManager.poolArrayInstance(payloadBuffers);
 			if(continuePayloadLength>=getWebSocketMessageLimit()){
 				logger.debug("WsHybi10#doFrame too long frame.continuePayloadLength:"+continuePayloadLength);
@@ -110,7 +110,7 @@ public class WsHybi10 extends WsProtocol {
 			//1つのメッセージが複数のFrameからできている場合
 			logger.debug("WsHybi10#doFrame pcode CONTINUE");
 			pcode=continuePcode;
-			payloadFile.write(payloadBuffers);
+			payloadFile.putBuffer(payloadBuffers);
 //			for(ByteBuffer buffer:payloadBuffers){
 //				continuePayload.add(buffer);
 //			}
@@ -135,7 +135,7 @@ public class WsHybi10 extends WsProtocol {
 			break;
 		case WsHybiFrame.PCODE_BINARY:
 			logger.debug("WsHybi10#doFrame pcode BINARY");
-			callBinaryOnMessage(payloadBuffers);
+			callBinaryOnMessage(payloadFile);
 			break;
 		case WsHybiFrame.PCODE_CLOSE:
 			logger.debug("WsHybi10#doFrame pcode CLOSE");
@@ -217,7 +217,7 @@ public class WsHybi10 extends WsProtocol {
 
 	/* アプリがpostMessageを呼び出した */
 	@Override
-	public void postMessage(ByteBuffer[] message,boolean isFin) {
+	public void postMessage(AsyncBuffer message,boolean isFin) {
 		logger.debug("WsHybi10#postMessage(bin) cid:"+handler.getChannelId());
 		ByteBuffer[] buffers=WsHybiFrame.createBinaryFrame(isFin,isWebSocketResponseMask(), message);
 		handler.asyncWrite(null, buffers);
