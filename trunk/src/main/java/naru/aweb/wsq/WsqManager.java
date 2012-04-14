@@ -2,6 +2,7 @@ package naru.aweb.wsq;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -59,9 +60,26 @@ public class WsqManager {
 		return qmap.keySet();
 	}
 	
-	public void term(){
+	private void termQmap(Map<String,Wsq> qmap){
+		Iterator<Wsq> itr=qmap.values().iterator();
+		while(itr.hasNext()){
+			Wsq wsq=itr.next();
+			itr.remove();
+			wsq.endQueue();
+			wsq.unref();
+		}
 	}
 	
+	public void term(){
+		synchronized(wsqs){
+			Iterator<Map<String,Wsq>> itr=wsqs.values().iterator();
+			while(itr.hasNext()){
+				Map<String,Wsq> qmap=itr.next();
+				itr.remove();
+				termQmap(qmap);
+			}
+		}
+	}
 	
 	public boolean createWsq(Object wsqlet,String srcPath,String qname){
 		synchronized(wsqs){
@@ -93,6 +111,7 @@ public class WsqManager {
 				return false;
 			}
 			wsq.endQueue();
+			wsq.unref();
 		}
 		return true;
 	}
