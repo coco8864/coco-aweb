@@ -48,6 +48,7 @@ public class WSConnectionHandler extends WebSocketHandler {
 	@Override
 	public void onMessage(AsyncBuffer msgs) {
 		logger.debug("#message bin cid:"+getChannelId());
+		msgs.unref();
 	}
 
 	@Override

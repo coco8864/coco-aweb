@@ -22,7 +22,7 @@ public class WsHybi10 extends WsProtocol {
 	private byte continuePcode;
 	private int continuePayloadLength=0;
 //	private List<ByteBuffer> continuePayload=new ArrayList<ByteBuffer>();
-	private AsyncBuffer payloadFile;
+	private AsyncBuffer payloadBuffer;
 	private WsHybiFrame frame=new WsHybiFrame();
 
 	@Override
@@ -31,9 +31,9 @@ public class WsHybi10 extends WsProtocol {
 		continuePcode=-1;
 		continuePayloadLength=0;
 //		PoolManager.poolBufferInstance(continuePayload);
-		if(payloadFile!=null){
-			payloadFile.unref();
-			payloadFile=null;
+		if(payloadBuffer!=null){
+			payloadBuffer.unref();
+			payloadBuffer=null;
 		}
 		frame.init();
 		super.recycle();
@@ -88,8 +88,8 @@ public class WsHybi10 extends WsProtocol {
 	private void doFrame(){
 		logger.debug("WsHybi10#doFrame cid:"+handler.getChannelId());
 		byte pcode=frame.getPcode();
-		if(payloadFile==null){
-			payloadFile=AsyncBuffer.open();
+		if(payloadBuffer==null){
+			payloadBuffer=AsyncBuffer.open();
 		}
 		ByteBuffer[] payloadBuffers=frame.getPayloadBuffers();
 		if(!frame.isFin()){//最終Frameじゃない
@@ -98,7 +98,7 @@ public class WsHybi10 extends WsProtocol {
 				continuePcode=pcode;
 			}
 			continuePayloadLength+=BuffersUtil.remaining(payloadBuffers);
-			payloadFile.putBuffer(payloadBuffers);
+			payloadBuffer.putBuffer(payloadBuffers);
 //			PoolManager.poolArrayInstance(payloadBuffers);
 			if(continuePayloadLength>=getWebSocketMessageLimit()){
 				logger.debug("WsHybi10#doFrame too long frame.continuePayloadLength:"+continuePayloadLength);
@@ -110,7 +110,6 @@ public class WsHybi10 extends WsProtocol {
 			//1つのメッセージが複数のFrameからできている場合
 			logger.debug("WsHybi10#doFrame pcode CONTINUE");
 			pcode=continuePcode;
-			payloadFile.putBuffer(payloadBuffers);
 //			for(ByteBuffer buffer:payloadBuffers){
 //				continuePayload.add(buffer);
 //			}
@@ -124,9 +123,15 @@ public class WsHybi10 extends WsProtocol {
 			continuePayloadLength=0;
 			continuePcode=-1;
 		}
+		payloadBuffer.putBuffer(payloadBuffers);
 		switch(pcode){
 		case WsHybiFrame.PCODE_TEXT:
 			logger.debug("WsHybi10#doFrame pcode TEXT");
+			if(!payloadBuffer.isInTopBuffer()){
+				//textの場合長いbufferは許さない
+				throw new UnsupportedOperationException("unsuppert big text");
+			}
+			payloadBuffers=payloadBuffer.popTopBuffer();
 			for(ByteBuffer buffer:payloadBuffers){
 				convertPutBuffer(buffer);
 			}
@@ -135,7 +140,7 @@ public class WsHybi10 extends WsProtocol {
 			break;
 		case WsHybiFrame.PCODE_BINARY:
 			logger.debug("WsHybi10#doFrame pcode BINARY");
-			callBinaryOnMessage(payloadFile);
+			callBinaryOnMessage(payloadBuffer);
 			break;
 		case WsHybiFrame.PCODE_CLOSE:
 			logger.debug("WsHybi10#doFrame pcode CLOSE");
