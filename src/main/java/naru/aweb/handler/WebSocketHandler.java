@@ -420,14 +420,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 			super.onWrittenPlain(userContext);
 			return;
 		}
-		if(asyncBuffer==null||asyncBuffer!=userContext){
-			return;
-		}
-		if(position<endPosition){
-			asyncBuffer.asyncGet(this,position,asyncBuffer);
-			return;
-		}
-		creanupAsyncBuffer();
+		wsProtocol.onWrittenPostMessage(userContext);
 	}
 	
 	@Override
