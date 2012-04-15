@@ -247,7 +247,23 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 			}
 		}
 	}
-	
+	/* BlobMessageの形
+	 * header長(2byte,bigendigan)
+	 * header=jsonデータ
+	 * {
+	 * type:'publish',qname:'qname',dataCount:データ数,totalLength:総データ長,(isGz:gz圧縮の有無),message:任意
+	 * metas:[
+	 *  {length:1番目datalen,以降任意,jsType:'ArrayBuffer'|string|Blob|object,name:,mimeType: },
+	 *  {length:2番目datalen,以降任意,},
+	 *  {length:3番目datalen,以降任意,}
+	 *  ]
+	 * }
+	 * 1番目のデータ
+	 * 2番目のデータ
+	 * 3番目のデータ
+	 * (non-Javadoc)
+	 * @see naru.aweb.handler.WebSocketHandler#onMessage(naru.async.cache.AsyncBuffer)
+	 */
 	@Override
 	public void onMessage(AsyncBuffer message) {
 		//metaまでは、msg[0]にある事を前提 TODO 改善要
@@ -256,37 +272,35 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 			message.unref();
 			throw new UnsupportedOperationException("WsqHandler onMessage");
 		}
-		ByteBuffer[] msgs=message.popTopBuffer();
-		System.out.println("message:"+BuffersUtil.toStringFromBuffer(msgs[0],"utf-8"));
-		PoolManager.poolBufferInstance(msgs);
-		message.unref();
-		/*
-		ByteBuffer topBuf=msgs[0];
-		topBuf.order(ByteOrder.LITTLE_ENDIAN);
+		ByteBuffer[] topBufs=message.popTopBuffer();
+		ByteBuffer topBuf=topBufs[0];
+		topBuf.order(ByteOrder.BIG_ENDIAN);
 		int metaLength=topBuf.getInt();
-		byte[] array=topBuf.array();
 		int pos=topBuf.position();
 		if((pos+metaLength)>topBuf.limit()){
 			logger.warn("meta length error");
+			PoolManager.poolBufferInstance(topBufs);
+			message.unref();
 			return;
 		}
-		String meta;
+		String header;
 		try {
-			meta=new String(array,pos,metaLength,"UTF-8");
+			header=new String(topBuf.array(),pos,metaLength,"UTF-8");
 			topBuf.position(pos+metaLength);
 		} catch (UnsupportedEncodingException e) {
 			logger.error("encode error");
 			return;
 		}
-		JSONObject metaObj=(JSONObject)JSONSerializer.toJSON(meta);
-		BlobMessage blobMessage=BlobMessage.create(metaObj, msgs);
+		PoolManager.poolBufferInstance(topBufs);
+		logger.debug("header:"+header);
+		JSONObject headerObj=(JSONObject)JSONSerializer.toJSON(header);
+		BlobMessage blobMessage=BlobMessage.create(headerObj, message);
 		
-		String qname=metaObj.getString("qname");
-		String subId=metaObj.optString("subId",null);
+		String qname=headerObj.getString("qname");
+		String subId=headerObj.optString("subId",null);
 		WsqPeer from=WsqPeer.create(authSession,srcPath,qname,subId);
 		wsqManager.publish(from, blobMessage);
 		from.unref();
-		*/
 	}
 	
 	@Override

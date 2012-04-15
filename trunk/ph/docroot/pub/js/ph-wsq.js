@@ -21,7 +21,7 @@ if(typeof ph == "undefined"){
     _XHR_FRAME_URL:'/xhrFrame.html',
     _RETRY_COUNT:3,
     _isBlobMessage:true,/* Blobメッセージを使うか否か */
-    _isGz:true,/* Blobメッセージにgzipを使うか否か */
+    _isGz:false,/* Blobメッセージにgzipを使うか否か */
     _connections:{},
     /* 接続毎に作られるオブジェクト */
     _Connection:function(url,cb){
@@ -129,65 +129,65 @@ if(typeof ph == "undefined"){
         con._onXhrMessage(event);
       }
     },
-    _readBlobs:function(meta,data,con){
+    _readBlobs:function(header,data,con){
       if(!ph.jQuery.isArray(data)){
         data=[data];
       }
-      meta.dataMetas=[];
-      meta.dataCount=0;
-      meta.totalLength=0;
+      header.metas=[];
+      header.dataCount=0;
+      header.totalLength=0;
       var results=[];//ArrayBufferの列に変換する
       var readCount=0;
       for(var i in data){
-        var dataMetas={};
+        var meta={};
         var d=data[i];
-        meta.dataMetas[i]=dataMetas;
+        header.metas[i]=meta;
         if(d instanceof ArrayBuffer){
-          meta.dataCount++;
-          dataMetas.jsType='ArrayBuffer';
-          dataMetas.length=d.byteLength;
+          header.dataCount++;
+          meta.jsType='ArrayBuffer';
+          meta.length=d.byteLength;
           results[i]=b;
-          meta.totalLength+=dataMetas.length;
+          header.totalLength+=meta.length;
           continue;
         }else if(typeof d==='string'){
-          meta.dataCount++;
-          dataMetas.jsType='string';
+          header.dataCount++;
+          meta.jsType='string';
           results[i]=jz.utils.stringToArrayBuffer(d);
-          dataMetas.length=results[i].byteLength;
-          meta.totalLength+=dataMetas.length;
+          meta.length=results[i].byteLength;
+          header.totalLength+=meta.length;
           continue;
         }else if(!(d instanceof Blob)){
-          meta.dataCount++;
-          dataMetas.jsType='object';
+          header.dataCount++;
+          meta.jsType='object';
           var dText=ph.JSON.stringify(d);
           results[i]=jz.utils.stringToArrayBuffer(dText);
-          dataMetas.length=results[i].byteLength;
-          meta.totalLength+=dataMetas.length;
+          meta.length=results[i].byteLength;
+          header.totalLength+=meta.length;
           continue;
         }
-        dataMetas.mimeType=d.type;
-        dataMetas.jsType='Blob';
-        dataMetas.name=d.name;
-        dataMetas.length=d.size;
-        meta.totalLength+=dataMetas.length;
+        meta.mimeType=d.type;
+        meta.jsType='Blob';
+        meta.name=d.name;
+        meta.length=d.size;
+        header.totalLength+=meta.length;
         var fr=new FileReader();
         fr._i=i;
         fr.onload=function(e){
           results[this._i]=e.target.result;
-          meta.dataCount++;
-          if(meta.dataCount===data.length){//複数のblobを全て読みきったら
-            ph.wsq._sendBinMessage(meta,results,con);
+          header.dataCount++;
+          if(header.dataCount===data.length){//複数のblobを全て読みきったら
+            ph.wsq._sendBinMessage(header,results,con);
           }
         }
         fr.readAsArrayBuffer(d);
       }
-      if(meta.dataCount===data.length){//Blobは無かった
-        ph.wsq._sendBinMessage(meta,results,con);
+      if(header.dataCount===data.length){//Blobは無かった
+        ph.wsq._sendBinMessage(header,results,con);
       }
     },
-    _sendBinMessage:function(meta,data,con){
+    _sendBinMessage:function(header,data,con){
       var payloadGzBuf=null;
-      var payloadBuf=new ArrayBuffer(meta.totalLength);
+      var payloadBuf=new ArrayBuffer(header.totalLength);
       var payloadBufA=new Uint8Array(payloadBuf);
       var pos=0;
       for(var i in data){
@@ -196,21 +196,25 @@ if(typeof ph == "undefined"){
         pos+=len;
       }
       if(ph.wsq._isGz){
-        meta.isGz=true;
+        header.isGz=true;
         payloadBuf=jz.gz.compress(payloadBuf);
       }else{
-        meta.isGz=false;
+        header.isGz=false;
       }
       var BlobBuilder = window.MozBlobBuilder || window.WebKitBlobBuilder;
       var bb=new BlobBuilder();
-      var headerBuf=new ArrayBuffer(4);
-      var metaText=ph.JSON.stringify(meta);
-      var metaBuf=jz.utils.stringToArrayBuffer(metaText);
-      /* ヘッダ(4):meta長 */
-      var header=new Uint32Array(headerBuf);
-      header[0]=metaBuf.byteLength;//metaサイズ
+      var headerLenBuf=new ArrayBuffer(4);
+      var headerText=ph.JSON.stringify(header);
+      var headerBuf=jz.utils.stringToArrayBuffer(headerText);
+      /* header長 bigEndianにして代入 */
+      var header=new Uint8Array(headerLenBuf);
+      var wkLen=headerBuf.byteLength;
+      for(var i=0;i<4;i++){
+        header[3-i]=wkLen&0xff//metaサイズ
+        wkLen>>=8;
+      }
+      bb.append(headerLenBuf);
       bb.append(headerBuf);
-      bb.append(metaBuf);
       bb.append(payloadBuf);
       con._ws.send(bb.getBlob());
     }
