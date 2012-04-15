@@ -848,7 +848,7 @@ public class WebServerHandler extends ServerBaseHandler {
 		super.onFinished();
 	}
 
-	public final void onWrittenPlain(Object userContext) {
+	public void onWrittenPlain(Object userContext) {
 		logger.debug("#onWrittenPlain cid:" + getChannelId()+":userContext:"+userContext);
 		if (userContext == WRITE_CONTEXT_BODY) {
 			onWrittenBody();//‚±‚Ì‰„’·‚ÅresponseEnd‚ªŒÄ‚Ño‚³‚ê‚é‰Â”\«‚ª‚ ‚éA‚»‚Ìê‡context‚ªnull‚Æ‚È‚é
