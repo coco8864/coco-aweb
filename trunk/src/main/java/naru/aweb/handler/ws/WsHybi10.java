@@ -228,8 +228,9 @@ public class WsHybi10 extends WsProtocol {
 
 	/* ƒAƒvƒŠ‚ªpostMessage‚ğŒÄ‚Ño‚µ‚½ */
 	@Override
-	public void postMessage(AsyncBuffer message,boolean isFin) {
+	public void postMessage(AsyncBuffer message) {
 		logger.debug("WsHybi10#postMessage(bin) cid:"+handler.getChannelId());
+		boolean isFin=true;
 		ByteBuffer[] buffers=WsHybiFrame.createBinaryFrame(isFin,isWebSocketResponseMask(), message);
 		handler.asyncWrite(null, buffers);
 	}
@@ -241,5 +242,11 @@ public class WsHybi10 extends WsProtocol {
 	@Override
 	public String getRequestSubProtocols(HeaderParser requestHeader) {
 		return requestHeader.getHeader(SEC_WEBSOCKET_PROTOCOL);
+	}
+
+	@Override
+	public void onWrittenPostMessage(Object userContext) {
+		// TODO Auto-generated method stub
+		
 	}
 }
