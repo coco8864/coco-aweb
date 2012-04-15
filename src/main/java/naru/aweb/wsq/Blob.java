@@ -3,7 +3,11 @@ package naru.aweb.wsq;
 import java.io.File;
 import java.nio.ByteBuffer;
 
+import naru.async.BufferGetter;
+import naru.async.cache.AsyncBuffer;
 import naru.async.pool.BuffersUtil;
+import naru.async.pool.PoolBase;
+import naru.async.pool.PoolManager;
 
 /**
  * binaryMessageのインタフェースに利用
@@ -19,25 +23,41 @@ import naru.async.pool.BuffersUtil;
  * 最初の実装は2)を許容する
  * @author Naru
  */
-public class Blob {
+public class Blob extends PoolBase implements BufferGetter{
 	private String mimeType;
 	private String jsType;
 	private String name;
-	private long length;
-	
-	/* bufferは常に設定されているとは限らない　*/
-	private ByteBuffer[] buffer;
-	
-	private BlobFile blobFile;
+	private AsyncBuffer buffer;
 	private long offset;
+	private long length;
+	private long endPosition;
 	
-	public Blob(ByteBuffer[] buffer){
-		this.buffer=buffer;
-		this.length=BuffersUtil.remaining(buffer);
+	public static Blob create(File file){
+		AsyncBuffer buffer=AsyncBuffer.open(file);
+		return create(buffer);
 	}
 	
-	public Blob(File file){
-		this(new BlobFile(file),0,file.length());
+	public static Blob create(ByteBuffer[] byteBuffer){
+		AsyncBuffer buffer=AsyncBuffer.open(byteBuffer);
+		return create(buffer);
+	}
+	
+	public static Blob create(AsyncBuffer buffer){
+		return create(buffer,0,buffer.length());
+	}
+	
+	/* bufferは、Blob終了時に開放される */
+	public static Blob create(AsyncBuffer buffer,long offset,long length){
+		Blob blob=(Blob)PoolManager.getInstance(Blob.class);
+		blob.buffer=buffer;
+		blob.offset=offset;
+		blob.length=length;
+		blob.endPosition=offset+length;
+		return blob;
+	}
+	
+	public long length(){
+		return length;
 	}
 	
 	public String getMimeType() {
@@ -64,19 +84,60 @@ public class Blob {
 		this.name = name;
 	}
 
-	public Blob(BlobFile blobFile,long offset,long length){
-		blobFile.addRef(this);
-		this.blobFile=blobFile;
-		this.offset=offset;
-		this.length=length;
+	private static class GetContext{
+		GetContext(BufferGetter getter,long position){
+			this.getter=getter;
+			this.position=position;
+		}
+		private BufferGetter getter;
+		private long position;
 	}
 	
-	public ByteBuffer[] read(){
-		if(buffer!=null){
-			return buffer;
-		}if(blobFile!=null){
-			return blobFile.read(offset, length);
+	/**
+	 * 初回呼び出し時ctxはnullで呼び出す。
+	 * 2回目以降は、onBufferに通知したctxを指定し、継続getである事を表現する
+	 * onBufferに通知されるctxがnullの場合は最終bufferである事を表現
+	 */
+	public boolean asyncGet(BufferGetter getter,Object ctx){
+		GetContext context;
+		if(ctx==null){
+			context=new GetContext(getter,offset);
+		}else{
+			context=(GetContext)ctx;
 		}
-		return null;
+		return buffer.asyncGet(this, context.position, context);
+	}
+	
+	@Override
+	public void recycle() {
+		if(buffer!=null){
+			buffer.unref();
+			buffer=null;
+		}
+		mimeType=jsType=name=null;
+		length=offset=0;
+	}
+
+	public boolean onBuffer(Object ctx, ByteBuffer[] buffers) {
+		GetContext context=(GetContext)ctx;
+		long len=BuffersUtil.remaining(buffers);
+		if( endPosition<=(context.position+len)){
+			BuffersUtil.cut(buffers, endPosition-context.position);
+			context.getter.onBuffer(null,buffers);
+		}else{
+			context.position+=len;
+			context.getter.onBuffer(context,buffers);
+		}
+		return false;
+	}
+
+	public void onBufferEnd(Object ctx) {
+		GetContext context=(GetContext)ctx;
+		context.getter.onBufferEnd(context);
+	}
+
+	public void onBufferFailure(Object ctx, Throwable failure) {
+		GetContext context=(GetContext)ctx;
+		context.getter.onBufferFailure(context,failure);
 	}
 }

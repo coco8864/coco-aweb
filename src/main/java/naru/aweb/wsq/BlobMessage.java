@@ -7,6 +7,7 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 
+import naru.async.cache.AsyncBuffer;
 import naru.async.pool.PoolManager;
 import naru.async.store.Page;
 import net.sf.json.JSONArray;
@@ -17,28 +18,29 @@ public class BlobMessage {
 	private JSONObject meta;
 	private List<Blob> blobs=new ArrayList<Blob>();
 	
-	public static BlobMessage create(JSONObject meta,ByteBuffer[] data){
-		Object message=meta.get("message");//message ‚ÍString or JSON
+	public static BlobMessage create(JSONObject header,AsyncBuffer buffer){
+		Object message=header.get("message");//message ‚ÍString or JSON
 		BlobMessage result=new BlobMessage(message);
-		result.setMeta(meta);
-		if(meta.getInt("totalLength")!=0){
-			BlobFile blobFile=BlobFile.create(data,meta.getBoolean("isGz"));
-			JSONArray dataMetas=meta.getJSONArray("dataMetas");
+		result.setMeta(header);
+		if(header.getInt("totalLength")!=0){
+//			BlobFile blobFile=BlobFile.create(data,meta.getBoolean("isGz"));
+			JSONArray metas=header.getJSONArray("metas");
 			long offset=0;
-			for(int i=0;i<dataMetas.size();i++){
-				JSONObject dataMeta=dataMetas.getJSONObject(i);
-				long length=dataMeta.getLong("length");
-				Blob blob=new Blob(blobFile,offset,length);
+			for(int i=0;i<metas.size();i++){
+				JSONObject meta=metas.getJSONObject(i);
+				long length=meta.getLong("length");
+				Blob blob=Blob.create(buffer,offset,length);
 				offset+=length;
-				blob.setJsType(dataMeta.optString("jsType"));
-				blob.setName(dataMeta.optString("name"));
-				blob.setMimeType(dataMeta.optString("mimeType"));
+				blob.setJsType(meta.optString("jsType"));
+				blob.setName(meta.optString("name"));
+				blob.setMimeType(meta.optString("mimeType"));
 				result.addBlob(blob);
 			}
 		}
 		return result;
 	}
 	
+	/*
 	public ByteBuffer[] toBuffer(){
 		meta.element("message", message);
 		Page page=new Page();
@@ -62,6 +64,7 @@ public class BlobMessage {
 		return buffer;
 		
 	}
+	*/
 	
 	public BlobMessage(Object message){
 		this.message=message;
@@ -85,17 +88,15 @@ public class BlobMessage {
 		blobs.add(blob);
 	}
 	public void addBlob(ByteBuffer[] buffer){
-		blobs.add(new Blob(buffer));
+		blobs.add(Blob.create(buffer));
 	}
 	public void addBlob(File file){
-		blobs.add(new Blob(file));
+		blobs.add(Blob.create(file));
 	}
-
 	public Object getMessage() {
 		return message;
 	}
-
-	public void setMessage(String message) {
+	public void setMessage(Object message) {
 		this.message = message;
 	}
 }
