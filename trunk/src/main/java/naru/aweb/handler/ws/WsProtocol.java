@@ -248,6 +248,9 @@ public abstract class WsProtocol extends PoolBase{
 		}
 	}
 	
+	
+	
+	
 	public void postMessage(AsyncBuffer message){
 		postMessage(message,true);
 	}

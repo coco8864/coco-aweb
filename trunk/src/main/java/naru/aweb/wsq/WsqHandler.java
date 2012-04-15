@@ -415,4 +415,14 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 			timerId=TimerManager.setTimeout(10, this,null);
 		}
 	}
+	
+	private Blob blob;
+	
+	@Override
+	public void onWrittenPlain(Object userContext) {
+		if(!isWs){
+			super.onWrittenPlain(userContext);
+			return;
+		}
+	}
 }

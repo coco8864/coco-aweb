@@ -6,6 +6,7 @@ package naru.aweb.handler;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
+import naru.async.BufferGetter;
 import naru.async.cache.AsyncBuffer;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
@@ -29,7 +30,7 @@ import org.apache.log4j.Logger;
  * @author Naru
  *
  */
-public abstract class WebSocketHandler extends WebServerHandler implements LogoutEvent{
+public abstract class WebSocketHandler extends WebServerHandler implements LogoutEvent,BufferGetter{
 	private static Logger logger=Logger.getLogger(WebSocketHandler.class);
 	protected boolean isWs;//WebSocketをハンドリングしているか否か
 	private boolean isHandshaked;
@@ -379,6 +380,79 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 			wsProtocol=null;
 		}
 		super.recycle();
+	}
+	
+	/*----asyncBuffer処理----*/
+	//AsyncBuffer送信通知,overrideして使う
+	public void onWrittenAsyncBuffer(Object userContext){
+	}
+	
+	private AsyncBuffer asyncBuffer;
+//	private long offset;
+//	private long length;
+	private long position;
+	private long endPosition;
+	
+	private void creanupAsyncBuffer(){
+		if(asyncBuffer==null){
+			return;
+		}
+		asyncBuffer.unref();
+		asyncBuffer=null;
+	}
+	
+	public boolean asyncBuffer(AsyncBuffer asyncBuffer,long offset,long length){
+		if(this.asyncBuffer!=null){
+			return false;
+		}
+		this.asyncBuffer=asyncBuffer;
+//		this.offset=offset;
+//		this.length=length;
+		this.position=offset;
+		this.endPosition=offset+length;
+		asyncBuffer.asyncGet(this,position,asyncBuffer);
+		return true;
+	}
+	
+	@Override
+	public void onWrittenPlain(Object userContext) {
+		if(!isWs){
+			super.onWrittenPlain(userContext);
+			return;
+		}
+		if(asyncBuffer==null||asyncBuffer!=userContext){
+			return;
+		}
+		if(position<endPosition){
+			asyncBuffer.asyncGet(this,position,asyncBuffer);
+			return;
+		}
+		creanupAsyncBuffer();
+	}
+	
+	@Override
+	public boolean onBuffer(Object ctx, ByteBuffer[] buffers) {
+		long len=BuffersUtil.remaining(buffers);
+		if( endPosition<=(position+len)){
+			BuffersUtil.cut(buffers, endPosition-position);
+			position=endPosition;
+		}else{
+			position+=len;
+		}
+		asyncWrite(asyncBuffer, buffers);
+		return false;
+	}
+
+	@Override
+	public void onBufferEnd(Object ctx) {
+		//来ないはず。
+		creanupAsyncBuffer();
+	}
+
+	@Override
+	public void onBufferFailure(Object ctx, Throwable failure) {
+		creanupAsyncBuffer();
+		onFailure(failure);
 	}
 
 	/*

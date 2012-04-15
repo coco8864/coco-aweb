@@ -118,6 +118,7 @@ public class Blob extends PoolBase implements BufferGetter{
 		length=offset=0;
 	}
 
+	@Override
 	public boolean onBuffer(Object ctx, ByteBuffer[] buffers) {
 		GetContext context=(GetContext)ctx;
 		long len=BuffersUtil.remaining(buffers);
@@ -131,11 +132,13 @@ public class Blob extends PoolBase implements BufferGetter{
 		return false;
 	}
 
+	@Override
 	public void onBufferEnd(Object ctx) {
 		GetContext context=(GetContext)ctx;
 		context.getter.onBufferEnd(context);
 	}
 
+	@Override
 	public void onBufferFailure(Object ctx, Throwable failure) {
 		GetContext context=(GetContext)ctx;
 		context.getter.onBufferFailure(context,failure);
