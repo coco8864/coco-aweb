@@ -384,7 +384,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	
 	/*----asyncBufferˆ—----*/
 	//AsyncBuffer‘—M’Ê’m,override‚µ‚Äg‚¤
-	public void onWrittenAsyncBuffer(Object userContext){
+	public void onPostMessage(Object userContext){
 	}
 	
 	private AsyncBuffer asyncBuffer;
@@ -416,11 +416,11 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	
 	@Override
 	public void onWrittenPlain(Object userContext) {
-		if(!isWs){
+		if(wsProtocol==null){
 			super.onWrittenPlain(userContext);
-			return;
+		}else{
+			wsProtocol.onWrittenPlain(userContext);
 		}
-		wsProtocol.onWrittenPostMessage(userContext);
 	}
 	
 	@Override

@@ -10,7 +10,6 @@ import java.util.Random;
 
 import org.apache.log4j.Logger;
 
-import naru.async.cache.AsyncBuffer;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.aweb.config.Config;
@@ -22,12 +21,18 @@ public class WsHybiFrame {
 	private static Random random=config.getRandom("WsHibiFrame"+System.currentTimeMillis());
 	private static int webSocketMessageLimit=config.getInt("webSocketMessageLimit",2048000);
 	
+	/*
+	 * 	RFC 6455 	
+	 * http://www.ietf.org/rfc/rfc6455.txt
+	 * 5.4.  Fragmentation
+	 */
 	public static final byte PCODE_CONTINUE = 0x00;
 	public static final byte PCODE_TEXT = 0x01;
 	public static final byte PCODE_BINARY = 0x02;
 	public static final byte PCODE_CLOSE = 0x08;
 	public static final byte PCODE_PING = 0x09;
 	public static final byte PCODE_PONG = 0x0A;
+	
 
 	public static final short CLOSE_UNKOWN=-1;
 	
@@ -160,14 +165,8 @@ public class WsHybiFrame {
 		return createFinFrame(PCODE_TEXT, isMask, message);
 	}
 	
-	public static ByteBuffer[] createBinaryFrame(boolean isFin,boolean isMask, AsyncBuffer message) {
-		//TODO imple
-		if(!message.isInTopBuffer()){
-			message.unref();
-			throw new UnsupportedOperationException("createBinaryFrame big bin");
-		}
-		message.unref();
-		return createFrame(isFin,PCODE_BINARY, isMask, message.popTopBuffer());
+	public static ByteBuffer[] createBinaryFrame(boolean isFin,boolean isMask, ByteBuffer[] message) {
+		return createFrame(isFin,PCODE_BINARY, isMask, message);
 	}
 	
 	public static ByteBuffer[] createPingFrame(boolean isMask, String message) {

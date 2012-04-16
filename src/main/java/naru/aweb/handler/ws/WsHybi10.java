@@ -6,13 +6,14 @@ import java.util.ArrayList;
 
 import org.apache.log4j.Logger;
 
+import naru.async.BufferGetter;
 import naru.async.cache.AsyncBuffer;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
 import naru.aweb.http.HeaderParser;
 
-public class WsHybi10 extends WsProtocol {
+public class WsHybi10 extends WsProtocol implements BufferGetter{
 	private static Logger logger=Logger.getLogger(WsHybi10.class);
 	private static final String SPEC="hybi10";
 	private static final String GUID="258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
@@ -223,16 +224,15 @@ public class WsHybi10 extends WsProtocol {
 	public void postMessage(String message) {
 		logger.debug("WsHybi10#postMessage(txt) cid:"+handler.getChannelId());
 		ByteBuffer[] buffers=WsHybiFrame.createTextFrame(isWebSocketResponseMask(), message);
-		handler.asyncWrite(null, buffers);
+		handler.asyncWrite(this, buffers);
 	}
-
-	/* アプリがpostMessageを呼び出した */
+	
 	@Override
-	public void postMessage(AsyncBuffer message) {
+	public void postMessage(ByteBuffer[] message) {
 		logger.debug("WsHybi10#postMessage(bin) cid:"+handler.getChannelId());
 		boolean isFin=true;
 		ByteBuffer[] buffers=WsHybiFrame.createBinaryFrame(isFin,isWebSocketResponseMask(), message);
-		handler.asyncWrite(null, buffers);
+		handler.asyncWrite(this, buffers);
 	}
 	
 	@Override
@@ -244,9 +244,67 @@ public class WsHybi10 extends WsProtocol {
 		return requestHeader.getHeader(SEC_WEBSOCKET_PROTOCOL);
 	}
 
-	@Override
-	public void onWrittenPostMessage(Object userContext) {
-		// TODO Auto-generated method stub
-		
+	private AsyncBuffer asyncBuffer;
+//	private long offset;
+//	private long length;
+	private long position;
+	private long endPosition;
+	
+	private void creanupAsyncBuffer(){
+		if(asyncBuffer==null){
+			return;
+		}
+		asyncBuffer.unref();
+		asyncBuffer=null;
 	}
+	
+	/* アプリがpostMessageを呼び出した */
+	@Override
+	public void postMessage(AsyncBuffer message,long offset,long length) {
+		logger.debug("WsHybi10#postMessage(bin) cid:"+handler.getChannelId());
+		asyncBuffer=message;
+		position=offset;
+		endPosition=offset+length;
+		asyncBuffer.asyncGet(this,position,this);
+	}
+	
+	@Override
+	public void onWrittenPlain(Object userContext) {
+		if(asyncBuffer==null||asyncBuffer!=userContext){
+			return;
+		}
+		if(position==endPosition){
+			handler.onPostMessage(userContext);
+			creanupAsyncBuffer();
+			return;
+		}
+		asyncBuffer.asyncGet(this,position,this);
+	}
+	
+	@Override
+	public boolean onBuffer(Object ctx, ByteBuffer[] buffers) {
+		long len=BuffersUtil.remaining(buffers);
+		if( endPosition<=(position+len)){
+			BuffersUtil.cut(buffers, endPosition-position);
+			position=endPosition;
+		}else{
+			position+=len;
+		}
+//		ByteBuffer[] buffers=WsHybiFrame.createBinaryFrame(isFin,isWebSocketResponseMask(), message);
+		handler.asyncWrite(this, buffers);
+		return false;
+	}
+
+	@Override
+	public void onBufferEnd(Object ctx) {
+		//来ないはず。
+		creanupAsyncBuffer();
+	}
+
+	@Override
+	public void onBufferFailure(Object ctx, Throwable failure) {
+		creanupAsyncBuffer();
+		handler.onFailure(failure);
+	}
+
 }
