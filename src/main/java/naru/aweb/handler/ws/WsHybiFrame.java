@@ -25,6 +25,7 @@ public class WsHybiFrame {
 	 * 	RFC 6455 	
 	 * http://www.ietf.org/rfc/rfc6455.txt
 	 * 5.4.  Fragmentation
+	 * トップのFragmentationにopcodeが入って、以降のFragmentationのopcodeは、0
 	 */
 	public static final byte PCODE_CONTINUE = 0x00;
 	public static final byte PCODE_TEXT = 0x01;
