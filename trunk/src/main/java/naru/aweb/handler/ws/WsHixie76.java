@@ -314,4 +314,19 @@ public class WsHixie76 extends WsProtocol {
 	public String getRequestSubProtocols(HeaderParser requestHeader) {
 		return requestHeader.getHeader(SEC_WEBSOCKET_PROTOCOL);
 	}
+	
+	@Override
+	public void onWrittenPlain(Object userContext) {
+	}
+
+	@Override
+	public void postMessage(ByteBuffer[] message) {
+		throw new UnsupportedOperationException("postMessage binary mode");
+	}
+
+	@Override
+	public void postMessage(AsyncBuffer message, long offset, long length) {
+		logger.debug("WsHiXie75#postMessage(bin) cid:"+handler.getChannelId());
+		throw new UnsupportedOperationException("postMessage binary mode");
+	}
 }

@@ -36,7 +36,7 @@ public class SampleWsqlet implements Wsqlet {
 	public void onPublish(WsqPeer from, BlobMessage message) {
 		logger.info("onPublish:"+from);
 		Blob blob=message.getBlob(0);
-		ByteBuffer[] buf=blob.read();
+//		ByteBuffer[] buf=blob.read();
 		controller.message(message);//来たメッセージをecho back
 	}
 
