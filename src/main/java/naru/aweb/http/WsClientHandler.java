@@ -11,7 +11,7 @@ import javax.net.ssl.SSLEngine;
 import org.apache.log4j.Logger;
 
 import naru.async.Timer;
-import naru.async.cache.AsyncBuffer;
+import naru.async.cache.CacheBuffer;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
@@ -285,7 +285,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 			break;
 		case WsHybiFrame.PCODE_BINARY:
 			logger.debug("WsClientHandler#doFrame pcode BINARY");
-			onWcMessage(AsyncBuffer.open(payloadBuffers));
+			onWcMessage(CacheBuffer.open(payloadBuffers));
 			break;
 		case WsHybiFrame.PCODE_CLOSE:
 			logger.debug("WsClientHandler#doFrame pcode CLOSE");
@@ -432,7 +432,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 		asyncWrite(CONTEXT_MESSAGE,buffers);
 	}
 	
-	public final void postMessage(AsyncBuffer message){
+	public final void postMessage(CacheBuffer message){
 		ByteBuffer[] buffers=WsHybiFrame.createBinaryFrame(true,true, message);
 		asyncWrite(CONTEXT_MESSAGE,buffers);
 	}
@@ -490,7 +490,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 		}
 	}
 	
-	private void onWcMessage(AsyncBuffer message) {
+	private void onWcMessage(CacheBuffer message) {
 		logger.debug("#message binary cid:"+getChannelId());
 		if (wsClient != null) {
 			wsClient.onWcMessage(userContext, message);

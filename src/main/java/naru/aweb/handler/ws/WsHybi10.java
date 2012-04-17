@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import org.apache.log4j.Logger;
 
 import naru.async.BufferGetter;
-import naru.async.cache.AsyncBuffer;
+import naru.async.cache.CacheBuffer;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
@@ -23,7 +23,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 	private byte continuePcode;
 	private int continuePayloadLength=0;
 //	private List<ByteBuffer> continuePayload=new ArrayList<ByteBuffer>();
-	private AsyncBuffer payloadBuffer;
+	private CacheBuffer payloadBuffer;
 	private WsHybiFrame frame=new WsHybiFrame();
 
 	@Override
@@ -90,7 +90,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 		logger.debug("WsHybi10#doFrame cid:"+handler.getChannelId());
 		byte pcode=frame.getPcode();
 		if(payloadBuffer==null){
-			payloadBuffer=AsyncBuffer.open();
+			payloadBuffer=CacheBuffer.open();
 		}
 		ByteBuffer[] payloadBuffers=frame.getPayloadBuffers();
 		if(!frame.isFin()){//最終Frameじゃない
@@ -244,7 +244,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 		return requestHeader.getHeader(SEC_WEBSOCKET_PROTOCOL);
 	}
 
-	private AsyncBuffer asyncBuffer;
+	private CacheBuffer asyncBuffer;
 //	private long offset;
 //	private long length;
 	private long position;
@@ -260,7 +260,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 	
 	/* アプリがpostMessageを呼び出した */
 	@Override
-	public void postMessage(AsyncBuffer message,long offset,long length) {
+	public void postMessage(CacheBuffer message,long offset,long length) {
 		logger.debug("WsHybi10#postMessage(bin) cid:"+handler.getChannelId());
 		asyncBuffer=message;
 		position=offset;

@@ -12,7 +12,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import naru.async.Timer;
-import naru.async.cache.AsyncBuffer;
+import naru.async.cache.CacheBuffer;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.async.timer.TimerManager;
@@ -265,7 +265,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 	 * @see naru.aweb.handler.WebSocketHandler#onMessage(naru.async.cache.AsyncBuffer)
 	 */
 	@Override
-	public void onMessage(AsyncBuffer message) {
+	public void onMessage(CacheBuffer message) {
 		//meta‚Ü‚Å‚ÍAmsg[0]‚É‚ ‚é–‚ğ‘O’ñ TODO ‰ü‘P—v
 		if(!message.isInTopBuffer()){
 			//TODO suppert big data

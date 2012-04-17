@@ -7,7 +7,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
 import naru.async.BufferGetter;
-import naru.async.cache.AsyncBuffer;
+import naru.async.cache.CacheBuffer;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.async.store.Store;
@@ -141,7 +141,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		wsPostTrace("text/plain",messageBuffers);
 	}
 	
-	public void tracePostMessage(AsyncBuffer message){
+	public void tracePostMessage(CacheBuffer message){
 		postMessageCount++;
 		ByteBuffer [] messageBuffers=null;
 		switch(logType){
@@ -229,7 +229,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	
 	/* メッセージを送信する場合(binary) */
 	/* 同時にpostMessageを受け付ける事はできないのでsynchronized */
-	protected synchronized void postMessage(AsyncBuffer message){
+	protected synchronized void postMessage(CacheBuffer message){
 		tracePostMessage(message);
 		wsProtocol.postMessage(message);
 	}
@@ -257,7 +257,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	public abstract void onWsClose(short code,String reason);
 	public abstract void onMessage(String msgs);
 //	public abstract void onMessage(ByteBuffer[] msgs);
-	public abstract void onMessage(AsyncBuffer msgs);
+	public abstract void onMessage(CacheBuffer msgs);
 	
 	/**
 	 * WebSocket接続中にセションきれた場合の通知
@@ -387,7 +387,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	public void onPostMessage(Object userContext){
 	}
 	
-	private AsyncBuffer asyncBuffer;
+	private CacheBuffer asyncBuffer;
 //	private long offset;
 //	private long length;
 	private long position;
@@ -401,7 +401,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		asyncBuffer=null;
 	}
 	
-	public boolean asyncBuffer(AsyncBuffer asyncBuffer,long offset,long length){
+	public boolean asyncBuffer(CacheBuffer asyncBuffer,long offset,long length){
 		if(this.asyncBuffer!=null){
 			return false;
 		}

@@ -5,7 +5,7 @@ package naru.aweb.handler;
 
 import java.nio.ByteBuffer;
 
-import naru.async.cache.AsyncBuffer;
+import naru.async.cache.CacheBuffer;
 import naru.aweb.config.Config;
 import naru.aweb.handler.ws.WsProtocol;
 import naru.aweb.http.HeaderParser;
@@ -54,7 +54,7 @@ public class WsProxyHandler extends  WebSocketHandler implements WsClient{
 	}
 	/* ブラウザがmessageを送信してきた時 */
 	@Override
-	public void onMessage(AsyncBuffer message) {
+	public void onMessage(CacheBuffer message) {
 		wsClientHandler.postMessage(message);
 	}
 	
@@ -103,7 +103,7 @@ public class WsProxyHandler extends  WebSocketHandler implements WsClient{
 		postMessage(message);
 	}
 	@Override
-	public void onWcMessage(Object userContext, AsyncBuffer message) {
+	public void onWcMessage(Object userContext, CacheBuffer message) {
 		postMessage(message);
 		
 	}

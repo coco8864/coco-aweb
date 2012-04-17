@@ -7,7 +7,7 @@ import java.security.NoSuchAlgorithmException;
 
 import org.apache.log4j.Logger;
 
-import naru.async.cache.AsyncBuffer;
+import naru.async.cache.CacheBuffer;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.aweb.http.HeaderParser;
@@ -289,7 +289,7 @@ public class WsHixie76 extends WsProtocol {
 
 	/* ƒAƒvƒŠ‚ªpostMessage‚ğŒÄ‚Ño‚µ‚½ */
 	@Override
-	public void postMessage(AsyncBuffer message) {
+	public void postMessage(CacheBuffer message) {
 		logger.debug("WsHiXie76#postMessage(bin) cid:"+handler.getChannelId());
 		throw new UnsupportedOperationException("postMessage binary mode");
 	}
@@ -325,7 +325,7 @@ public class WsHixie76 extends WsProtocol {
 	}
 
 	@Override
-	public void postMessage(AsyncBuffer message, long offset, long length) {
+	public void postMessage(CacheBuffer message, long offset, long length) {
 		logger.debug("WsHiXie75#postMessage(bin) cid:"+handler.getChannelId());
 		throw new UnsupportedOperationException("postMessage binary mode");
 	}

@@ -5,16 +5,18 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import naru.async.cache.AsyncBuffer;
+import naru.async.AsyncBuffer;
+import naru.async.BufferGetter;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
-public class BlobMessage {
+public class BlobMessage implements AsyncBuffer,BufferGetter{
 	private Object message;
 	private JSONObject meta;
 	private List<Blob> blobs=new ArrayList<Blob>();
+	private long[] offsets=null;
 	
-	public static BlobMessage create(JSONObject header,AsyncBuffer buffer){
+	public static BlobMessage create(JSONObject header,naru.async.cache.CacheBuffer buffer){
 		Object message=header.get("message");//message ‚ÍString or JSON
 		BlobMessage result=new BlobMessage(message);
 		result.setMeta(header);
@@ -95,4 +97,44 @@ public class BlobMessage {
 	public void setMessage(Object message) {
 		this.message = message;
 	}
+
+	public boolean asyncBuffer(BufferGetter bufferGetter, Object userContext) {
+		throw new UnsupportedOperationException("asyncBuffer(BufferGetter bufferGetter, Object userContext)");
+	}
+
+	public boolean asyncBuffer(BufferGetter bufferGetter, long offset,Object userContext) {
+		int blobNo=0;
+		long blobOffset=0;
+		for(;blobNo<offsets.length;blobNo++){
+			if(offsets[blobNo]>offset){
+				blobOffset=offsets[blobNo]-offset;
+				break;
+			}
+		}
+		if(blobNo==0){
+		}else{
+			Blob blob=getBlob(blobNo-1);
+			blob.asyncBuffer(this,blobOffset,bufferGetter);
+		}
+		return false;
+	}
+
+	public long bufferLength() {
+		return offsets[offsets.length-1];
+	}
+
+	public boolean onBuffer(Object userContext, ByteBuffer[] buffers) {
+		BufferGetter bufferGetter=(BufferGetter)userContext;
+		return bufferGetter.onBuffer(userContext, buffers);
+	}
+
+	public void onBufferEnd(Object userContext) {
+		throw new IllegalStateException("BlobMessage not use onBufferEnd");
+	}
+
+	public void onBufferFailure(Object userContext, Throwable failure) {
+		BufferGetter bufferGetter=(BufferGetter)userContext;
+		bufferGetter.onBufferFailure(userContext, failure);
+	}
+
 }

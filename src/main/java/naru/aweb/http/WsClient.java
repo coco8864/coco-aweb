@@ -2,7 +2,7 @@ package naru.aweb.http;
 
 import java.nio.ByteBuffer;
 
-import naru.async.cache.AsyncBuffer;
+import naru.async.cache.CacheBuffer;
 
 
 /**
@@ -31,7 +31,7 @@ public interface WsClient {
 	//メッセージ受信時
 	public void onWcMessage(Object userContext,String message);
 	//メッセージ受信時
-	public void onWcMessage(Object userContext,AsyncBuffer message);
+	public void onWcMessage(Object userContext,CacheBuffer message);
 	//header書き込みが完了した時
 	public void onWcWrittenHeader(Object userContext);
 }
