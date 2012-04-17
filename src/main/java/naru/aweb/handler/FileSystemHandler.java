@@ -145,7 +145,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 			asyncFile.position(offset);
 		}
 		this.asyncFile = asyncFile;
-		asyncFile.asyncGet(this, asyncFile);
+		asyncFile.asyncBuffer(this, asyncFile);
 	}
 
 	// 存在確認済みのディレクトリを一覧レスポンスする。
@@ -359,7 +359,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 	public void onWrittenBody() {
 		logger.debug("#writtenBody.cid:" + getChannelId());
 		if(asyncFile!=null){
-			asyncFile.asyncGet(this, asyncFile);
+			asyncFile.asyncBuffer(this, asyncFile);
 		}
 		super.onWrittenBody();
 	}

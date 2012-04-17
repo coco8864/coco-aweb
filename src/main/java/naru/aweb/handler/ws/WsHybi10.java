@@ -265,7 +265,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 		asyncBuffer=message;
 		position=offset;
 		endPosition=offset+length;
-		asyncBuffer.asyncGet(this,position,this);
+		asyncBuffer.asyncBuffer(this,position,this);
 	}
 	
 	@Override
@@ -278,7 +278,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 			creanupAsyncBuffer();
 			return;
 		}
-		asyncBuffer.asyncGet(this,position,this);
+		asyncBuffer.asyncBuffer(this,position,this);
 	}
 	
 	@Override
