@@ -10,7 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import naru.async.cache.AsyncBuffer;
+import naru.async.cache.CacheBuffer;
 import naru.aweb.config.Config;
 import naru.aweb.handler.WebSocketHandler;
 import naru.aweb.http.ParameterParser;
@@ -234,7 +234,7 @@ public class WsQueueHandler extends WebSocketHandler {
 	}
 
 	@Override
-	public void onMessage(AsyncBuffer msgs) {
+	public void onMessage(CacheBuffer msgs) {
 		msgs.unref();
 	}
 

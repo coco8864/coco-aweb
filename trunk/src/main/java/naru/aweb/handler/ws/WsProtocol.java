@@ -9,7 +9,7 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 
-import naru.async.cache.AsyncBuffer;
+import naru.async.cache.CacheBuffer;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.aweb.config.Config;
@@ -193,7 +193,7 @@ public abstract class WsProtocol extends PoolBase{
 		}
 	}
 	
-	protected void callBinaryOnMessage(AsyncBuffer message){
+	protected void callBinaryOnMessage(CacheBuffer message){
 		try {
 			//traceOnMessageは、buffersを消費しない
 //			handler.traceOnMessage(message.popTopBuffer());//TODO 複数bufferになった場合
@@ -248,7 +248,7 @@ public abstract class WsProtocol extends PoolBase{
 		}
 	}
 	
-	public void postMessage(AsyncBuffer message){
+	public void postMessage(CacheBuffer message){
 		postMessage(message,0,message.length());
 	}
 	/* handshakeに失敗した場合は、このメソッドで,httpとしてリクエストを完了させる */
@@ -257,7 +257,7 @@ public abstract class WsProtocol extends PoolBase{
 	public abstract void onClose(short code,String reason);/* 回線が切断した or アプリがcloseWebSocketを呼び出した */
 	public abstract void postMessage(String message);
 	public abstract void postMessage(ByteBuffer[] message);
-	public abstract void postMessage(AsyncBuffer message,long offset,long length);
+	public abstract void postMessage(CacheBuffer message,long offset,long length);
 	public abstract void onReadTimeout();/* 回線readがタイムアウトした */
 	public abstract String getWsProtocolName();
 	public abstract String getRequestSubProtocols(HeaderParser requestHeader);

@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 
 import org.apache.log4j.Logger;
 
-import naru.async.cache.AsyncBuffer;
+import naru.async.cache.CacheBuffer;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.aweb.http.HeaderParser;
@@ -202,7 +202,7 @@ public class WsHixie75 extends WsProtocol {
 	}
 
 	@Override
-	public void postMessage(AsyncBuffer message, long offset, long length) {
+	public void postMessage(CacheBuffer message, long offset, long length) {
 		logger.debug("WsHiXie75#postMessage(bin) cid:"+handler.getChannelId());
 		throw new UnsupportedOperationException("postMessage binary mode");
 	}

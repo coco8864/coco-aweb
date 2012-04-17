@@ -8,7 +8,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import naru.async.Timer;
-import naru.async.cache.AsyncBuffer;
+import naru.async.cache.CacheBuffer;
 import naru.async.timer.TimerManager;
 import naru.aweb.config.Config;
 import naru.aweb.http.HeaderParser;
@@ -220,7 +220,7 @@ public class ConnectChecker implements Timer,WsClient{
 	}
 
 	@Override
-	public void onWcMessage(Object userContext, AsyncBuffer message) {
+	public void onWcMessage(Object userContext, CacheBuffer message) {
 	}
 
 	@Override
