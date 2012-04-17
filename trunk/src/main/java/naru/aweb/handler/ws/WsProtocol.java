@@ -249,7 +249,7 @@ public abstract class WsProtocol extends PoolBase{
 	}
 	
 	public void postMessage(CacheBuffer message){
-		postMessage(message,0,message.length());
+		postMessage(message,0,message.bufferLength());
 	}
 	/* handshakeに失敗した場合は、このメソッドで,httpとしてリクエストを完了させる */
 	public abstract boolean onHandshake(HeaderParser requestHeader,String subProtocol);

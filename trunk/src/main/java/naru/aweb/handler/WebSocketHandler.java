@@ -410,7 +410,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 //		this.length=length;
 		this.position=offset;
 		this.endPosition=offset+length;
-		asyncBuffer.asyncGet(this,position,asyncBuffer);
+		asyncBuffer.asyncBuffer(this,position,asyncBuffer);
 		return true;
 	}
 	
