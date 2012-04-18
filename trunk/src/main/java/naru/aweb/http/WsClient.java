@@ -1,7 +1,5 @@
 package naru.aweb.http;
 
-import java.nio.ByteBuffer;
-
 import naru.async.cache.CacheBuffer;
 
 

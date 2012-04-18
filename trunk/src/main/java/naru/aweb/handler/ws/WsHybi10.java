@@ -1,14 +1,15 @@
 package naru.aweb.handler.ws;
 
-import java.util.List;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
+import java.util.LinkedList;
 
 import org.apache.log4j.Logger;
 
+import naru.async.AsyncBuffer;
 import naru.async.BufferGetter;
 import naru.async.cache.CacheBuffer;
 import naru.async.pool.BuffersUtil;
+import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
 import naru.aweb.http.HeaderParser;
@@ -81,18 +82,28 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 			return;
 		}
 		isSendClose=true;
-		handler.traceClose(code, reason);
+		traceClose(code, reason);
 		ByteBuffer[] closeBuffer=WsHybiFrame.createCloseFrame(isWebSocketResponseMask(),code,reason);
 		handler.asyncWrite(null, closeBuffer);
+	}
+	
+	private void doBinaryTrace(byte pcode,boolean isTop,boolean isFin,ByteBuffer[] payloadBuffers){
+		if(pcode!=WsHybiFrame.PCODE_BINARY || continuePcode!=WsHybiFrame.PCODE_BINARY){
+			return;//binaryじゃない
+		}
+		traceOnMessage(isTop, isFin, payloadBuffers);
 	}
 	
 	private void doFrame(){
 		logger.debug("WsHybi10#doFrame cid:"+handler.getChannelId());
 		byte pcode=frame.getPcode();
+		ByteBuffer[] payloadBuffers=frame.getPayloadBuffers();
+		//binaryデータの場合、payloadbuffersを消費する前にtraceを採取
+		doBinaryTrace(pcode,payloadBuffer==null,frame.isFin(),payloadBuffers);
+		
 		if(payloadBuffer==null){
 			payloadBuffer=CacheBuffer.open();
 		}
-		ByteBuffer[] payloadBuffers=frame.getPayloadBuffers();
 		if(!frame.isFin()){//最終Frameじゃない
 			logger.debug("WsHybi10#doFrame not isFin");
 			if(pcode!=WsHybiFrame.PCODE_CONTINUE){
@@ -105,22 +116,13 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 				logger.debug("WsHybi10#doFrame too long frame.continuePayloadLength:"+continuePayloadLength);
 				sendClose(WsHybiFrame.CLOSE_MESSAGE_TOO_BIG,"too long frame");
 			}
+			//TODO
 			return;
 		}
 		if(pcode==WsHybiFrame.PCODE_CONTINUE){
 			//1つのメッセージが複数のFrameからできている場合
 			logger.debug("WsHybi10#doFrame pcode CONTINUE");
 			pcode=continuePcode;
-//			for(ByteBuffer buffer:payloadBuffers){
-//				continuePayload.add(buffer);
-//			}
-//			PoolManager.poolArrayInstance(payloadBuffers);
-//			int size=continuePayload.size();
-//			payloadBuffers=BuffersUtil.newByteBufferArray(size);
-//			for(int i=0;i<size;i++){
-//				payloadBuffers[i]=continuePayload.get(i);
-//			}
-//			continuePayload.clear();
 			continuePayloadLength=0;
 			continuePcode=-1;
 		}
@@ -138,7 +140,9 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 				convertPutBuffer(buffer);
 			}
 			PoolManager.poolArrayInstance(payloadBuffers);
-			callTextOnMessage();
+			String textMessage=convertToString();
+			traceOnMessage(textMessage);
+			callOnMessage(textMessage);
 			break;
 		case WsHybiFrame.PCODE_BINARY:
 			logger.debug("WsHybi10#doFrame pcode BINARY");
@@ -149,18 +153,20 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 			logger.debug("WsHybi10#doFrame pcode CLOSE");
 			PoolManager.poolBufferInstance(payloadBuffers);
 			//close受信
-			handler.traceOnClose(frame.getCloseCode(),frame.getCloseReason());
+			traceOnClose(frame.getCloseCode(),frame.getCloseReason());
 			//必要ならclose送信
 			sendClose(WsHybiFrame.CLOSE_NORMAL,null);
 			break;
 		case WsHybiFrame.PCODE_PING:
 			logger.debug("WsHybi10#doFrame pcode PING");
+			tracePingPong("PING");			
 			ByteBuffer[] pongBuffer=WsHybiFrame.createPongFrame(isWebSocketResponseMask(), payloadBuffers);
 			handler.asyncWrite(null, pongBuffer);
 			break;
 		case WsHybiFrame.PCODE_PONG:
 			logger.debug("WsHybi10#doFrame pcode PONG");
 			PoolManager.poolBufferInstance(payloadBuffers);
+			tracePingPong("PONG");
 			//do nothing
 			break;
 		}
@@ -223,16 +229,13 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 	@Override
 	public void postMessage(String message) {
 		logger.debug("WsHybi10#postMessage(txt) cid:"+handler.getChannelId());
-		ByteBuffer[] buffers=WsHybiFrame.createTextFrame(isWebSocketResponseMask(), message);
-		handler.asyncWrite(this, buffers);
+		postMessage(new PostRequest(message));
 	}
 	
 	@Override
 	public void postMessage(ByteBuffer[] message) {
 		logger.debug("WsHybi10#postMessage(bin) cid:"+handler.getChannelId());
-		boolean isFin=true;
-		ByteBuffer[] buffers=WsHybiFrame.createBinaryFrame(isFin,isWebSocketResponseMask(), message);
-		handler.asyncWrite(this, buffers);
+		postMessage(new PostRequest(message));
 	}
 	
 	@Override
@@ -243,67 +246,134 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 	public String getRequestSubProtocols(HeaderParser requestHeader) {
 		return requestHeader.getHeader(SEC_WEBSOCKET_PROTOCOL);
 	}
-
-	private CacheBuffer asyncBuffer;
-//	private long offset;
-//	private long length;
-	private long position;
-	private long endPosition;
 	
-	private void creanupAsyncBuffer(){
-		if(asyncBuffer==null){
+	private static class PostRequest{
+		public PostRequest(AsyncBuffer message, long offset, long length) {
+			if(message instanceof PoolBase){
+				((PoolBase)message).ref();
+			}
+			this.asyncMessage=message;
+			position=offset;
+			endPosition=offset+length;
+			isTop=true;
+			strMessage=null;
+			byteMessage=null;
+		}
+		public PostRequest(String message) {
+			this.strMessage=message;
+		}
+		public PostRequest(ByteBuffer[] message) {
+			this.byteMessage=message;
+			this.strMessage=null;
+		}
+		public void clean(){
+			if(asyncMessage!=null&&asyncMessage instanceof PoolBase){
+				((PoolBase)asyncMessage).unref();
+			}
+			asyncMessage=null;
+		}
+		String strMessage;
+		ByteBuffer[] byteMessage;
+		AsyncBuffer asyncMessage;
+		long position;
+		long endPosition;
+		boolean isTop=true;
+	}
+	private PostRequest curReq=null;
+	private LinkedList<PostRequest> postQueue=new LinkedList<PostRequest> ();
+	
+	private synchronized void postMessage(PostRequest req) {
+		if(req==null){
 			return;
 		}
-		asyncBuffer.unref();
-		asyncBuffer=null;
-	}
-	
-	/* アプリがpostMessageを呼び出した */
-	@Override
-	public void postMessage(CacheBuffer message,long offset,long length) {
-		logger.debug("WsHybi10#postMessage(bin) cid:"+handler.getChannelId());
-		asyncBuffer=message;
-		position=offset;
-		endPosition=offset+length;
-		asyncBuffer.asyncBuffer(this,position,this);
+		if(curReq!=null){
+			postQueue.add(req);
+			return;
+		}
+		curReq=req;
+		if(curReq.strMessage!=null){
+			tracePostMessage(curReq.strMessage);
+			ByteBuffer[] buffers=WsHybiFrame.createTextFrame(isWebSocketResponseMask(),curReq.strMessage);
+			handler.asyncWrite(curReq, buffers);
+			return;
+		}
+		if(curReq.byteMessage!=null){
+			tracePostMessage(true,true,curReq.byteMessage);
+			ByteBuffer[] buffers=WsHybiFrame.createBinaryFrame(true,true,isWebSocketResponseMask(),curReq.byteMessage);
+			handler.asyncWrite(curReq, buffers);
+			return;
+		}
+		curReq.asyncMessage.asyncBuffer(this,curReq.position,curReq);
 	}
 	
 	@Override
 	public void onWrittenPlain(Object userContext) {
-		if(asyncBuffer==null||asyncBuffer!=userContext){
+		boolean isPostEnd=false;
+		synchronized(this){
+			if(curReq==null||curReq!=userContext){
+				return;
+			}
+			if(curReq.position==curReq.endPosition){
+				isPostEnd=true;
+			}
+		}
+		if(!isPostEnd){
+			curReq.asyncMessage.asyncBuffer(this,curReq.position,curReq);
 			return;
 		}
-		if(position==endPosition){
-			handler.onPostMessage(userContext);
-			creanupAsyncBuffer();
-			return;
+		//回収処理
+		curReq.clean();
+		handler.onPosted();
+		synchronized(this){
+			curReq=null;
+			PostRequest req=postQueue.removeFirst();
+			if(req!=null){
+				postMessage(req);
+			}
 		}
-		asyncBuffer.asyncBuffer(this,position,this);
+	}
+	
+	/* アプリがpostMessageを呼び出した */
+	@Override
+	public void postMessage(AsyncBuffer message,long offset,long length) {
+		logger.debug("WsHybi10#postMessage(bin) cid:"+handler.getChannelId());
+		postMessage(new PostRequest(message,offset,length));
 	}
 	
 	@Override
 	public boolean onBuffer(Object ctx, ByteBuffer[] buffers) {
 		long len=BuffersUtil.remaining(buffers);
-		if( endPosition<=(position+len)){
-			BuffersUtil.cut(buffers, endPosition-position);
-			position=endPosition;
+		if( curReq.endPosition<=(curReq.position+len)){
+			BuffersUtil.cut(buffers, curReq.endPosition-curReq.position);
+			curReq.position=curReq.endPosition;
 		}else{
-			position+=len;
+			curReq.position+=len;
 		}
-//		ByteBuffer[] buffers=WsHybiFrame.createBinaryFrame(isFin,isWebSocketResponseMask(), message);
-		handler.asyncWrite(this, buffers);
+		boolean isFin=false;
+		if(curReq.position==curReq.endPosition){
+			isFin=true;
+		}
+		tracePostMessage(curReq.isTop,isFin,curReq.byteMessage);
+		buffers=WsHybiFrame.createBinaryFrame(curReq.isTop,isFin,isWebSocketResponseMask(), buffers);
+		curReq.isTop=false;
+		handler.asyncWrite(curReq, buffers);
 		return false;
 	}
 
 	@Override
 	public void onBufferEnd(Object ctx) {
-		//来ないはず。
-		creanupAsyncBuffer();
+		throw new IllegalStateException("called onBufferEnd");
 	}
 
 	@Override
 	public void onBufferFailure(Object ctx, Throwable failure) {
-		creanupAsyncBuffer();
+		synchronized(this){
+			if(curReq==null){
+				return;//ありえない
+			}
+			curReq.clean();
+			curReq=null;
+		}
 		handler.onFailure(failure);
 	}
 

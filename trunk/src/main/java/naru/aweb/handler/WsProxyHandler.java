@@ -3,11 +3,9 @@
  */
 package naru.aweb.handler;
 
-import java.nio.ByteBuffer;
 
 import naru.async.cache.CacheBuffer;
 import naru.aweb.config.Config;
-import naru.aweb.handler.ws.WsProtocol;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.WsClient;
 import naru.aweb.http.WsClientHandler;
@@ -102,11 +100,12 @@ public class WsProxyHandler extends  WebSocketHandler implements WsClient{
 	public void onWcMessage(Object userContext, String message) {
 		postMessage(message);
 	}
+	
 	@Override
 	public void onWcMessage(Object userContext, CacheBuffer message) {
 		postMessage(message);
-		
 	}
+	
 	@Override
 	public void onWcProxyConnected(Object userContext) {
 	}
@@ -141,4 +140,5 @@ public class WsProxyHandler extends  WebSocketHandler implements WsClient{
 		}
 		super.recycle();
 	}
+
 }

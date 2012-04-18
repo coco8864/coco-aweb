@@ -1,6 +1,7 @@
 package naru.aweb.handler.ws;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -9,10 +10,15 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 
+import naru.async.AsyncBuffer;
 import naru.async.cache.CacheBuffer;
+import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
+import naru.async.store.Store;
+import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
+import naru.aweb.config.Mapping.LogType;
 import naru.aweb.handler.WebSocketHandler;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.mapping.MappingResult;
@@ -159,6 +165,9 @@ public abstract class WsProtocol extends PoolBase{
 			wsProtocol=(WsProtocol)PoolManager.getInstance(WsHixie76.class);
 		}
 		wsProtocol.setSubprotocolSet(subprotocolSet);
+		wsProtocol.logType=mapping.getLogType();
+		wsProtocol.onMessageCount=0;
+		wsProtocol.postMessageCount=0;
 		return wsProtocol;
 	}
 	
@@ -203,13 +212,8 @@ public abstract class WsProtocol extends PoolBase{
 		}
 	}
 	
-	protected void callTextOnMessage(){
-		callOnMessage(convertToString());
-	}
-	
 	protected void callOnMessage(String msgs){
 		try {
-			handler.traceOnMessage(msgs);
 			handler.onMessage(msgs);
 		} catch (Throwable e) {
 			logger.warn("callOnMessage handler exception.",e);
@@ -230,7 +234,7 @@ public abstract class WsProtocol extends PoolBase{
 			if(isCallWsClose){
 				return;
 			}
-			handler.traceOnClose(code, reason);
+			traceOnClose(code, reason);
 			try {
 				handler.onWsClose(code,reason);
 			} catch (Throwable e) {
@@ -248,7 +252,7 @@ public abstract class WsProtocol extends PoolBase{
 		}
 	}
 	
-	public void postMessage(CacheBuffer message){
+	public void postMessage(AsyncBuffer message){
 		postMessage(message,0,message.bufferLength());
 	}
 	/* handshakeに失敗した場合は、このメソッドで,httpとしてリクエストを完了させる */
@@ -257,10 +261,221 @@ public abstract class WsProtocol extends PoolBase{
 	public abstract void onClose(short code,String reason);/* 回線が切断した or アプリがcloseWebSocketを呼び出した */
 	public abstract void postMessage(String message);
 	public abstract void postMessage(ByteBuffer[] message);
-	public abstract void postMessage(CacheBuffer message,long offset,long length);
+	public abstract void postMessage(AsyncBuffer message,long offset,long length);
 	public abstract void onReadTimeout();/* 回線readがタイムアウトした */
 	public abstract String getWsProtocolName();
 	public abstract String getRequestSubProtocols(HeaderParser requestHeader);
-	//回線にデータを書き込んだ事を通知
+	
+	//回線にデータを書き込んだ通知を受け、handler.onPostMessageを呼び出す
 	public abstract void onWrittenPlain(Object userContext);
+
+	private LogType logType;
+	private int onMessageCount;
+	private int postMessageCount;
+	
+	/*-- trace関連の関数群 --*/
+	/**
+	 * 
+	 * @param sourceType
+	 * @param contentType
+	 * @param contentEncoding
+	 * @param transferEncoding
+	 * @param message
+	 */
+	private void wsTrace(char sourceType,String contentType,String comment,String statusCode,ByteBuffer[] message){
+		AccessLog accessLog=handler.getAccessLog();
+		AccessLog wsAccessLog=accessLog.copyForWs();
+		wsAccessLog.setContentType(contentType);
+		wsAccessLog.setRequestLine(accessLog.getRequestLine() +comment);
+		wsAccessLog.setSourceType(sourceType);
+		wsAccessLog.setStatusCode(statusCode);
+		wsAccessLog.endProcess();
+		wsAccessLog.setPersist(true);
+		if(message!=null){
+			Store store = Store.open(true);
+			store.putBuffer(message);
+			long responseLength=BuffersUtil.remaining(message);
+			wsAccessLog.setResponseLength(responseLength);
+			wsAccessLog.incTrace();//close前にカウンタをアップ
+			store.close(wsAccessLog,store);//close時にdigestが決まる
+			wsAccessLog.setResponseBodyDigest(store.getDigest());
+		}
+		wsAccessLog.decTrace();//traceを出力する
+	}
+	
+	private void wsPostTrace(boolean isTop,boolean isFin,String contentType,ByteBuffer[] message){
+		//ブラウザにはonMessageが通知されるので
+		StringBuilder sb=new StringBuilder();
+		sb.append('[');
+		sb.append(handler.getChannelId());
+		sb.append(":");
+		sb.append(onMessageCount);
+		if(isTop){
+			onMessageCount++;
+			sb.append(":top");
+		}
+		if(isFin){
+			sb.append(":fin");
+		}
+		sb.append(']');
+		wsTrace(AccessLog.SOURCE_TYPE_WS_ON_MESSAGE,contentType,sb.toString(),"B<S",message);
+	}
+	
+	private void wsCloseTrace(short code,String reason){
+		StringBuilder sb=new StringBuilder();
+		sb.append("[ServerClose:");
+		sb.append(handler.getChannelId());
+		sb.append(":code:");
+		sb.append(code);
+		sb.append(":reason:");
+		sb.append(reason);
+		sb.append(']');
+		wsTrace(AccessLog.SOURCE_TYPE_WS_ON_MESSAGE,null,sb.toString(),"B<S",null);
+	}
+	
+	private void wsOnTrace(boolean isTop,boolean isFin,String contentType,ByteBuffer[] message){
+		//ブラウザのpostMessageに起因して記録されるので
+		StringBuilder sb=new StringBuilder();
+		sb.append('[');
+		sb.append(handler.getChannelId());
+		sb.append(":");
+		sb.append(postMessageCount);
+		if(isTop){
+			postMessageCount++;
+			sb.append(":top");
+		}
+		if(isFin){
+			sb.append(":fin");
+		}
+		sb.append(']');
+		wsTrace(AccessLog.SOURCE_TYPE_WS_POST_MESSAGE,contentType,sb.toString(),"B>S",message);
+	}
+	
+	private void wsOnCloseTrace(short code,String reason){
+		StringBuilder sb=new StringBuilder();
+		sb.append("[BrowserClose:");
+		sb.append(handler.getChannelId());
+		sb.append(":code:");
+		sb.append(code);
+		sb.append(":reason:");
+		sb.append(reason);
+		sb.append(']');
+		wsTrace(AccessLog.SOURCE_TYPE_WS_POST_MESSAGE,null,sb.toString(),"B>S",null);
+	}
+	
+	private ByteBuffer[] stringToBuffers(String message){
+		try {
+			return BuffersUtil.toByteBufferArray(ByteBuffer.wrap(message.getBytes("utf-8")));
+		} catch (UnsupportedEncodingException e) {
+			logger.error("stringToBuffers error",e);
+			return null;
+		}
+	}
+	
+	public void tracePostMessage(String message){
+		ByteBuffer [] messageBuffers=null;
+		switch(logType){
+		case NONE:
+			return;
+		case ACCESS:
+		case RESPONSE_TRACE:
+			break;
+		case REQUEST_TRACE:
+		case TRACE:
+			messageBuffers=stringToBuffers(message);
+			break;
+		}
+		wsPostTrace(true,true,"text/plain",messageBuffers);
+	}
+	
+	public void tracePostMessage(boolean isTop,boolean isFin,ByteBuffer[] message){
+		postMessageCount++;
+		ByteBuffer [] messageBuffers=null;
+		switch(logType){
+		case NONE:
+			return;
+		case ACCESS:
+		case RESPONSE_TRACE:
+			break;
+		case REQUEST_TRACE:
+		case TRACE:
+			//TODO dump all data
+			messageBuffers=PoolManager.duplicateBuffers(message);
+			break;
+		}
+		wsPostTrace(isTop,isFin,"application/octet-stream",messageBuffers);
+	}
+	
+	public void traceClose(short code,String reason){
+		switch(logType){
+		case NONE:
+			return;
+		case ACCESS:
+		case REQUEST_TRACE:
+			break;
+		case RESPONSE_TRACE:
+		case TRACE:
+			break;
+		}
+		wsCloseTrace(code,reason);
+	}
+	
+	public void traceOnMessage(String message){
+		ByteBuffer [] messageBuffers=null;
+		switch(logType){
+		case NONE:
+			return;
+		case ACCESS:
+		case REQUEST_TRACE:
+			break;
+		case RESPONSE_TRACE:
+		case TRACE:
+			messageBuffers=stringToBuffers(message);
+			break;
+		}
+		wsOnTrace(true,true,"text/plain",messageBuffers);
+	}
+
+	public void traceOnMessage(boolean isTop,boolean isFin,ByteBuffer[] message){
+		ByteBuffer [] messageBuffers=null;
+		switch(logType){
+		case NONE:
+			return;
+		case ACCESS:
+		case REQUEST_TRACE:
+			break;
+		case RESPONSE_TRACE:
+		case TRACE:
+			messageBuffers=PoolManager.duplicateBuffers(message);
+			break;
+		}
+		wsOnTrace(isTop,isFin,"octedstream",messageBuffers);
+	}
+	
+	public void traceOnClose(short code,String reason){
+		switch(logType){
+		case NONE:
+			return;
+		case ACCESS:
+		case REQUEST_TRACE:
+			break;
+		case RESPONSE_TRACE:
+		case TRACE:
+			break;
+		}
+		wsOnCloseTrace(code,reason);
+	}
+	
+	public void tracePingPong(String pingPong){
+		if(logType!=LogType.TRACE){
+			return;
+		}
+		StringBuilder sb=new StringBuilder();
+		sb.append("[");
+		sb.append(pingPong);
+		sb.append(":");
+		sb.append(handler.getChannelId());
+		sb.append(']');
+		wsTrace(AccessLog.SOURCE_TYPE_WS_POST_MESSAGE,null,sb.toString(),"B>S",null);
+	}
 }
