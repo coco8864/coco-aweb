@@ -7,19 +7,36 @@ import java.util.List;
 
 import naru.async.AsyncBuffer;
 import naru.async.BufferGetter;
+import naru.async.cache.CacheBuffer;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
+/* BlobMessageの形
+ * header長(4byte,BigEndigan)
+ * header=jsonデータ
+ * {
+ * type:'publish',qname:'qname',dataCount:データ数,totalLength:総データ長,(isGz:gz圧縮の有無),message:任意
+ * metas:[
+ *  {length:1番目datalen,以降任意,jsType:'ArrayBuffer'|string|Blob|object,name:,mimeType: },
+ *  {length:2番目datalen,以降任意,},
+ *  {length:3番目datalen,以降任意,}
+ *  ]
+ * }
+ * 1番目のデータ
+ * 2番目のデータ
+ * 3番目のデータ
+ */
+
 public class BlobMessage implements AsyncBuffer,BufferGetter{
 	private Object message;
-	private JSONObject meta;
+	private JSONObject header;
 	private List<Blob> blobs=new ArrayList<Blob>();
 	private long[] offsets=null;
 	
-	public static BlobMessage create(JSONObject header,naru.async.cache.CacheBuffer buffer){
+	public static BlobMessage create(JSONObject header,CacheBuffer buffer){
 		Object message=header.get("message");//message はString or JSON
 		BlobMessage result=new BlobMessage(message);
-		result.setMeta(header);
+		result.setHeader(header);
 		if(header.getInt("totalLength")!=0){
 //			BlobFile blobFile=BlobFile.create(data,meta.getBoolean("isGz"));
 			JSONArray metas=header.getJSONArray("metas");
@@ -63,22 +80,18 @@ public class BlobMessage implements AsyncBuffer,BufferGetter{
 		
 	}
 	*/
-	
 	public BlobMessage(Object message){
 		this.message=message;
 	}
-	
-	public JSONObject getMeta() {
-		return meta;
+	public JSONObject getHeader() {
+		return header;
 	}
-	public void setMeta(JSONObject meta) {
-		this.meta=meta;
+	public void setHeader(JSONObject header) {
+		this.header=header;
 	}
-	
 	public int blobCount(){
 		return blobs.size();
 	}
-	
 	public Blob getBlob(int index) {
 		return blobs.get(index);
 	}
@@ -123,6 +136,7 @@ public class BlobMessage implements AsyncBuffer,BufferGetter{
 		return offsets[offsets.length-1];
 	}
 
+	/* 子Blob読み込み用 */
 	public boolean onBuffer(Object userContext, ByteBuffer[] buffers) {
 		BufferGetter bufferGetter=(BufferGetter)userContext;
 		return bufferGetter.onBuffer(userContext, buffers);

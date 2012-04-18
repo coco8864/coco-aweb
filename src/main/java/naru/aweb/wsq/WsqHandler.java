@@ -247,23 +247,6 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 			}
 		}
 	}
-	/* BlobMessageの形
-	 * header長(2byte,bigendigan)
-	 * header=jsonデータ
-	 * {
-	 * type:'publish',qname:'qname',dataCount:データ数,totalLength:総データ長,(isGz:gz圧縮の有無),message:任意
-	 * metas:[
-	 *  {length:1番目datalen,以降任意,jsType:'ArrayBuffer'|string|Blob|object,name:,mimeType: },
-	 *  {length:2番目datalen,以降任意,},
-	 *  {length:3番目datalen,以降任意,}
-	 *  ]
-	 * }
-	 * 1番目のデータ
-	 * 2番目のデータ
-	 * 3番目のデータ
-	 * (non-Javadoc)
-	 * @see naru.aweb.handler.WebSocketHandler#onMessage(naru.async.cache.AsyncBuffer)
-	 */
 	@Override
 	public void onMessage(CacheBuffer message) {
 		//metaまでは、msg[0]にある事を前提 TODO 改善要
