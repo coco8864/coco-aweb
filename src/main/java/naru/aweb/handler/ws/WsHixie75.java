@@ -5,8 +5,9 @@ import java.nio.ByteBuffer;
 
 import org.apache.log4j.Logger;
 
-import naru.async.cache.CacheBuffer;
+import naru.async.AsyncBuffer;
 import naru.async.pool.BuffersUtil;
+import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.aweb.http.HeaderParser;
 
@@ -119,7 +120,10 @@ public class WsHixie75 extends WsProtocol {
 					frameLength+=dupBuffer.remaining();
 					convertPutBuffer(dupBuffer);
 				}
-				callTextOnMessage();
+				String textMessage=convertToString();
+				//ïKóvÇ»èÍçátraceÇçÃéÊ
+				traceOnMessage(textMessage);
+				callOnMessage(textMessage);
 				frameMode=FRAME_MODE_END;
 			}else{
 				if(frameMode==FRAME_MODE_END){
@@ -168,6 +172,7 @@ public class WsHixie75 extends WsProtocol {
 	@Override
 	public void postMessage(String message) {
 		logger.debug("WsHiXie75#postMessage(txt) cid:"+handler.getChannelId());
+		tracePostMessage(message);
 		ByteBuffer[] bufs=BuffersUtil.newByteBufferArray(3);
 		bufs[0]=ByteBuffer.wrap(START_FRAME);
 		try {
@@ -197,13 +202,17 @@ public class WsHixie75 extends WsProtocol {
 	}
 
 	@Override
-	public void postMessage(ByteBuffer[] message) {
+	public void postMessage(ByteBuffer[] msgs) {
+		PoolManager.poolBufferInstance(msgs);
 		throw new UnsupportedOperationException("postMessage binary mode");
 	}
 
 	@Override
-	public void postMessage(CacheBuffer message, long offset, long length) {
+	public void postMessage(AsyncBuffer msgs, long offset, long length) {
 		logger.debug("WsHiXie75#postMessage(bin) cid:"+handler.getChannelId());
+		if(msgs instanceof PoolBase){
+			((PoolBase)msgs).unref();
+		}
 		throw new UnsupportedOperationException("postMessage binary mode");
 	}
 

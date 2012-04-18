@@ -1,10 +1,9 @@
 package naru.aweb.handler;
 
-import java.nio.ByteBuffer;
-
+import naru.async.AsyncBuffer;
 import naru.async.cache.CacheBuffer;
+import naru.async.pool.PoolBase;
 import naru.aweb.config.Config;
-import naru.aweb.handler.ws.WsProtocol;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.mapping.MappingResult;
 
@@ -48,7 +47,9 @@ public class WSConnectionHandler extends WebSocketHandler {
 	@Override
 	public void onMessage(CacheBuffer msgs) {
 		logger.debug("#message bin cid:"+getChannelId());
-		msgs.unref();
+		if(msgs instanceof PoolBase){
+			((PoolBase)msgs).unref();
+		}
 	}
 
 	@Override

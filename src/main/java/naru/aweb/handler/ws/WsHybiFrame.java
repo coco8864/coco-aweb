@@ -72,6 +72,7 @@ public class WsHybiFrame {
 	private static ByteBuffer fillFrame(boolean isFin, byte pcode,boolean isMask,int payloadLength,byte[] maskBytes){
 		int frameLength=frameLength(isMask, payloadLength);
 		ByteBuffer frame = PoolManager.getBufferInstance(frameLength);
+		frame.order(ByteOrder.BIG_ENDIAN);
 		if (isFin) {
 			frame.put((byte) (MASK_FIN | pcode));
 		} else {
@@ -88,7 +89,7 @@ public class WsHybiFrame {
 			frame.putShort((short) payloadLength);
 		}else{
 			frame.put((byte) (maskMask | 0x7f));
-			frame.putInt(payloadLength);
+			frame.putLong(payloadLength);
 		}
 		if (isMask) {
 			frame.put(maskBytes);
@@ -165,9 +166,13 @@ public class WsHybiFrame {
 	public static ByteBuffer[] createTextFrame(boolean isMask, String message) {
 		return createFinFrame(PCODE_TEXT, isMask, message);
 	}
-	
-	public static ByteBuffer[] createBinaryFrame(boolean isFin,boolean isMask, ByteBuffer[] message) {
-		return createFrame(isFin,PCODE_BINARY, isMask, message);
+
+	public static ByteBuffer[] createBinaryFrame(boolean isTop,boolean isFin,boolean isMask, ByteBuffer[] message) {
+		if(isTop){
+			return createFrame(isFin,PCODE_BINARY, isMask, message);
+		}else{
+			return createFrame(isFin,PCODE_CONTINUE, isMask, message);
+		}
 	}
 	
 	public static ByteBuffer[] createPingFrame(boolean isMask, String message) {

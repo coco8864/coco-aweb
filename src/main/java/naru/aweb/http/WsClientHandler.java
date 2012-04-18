@@ -10,6 +10,7 @@ import javax.net.ssl.SSLEngine;
 
 import org.apache.log4j.Logger;
 
+import naru.async.AsyncBuffer;
 import naru.async.Timer;
 import naru.async.cache.CacheBuffer;
 import naru.async.pool.BuffersUtil;
@@ -432,9 +433,10 @@ public class WsClientHandler extends SslHandler implements Timer {
 		asyncWrite(CONTEXT_MESSAGE,buffers);
 	}
 	
-	public final void postMessage(CacheBuffer message){
-		ByteBuffer[] buffers=WsHybiFrame.createBinaryFrame(true,true, message);
-		asyncWrite(CONTEXT_MESSAGE,buffers);
+	public final void postMessage(AsyncBuffer message){
+		//TODO
+//		ByteBuffer[] buffers=WsHybiFrame.createBinaryFrame(true,true, message.popTopBuffer());
+//		asyncWrite(CONTEXT_MESSAGE,buffers);
 	}
 
 //	public final void postMessage(ByteBuffer message){
