@@ -20,7 +20,13 @@ import net.sf.json.JSONObject;
  * header長(4byte,BigEndigan)
  * header=jsonデータ
  * {
- * type:'publish',qname:'qname',dataCount:データ数,totalLength:総データ長,(isGz:gz圧縮の有無),message:任意
+ * type:'publish',
+ * qname:'qname',
+ * subId:'subId',***
+ * dataCount:データ数,
+ * totalLength:総データ長,
+ * (isGz:gz圧縮の有無),
+ * message:任意
  * metas:[
  *  {length:1番目のdeta長,jsType:'ArrayBuffer'|string|Blob|object,name:,mimeType:,以降任意},
  *  {length:2番目のdeta長,..},
@@ -32,9 +38,10 @@ import net.sf.json.JSONObject;
  * 3番目のデータ
  */
 public class BlobMessage extends PoolBase implements AsyncBuffer,BufferGetter{
-	private JSONObject header;
+//	private JSONObject header;
+	private JSONArray metas;
 	private List<Blob> blobs=new ArrayList<Blob>();
-	private ByteBuffer headerBuffer=null;
+//	private ByteBuffer headerBuffer=null;
 	private long[] offsets=null;
 	
 	public static BlobMessage create(JSONObject header,CacheBuffer buffer){
@@ -58,11 +65,13 @@ public class BlobMessage extends PoolBase implements AsyncBuffer,BufferGetter{
 	}
 	@Override
 	public void recycle() {
+		/*
 		if(headerBuffer!=null){
 			PoolManager.poolBufferInstance(headerBuffer);
 			headerBuffer=null;
 		}
 		header=null;
+		*/
 		Iterator<Blob> blobItr=blobs.iterator();
 		while(blobItr.hasNext()){
 			Blob blob=blobItr.next();
@@ -74,10 +83,10 @@ public class BlobMessage extends PoolBase implements AsyncBuffer,BufferGetter{
 	
 	/* 設定モードから送信モードへの切り替え */
 	public synchronized void flip(){
-		if(headerBuffer!=null){
-			return;
-		}
-		JSONArray metas=header.getJSONArray("metas");
+//		if(headerBuffer!=null){
+//			return;
+//		}
+//		JSONArray metas=header.getJSONArray("metas");
 		if(metas==null){
 			metas=new JSONArray();
 		}
@@ -94,16 +103,17 @@ public class BlobMessage extends PoolBase implements AsyncBuffer,BufferGetter{
 			metas.element(i,meta);
 			i++;
 		}
-		header.element("metas", metas);
-		
-		String jsonHeader=header.toString();
+//		header.element("metas", metas);
+//		String jsonHeader=header.toString();
 		int size=blobs.size()+1;
 		offsets=new long[size];
+		/*
 		try {
 			headerBuffer=ByteBuffer.wrap(jsonHeader.getBytes("utf-8"));
 		} catch (UnsupportedEncodingException e) {
 			throw new RuntimeException("UnsupportedEncodingException utf-8");
 		}
+		*/
 		offsets[0]=headerBuffer.remaining();
 		i=1;
 		for(Blob blob:blobs){
