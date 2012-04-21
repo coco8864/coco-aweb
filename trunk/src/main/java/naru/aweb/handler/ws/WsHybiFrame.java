@@ -134,7 +134,7 @@ public class WsHybiFrame {
 		}
 		return createFrame(true,pcode, isMask, payloadBuffers);
 	}
-	
+
 	public static ByteBuffer[] createFrame(boolean isFin,byte pcode,boolean isMask, ByteBuffer[] payloadBuffers) {
 		ByteBuffer[] framedBuffers=null;
 		int length;
@@ -165,6 +165,10 @@ public class WsHybiFrame {
 	
 	public static ByteBuffer[] createTextFrame(boolean isMask, String message) {
 		return createFinFrame(PCODE_TEXT, isMask, message);
+	}
+
+	public static ByteBuffer[] createTopBinaryFrame(boolean isFin,boolean isMask,ByteBuffer header,ByteBuffer[] message) {
+		return createFrame(isFin,PCODE_BINARY, isMask, message);
 	}
 
 	public static ByteBuffer[] createBinaryFrame(boolean isTop,boolean isFin,boolean isMask, ByteBuffer[] message) {
