@@ -45,9 +45,11 @@ public class Wsq extends PoolBase implements WsqController,Timer{
 			//TODO BlobMessageの場合は、ヘッダを最初に送信、後はAsyncFileを使って順次送信する
 			//
 			if(msg instanceof BlobMessage){
-				if(from.isAllowBlob()){
-				}else{
+				if(!from.isAllowBlob()){
+					logger.warn("not support BlobMessage."+handler);
+					return;
 				}
+				WsqManager.setupBlobMessage((BlobMessage)msg,from.getQname(),from.getSubId());
 				return;
 			}
 			Object sendMsg=WsqManager.makeMessage(

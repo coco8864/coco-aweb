@@ -52,6 +52,21 @@ public class WsqManager {
 		return json;
 	}
 	
+	/**
+	 * peer‚Ö‚Ì‘—M“d•¶ì¬
+	 * @param action
+	 * @param chId
+	 * @param name
+	 * @return
+	 */
+	public static void setupBlobMessage(BlobMessage message,String qname,String subId){
+		JSONObject header=message.getHeader();
+		header.put("type", WsqManager.CB_TYPE_MESSAGE);
+		header.put("qname", qname);
+		header.put("subId", subId);
+	}
+	
+	
 	public Collection<String> getQnames(String srcPath){
 		Map<String,Wsq> qmap=wsqs.get(srcPath);
 		if(qmap==null){
