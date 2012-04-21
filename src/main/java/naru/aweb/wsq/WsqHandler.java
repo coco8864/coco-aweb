@@ -228,6 +228,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 		if(isWs){
 			//TODO BlobMessage�̏ꍇ
 			if(obj instanceof BlobMessage){
+				postMessage((BlobMessage)obj);
 			}else{
 				postMessage(obj.toString());
 			}
