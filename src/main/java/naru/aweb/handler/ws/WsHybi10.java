@@ -248,11 +248,12 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 	}
 	
 	private static class PostRequest{
-		public PostRequest(AsyncBuffer message, long offset, long length) {
-			if(message instanceof PoolBase){
-				((PoolBase)message).ref();
+		public PostRequest(ByteBuffer asyncHeader,AsyncBuffer asyncMessage, long offset, long length) {
+			if(asyncMessage instanceof PoolBase){
+				((PoolBase)asyncMessage).ref();
 			}
-			this.asyncMessage=message;
+			this.asyncHeader=asyncHeader;
+			this.asyncMessage=asyncMessage;
 			position=offset;
 			endPosition=offset+length;
 			isTop=true;
@@ -274,6 +275,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 		}
 		String strMessage;
 		ByteBuffer[] byteMessage;
+		ByteBuffer asyncHeader;
 		AsyncBuffer asyncMessage;
 		long position;
 		long endPosition;
@@ -338,9 +340,9 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 	
 	/* ÉAÉvÉäÇ™postMessageÇåƒÇ—èoÇµÇΩ */
 	@Override
-	public void postMessage(AsyncBuffer message,long offset,long length) {
+	public void postMessage(ByteBuffer header,AsyncBuffer message,long offset,long length) {
 		logger.debug("WsHybi10#postMessage(bin) cid:"+handler.getChannelId());
-		postMessage(new PostRequest(message,offset,length));
+		postMessage(new PostRequest(header,message,offset,length));
 	}
 	
 	@Override
@@ -357,7 +359,11 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 			isFin=true;
 		}
 		tracePostMessage(curReq.isTop,isFin,curReq.byteMessage);
-		buffers=WsHybiFrame.createBinaryFrame(curReq.isTop,isFin,isWebSocketResponseMask(), buffers);
+		if(curReq.isTop){
+			buffers=WsHybiFrame.createTopBinaryFrame(isFin,isWebSocketResponseMask(),curReq.asyncHeader,buffers);
+		}else{
+			buffers=WsHybiFrame.createBinaryFrame(curReq.isTop,isFin,isWebSocketResponseMask(), buffers);
+		}
 		curReq.isTop=false;
 		handler.asyncWrite(curReq, buffers);
 		return false;
