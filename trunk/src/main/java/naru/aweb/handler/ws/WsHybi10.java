@@ -326,6 +326,9 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 		handler.onPosted();
 		synchronized(this){
 			curReq=null;
+			if(postQueue.size()==0){
+				return;
+			}
 			PostRequest req=postQueue.removeFirst();
 			if(req!=null){
 				postMessage(req);
