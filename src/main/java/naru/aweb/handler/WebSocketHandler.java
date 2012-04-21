@@ -210,6 +210,14 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	public void onPosted(){
 	}
 
+	@Override
+	public void onWrittenPlain(Object userContext) {
+		if(wsProtocol!=null){
+			wsProtocol.onWrittenPlain(userContext);
+		}
+		super.onWrittenPlain(userContext);
+	}
+
 	/*
 	@Override
 	public void ref() {

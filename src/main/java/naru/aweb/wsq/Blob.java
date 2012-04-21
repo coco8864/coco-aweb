@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 import naru.async.AsyncBuffer;
 import naru.async.BufferGetter;
 import naru.async.cache.CacheBuffer;
+import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 
@@ -23,7 +24,7 @@ import naru.async.pool.PoolManager;
  * Å‰‚ÌŽÀ‘•‚Í2)‚ð‹–—e‚·‚é
  * @author Naru
  */
-public class Blob extends PoolBase implements AsyncBuffer{
+public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 	private String mimeType;
 	private String jsType;
 	private String name;
@@ -51,7 +52,6 @@ public class Blob extends PoolBase implements AsyncBuffer{
 		blob.buffer=buffer;
 		blob.offset=offset;
 		blob.length=length;
-//		blob.endPosition=offset+length;
 		return blob;
 	}
 	
@@ -94,14 +94,43 @@ public class Blob extends PoolBase implements AsyncBuffer{
 	}
 
 	public boolean asyncBuffer(BufferGetter bufferGetter, Object userContext) {
-		return buffer.asyncBuffer(bufferGetter, userContext);
+		throw new UnsupportedOperationException("asyncBuffer(BufferGetter bufferGetter, Object userContext)");
 	}
 
 	public boolean asyncBuffer(BufferGetter bufferGetter, long offset,Object userContext) {
-		return buffer.asyncBuffer(bufferGetter, this.offset+offset,userContext);
+		long maxLength=length-offset;
+		Object[] ctx={bufferGetter,userContext,maxLength};
+		return buffer.asyncBuffer(this, this.offset+offset,ctx);
 	}
 
 	public long bufferLength() {
 		return length;
+	}
+
+	public boolean onBuffer(Object userContext, ByteBuffer[] buffers) {
+		long len=BuffersUtil.remaining(buffers);
+		Object[] ctx=(Object[])userContext;
+		BufferGetter bufferGetter=(BufferGetter)ctx[0];
+		Object orgUserContext=ctx[1];
+		Long maxLength=(Long)ctx[2];
+		if(len>maxLength){
+			BuffersUtil.cut(buffers, maxLength);
+		}
+		bufferGetter.onBuffer(orgUserContext, buffers);
+		return false;
+	}
+
+	public void onBufferEnd(Object userContext) {
+		Object[] ctx=(Object[])userContext;
+		BufferGetter bufferGetter=(BufferGetter)ctx[0];
+		Object orgUserContext=ctx[1];
+		bufferGetter.onBufferEnd(orgUserContext);
+	}
+
+	public void onBufferFailure(Object userContext, Throwable failure) {
+		Object[] ctx=(Object[])userContext;
+		BufferGetter bufferGetter=(BufferGetter)ctx[0];
+		Object orgUserContext=ctx[1];
+		bufferGetter.onBufferFailure(orgUserContext,failure);
 	}
 }
