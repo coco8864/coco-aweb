@@ -133,61 +133,67 @@ if(typeof ph == "undefined"){
       if(!ph.jQuery.isArray(data)){
         data=[data];
       }
-      header.metas=[];
-      header.dataCount=0;
-      header.totalLength=0;
+      var blobHeader={};
+      blobHeader.metas=[];
+      blobHeader.count=0;
+      blobHeader.totalLength=0;
       var results=[];//ArrayBufferの列に変換する
       var readCount=0;
       for(var i in data){
         var meta={};
         var d=data[i];
-        header.metas[i]=meta;
+        blobHeader.metas[i]=meta;
         if(d instanceof ArrayBuffer){
-          header.dataCount++;
+          blobHeader.count++;
           meta.jsType='ArrayBuffer';
           meta.length=d.byteLength;
           results[i]=b;
-          header.totalLength+=meta.length;
+          blobHeader.totalLength+=meta.length;
           continue;
         }else if(typeof d==='string'){
-          header.dataCount++;
+          blobHeader.count++;
           meta.jsType='string';
           results[i]=jz.utils.stringToArrayBuffer(d);
           meta.length=results[i].byteLength;
-          header.totalLength+=meta.length;
+          blobHeader.totalLength+=meta.length;
           continue;
         }else if(!(d instanceof Blob)){
-          header.dataCount++;
+          blobHeader.count++;
           meta.jsType='object';
           var dText=ph.JSON.stringify(d);
           results[i]=jz.utils.stringToArrayBuffer(dText);
           meta.length=results[i].byteLength;
-          header.totalLength+=meta.length;
+          blobHeader.totalLength+=meta.length;
           continue;
         }
         meta.mimeType=d.type;
         meta.jsType='Blob';
         meta.name=d.name;
         meta.length=d.size;
-        header.totalLength+=meta.length;
+        blobHeader.totalLength+=meta.length;
         var fr=new FileReader();
         fr._i=i;
         fr.onload=function(e){
           results[this._i]=e.target.result;
-          header.dataCount++;
-          if(header.dataCount===data.length){//複数のblobを全て読みきったら
-            ph.wsq._sendBinMessage(header,results,con);
+          blobHeader.count++;
+          if(blobHeader.count===data.length){//複数のblobを全て読みきったら
+            ph.wsq._sendBinMessage(header,blobHeader,results,con);
           }
         }
         fr.readAsArrayBuffer(d);
       }
-      if(header.dataCount===data.length){//Blobは無かった
-        ph.wsq._sendBinMessage(header,results,con);
+      if(blobHeader.count===data.length){//Blobは無かった
+        ph.wsq._sendBinMessage(header,blobHeader,results,con);
       }
     },
-    _sendBinMessage:function(header,data,con){
+    _sendBinMessage:function(header,blobHeader,data,con){
+      var blobHeaderText=ph.JSON.stringify(blobHeader);
+      var blobHeaderBuf=jz.utils.stringToArrayBuffer(blobHeaderText);
+      header.dataType='blobMessage';
+      header.blobHeaderLength=blobHeaderBuf.byteLength;
+
       var payloadGzBuf=null;
-      var payloadBuf=new ArrayBuffer(header.totalLength);
+      var payloadBuf=new ArrayBuffer(blobHeader.totalLength);
       var payloadBufA=new Uint8Array(payloadBuf);
       var pos=0;
       for(var i in data){
@@ -196,10 +202,10 @@ if(typeof ph == "undefined"){
         pos+=len;
       }
       if(ph.wsq._isGz){
-        header.isGz=true;
+        blobHeader.isGz=true;
         payloadBuf=jz.gz.compress(payloadBuf);
       }else{
-        header.isGz=false;
+        blobHeader.isGz=false;
       }
       var BlobBuilder = window.MozBlobBuilder || window.WebKitBlobBuilder;
       var bb=new BlobBuilder();
@@ -215,6 +221,7 @@ if(typeof ph == "undefined"){
       }
       bb.append(headerLenBuf);
       bb.append(headerBuf);
+      bb.append(blobHeaderBuf);
       bb.append(payloadBuf);
       con._ws.send(bb.getBlob());
     }
