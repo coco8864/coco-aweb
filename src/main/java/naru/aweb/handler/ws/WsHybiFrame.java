@@ -167,10 +167,12 @@ public class WsHybiFrame {
 		return createFinFrame(PCODE_TEXT, isMask, message);
 	}
 
+	/*
 	public static ByteBuffer[] createTopBinaryFrame(boolean isFin,boolean isMask,ByteBuffer header,ByteBuffer[] message) {
 		ByteBuffer[] conMessage=BuffersUtil.concatenate(header, message,null);
 		return createFrame(isFin,PCODE_BINARY, isMask, conMessage);
 	}
+	*/
 
 	public static ByteBuffer[] createBinaryFrame(boolean isTop,boolean isFin,boolean isMask, ByteBuffer[] message) {
 		if(isTop){

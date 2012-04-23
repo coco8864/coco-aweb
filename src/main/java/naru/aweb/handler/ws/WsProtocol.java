@@ -258,7 +258,7 @@ public abstract class WsProtocol extends PoolBase{
 	public abstract void onClose(short code,String reason);/* 回線が切断した or アプリがcloseWebSocketを呼び出した */
 	public abstract void postMessage(String message);
 	public abstract void postMessage(ByteBuffer[] message);
-	public abstract void postMessage(ByteBuffer header,AsyncBuffer message,long offset,long length);
+	public abstract void postMessage(AsyncBuffer message,long offset,long length);
 	public abstract void onReadTimeout();/* 回線readがタイムアウトした */
 	public abstract String getWsProtocolName();
 	public abstract String getRequestSubProtocols(HeaderParser requestHeader);
