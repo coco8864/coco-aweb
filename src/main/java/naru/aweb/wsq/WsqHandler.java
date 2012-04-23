@@ -3,9 +3,7 @@
  */
 package naru.aweb.wsq;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -13,8 +11,6 @@ import java.util.List;
 
 import naru.async.Timer;
 import naru.async.cache.CacheBuffer;
-import naru.async.pool.BuffersUtil;
-import naru.async.pool.PoolManager;
 import naru.async.timer.TimerManager;
 import naru.aweb.auth.AuthSession;
 import naru.aweb.config.Config;
@@ -63,11 +59,11 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 		}
 	}
 	
-	private void subscribe(JSONObject msg,JSONArray ress){
+	private void subscribe(JSONObject msg,List ress){
 		String qname=msg.getString("qname");
 		String subId=msg.optString("subId",null);
 		boolean isAllowBlob=msg.optBoolean("isAllowBlob", false);
-		WsqPeer from=WsqPeer.create(authSession,srcPath,qname,subId);
+		WsqPeer from=WsqPeer.create(authSession,srcPath,qname,subId,isWs);
 		if( wsqManager.subscribe(from, this) ){
 			if(!wsqSession.reg(from)){
 				logger.warn("aleady in session.",new Exception());
@@ -80,7 +76,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 		}
 	}
 	
-	private void unsubscribe(JSONObject msg,JSONArray ress){
+	private void unsubscribe(JSONObject msg,List ress){
 		String qname=msg.getString("qname");
 		String subId=msg.optString("subId",null);
 		JSON res=null;
@@ -110,16 +106,16 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 		}
 	}
 	
-	private void publish(JSONObject msg,JSONArray ress){
+	private void publish(JSONObject msg,List ress){
 		String qname=msg.getString("qname");
 		String subId=msg.optString("subId",null);
-		WsqPeer from=WsqPeer.create(authSession,srcPath,qname,subId);
+		WsqPeer from=WsqPeer.create(authSession,srcPath,qname,subId,isWs);
 		Object message=msg.opt("message");
 		wsqManager.publish(from, message);
 		from.unref();
 	}
 	
-	private void close(JSONArray ress){
+	private void close(List ress){
 		JSON res=null;
 		List<WsqPeer> peers=wsqSession.unregs();
 		for(WsqPeer peer:peers){
@@ -132,13 +128,13 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 		ress.add(res);
 	}
 	
-	private void getQnames(JSONArray ress){
+	private void getQnames(List ress){
 		Collection<String> qnames=wsqManager.getQnames(srcPath);
 		JSON res=WsqManager.makeMessage(WsqManager.CB_TYPE_INFO,null, null,"getQnames",qnames);
 		ress.add(res);
 	}
 	
-	private void deploy(String qname,String className,JSONArray ress){
+	private void deploy(String qname,String className,List ress){
 		JSON res=null;
 		if( !roles.contains("admin")){//TODO admin name
 			res=WsqManager.makeMessage(WsqManager.CB_TYPE_ERROR,null, null,"deploy","not admin");
@@ -166,7 +162,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 	}
 	
 	
-	private void dispatchMessage(JSONObject msg,JSONArray ress){
+	private void dispatchMessage(JSONObject msg,List ress){
 		String type=msg.getString("type");
 		if("subscribe".equals(type)){
 			subscribe(msg,ress);
@@ -193,7 +189,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 	 * @param wsHandler WebSocketプロトコルを処理しているハンドラ
 	 * @return
 	 */
-	private void processMessages(JSON json,JSONArray ress){
+	private void processMessages(JSON json,List ress){
 		if(!json.isArray()){
 			dispatchMessage((JSONObject)json,ress);
 			return;
@@ -213,11 +209,15 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 	public void onMessage(String msgs){
 		logger.debug("onMessage.message:"+msgs);
 		JSON json=JSONSerializer.toJSON(msgs);
-		JSONArray ress=new JSONArray();
+		List ress=new ArrayList();
 		processMessages(json,ress);
 		if(ress.size()>0){
 			message(ress);
 		}
+	}
+	
+	void message(ByteBuffer header,BlobMessage message){
+		postMessage(header,message);
 	}
 	
 	/**
@@ -226,15 +226,11 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 	 */
 	void message(Object obj){
 		if(isWs){
-			//TODO BlobMessageの場合
-			if(obj instanceof BlobMessage){
-				postMessage((BlobMessage)obj);
-			}else{
-				postMessage(obj.toString());
-			}
+			//BlobMessageはここを通過しない
+			postMessage(obj.toString());
 		}else{
-			if(obj instanceof JSONArray){
-				responseObjs.addAll((JSONArray)obj);
+			if(obj instanceof List){
+				responseObjs.addAll((List)obj);
 			}else{
 				responseObjs.add(obj);
 			}
@@ -251,38 +247,11 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 	@Override
 	public void onMessage(CacheBuffer message) {
 		//metaまでは、msg[0]にある事を前提 TODO 改善要
-		if(!message.isInTopBuffer()){
-			//TODO suppert big data
-			message.unref();
-			throw new UnsupportedOperationException("WsqHandler onMessage");
-		}
-		ByteBuffer[] topBufs=message.popTopBuffer();
-		ByteBuffer topBuf=topBufs[0];
-		topBuf.order(ByteOrder.BIG_ENDIAN);
-		int metaLength=topBuf.getInt();
-		int pos=topBuf.position();
-		if((pos+metaLength)>topBuf.limit()){
-			logger.warn("meta length error");
-			PoolManager.poolBufferInstance(topBufs);
-			message.unref();
-			return;
-		}
-		String header;
-		try {
-			header=new String(topBuf.array(),pos,metaLength,"UTF-8");
-			topBuf.position(pos+metaLength);
-		} catch (UnsupportedEncodingException e) {
-			logger.error("encode error");
-			return;
-		}
-		PoolManager.poolBufferInstance(topBufs);
-		logger.debug("header:"+header);
-		JSONObject headerObj=(JSONObject)JSONSerializer.toJSON(header);
-		BlobMessage blobMessage=BlobMessage.create(headerObj, message);
-		
-		String qname=headerObj.getString("qname");
-		String subId=headerObj.optString("subId",null);
-		WsqPeer from=WsqPeer.create(authSession,srcPath,qname,subId);
+		BlobMessage blobMessage=BlobMessage.create(message);
+		JSONObject header=blobMessage.getHeader();
+		String qname=header.getString("qname");
+		String subId=header.optString("subId",null);
+		WsqPeer from=WsqPeer.create(authSession,srcPath,qname,subId,isWs);
 		wsqManager.publish(from, blobMessage);
 		from.unref();
 	}
@@ -295,7 +264,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 	private AuthSession authSession;
 	private List<String> roles;
 	private WsqSession wsqSession;
-	private JSONArray responseObjs=new JSONArray();
+	private List responseObjs=new ArrayList();
 	private boolean isMsgBlock=false;
 	private boolean isResponse=false;
 	private long timerId;
@@ -349,6 +318,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 		if(responseObjs.size()>0){
 			wsqSession.setHandler(wsqManager, null);
 			isMsgBlock=true;
+			//responseObjsの処理は、timerで行う
 			timerId=TimerManager.setTimeout(10, this,null);
 		}else{
 			/* 折り返しにレスポンスするオブジェクトがなければ1秒待つ */
@@ -388,7 +358,9 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 				isResponse=true;
 			}
 			if(responseObjs.size()>0){
-				responseJson(responseObjs);
+				JSONArray res=new JSONArray();
+				res.addAll(responseObjs);
+				responseJson(res);
 				responseObjs.clear();
 			}else{
 				completeResponse("205");

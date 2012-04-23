@@ -3,6 +3,7 @@ package naru.aweb.wsq;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -51,21 +52,6 @@ public class WsqManager {
 		json.put("message", message);
 		return json;
 	}
-	
-	/**
-	 * peer‚Ö‚Ì‘—M“d•¶ì¬
-	 * @param action
-	 * @param chId
-	 * @param name
-	 * @return
-	 */
-	public static void setupBlobMessage(BlobMessage message,String qname,String subId){
-		JSONObject header=message.getHeader();
-		header.put("type", WsqManager.CB_TYPE_MESSAGE);
-		header.put("qname", qname);
-		header.put("subId", subId);
-	}
-	
 	
 	public Collection<String> getQnames(String srcPath){
 		Map<String,Wsq> qmap=wsqs.get(srcPath);
@@ -179,7 +165,7 @@ public class WsqManager {
 	}
 	
 	//wsqHandler‚É‘Î‰‚·‚éWsq‚©‚çmessage‚ğæ“¾‚·‚é
-	public JSONArray getMessage(WsqPeer from){
+	public List getMessage(WsqPeer from){
 		Wsq wsq=getWsqFromPeer(from);
 		if(wsq==null){
 			return null;

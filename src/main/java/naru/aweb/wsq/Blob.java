@@ -49,6 +49,7 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 	/* buffer‚ÍABlobI—¹‚ÉŠJ•ú‚³‚ê‚é */
 	public static Blob create(CacheBuffer buffer,long offset,long length){
 		Blob blob=(Blob)PoolManager.getInstance(Blob.class);
+		buffer.ref();
 		blob.buffer=buffer;
 		blob.offset=offset;
 		blob.length=length;
