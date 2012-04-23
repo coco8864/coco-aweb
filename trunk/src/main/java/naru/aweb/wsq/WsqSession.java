@@ -87,12 +87,12 @@ public class WsqSession {
 		return count;
 	}
 	
-	public synchronized int collectMessage(WsqManager wsqManager,JSONArray result){
+	public synchronized int collectMessage(WsqManager wsqManager,List result){
 		Iterator<WsqPeer> itr=peers.iterator();
 		int count=0;
 		while(itr.hasNext()){
 			WsqPeer peer=itr.next();
-			JSONArray array=wsqManager.getMessage(peer);
+			List array=wsqManager.getMessage(peer);
 			if(array==null){
 				continue;
 			}

@@ -1,8 +1,11 @@
 package naru.aweb.wsq;
 
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -12,7 +15,7 @@ import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.async.timer.TimerManager;
 import net.sf.json.JSON;
-import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 
 public class Wsq extends PoolBase implements WsqController,Timer{
 	private static Logger logger=Logger.getLogger(Wsq.class);
@@ -39,19 +42,38 @@ public class Wsq extends PoolBase implements WsqController,Timer{
 	private static class SubscribeInfo{
 		WsqPeer from;
 		WsqHandler handler;
-		JSONArray msgs;
+		List msgs=null;
+		List<Object[]> blobMsgs=new ArrayList<Object[]>();
 		long lastAccess;
-		void setMessage(Object msg){
-			//TODO BlobMessageの場合は、ヘッダを最初に送信、後はAsyncFileを使って順次送信する
-			//
-			if(msg instanceof BlobMessage){
-				if(!from.isAllowBlob()){
-					logger.warn("not support BlobMessage."+handler);
-					return;
-				}
-				WsqManager.setupBlobMessage((BlobMessage)msg,from.getQname(),from.getSubId());
+		
+		void setMessage(BlobMessage msg){
+			if(!from.isAllowBlob()){
+				logger.warn("not support BlobMessage."+handler);
 				return;
 			}
+			JSONObject header=(JSONObject)WsqManager.makeMessage(
+					WsqManager.CB_TYPE_MESSAGE,
+					from.getQname(),
+					from.getSubId(),
+					null,
+					msg
+			);
+			ByteBuffer headerBuffer=BlobMessage.headerBuffer(header, msg);
+			if(handler!=null){
+				handler.message(headerBuffer,msg);
+				return;
+			}else if(msgs==null){
+				msgs=new ArrayList();
+			}
+			logger.warn("not support BlobMessage.");
+			Object[] blbMsg=new Object[]{handler,msg};
+			msg.ref();
+			synchronized(blobMsgs){
+				blobMsgs.add(blbMsg);
+			}
+		}
+		
+		void setMessage(Object msg){
 			Object sendMsg=WsqManager.makeMessage(
 					WsqManager.CB_TYPE_MESSAGE,
 					from.getQname(),
@@ -63,7 +85,7 @@ public class Wsq extends PoolBase implements WsqController,Timer{
 				handler.message(sendMsg);
 				return;
 			}else if(msgs==null){
-				msgs=new JSONArray();
+				msgs=new ArrayList();
 			}
 			msgs.add(sendMsg);
 		}
@@ -74,6 +96,14 @@ public class Wsq extends PoolBase implements WsqController,Timer{
 					handler.message(msgs);
 				}
 				msgs=null;
+				synchronized(blobMsgs){
+					for(Object[] blobMsg:blobMsgs){
+						BlobMessage message=(BlobMessage)blobMsg[1];
+						handler.message((ByteBuffer)blobMsg[0],message);
+						message.ref();
+					}
+					blobMsgs.clear();
+				}
 			}
 			WsqHandler orgHandler=this.handler;
 			this.handler=handler;
@@ -124,13 +154,14 @@ public class Wsq extends PoolBase implements WsqController,Timer{
 		}
 	}
 	
-	public JSONArray getMessage(WsqPeer from){
+	/* XHRのときだけ使われる */
+	public List getMessage(WsqPeer from){
 		SubscribeInfo info=subscribeInfos.get(from);
 		if(info==null){
 			return null;
 		}
 		synchronized(info){
-			JSONArray orgMsgs=info.msgs;
+			List orgMsgs=info.msgs;
 			info.msgs=null;
 			return orgMsgs;
 		}
@@ -231,15 +262,26 @@ public class Wsq extends PoolBase implements WsqController,Timer{
 		if(info==null){
 			return 0;
 		}
-		info.setMessage(message);
+		if(message instanceof BlobMessage){
+			info.setMessage((BlobMessage)message);
+		}else{
+			info.setMessage(message);
+		}
 		return 1;
 	}
 
 	private int messageInternal(Object message, Collection<SubscribeInfo> infos){
 		int count=0;
-		for(SubscribeInfo info:infos){
-			info.setMessage(message);
-			count++;
+		if(message instanceof BlobMessage){
+			for(SubscribeInfo info:infos){
+				info.setMessage((BlobMessage)message);
+				count++;
+			}
+		}else{
+			for(SubscribeInfo info:infos){
+				info.setMessage(message);
+				count++;
+			}
 		}
 		return count;
 	}

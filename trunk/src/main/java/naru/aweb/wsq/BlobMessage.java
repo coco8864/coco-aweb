@@ -3,6 +3,7 @@ package naru.aweb.wsq;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -15,15 +16,23 @@ import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
-
-/* BlobMessageの形
+/*
+ * このデータはこの接続固有のheader
  * header長(4byte,BigEndigan)
  * header=jsonデータ
  * {
- * type:'publish',
- * qname:'qname',
- * subId:'subId',***
- * dataCount:データ数,
+* type:'publish',
+* qname:'qname',
+* subId:'subId',***
+* dataType:blobMessage
+* blobHeaderLength:blobヘッダ長
+* }
+*/
+/* このデータは、複数の回線で同じデータが共有される
+ * BlobMessageの形
+ * blobHeader=jsonデータ
+ * {
+ * count:データ数,
  * totalLength:総データ長,
  * (isGz:gz圧縮の有無),
  * message:任意
@@ -32,24 +41,77 @@ import net.sf.json.JSONObject;
  *  {length:2番目のdeta長,..},
  *  {length:3番目のdeta長,..,}
  *  ]
- * }
+ * }//ここまでがtopBufferに入っている事を期待
  * 1番目のデータ
  * 2番目のデータ
  * 3番目のデータ
  */
 public class BlobMessage extends PoolBase implements AsyncBuffer,BufferGetter{
-//	private JSONObject header;
-	private JSONArray metas;
-	private List<Blob> blobs=new ArrayList<Blob>();
-//	private ByteBuffer headerBuffer=null;
-	private long[] offsets=null;
+	//parse時にのみ有効、出力時には利用されない（BlobMessageの構成要素ではなく、parse結果の受け渡し用に使うのみ)
+	private JSONObject header;
 	
-	public static BlobMessage create(JSONObject header,CacheBuffer buffer){
-		BlobMessage result=new BlobMessage(header);
-		if(header.getInt("totalLength")!=0){
+	private JSONArray metas;
+	private Object message;
+	private List<Blob> blobs=new ArrayList<Blob>();
+	private long[] offsets=null;
+	private ByteBuffer blobHeaderBuffer=null;
+	
+	public static ByteBuffer headerBuffer(JSONObject header,BlobMessage message){
+		header.element("dataType", "blobMessage");
+		header.element("blobHeaderLength", message.getBlobHeaderLength());
+		String headerString=header.toString();
+		byte[] headerBytes=null;
+		try {
+			headerBytes = headerString.getBytes("uft-8");
+		} catch (UnsupportedEncodingException e) {
+			throw new UnsupportedOperationException("WsqHandler onMessage");
+		}
+		ByteBuffer headerBuffer=PoolManager.getBufferInstance(4+headerBytes.length);
+		headerBuffer.order(ByteOrder.BIG_ENDIAN);
+		headerBuffer.putLong(headerBytes.length);
+		headerBuffer.put(headerBytes);
+		headerBuffer.flip();
+		return headerBuffer;
+	}
+	
+	private static String getString(ByteBuffer buf,int length){
+		int pos=buf.position();
+		if((pos+length)>buf.limit()){
+			throw new UnsupportedOperationException("WsqHandler onMessage");
+		}
+		String result;
+		try {
+			result = new String(buf.array(),pos,length,"UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			throw new UnsupportedOperationException("WsqHandler onMessage");
+		}
+		buf.position(pos+length);
+		return result;
+	}
+	
+	public static BlobMessage create(CacheBuffer buffer){
+		if(!buffer.isInTopBuffer()){
+			buffer.unref();
+			throw new UnsupportedOperationException("WsqHandler onMessage");
+		}
+		//TODO 先頭の1バッファにheader類が保持されている事に依存
+		ByteBuffer[] topBufs=buffer.popTopBuffer();
+		ByteBuffer topBuf=topBufs[0];
+		topBuf.order(ByteOrder.BIG_ENDIAN);
+		int headerLength=topBuf.getInt();
+		String headerString=getString(topBuf,headerLength);
+		JSONObject header=JSONObject.fromObject(headerString);
+		int blobHeaderLength=header.getInt("blobHeaderLength");
+		String blobHeaderString=getString(topBuf,blobHeaderLength);
+		JSONObject blobHeader=JSONObject.fromObject(blobHeaderString);
+		BlobMessage result=(BlobMessage)PoolManager.getInstance(BlobMessage.class);
+		result.header=header;//parse時にだけ設定される
+		result.metas=blobHeader.getJSONArray("metas");
+		result.message=blobHeader.get("message");
+		if(blobHeader.getInt("totalLength")!=0){
 //			BlobFile blobFile=BlobFile.create(data,meta.getBoolean("isGz"));
-			JSONArray metas=header.getJSONArray("metas");
-			long offset=0;
+			JSONArray metas=blobHeader.getJSONArray("metas");
+			long offset=4+headerLength+blobHeaderLength;
 			for(int i=0;i<metas.size();i++){
 				JSONObject meta=metas.getJSONObject(i);
 				long length=meta.getLong("length");
@@ -65,13 +127,10 @@ public class BlobMessage extends PoolBase implements AsyncBuffer,BufferGetter{
 	}
 	@Override
 	public void recycle() {
-		/*
-		if(headerBuffer!=null){
-			PoolManager.poolBufferInstance(headerBuffer);
-			headerBuffer=null;
+		if(blobHeaderBuffer!=null){
+			PoolManager.poolBufferInstance(blobHeaderBuffer);
+			blobHeaderBuffer=null;
 		}
-		header=null;
-		*/
 		Iterator<Blob> blobItr=blobs.iterator();
 		while(blobItr.hasNext()){
 			Blob blob=blobItr.next();
@@ -83,38 +142,44 @@ public class BlobMessage extends PoolBase implements AsyncBuffer,BufferGetter{
 	
 	/* 設定モードから送信モードへの切り替え */
 	public synchronized void flip(){
-//		if(headerBuffer!=null){
-//			return;
-//		}
-//		JSONArray metas=header.getJSONArray("metas");
 		if(metas==null){
 			metas=new JSONArray();
 		}
 		int i=0;
+		long totalLength=0;
 		for(Blob blob:blobs){
 			JSONObject meta=metas.getJSONObject(i);
 			if(meta==null){
 				meta=new JSONObject();
 			}
-			meta.element("length",blob.length());
+			long length=blob.length();
+			totalLength+=length;
+			meta.element("length",length);
 			meta.element("name",blob.getName());
 			meta.element("jsType",blob.getJsType());
 			meta.element("mimeType",blob.getMimeType());
 			metas.element(i,meta);
 			i++;
 		}
-//		header.element("metas", metas);
-//		String jsonHeader=header.toString();
-		int size=blobs.size()+1;
-		offsets=new long[size];
-		/*
+		int count=blobs.size();
+		
+		JSONObject blobHeader=new JSONObject();
+		blobHeader.element("message", message);
+		blobHeader.element("metas", metas);
+		blobHeader.element("count", blobs.size());
+		blobHeader.element("totalLength", totalLength);
+		
+		byte[] blobHeaderBytes=null;
 		try {
-			headerBuffer=ByteBuffer.wrap(jsonHeader.getBytes("utf-8"));
+			blobHeaderBytes=blobHeader.toString().getBytes("utf-8");
 		} catch (UnsupportedEncodingException e) {
 			throw new RuntimeException("UnsupportedEncodingException utf-8");
 		}
-		*/
-		offsets[0]=headerBuffer.remaining();
+		blobHeaderBuffer=PoolManager.getBufferInstance(blobHeaderBytes.length);
+		blobHeaderBuffer.put(blobHeaderBytes);
+		blobHeaderBuffer.flip();
+		offsets[0]=blobHeaderBuffer.remaining();
+		offsets=new long[count+1];
 		i=1;
 		for(Blob blob:blobs){
 			long length=blob.length();
@@ -123,16 +188,6 @@ public class BlobMessage extends PoolBase implements AsyncBuffer,BufferGetter{
 		}
 	}
 	
-	public BlobMessage(JSONObject header){
-		if(header==null){
-			header=new JSONObject();
-		}
-		this.header=header;
-	}
-	
-	public JSONObject getHeader() {
-		return header;
-	}
 	public int blobCount(){
 		return blobs.size();
 	}
@@ -141,7 +196,6 @@ public class BlobMessage extends PoolBase implements AsyncBuffer,BufferGetter{
 	}
 	
 	public void setMeta(int index,JSONObject meta){
-		JSONArray metas=header.getJSONArray("metas");
 		if(metas==null){
 			metas=new JSONArray();
 		}
@@ -158,7 +212,6 @@ public class BlobMessage extends PoolBase implements AsyncBuffer,BufferGetter{
 			}
 		}
 		metas.element(index,meta);
-		header.element("metas", metas);
 	}
 	
 	public Blob addBlob(Blob blob){
@@ -200,13 +253,14 @@ public class BlobMessage extends PoolBase implements AsyncBuffer,BufferGetter{
 		return blob;
 	}
 	public Object getMessage() {
-		return header.opt("message");
+		return message;
 	}
 	public void setMessage(Object message) {
-		if(header==null){
-			header=new JSONObject();
-		}
-		header.element("message", message);
+		this.message=message;
+	}
+	
+	public int getBlobHeaderLength(){
+		return blobHeaderBuffer.remaining();
 	}
 
 	public boolean asyncBuffer(BufferGetter bufferGetter, Object userContext) {
@@ -221,7 +275,7 @@ public class BlobMessage extends PoolBase implements AsyncBuffer,BufferGetter{
 			}
 		}
 		if(blobNo==0){
-			ByteBuffer h=PoolManager.duplicateBuffer(headerBuffer);
+			ByteBuffer h=PoolManager.duplicateBuffer(blobHeaderBuffer);
 			BuffersUtil.skip(h,offset);
 			bufferGetter.onBuffer(userContext, BuffersUtil.toByteBufferArray(h));
 		}else{
@@ -252,5 +306,9 @@ public class BlobMessage extends PoolBase implements AsyncBuffer,BufferGetter{
 		Object[] ctx=(Object[])userContext;
 		BufferGetter bufferGetter=(BufferGetter)ctx[0];
 		bufferGetter.onBufferFailure(ctx[1], failure);
+	}
+
+	public JSONObject getHeader() {
+		return header;
 	}
 }
