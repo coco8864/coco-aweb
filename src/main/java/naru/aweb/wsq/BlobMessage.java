@@ -56,23 +56,6 @@ public class BlobMessage extends PoolBase implements AsyncBuffer,BufferGetter{
 	private long[] offsets=null;
 	private ByteBuffer blobHeaderBuffer=null;
 	
-	public static ByteBuffer headerBuffer(JSONObject header,BlobMessage message){
-		header.element("dataType", "blobMessage");
-		header.element("blobHeaderLength", message.getBlobHeaderLength());
-		String headerString=header.toString();
-		byte[] headerBytes=null;
-		try {
-			headerBytes = headerString.getBytes("uft-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new UnsupportedOperationException("WsqHandler onMessage");
-		}
-		ByteBuffer headerBuffer=PoolManager.getBufferInstance(4+headerBytes.length);
-		headerBuffer.order(ByteOrder.BIG_ENDIAN);
-		headerBuffer.putLong(headerBytes.length);
-		headerBuffer.put(headerBytes);
-		headerBuffer.flip();
-		return headerBuffer;
-	}
 	
 	private static String getString(ByteBuffer buf,int length){
 		int pos=buf.position();
