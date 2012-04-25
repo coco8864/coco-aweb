@@ -43,10 +43,10 @@ public class Wsq extends PoolBase implements WsqController,Timer{
 		WsqPeer from;
 		WsqHandler handler;
 		List msgs=null;
-		List<Object[]> blobMsgs=new ArrayList<Object[]>();
+		List<BlobEnvelope> blobMsgs=new ArrayList<BlobEnvelope>();
 		long lastAccess;
 		
-		void setMessage(BlobMessage msg){
+		void setMessage(BlobMessage blobMessage){
 			if(!from.isAllowBlob()){
 				logger.warn("not support BlobMessage."+handler);
 				return;
@@ -56,20 +56,18 @@ public class Wsq extends PoolBase implements WsqController,Timer{
 					from.getQname(),
 					from.getSubId(),
 					null,
-					msg
+					null
 			);
-			ByteBuffer headerBuffer=BlobMessage.headerBuffer(header, msg);
+			BlobEnvelope envelope=BlobEnvelope.create(header, blobMessage);
 			if(handler!=null){
-				handler.message(headerBuffer,msg);
+				handler.message(envelope);
 				return;
 			}else if(msgs==null){
 				msgs=new ArrayList();
 			}
 			logger.warn("not support BlobMessage.");
-			Object[] blbMsg=new Object[]{handler,msg};
-			msg.ref();
 			synchronized(blobMsgs){
-				blobMsgs.add(blbMsg);
+				blobMsgs.add(envelope);
 			}
 		}
 		
@@ -97,10 +95,8 @@ public class Wsq extends PoolBase implements WsqController,Timer{
 				}
 				msgs=null;
 				synchronized(blobMsgs){
-					for(Object[] blobMsg:blobMsgs){
-						BlobMessage message=(BlobMessage)blobMsg[1];
-						handler.message((ByteBuffer)blobMsg[0],message);
-						message.ref();
+					for(BlobEnvelope envelope:blobMsgs){
+						handler.message(envelope);
 					}
 					blobMsgs.clear();
 				}

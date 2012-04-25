@@ -38,6 +38,10 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 			payloadBuffer=null;
 		}
 		frame.init();
+		if(curReq!=null){
+			curReq.clean();
+			curReq=null;
+		}
 		super.recycle();
 	}
 	
@@ -248,13 +252,13 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 	}
 	
 	private static class PostRequest{
-		public PostRequest(AsyncBuffer asyncMessage, long offset, long length) {
+		public PostRequest(AsyncBuffer asyncMessage) {
 			if(asyncMessage instanceof PoolBase){
 				((PoolBase)asyncMessage).ref();
 			}
 			this.asyncMessage=asyncMessage;
-			position=offset;
-			endPosition=offset+length;
+			position=0;
+			endPosition=asyncMessage.bufferLength();
 			isTop=true;
 			strMessage=null;
 			byteMessage=null;
@@ -275,7 +279,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 		String strMessage;
 		ByteBuffer[] byteMessage;
 		AsyncBuffer asyncMessage;
-		long position;
+		long position;//最終フレームを判断するために、送信長を計算する必要がある
 		long endPosition;
 		boolean isTop=true;
 	}
@@ -303,7 +307,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 			handler.asyncWrite(curReq, buffers);
 			return;
 		}
-		curReq.asyncMessage.asyncBuffer(this,curReq.position,curReq);
+		curReq.asyncMessage.asyncBuffer(this,curReq);
 	}
 	
 	@Override
@@ -318,7 +322,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 			}
 		}
 		if(!isPostEnd){
-			curReq.asyncMessage.asyncBuffer(this,curReq.position,curReq);
+			curReq.asyncMessage.asyncBuffer(this,curReq);
 			return;
 		}
 		//回収処理
@@ -338,9 +342,9 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 	
 	/* アプリがpostMessageを呼び出した */
 	@Override
-	public void postMessage(AsyncBuffer message,long offset,long length) {
+	public void postMessage(AsyncBuffer message) {
 		logger.debug("WsHybi10#postMessage(bin) cid:"+handler.getChannelId());
-		postMessage(new PostRequest(message,offset,length));
+		postMessage(new PostRequest(message));
 	}
 	
 	@Override

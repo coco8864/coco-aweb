@@ -208,7 +208,7 @@ public class WsHixie75 extends WsProtocol {
 	}
 
 	@Override
-	public void postMessage(AsyncBuffer msgs, long offset, long length) {
+	public void postMessage(AsyncBuffer msgs) {
 		logger.debug("WsHiXie75#postMessage(bin) cid:"+handler.getChannelId());
 		if(msgs instanceof PoolBase){
 			((PoolBase)msgs).unref();
