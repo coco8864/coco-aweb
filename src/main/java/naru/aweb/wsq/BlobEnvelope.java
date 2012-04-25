@@ -10,7 +10,6 @@ import naru.async.cache.CacheBuffer;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
-import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 public class BlobEnvelope extends PoolBase implements AsyncBuffer,BufferGetter{
@@ -42,18 +41,19 @@ public class BlobEnvelope extends PoolBase implements AsyncBuffer,BufferGetter{
 		String headerString=header.toString();
 		byte[] headerBytes=null;
 		try {
-			headerBytes = headerString.getBytes("uft-8");
+			headerBytes = headerString.getBytes("utf-8");
 		} catch (UnsupportedEncodingException e) {
 			throw new UnsupportedOperationException("WsqHandler onMessage");
 		}
 		ByteBuffer headerBuffer=PoolManager.getBufferInstance(4+headerBytes.length);
 		headerBuffer.order(ByteOrder.BIG_ENDIAN);
-		headerBuffer.putLong(headerBytes.length);
+		headerBuffer.putInt(headerBytes.length);
 		headerBuffer.put(headerBytes);
 		headerBuffer.flip();
 		return headerBuffer;
 	}
 	
+	/* 受信データを解析する場合 */
 	public static BlobEnvelope parse(CacheBuffer buffer){
 		if(!buffer.isInTopBuffer()){
 			buffer.unref();
@@ -64,38 +64,24 @@ public class BlobEnvelope extends PoolBase implements AsyncBuffer,BufferGetter{
 		ByteBuffer topBuf=topBufs[0];
 		topBuf.order(ByteOrder.BIG_ENDIAN);
 		int headerLength=topBuf.getInt();
-		
 		int pos=topBuf.position();
 		if((pos+headerLength)>topBuf.limit()){
 			throw new UnsupportedOperationException("BlobEnvelope parse");
 		}
 		String headerString=getString(topBuf,headerLength);
 		JSONObject header=JSONObject.fromObject(headerString);
-		
 		int blobHeaderLength=header.getInt("blobHeaderLength");
+		
 		String blobHeaderString=getString(topBuf,blobHeaderLength);
 		JSONObject blobHeader=JSONObject.fromObject(blobHeaderString);
-		BlobMessage result=(BlobMessage)PoolManager.getInstance(BlobMessage.class);
-		result.header=header;//parse時にだけ設定される
-		result.metas=blobHeader.getJSONArray("metas");
-		result.message=blobHeader.get("message");
-		if(blobHeader.getInt("totalLength")!=0){
-//			BlobFile blobFile=BlobFile.create(data,meta.getBoolean("isGz"));
-			JSONArray metas=blobHeader.getJSONArray("metas");
-			long offset=4+headerLength+blobHeaderLength;
-			for(int i=0;i<metas.size();i++){
-				JSONObject meta=metas.getJSONObject(i);
-				long length=meta.getLong("length");
-				Blob blob=Blob.create(buffer,offset,length);
-				offset+=length;
-				blob.setName(meta.optString("name"));
-				blob.setJsType(meta.optString("jsType"));
-				blob.setMimeType(meta.optString("mimeType"));
-				result.addBlob(blob);
-			}
-		}
+		BlobMessage blobMessage=BlobMessage.parse(blobHeader, 4+headerLength+blobHeaderLength, buffer);
+		BlobEnvelope envelope=(BlobEnvelope)PoolManager.getInstance(BlobEnvelope.class);
+		envelope.header=header;
+		envelope.blobMessage=blobMessage;
+		return envelope;
 	}
 	
+	/* 送信用に新規に作る場合 */
 	public static BlobEnvelope create(JSONObject header,BlobMessage blobMessage){
 		BlobEnvelope envelope=(BlobEnvelope)PoolManager.getInstance(BlobEnvelope.class);
 		envelope.init(header, blobMessage);
@@ -105,21 +91,9 @@ public class BlobEnvelope extends PoolBase implements AsyncBuffer,BufferGetter{
 	private void init(JSONObject header,BlobMessage blobMessage){
 		this.header=header;
 		blobMessage.ref();
+		blobMessage.flip();
 		this.blobMessage=blobMessage;
-		header.element("dataType", "blobMessage");
-		header.element("blobHeaderLength", blobMessage.getBlobHeaderLength());
-		String headerString=header.toString();
-		byte[] headerBytes=null;
-		try {
-			headerBytes = headerString.getBytes("uft-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new UnsupportedOperationException("WsqHandler onMessage");
-		}
-		ByteBuffer buffer=PoolManager.getBufferInstance(4+headerBytes.length);
-		buffer.order(ByteOrder.BIG_ENDIAN);
-		buffer.putLong(headerBytes.length);
-		buffer.put(headerBytes);
-		buffer.flip();
+		ByteBuffer buffer=headerBuffer(header, blobMessage);
 		headerBuffer=BuffersUtil.toByteBufferArray(buffer);
 		blobOffset=0;
 		bufferLength=BuffersUtil.remaining(headerBuffer)+blobMessage.bufferLength();

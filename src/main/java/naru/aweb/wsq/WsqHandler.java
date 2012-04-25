@@ -3,7 +3,6 @@
  */
 package naru.aweb.wsq;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -216,8 +215,8 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 		}
 	}
 	
-	void message(ByteBuffer header,BlobMessage message){
-		postMessage(header,message);
+	void message(BlobEnvelope envelope){
+		postMessage(envelope);
 	}
 	
 	/**
@@ -247,12 +246,12 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 	@Override
 	public void onMessage(CacheBuffer message) {
 		//metaÇ‹Ç≈ÇÕÅAmsg[0]Ç…Ç†ÇÈéñÇëOíÒ TODO â¸ëPóv
-		BlobMessage blobMessage=BlobMessage.create(message);
-		JSONObject header=blobMessage.getHeader();
+		BlobEnvelope envelope=BlobEnvelope.parse(message);
+		JSONObject header=envelope.getHeader();
 		String qname=header.getString("qname");
 		String subId=header.optString("subId",null);
 		WsqPeer from=WsqPeer.create(authSession,srcPath,qname,subId,isWs);
-		wsqManager.publish(from, blobMessage);
+		wsqManager.publish(from, envelope.getBlobMessage());
 		from.unref();
 	}
 	
@@ -372,13 +371,13 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 		}
 	}
 	
-	private Blob blob;
-	
-	@Override
-	public void onWrittenPlain(Object userContext) {
-		if(!isWs){
-			super.onWrittenPlain(userContext);
-			return;
-		}
-	}
+//	private Blob blob;
+//	
+//	@Override
+//	public void onWrittenPlain(Object userContext) {
+//		if(!isWs){
+//			super.onWrittenPlain(userContext);
+//			return;
+//		}
+//	}
 }

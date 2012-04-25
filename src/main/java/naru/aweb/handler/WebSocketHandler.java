@@ -46,12 +46,14 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	}
 	
 	protected synchronized void postMessage(AsyncBuffer message){
-		wsProtocol.postMessage(message,0,message.bufferLength());
+		wsProtocol.postMessage(message);
 	}
 	
+	/*
 	protected synchronized void postMessage(AsyncBuffer message, long offset, long length){
 		wsProtocol.postMessage(message, offset, length);
 	}
+	*/
 	/* header‚É‚ÍA‚»‚Ì‰ñüŒÅ—L‚Ìî•ñ‚ğÚ‚¹‚é */
 	/*
 	protected synchronized void postMessage(ByteBuffer header,AsyncBuffer message){

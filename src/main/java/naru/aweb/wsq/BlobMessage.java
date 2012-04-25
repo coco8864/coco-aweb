@@ -3,7 +3,6 @@ package naru.aweb.wsq;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -47,54 +46,20 @@ import net.sf.json.JSONObject;
  * 3番目のデータ
  */
 public class BlobMessage extends PoolBase implements AsyncBuffer,BufferGetter{
-	//parse時にのみ有効、出力時には利用されない（BlobMessageの構成要素ではなく、parse結果の受け渡し用に使うのみ)
-	private JSONObject header;
-	
 	private JSONArray metas;
 	private Object message;
 	private List<Blob> blobs=new ArrayList<Blob>();
 	private long[] offsets=null;
 	private ByteBuffer blobHeaderBuffer=null;
 	
-	
-	private static String getString(ByteBuffer buf,int length){
-		int pos=buf.position();
-		if((pos+length)>buf.limit()){
-			throw new UnsupportedOperationException("WsqHandler onMessage");
-		}
-		String result;
-		try {
-			result = new String(buf.array(),pos,length,"UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new UnsupportedOperationException("WsqHandler onMessage");
-		}
-		buf.position(pos+length);
-		return result;
-	}
-	
-	public static BlobMessage create(CacheBuffer buffer){
-		if(!buffer.isInTopBuffer()){
-			buffer.unref();
-			throw new UnsupportedOperationException("WsqHandler onMessage");
-		}
-		//TODO 先頭の1バッファにheader類が保持されている事に依存
-		ByteBuffer[] topBufs=buffer.popTopBuffer();
-		ByteBuffer topBuf=topBufs[0];
-		topBuf.order(ByteOrder.BIG_ENDIAN);
-		int headerLength=topBuf.getInt();
-		String headerString=getString(topBuf,headerLength);
-		JSONObject header=JSONObject.fromObject(headerString);
-		int blobHeaderLength=header.getInt("blobHeaderLength");
-		String blobHeaderString=getString(topBuf,blobHeaderLength);
-		JSONObject blobHeader=JSONObject.fromObject(blobHeaderString);
+	public static BlobMessage parse(JSONObject blobHeader,long  totalHeaderLength,CacheBuffer buffer){
 		BlobMessage result=(BlobMessage)PoolManager.getInstance(BlobMessage.class);
-		result.header=header;//parse時にだけ設定される
 		result.metas=blobHeader.getJSONArray("metas");
 		result.message=blobHeader.get("message");
 		if(blobHeader.getInt("totalLength")!=0){
 //			BlobFile blobFile=BlobFile.create(data,meta.getBoolean("isGz"));
 			JSONArray metas=blobHeader.getJSONArray("metas");
-			long offset=4+headerLength+blobHeaderLength;
+			long offset=totalHeaderLength;
 			for(int i=0;i<metas.size();i++){
 				JSONObject meta=metas.getJSONObject(i);
 				long length=meta.getLong("length");
@@ -108,6 +73,7 @@ public class BlobMessage extends PoolBase implements AsyncBuffer,BufferGetter{
 		}
 		return result;
 	}
+	
 	@Override
 	public void recycle() {
 		if(blobHeaderBuffer!=null){
@@ -161,8 +127,8 @@ public class BlobMessage extends PoolBase implements AsyncBuffer,BufferGetter{
 		blobHeaderBuffer=PoolManager.getBufferInstance(blobHeaderBytes.length);
 		blobHeaderBuffer.put(blobHeaderBytes);
 		blobHeaderBuffer.flip();
-		offsets[0]=blobHeaderBuffer.remaining();
 		offsets=new long[count+1];
+		offsets[0]=blobHeaderBuffer.remaining();
 		i=1;
 		for(Blob blob:blobs){
 			long length=blob.length();
@@ -289,9 +255,5 @@ public class BlobMessage extends PoolBase implements AsyncBuffer,BufferGetter{
 		Object[] ctx=(Object[])userContext;
 		BufferGetter bufferGetter=(BufferGetter)ctx[0];
 		bufferGetter.onBufferFailure(ctx[1], failure);
-	}
-
-	public JSONObject getHeader() {
-		return header;
 	}
 }
