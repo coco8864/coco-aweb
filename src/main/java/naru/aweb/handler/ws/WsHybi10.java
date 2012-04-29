@@ -253,9 +253,6 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 	
 	private static class PostRequest{
 		public PostRequest(AsyncBuffer asyncMessage) {
-			if(asyncMessage instanceof PoolBase){
-				((PoolBase)asyncMessage).ref();
-			}
 			this.asyncMessage=asyncMessage;
 			position=0;
 			endPosition=asyncMessage.bufferLength();

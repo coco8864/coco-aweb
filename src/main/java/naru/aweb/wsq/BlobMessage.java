@@ -31,12 +31,11 @@ import net.sf.json.JSONObject;
  * BlobMessageの形
  * blobHeader=jsonデータ
  * {
- * count:データ数,
- * totalLength:総データ長,
- * (isGz:gz圧縮の有無),
+ * //count:データ数,
+ * //totalLength:総データ長,
  * message:任意
  * metas:[
- *  {length:1番目のdeta長,jsType:'ArrayBuffer'|string|Blob|object,name:,mimeType:,以降任意},
+ *  {length:1番目のdeta長,jsType:'ArrayBuffer'|string|Blob|object,name:,mimeType:,isGz圧縮の有無以降任意},
  *  {length:2番目のdeta長,..},
  *  {length:3番目のdeta長,..,}
  *  ]
@@ -46,30 +45,23 @@ import net.sf.json.JSONObject;
  * 3番目のデータ
  */
 public class BlobMessage extends PoolBase implements AsyncBuffer,BufferGetter{
-	private JSONArray metas;
+//	private JSONArray metas;
 	private Object message;
-	private List<Blob> blobs=new ArrayList<Blob>();
+	private List<Blob> blobData=new ArrayList<Blob>();
 	private long[] offsets=null;
 	private ByteBuffer blobHeaderBuffer=null;
 	
 	public static BlobMessage parse(JSONObject blobHeader,long  totalHeaderLength,CacheBuffer buffer){
 		BlobMessage result=(BlobMessage)PoolManager.getInstance(BlobMessage.class);
-		result.metas=blobHeader.getJSONArray("metas");
 		result.message=blobHeader.get("message");
-		if(blobHeader.getInt("totalLength")!=0){
-//			BlobFile blobFile=BlobFile.create(data,meta.getBoolean("isGz"));
-			JSONArray metas=blobHeader.getJSONArray("metas");
-			long offset=totalHeaderLength;
-			for(int i=0;i<metas.size();i++){
-				JSONObject meta=metas.getJSONObject(i);
-				long length=meta.getLong("length");
-				Blob blob=Blob.create(buffer,offset,length);
-				offset+=length;
-				blob.setName(meta.optString("name"));
-				blob.setJsType(meta.optString("jsType"));
-				blob.setMimeType(meta.optString("mimeType"));
-				result.addBlob(blob);
-			}
+		JSONArray metas=blobHeader.getJSONArray("metas");
+		long offset=totalHeaderLength;
+		for(int i=0;i<metas.size();i++){
+			JSONObject meta=metas.getJSONObject(i);
+			long length=meta.getLong("size");
+			Blob blob=Blob.create(buffer,offset,length,meta);
+			offset+=length;
+			result.addBlob(blob);
 		}
 		return result;
 	}
@@ -80,7 +72,7 @@ public class BlobMessage extends PoolBase implements AsyncBuffer,BufferGetter{
 			PoolManager.poolBufferInstance(blobHeaderBuffer);
 			blobHeaderBuffer=null;
 		}
-		Iterator<Blob> blobItr=blobs.iterator();
+		Iterator<Blob> blobItr=blobData.iterator();
 		while(blobItr.hasNext()){
 			Blob blob=blobItr.next();
 			blobItr.remove();
@@ -91,31 +83,20 @@ public class BlobMessage extends PoolBase implements AsyncBuffer,BufferGetter{
 	
 	/* 設定モードから送信モードへの切り替え */
 	public synchronized void flip(){
-		if(metas==null){
-			metas=new JSONArray();
-		}
 		int i=0;
 		long totalLength=0;
-		for(Blob blob:blobs){
-			JSONObject meta=metas.getJSONObject(i);
-			if(meta==null){
-				meta=new JSONObject();
-			}
-			long length=blob.length();
-			totalLength+=length;
-			meta.element("length",length);
-			meta.element("name",blob.getName());
-			meta.element("jsType",blob.getJsType());
-			meta.element("mimeType",blob.getMimeType());
-			metas.element(i,meta);
+		JSONArray metas=new JSONArray();
+		for(Blob blob:blobData){
+			totalLength+=blob.size();
+			metas.element(i,blob.getMeta());
 			i++;
 		}
-		int count=blobs.size();
+		int count=blobData.size();
 		
 		JSONObject blobHeader=new JSONObject();
 		blobHeader.element("message", message);
 		blobHeader.element("metas", metas);
-		blobHeader.element("count", blobs.size());
+		blobHeader.element("count", blobData.size());
 		blobHeader.element("totalLength", totalLength);
 		
 		byte[] blobHeaderBytes=null;
@@ -130,48 +111,22 @@ public class BlobMessage extends PoolBase implements AsyncBuffer,BufferGetter{
 		offsets=new long[count+1];
 		offsets[0]=blobHeaderBuffer.remaining();
 		i=1;
-		for(Blob blob:blobs){
-			long length=blob.length();
+		for(Blob blob:blobData){
+			long length=blob.size();
 			offsets[i]=offsets[i-1]+length;
 			i++;
 		}
 	}
 	
 	public int blobCount(){
-		return blobs.size();
+		return blobData.size();
 	}
 	public Blob getBlob(int index) {
-		return blobs.get(index);
-	}
-	
-	public void setMeta(int index,JSONObject meta){
-		if(metas==null){
-			metas=new JSONArray();
-		}
-		JSONObject orgMeta=null;
-		if(metas.size()>index){
-			orgMeta=metas.getJSONObject(index);
-		}
-		if(orgMeta!=null){
-			for(Object key:orgMeta.keySet()){
-				if(meta.get(key)!=null){
-					continue;
-				}
-				meta.put(key, orgMeta.get(key));
-			}
-		}
-		metas.element(index,meta);
+		return blobData.get(index);
 	}
 	
 	public Blob addBlob(Blob blob){
-		return addBlob(blob,null);
-	}
-	public Blob addBlob(Blob blob,JSONObject meta){
-		blob.ref();
-		blobs.add(blob);
-		if(meta!=null){
-			setMeta(blobs.size()-1,meta);
-		}
+		blobData.add(blob);
 		return blob;
 	}
 	
@@ -179,11 +134,8 @@ public class BlobMessage extends PoolBase implements AsyncBuffer,BufferGetter{
 		return addBlob(blob,null);
 	}
 	public Blob addBlob(ByteBuffer[] buffer,JSONObject meta){
-		Blob blob=Blob.create(buffer);
-		blobs.add(blob);
-		if(meta!=null){
-			setMeta(blobs.size()-1,meta);
-		}
+		Blob blob=Blob.create(buffer,meta);
+		blobData.add(blob);
 		return blob;
 	}
 	
@@ -192,13 +144,8 @@ public class BlobMessage extends PoolBase implements AsyncBuffer,BufferGetter{
 	}
 	
 	public Blob addBlob(File file,JSONObject meta){
-		Blob blob=Blob.create(file);
-		blobs.add(blob);
-		if(meta==null){
-			meta=new JSONObject();
-			meta.element("name",file.getName());
-		}
-		setMeta(blobs.size()-1,meta);
+		Blob blob=Blob.create(file,meta);
+		blobData.add(blob);
 		return blob;
 	}
 	public Object getMessage() {

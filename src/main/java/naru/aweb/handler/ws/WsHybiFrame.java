@@ -65,7 +65,7 @@ public class WsHybiFrame {
 		}else if(payloadLength<0xFFFF){
 			return length+2;
 		}else{
-			return length+4;
+			return length+8;
 		}
 	}
 	

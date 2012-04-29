@@ -253,6 +253,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 		WsqPeer from=WsqPeer.create(authSession,srcPath,qname,subId,isWs);
 		wsqManager.publish(from, envelope.getBlobMessage());
 		from.unref();
+		envelope.unref();
 	}
 	
 	@Override
