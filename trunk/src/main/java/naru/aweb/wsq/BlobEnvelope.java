@@ -66,6 +66,7 @@ public class BlobEnvelope extends PoolBase implements AsyncBuffer,BufferGetter{
 		int headerLength=topBuf.getInt();
 		int pos=topBuf.position();
 		if((pos+headerLength)>topBuf.limit()){
+			PoolManager.poolBufferInstance(topBufs);
 			throw new UnsupportedOperationException("BlobEnvelope parse");
 		}
 		String headerString=getString(topBuf,headerLength);
@@ -75,6 +76,9 @@ public class BlobEnvelope extends PoolBase implements AsyncBuffer,BufferGetter{
 		String blobHeaderString=getString(topBuf,blobHeaderLength);
 		JSONObject blobHeader=JSONObject.fromObject(blobHeaderString);
 		BlobMessage blobMessage=BlobMessage.parse(blobHeader, 4+headerLength+blobHeaderLength, buffer);
+		buffer.unref();//必要なBlobは参照をマーク、この処理は、これ以上bufferを予約する必要はない。
+		PoolManager.poolBufferInstance(topBufs);//
+		
 		BlobEnvelope envelope=(BlobEnvelope)PoolManager.getInstance(BlobEnvelope.class);
 		envelope.header=header;
 		envelope.blobMessage=blobMessage;
