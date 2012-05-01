@@ -372,7 +372,7 @@ public class WsHybiFrame {
 				return false;
 			}
 			readBuffer.order(ByteOrder.BIG_ENDIAN);
-			payloadLength=(int)readBuffer.getShort();
+			payloadLength=0x0000ffff&((int)readBuffer.getShort());
 		}else if(rawLen==0x7F){
 			ByteBuffer readBuffer=fillBuffer(buffer,8);
 			if(readBuffer==null){

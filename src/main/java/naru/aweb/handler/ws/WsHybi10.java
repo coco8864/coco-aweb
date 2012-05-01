@@ -92,7 +92,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 	}
 	
 	private void doBinaryTrace(byte pcode,boolean isTop,boolean isFin,ByteBuffer[] payloadBuffers){
-		if(pcode!=WsHybiFrame.PCODE_BINARY || continuePcode!=WsHybiFrame.PCODE_BINARY){
+		if(pcode!=WsHybiFrame.PCODE_BINARY && continuePcode!=WsHybiFrame.PCODE_BINARY){
 			return;//binary‚¶‚á‚È‚¢
 		}
 		traceOnMessage(isTop, isFin, payloadBuffers);
