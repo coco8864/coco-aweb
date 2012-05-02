@@ -8,8 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import net.sf.json.JSONArray;
-
 public class WsqSession {
 	private Map<String,Map<String,WsqPeer>> qnamePeerMap=new HashMap<String,Map<String,WsqPeer>>();
 	private Set<WsqPeer> peers=new HashSet<WsqPeer>();
@@ -76,12 +74,12 @@ public class WsqSession {
 	}
 	*/
 	
-	public synchronized int setHandler(WsqManager wsqManager,WsqHandler handler){
+	public synchronized int setHandler(WsqManager wsqManager,WsqHandler orgHandler,WsqHandler handler){
 		Iterator<WsqPeer> itr=peers.iterator();
 		int count=0;
 		while(itr.hasNext()){
 			WsqPeer peer=itr.next();
-			wsqManager.setHandler(peer, handler);
+			wsqManager.setHandler(peer, orgHandler,handler);
 			count++;
 		}
 		return count;

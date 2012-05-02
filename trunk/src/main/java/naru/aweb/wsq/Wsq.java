@@ -87,7 +87,11 @@ public class Wsq extends PoolBase implements WsqController,Timer{
 			}
 			msgs.add(sendMsg);
 		}
-		void setHandler(WsqHandler handler){
+		boolean setHandler(WsqHandler orgHandler,WsqHandler handler){
+			if(orgHandler!=null&&orgHandler!=this.handler){
+				return false;
+			}
+			orgHandler=this.handler;
 			if(handler!=null){
 				handler.ref();
 				if(msgs!=null){
@@ -101,11 +105,11 @@ public class Wsq extends PoolBase implements WsqController,Timer{
 					blobMsgs.clear();
 				}
 			}
-			WsqHandler orgHandler=this.handler;
 			this.handler=handler;
 			if(orgHandler!=null){
 				orgHandler.unref();
 			}
+			return true;
 		}
 	}
 
@@ -113,15 +117,14 @@ public class Wsq extends PoolBase implements WsqController,Timer{
 		return qname;
 	}
 
-	public boolean setHandler(WsqPeer from,WsqHandler handler){
+	public boolean setHandler(WsqPeer from,WsqHandler orgHandler,WsqHandler handler){
 		SubscribeInfo info=subscribeInfos.get(from);
 		if(info==null){
 			return false;
 		}
 		synchronized(info){
-			info.setHandler(handler);
+			return info.setHandler(orgHandler,handler);
 		}
-		return true;
 	}
 	
 	public boolean subscribe(WsqPeer from){
@@ -299,7 +302,7 @@ public class Wsq extends PoolBase implements WsqController,Timer{
 		}
 		synchronized(info){
 			wsqlet.onUnsubscribe(info.from);
-			info.setHandler(null);
+			info.setHandler(null,null);
 		}
 		return true;
 	}

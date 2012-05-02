@@ -234,7 +234,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 				responseObjs.add(obj);
 			}
 			if(!isMsgBlock){
-				wsqSession.setHandler(wsqManager, null);
+				wsqSession.setHandler(wsqManager,this,null);
 				isMsgBlock=true;
 				if(timerId!=-1){
 					TimerManager.clearTimeout(timerId);
@@ -258,7 +258,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 	
 	@Override
 	public void onWsClose(short code,String reason) {
-		wsqSession.setHandler(wsqManager, null);
+		wsqSession.setHandler(wsqManager,this,null);
 	}
 	
 	private AuthSession authSession;
@@ -278,7 +278,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 			wsqSession=new WsqSession();
 			authSession.setAttribute("WsqSession", wsqSession);
 		}
-		wsqSession.setHandler(wsqManager, this);
+//		wsqSession.setHandler(wsqManager, this);
 		srcPath=getRequestMapping().getSourcePath();
 	}
 
@@ -316,7 +316,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 		processMessages(json,responseObjs);//HTTP‚Åˆ—‚µ‚Ä‚¢‚é
 		wsqSession.collectMessage(wsqManager,responseObjs);
 		if(responseObjs.size()>0){
-			wsqSession.setHandler(wsqManager, null);
+			wsqSession.setHandler(wsqManager,this,null);
 			isMsgBlock=true;
 			//responseObjs‚Ìˆ—‚ÍAtimer‚Ås‚¤
 			timerId=TimerManager.setTimeout(10, this,null);
@@ -331,7 +331,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 	 */
 	public void onLogout(){
 		//logout‚É‚æ‚éunsubscribe‚ÌÀs
-		wsqSession.setHandler(wsqManager, null);
+		wsqSession.setHandler(wsqManager,null,null);
 		List<WsqPeer> peers=wsqSession.unregs();
 		for(WsqPeer peer:peers){
 			wsqManager.unsubscribe(peer);
@@ -366,7 +366,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 				completeResponse("205");
 			}
 		}else{
-			wsqSession.setHandler(wsqManager, null);
+			wsqSession.setHandler(wsqManager,this,null);
 			isMsgBlock=true;
 			timerId=TimerManager.setTimeout(10, this,null);
 		}

@@ -11,7 +11,7 @@
 
 function sendObjToParent(msg){
   var jsonText=ph.JSON.stringify(msg);
-  parent.postMessage(jsonText,"*");
+  parent.postMessage(xhrUrl+"@"+jsonText,"*");
 }
 function onMessageFunc(event){
   var msg=ph.JSON.parse(event.data);
@@ -27,7 +27,7 @@ function onMessageFunc(event){
 function xhrSuccess(text){
   errorCount=0;
   if(text){//受け取ったtextはそのままparentFrameに送信
-    parent.postMessage(text,"*");
+    parent.postMessage(xhrUrl+"@"+text,"*");
   }
   setTimeout(xhrRequest,INTERVAL);
 }
