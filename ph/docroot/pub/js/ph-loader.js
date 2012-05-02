@@ -1,5 +1,11 @@
 (function(){
+var bk='$!esc.javascript(${parameter.getParameter("bk")})';
+var include='$!esc.javascript(${parameter.getParameter("include")})'.split(',');
 if(window.ph){
+ if(bk){
+##bookmarkletから呼ばれた場合、必ずscriptを呼び出す
+  ph.loadScript(include);
+ }
  return;
 }
 window.ph={
@@ -12,6 +18,7 @@ window.ph={
  authUrl:'$esc.javascript(${config.authUrl})',
  adminUrl:'$esc.javascript(${config.adminUrl})',
  publicWebUrl:'$esc.javascript(${config.publicWebUrl})',
+ scriptBase:'',
  scripts:['jquery-1.5.1.min.js','ph-jqnoconflict.js','ph-json2.js'],
  isUseWebSocket:false,//WebSocketを使うか否か?
  isUseSessionStorage:false,//SessionStorageを使うか否か?
@@ -72,6 +79,18 @@ window.ph={
  },
  onload:function(){
 //  alert('ph-loader onload');
+ },
+ loadScript:function(includeScript){
+  var jsl=new ph.JSLoader(/*{finish:ph.onload}*/);
+  for(var i=0;i<includeScript.length;i++){
+   var script=includeScript[i];
+   if(!script.match(/^http/)){
+     jsl.next(ph.scriptBase+script);
+   }else{
+     jsl.next(script);
+   }
+  }
+  jsl.start();
  }
 };//end of window.ph
 
@@ -231,43 +250,28 @@ ph.Tran.prototype.toJson=function(){
  ph.JSON.stringify(this);
 };
 
-var include='$!esc.javascript(${parameter.getParameter("include")})'.split(',');
+if(ph.isSsl){
+ ph.scriptBase='https://';
+}else{
+ ph.scriptBase='http://';
+}
+
 for(var i=0;i<include.length;i++){
  if(include[i]==''){
   continue;
  }
  ph.scripts.push(include[i]);
 }
-
-var scriptBase;
-if(ph.isSsl){
- scriptBase='https://';
-}else{
- scriptBase='http://';
-}
-scriptBase+=ph.hostHeader +'/pub/js/';
-var bk='$!esc.javascript(${parameter.getParameter("bk")})';
+ph.scriptBase+=ph.hostHeader +'/pub/js/';
 if(bk){
-  var jsl=new ph.JSLoader(/*{finish:ph.onload}*/);
-  for(var i=0;i<ph.scripts.length;i++){
-   var script=ph.scripts[i];
-   if(!script.match(/^http/)){
-     jsl.next(scriptBase+script);
-   }else{
-     jsl.next(script);
-   }
-  }
-  jsl.start();
+  ph.loadScript(ph.scripts);
 }else{
-  ###if(${handler.getParameter("inj")}=="true")
-  ##ph.scripts.push('ph-injection.js');
-  ###end
   //alert(scriptBase);
   for(var i=0;i<ph.scripts.length;i++){
    var script=ph.scripts[i];
    document.write('<script type="text/javascript" src="');
    if(!script.match(/^http/)){
-    document.write(scriptBase);
+    document.write(ph.scriptBase);
    }
    document.write(script + '" charset="utf-8"');
    document.write('></' + 'script>');

@@ -1,6 +1,3 @@
-if(typeof ph == "undefined"){
-  ph={};
-}
 (function () {
   if(ph.wsq){
     return;
@@ -22,16 +19,56 @@ if(typeof ph == "undefined"){
     _RETRY_COUNT:3,
     _isBlobMessage:true,/* Blobメッセージを使うか否か */
     _isGz:false,/* Blobメッセージにgzipを使うか否か */
+    _createBlobBuilder:function(){
+      var BlobBuilder = window.MozBlobBuilder || window.WebKitBlobBuilder
+      return new BlobBuilder();
+    },
+    _blobSlice:function(blob,startingByte,endindByte){
+      if (blob.webkitSlice) {
+        return blob.webkitSlice(startingByte, endindByte);
+      } else if (blob.mozSlice) {
+        return blob.mozSlice(startingByte, endindByte);
+      }
+      return blob.slice(startingByte, endindByte);
+    },
+    //https://github.com/ukyo/jsziptools/blob/master/src/utils.js
+    _stringToArrayBuffer:function(str){
+      var n = str.length,
+      idx = -1,
+      utf8 = [],
+      i, j, c;
+      //http://user1.matsumoto.ne.jp/~goma/js/utf.js
+      for(i = 0; i < n; ++i){
+        c = str.charCodeAt(i);
+        if(c <= 0x7F){
+          utf8[++idx] = c;
+        } else if(c <= 0x7FF){
+          utf8[++idx] = 0xC0 | (c >>> 6);
+          utf8[++idx] = 0x80 | (c & 0x3F);
+        } else if(c <= 0xFFFF){
+          utf8[++idx] = 0xE0 | (c >>> 12);
+          utf8[++idx] = 0x80 | ((c >>> 6) & 0x3F);
+          utf8[++idx] = 0x80 | (c & 0x3F);
+        } else {
+          j = 4;
+          while(c >> (6 * j)) ++j;
+          utf8[++idx] = ((0xFF00 >>> j) & 0xFF) | (c >>> (6 * --j));
+          while(j--)
+            utf8[++idx] = 0x80 | ((c >>> (6 * j)) & 0x3F);
+        }
+      }
+      return new Uint8Array(utf8).buffer;
+    },
     _connections:{},
     /* 接続毎に作られるオブジェクト */
     _Connection:function(url,cb){
       /* callback通知情報 */
-      this.url=url;
       if(url.lastIndexOf('ws',0)==0 ){
         this.isWs=true;/* WebSocket */
       }else{
         this.isWs=false;/* Xhr */
       }
+      this.url=url;
       this.stat=this.STAT_INIT;/* init auth idle open connect close */
       this.qnames=[];
 
@@ -58,7 +95,6 @@ if(typeof ph == "undefined"){
     },
     /* */
     open:function(url,cb){/* isSsl,hostPort,cb */
-      //webSocketが使えなくてurlがws://だったらhttp://に変更
       var con=this._connections[url];
       if(con){
         if(con._isOpenCallback){
@@ -68,6 +104,12 @@ if(typeof ph == "undefined"){
           con._callback(this.CB_ERROR,'open','aleady openning.');
         }
         return;
+      }
+      if(url.lastIndexOf('ws',0)==0 ){
+        if(!ph.isUseWebSocket){
+          //webSocketが使えなくてurlがws://だったらhttp://に変更
+          url="http" + url.substring(2);
+        }
       }
       var con=new ph.wsq._Connection(url,cb);
       ph.wsq._connections[url]=con;
@@ -98,15 +140,15 @@ if(typeof ph == "undefined"){
       setTimeout(ph.wsq._onTimer,ph.wsq._INTERVAL);
     },
     //xhr関連
-    _frameNameToConnection:function(frameName){
-      if( frameName.lastIndexOf(ph.wsq._XHR_FRAME_NAME_PREFIX,0)!=0 ){
-        return null;
-      }
-      var url=frameName.substring(ph.wsq._XHR_FRAME_NAME_PREFIX.length);
-      return this._connections[url];
-    },
-    _xhrLoad:function(frameName){//xhr会話用のframeがloadされたら呼び出される
-      var con=this._frameNameToConnection(frameName);
+//    _frameNameToConnection:function(frameName){
+//      if( frameName.lastIndexOf(ph.wsq._XHR_FRAME_NAME_PREFIX,0)!=0 ){
+//        return null;
+//      }
+//      var url=frameName.substring(ph.wsq._XHR_FRAME_NAME_PREFIX.length);
+//      return this._connections[url];
+//    },
+    _xhrLoad:function(url){//xhr会話用のframeがloadされたら呼び出される
+      var con=this._connections[url];
       if(!con){
         //異常ありえない
         return;
@@ -115,11 +157,19 @@ if(typeof ph == "undefined"){
     },
     _xhrOnMessage:function(event){
 //TODO originチェック
-      var frameName=event.source.name;
-      if( !frameName || frameName.lastIndexOf(ph.wsq._XHR_FRAME_NAME_PREFIX, 0) != 0 ){
+//      var frameName=event.source.name;
+//      if( !frameName || frameName.lastIndexOf(ph.wsq._XHR_FRAME_NAME_PREFIX, 0) != 0 ){
+//        return;
+//      }
+      var allData=event.data;
+      var urlPosition=allData.indexOf('@');
+      if(urlPosition<0){
         return;
       }
-      var con=ph.wsq._frameNameToConnection(frameName);
+      var url=allData.substring(0,urlPosition);
+      var data=allData.substring(urlPosition+1);
+//      var con=ph.wsq._frameNameToConnection(frameName);
+      var con=ph.wsq._connections[url];
       if(!con){
         //他のイベント
         return;
@@ -127,7 +177,7 @@ if(typeof ph == "undefined"){
       if(!con._isOpenCallback){
         con._onXhrOpen();
       }else{
-        con._onXhrMessage(event);
+        con._onXhrMessage(data);
       }
     },
     _buildBlobs:function(header,message,data,con){
@@ -155,7 +205,7 @@ if(typeof ph == "undefined"){
         }else if(typeof d==='string'){
           blobHeader.count++;
           meta.jsType='string';
-          results[i]=jz.utils.stringToArrayBuffer(d);
+          results[i]=ph.wsq._stringToArrayBuffer(d);
           meta.size=results[i].byteLength;
           blobHeader.totalLength+=meta.size;
           continue;
@@ -163,7 +213,7 @@ if(typeof ph == "undefined"){
           blobHeader.count++;
           meta.jsType='object';
           var dText=ph.JSON.stringify(d);
-          results[i]=jz.utils.stringToArrayBuffer(dText);
+          results[i]=ph.wsq._stringToArrayBuffer(dText);
           meta.size=results[i].byteLength;
           blobHeader.totalLength+=meta.size;
           continue;
@@ -179,18 +229,18 @@ if(typeof ph == "undefined"){
           results[this._i]=e.target.result;
           blobHeader.count++;
           if(blobHeader.count===data.length){//複数のblobを全て読みきったら
-            ph.wsq._sendBinMessage(header,blobHeader,results,con);
+            ph.wsq._sendBlobMessage(header,blobHeader,results,con);
           }
         }
         fr.readAsArrayBuffer(d);
       }
       if(blobHeader.count===data.length){//Blobは無かった
-        ph.wsq._sendBinMessage(header,blobHeader,results,con);
+        ph.wsq._sendBlobMessage(header,blobHeader,results,con);
       }
     },
-    _sendBinMessage:function(header,blobHeader,data,con){
+    _sendBlobMessage:function(header,blobHeader,data,con){
       var blobHeaderText=ph.JSON.stringify(blobHeader);
-      var blobHeaderBuf=jz.utils.stringToArrayBuffer(blobHeaderText);
+      var blobHeaderBuf=ph.wsq._stringToArrayBuffer(blobHeaderText);
       header.dataType='blobMessage';
       header.blobHeaderLength=blobHeaderBuf.byteLength;
 
@@ -209,11 +259,11 @@ if(typeof ph == "undefined"){
       }else{
         blobHeader.isGz=false;
       }
-      var BlobBuilder = window.MozBlobBuilder || window.WebKitBlobBuilder;
-      var bb=new BlobBuilder();
+//      var BlobBuilder = window.MozBlobBuilder || window.WebKitBlobBuilder;
+      var bb=ph.wsq._createBlobBuilder();
       var headerLenBuf=new ArrayBuffer(4);
       var headerText=ph.JSON.stringify(header);
-      var headerBuf=jz.utils.stringToArrayBuffer(headerText);
+      var headerBuf=ph.wsq._stringToArrayBuffer(headerText);
       /* header長 bigEndianにして代入 */
       var headerLenArray=new Uint8Array(headerLenBuf);
       var wkLen=headerBuf.byteLength;
@@ -262,7 +312,7 @@ if(typeof ph == "undefined"){
     if(typeof msg.data==='string'){
       con._onMessageText(msg.data);
     }else if(msg.data instanceof Blob){
-      con._onMessageBin(msg.data);
+      con._onMessageBlob(msg.data);
     }
   };
   wsq._Connection.prototype._openWebSocket=function(){
@@ -287,8 +337,8 @@ if(typeof ph == "undefined"){
     //異常
     this.stat=ph.wsq.STAT_CLOSE;
   };
-  wsq._Connection.prototype._onXhrMessage=function(event){
-    this._onMessageText(event.data);
+  wsq._Connection.prototype._onXhrMessage=function(data){
+    this._onMessageText(data);
   };
   wsq._Connection.prototype._openXhr=function(){
     ph.log('Queue Xhr start');
@@ -297,7 +347,7 @@ if(typeof ph == "undefined"){
     this._xhrFrame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' +
 //    this.xhrFrame=ph.jQuery('<iframe name="' +
       this._xhrFrameName + 
-      '" onload=\'ph.wsq._xhrLoad(this.name);\' src="' + 
+      '" onload=\'ph.wsq._xhrLoad(this.url);\' src="' + 
       this.url + ph.wsq._XHR_FRAME_URL +
       '"></iframe>');
     ph.jQuery("body").append(this._xhrFrame);
@@ -358,7 +408,7 @@ if(typeof ph == "undefined"){
       this._onMessage(message[i]);
     }
   };
-  wsq._Connection.prototype._onMessageBin=function(blob){
+  wsq._Connection.prototype._onMessageBlob=function(blob){
     var con=this;
     var header;
     var offset=0;
@@ -374,7 +424,7 @@ if(typeof ph == "undefined"){
             headerLength+=u8array[i];
           }
           ph.log('headerLength:'+headerLength);
-          var headerBlob=blob.webkitSlice(offset,offset+headerLength);
+          var headerBlob=wsq._blobSlice(blob,offset,offset+headerLength);
           offset+=headerLength;
           mode=2;
           fr.readAsText(headerBlob);
@@ -382,7 +432,7 @@ if(typeof ph == "undefined"){
         case 2:
           ph.log('header:'+e.target.result);
           header=ph.JSON.parse(e.target.result);
-          var blobHeaderBlob=blob.webkitSlice(offset,offset+header.blobHeaderLength);
+          var blobHeaderBlob=wsq._blobSlice(blob,offset,offset+header.blobHeaderLength);
           offset+=header.blobHeaderLength;
           mode=3;
           fr.readAsText(blobHeaderBlob);
@@ -395,7 +445,8 @@ if(typeof ph == "undefined"){
           message.blobData=[];
           for(var i=0;i<metas.length;i++){
             var meta=metas[i];
-            meta.data=blob.webkitSlice(offset,offset+meta.size,meta.mimeType);
+            meta.data=wsq._blobSlice(blob,offset,offset+meta.size,meta.mimeType);
+            meta.jsType='Blob';
             message.blobData[i]=meta;
             offset+=meta.size;
           }
@@ -405,10 +456,8 @@ if(typeof ph == "undefined"){
       }
     }
     offset=4;
-    var headerLengthBlob=blob.webkitSlice(0,offset);
+    var headerLengthBlob=wsq._blobSlice(blob,0,offset);
     fr.readAsArrayBuffer(headerLengthBlob);
-//TODO
-//    this._onMessage(message);
   };
   wsq._Connection.prototype._callback=function(cbType,cause,message,isFin,qname,subId){
     this.cbType=cbType;
@@ -544,7 +593,7 @@ if(typeof ph == "undefined"){
       header.message=message;
       this._send(header);
     }else{
-      if(!this._ws){
+      if(!this.isWs){
         this._callback(ph.wsq.CB_ERROR,'publish binary','unsuppoert publish need WebSocket',false,qname,subId);
         return;
       }

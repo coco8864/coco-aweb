@@ -160,7 +160,7 @@ public class WsqManager {
 		if(wsq.subscribe(from)==false){
 			return false;
 		}
-		wsq.setHandler(from, handler);
+		wsq.setHandler(from,null,handler);
 		return true;
 	}
 	
@@ -173,12 +173,12 @@ public class WsqManager {
 		return wsq.getMessage(from);
 	}
 	
-	public boolean setHandler(WsqPeer from,WsqHandler handler){
+	public boolean setHandler(WsqPeer from,WsqHandler orgHandler,WsqHandler handler){
 		Wsq wsq=getWsqFromPeer(from);
 		if(wsq==null){
 			return false;
 		}
-		if(wsq.setHandler(from, handler)==false){
+		if(wsq.setHandler(from,orgHandler,handler)==false){
 			return false;
 		}
 		return true;

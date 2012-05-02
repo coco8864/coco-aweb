@@ -362,7 +362,6 @@ public class WsHybiFrame {
 	}
 	
 	private boolean parseLength(ByteBuffer buffer){
-		int remain=buffer.remaining();
 		if(rawLen<0x7E){
 			payloadLength=(int)rawLen;
 		}else if(rawLen==0x7E){
