@@ -62,12 +62,14 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 		String qname=msg.getString("qname");
 		String subId=msg.optString("subId",null);
 		boolean isAllowBlob=msg.optBoolean("isAllowBlob", false);
-		WsqPeer from=WsqPeer.create(authSession,srcPath,qname,subId,isWs);
+		WsqPeer from=WsqPeer.create(authSession,srcPath,qname,subId,isAllowBlob);
 		if( wsqManager.subscribe(from, this) ){
 			if(!wsqSession.reg(from)){
-				logger.warn("aleady in session.",new Exception());
+				logger.debug("subscribe aleady in session.");
 				from.unref();
 			}
+			JSON res=WsqManager.makeMessage(WsqManager.CB_TYPE_INFO,qname,subId,"subscribe","subscribed");
+			ress.add(res);
 		}else{
 			JSON res=WsqManager.makeMessage(WsqManager.CB_TYPE_ERROR,qname,subId,"subscribe","not found qname:"+qname);
 			ress.add(res);
@@ -245,9 +247,15 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 	}
 	@Override
 	public void onMessage(CacheBuffer message) {
-		//metaまでは、msg[0]にある事を前提 TODO 改善要
+		//onMessageにバイナリを送ってくるのは、publishしかない
 		BlobEnvelope envelope=BlobEnvelope.parse(message);
 		JSONObject header=envelope.getHeader();
+		String type=header.getString("type");
+		if(!"publish".equals(type)){
+			logger.error("onMessage CacheBuffer type:"+type);
+			envelope.unref();
+			return;
+		}
 		String qname=header.getString("qname");
 		String subId=header.optString("subId",null);
 		WsqPeer from=WsqPeer.create(authSession,srcPath,qname,subId,isWs);

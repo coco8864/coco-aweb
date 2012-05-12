@@ -17,10 +17,35 @@
     _XHR_FRAME_NAME_PREFIX:'__wsq_',
     _XHR_FRAME_URL:'/xhrFrame.html',
     _RETRY_COUNT:3,
+    _APPID_PREFIX:'appid.',
     _isBlobMessage:true,/* Blobメッセージを使うか否か */
     _isGz:false,/* Blobメッセージにgzipを使うか否か */
+    _loadFromSS:function(appId){
+      var peersText=sessionStorage[this._APPID_PREFIX+appId];
+      if(!peersText){
+        return {};
+      }
+      return ph.JSON.parse(peersText);
+    },
+    _saveToSS:function(appId,peers){
+      var peersText=ph.JSON.stringify(peers);
+      sessionStorage[this._APPID_PREFIX+appId]=peersText;
+    },
+    _addToSS:function(appId,msg){
+      var peers=this._loadFromSS(appId);
+      peers[msg.qname+'@'+msg.subId]=msg;
+      this._saveToSS(appId,peers);
+    },
+    _removeFromSS:function(appId,msg){
+      var peers=this._loadFromSS(appId);
+      delete peers[msg.qname+'@'+msg.subId];
+      this._saveToSS(appId,peers);
+    },
     _createBlobBuilder:function(){
-      var BlobBuilder = window.MozBlobBuilder || window.WebKitBlobBuilder
+      var BlobBuilder = window.MozBlobBuilder || window.WebKitBlobBuilder;
+      if(!BlobBuilder){
+        return null;
+      }
       return new BlobBuilder();
     },
     _blobSlice:function(blob,startingByte,endindByte){
@@ -81,6 +106,7 @@
       this.subId='';
 
       /* 内部制御情報 */
+      this._isAllowBlob=this.isWs;//TODO check File Api too BlobBuilder...
       this._cb=cb;
       this._appId=null;//not authrize yet
       this._errCount=0;/* 連続してerrorになった数 */
@@ -365,7 +391,6 @@
       }
       var cb=callbacks[msg.subId]
       if(!cb){//serverからsubscribeした覚えがないsubIdにmessageが来た
-        this._unSubscribeMsgs.push(msg);
 //まだsubscribeされていない可能性あり、msgをqueueする
         this._unSubscribeMsgs.push(msg);
 //        this._callback(ph.wsq.CB_ERROR,'server',msg.message,false,msg.qname,msg.subId);
@@ -375,11 +400,18 @@
       cb(msg.message,this);
       return;
     }else if(msg.type==ph.wsq.CB_ERROR && msg.cause=='subscribe'){//subscribe失敗
+      //TODO msg.qname,msg.subId=>session strageから削除
+      ph.wsq._removeFromSS(this._appId,{type:'subscribe',qname:msg.qname,subId:msg.subId,isAllowBlob:this._isAllowBlob});
       var callbacks=this._subscribes[msg.qname];
       if(callbacks){
         delete callbacks[msg.subId];
       }
+    }else if(msg.type==ph.wsq.CB_INFO && msg.cause=='subscribe'){//subscribe成功
+      //TODO msg.qname,msg.subId=>session strageに保存
+      ph.wsq._addToSS(this._appId,{type:'subscribe',qname:msg.qname,subId:msg.subId,isAllowBlob:this._isAllowBlob});
     }else if(msg.type==ph.wsq.CB_INFO && msg.cause=='unsubscribe'){//正常にunsubscribe
+      //TODO msg.qname,msg.subId=>session strageから削除
+      ph.wsq._removeFromSS(this._appId,{type:'subscribe',qname:msg.qname,subId:msg.subId,isAllowBlob:this._isAllowBlob});
       var callbacks=this._subscribes[msg.qname];
       if(callbacks){
         delete callbacks[msg.subId];
@@ -484,6 +516,11 @@
       if(!this._isOpenCallback){
         this._isOpenCallback=true;
         this._callback(ph.wsq.CB_INFO,'open','opened',false);
+//TODO session Strageからpeerを読み出し
+        var peers=ph.wsq._loadFromSS(this._appId);
+        for(var key in peers){
+          this._send(peers[key]);
+        }
       }
       var msgs=this._collectMsgs();
       if(msgs){
@@ -543,7 +580,7 @@
       this._subscribes[qname]=callbacks;
     }
     callbacks[subId]=onMessageCb;
-    var sendData={type:'subscribe',qname:qname,subId:subId};
+    var sendData={type:'subscribe',qname:qname,subId:subId,isAllowBlob:this._isAllowBlob};
     this._send(sendData);
     /* 既に到着しているmessageがあるかも知れない */
     if(this._unSubscribeMsgs.length!=0){
@@ -593,7 +630,7 @@
       header.message=message;
       this._send(header);
     }else{
-      if(!this.isWs){
+      if(!this._isAllowBlob){
         this._callback(ph.wsq.CB_ERROR,'publish binary','unsuppoert publish need WebSocket',false,qname,subId);
         return;
       }

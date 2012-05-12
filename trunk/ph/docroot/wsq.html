@@ -33,6 +33,8 @@
 <input type="button" value="deploy" onclick="wsq.deploy('test','naru.aweb.wsq.SampleWsqlet');"/>
 <input type="button" value="subscribe dump" onclick="wsq.subscribe('test',function(x){ph.log('++subscribe d cb++');ph.dump(x);ph.log('--subscribe d cb--');});"/>
 <input type="button" value="subscribe dump1" onclick="wsq.subscribe('test',function(x){ph.log('++subscribe d1 cb++');ph.dump1(x);ph.log('--subscribe d1 cb--');});"/>
+<input type="button" value="unsubscribe" onclick="wsq.unsubscribe('test');"/>
+
 <input type="button" value="publish string" onclick="wsq.publish('test','testAAA');"/>
 <input type="button" value="publish object" onclick="wsq.publish('test',{aaa:'testBBB'});"/>
 <input type="button" value="publish bin" onclick="wsq.publish('test',{aaa:'testCCC',blobData:[{data:'aaaa'},{data:'bbbbb'}]});"/>
