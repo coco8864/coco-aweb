@@ -26,14 +26,14 @@ function onMessageFunc(event){
 }
 
 function objFromParent(msg){
-  if(msg.type==='xhrSubscribe'){
-    msg.type='subscribe';
-    subscribes[msg.qname + '@'+msg.subId]=msg;
-  }else if(msg.type==='xhrUnsubscribe'){
+  if(msg.type==='xhrUnsubscribe'){
     if(subscribes[msg.qname + '@'+msg.subId]){
       delete subscribes[msg.qname + '@'+msg.subId];
     }
   }else{
+    if(msg.type==='subscribe'){
+      subscribes[msg.qname + '@'+msg.subId]=msg;
+    }
     msgs.push(msg);
   }
 }

@@ -402,6 +402,9 @@
     }else if(msg.type==ph.wsq.CB_ERROR && msg.cause=='subscribe'){//subscribe失敗
       //TODO msg.qname,msg.subId=>session strageから削除
       ph.wsq._removeFromSS(this._appId,{type:'subscribe',qname:msg.qname,subId:msg.subId,isAllowBlob:this._isAllowBlob});
+      if(!this.isWs){//xhrの場合frameに覚えているsubscribe情報をクリア
+        this._send({type:'xhrUnsubscribe',qname:msg.qname,subId:msg.subId});
+      }
       var callbacks=this._subscribes[msg.qname];
       if(callbacks){
         delete callbacks[msg.subId];
@@ -412,6 +415,9 @@
     }else if(msg.type==ph.wsq.CB_INFO && msg.cause=='unsubscribe'){//正常にunsubscribe
       //TODO msg.qname,msg.subId=>session strageから削除
       ph.wsq._removeFromSS(this._appId,{type:'subscribe',qname:msg.qname,subId:msg.subId,isAllowBlob:this._isAllowBlob});
+      if(!this.isWs){//xhrの場合frameに覚えているsubscribe情報をクリア
+        this._send({type:'xhrUnsubscribe',qname:msg.qname,subId:msg.subId});
+      }
       var callbacks=this._subscribes[msg.qname];
       if(callbacks){
         delete callbacks[msg.subId];
