@@ -357,7 +357,7 @@
   /* Xhr */
   wsq._Connection.prototype._onXhrOpen=function(){//frameからの初期化messageが来たら呼び出される
     this.stat=ph.wsq.STAT_CONNECT;/* connect */
-    con._onTimer();
+    this._onTimer();
   };
   wsq._Connection.prototype._onXhrLoad=function(){//frameのonloadから呼び出される。openが呼び出されていない場合error
     if(this.stat==ph.wsq.STAT_CONNECT){
