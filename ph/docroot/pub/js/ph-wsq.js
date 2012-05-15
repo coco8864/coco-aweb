@@ -156,6 +156,7 @@
       con.stat=this.STAT_IDLE;/* idle */
       con._openCount++;
       con._appId=auth.appId;
+      con._onTimer();
     },
     //timerハンドラ
     _onTimer:function(){
@@ -324,6 +325,7 @@
   wsq._Connection.prototype._onWsOpen=function(){
     var con=this._connection;
     con.stat=ph.wsq.STAT_CONNECT;/* connect */
+    con._onTimer();
   };
   wsq._Connection.prototype._onWsClose=function(){
     var con=this._connection;
@@ -355,6 +357,7 @@
   /* Xhr */
   wsq._Connection.prototype._onXhrOpen=function(){//frameからの初期化messageが来たら呼び出される
     this.stat=ph.wsq.STAT_CONNECT;/* connect */
+    con._onTimer();
   };
   wsq._Connection.prototype._onXhrLoad=function(){//frameのonloadから呼び出される。openが呼び出されていない場合error
     if(this.stat==ph.wsq.STAT_CONNECT){
@@ -410,7 +413,7 @@
         delete callbacks[msg.subId];
       }
     }else if(msg.type==ph.wsq.CB_INFO && msg.cause=='subscribe'){//subscribe成功
-      //TODO msg.qname,msg.subId=>session strageに保存
+      //TODO msg.qname,msg.subId=>session strageに保存,subscribeの復帰は来ない
       ph.wsq._addToSS(this._appId,{type:'subscribe',qname:msg.qname,subId:msg.subId,isAllowBlob:this._isAllowBlob});
     }else if(msg.type==ph.wsq.CB_INFO && msg.cause=='unsubscribe'){//正常にunsubscribe
       //TODO msg.qname,msg.subId=>session strageから削除
@@ -587,6 +590,7 @@
     }
     callbacks[subId]=onMessageCb;
     var sendData={type:'subscribe',qname:qname,subId:subId,isAllowBlob:this._isAllowBlob};
+    ph.wsq._addToSS(this._appId,sendData);
     this._send(sendData);
     /* 既に到着しているmessageがあるかも知れない */
     if(this._unSubscribeMsgs.length!=0){
