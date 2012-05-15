@@ -68,8 +68,10 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 				logger.debug("subscribe aleady in session.");
 				from.unref();
 			}
+			/*
 			JSON res=WsqManager.makeMessage(WsqManager.CB_TYPE_INFO,qname,subId,"subscribe","subscribed");
 			ress.add(res);
+			*/
 		}else{
 			JSON res=WsqManager.makeMessage(WsqManager.CB_TYPE_ERROR,qname,subId,"subscribe","not found qname:"+qname);
 			ress.add(res);
@@ -322,7 +324,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 		isMsgBlock=false;
 		isResponse=false;
 		processMessages(json,responseObjs);//HTTP‚Åˆ—‚µ‚Ä‚¢‚é
-		wsqSession.collectMessage(wsqManager,responseObjs);
+		//wsqSession.collectMessage(wsqManager,responseObjs);
 		if(responseObjs.size()>0){
 			wsqSession.setHandler(wsqManager,this,null);
 			isMsgBlock=true;
