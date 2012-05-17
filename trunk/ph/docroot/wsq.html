@@ -43,7 +43,7 @@
 <div>
 <ul>
 <li><a href="javascript:(function(){var selected=0,url={};url.before='http://www.google.com/search?q=';url.after='&foo=bar';traceFrames(window);if(!selected){var q=prompt('please input text.');if(q){openWindow(q);}}function traceFrames(w){getSelectedText(w);var flen=w.frames.length;for(var i=0;i<flen;i++){traceFrames(w[i]);}}function getSelectedText(w){var t;try{t=w.getSelection().toString();}catch(e){return;}if(t){openWindow(t);}else{var tias=getTextInputAreas(w);for(var i=0;i<tias.length;i++){var tia=tias[i];var s=tia.selectionStart;var e=tia.selectionEnd;if(s!=e){openWindow(tia.value.substr(s,e-s));}}}}function openWindow(q){selected++;var u=url.before+q+url.after;alert(u);/*window.open(u,'_blank');*/}function getTextInputAreas(w){var elms=w.document.getElementsByTagName('*');var tias=[];for(var i=0,e;e=elms[i];i++){var tag=e.tagName.toLowerCase();if(tag=='textarea'){tias[tias.length]=e;}else if(tag=='input'){var ty=e.type.toLowerCase();if (!ty||ty=='text') {tias[tias.length]=e;}}}return tias;}})();">test</a></li>
-<li><a href="javascript:(function(){var%20url='http://localhost:1280/pub/js/ph-loader.js?bk=bk&include=ph-auth.js,ph-wsq.js,jsziptools.min.js,bk.js';var%20d=document;var%20e=d.createElement('script');e.src=url;d.getElementsByTagName('head')[0].appendChild(e);})();">bk</a></li>
+<li><a href="javascript:(function(){var%20url='http://localhost:1280/pub/js/ph-loader.js?bk=bk&include=ph-auth.js,ph-wsq.js,bk.js';var%20d=document;var%20e=d.createElement('script');e.src=url;d.getElementsByTagName('head')[0].appendChild(e);})();">bk</a></li>
 </ul>
 </div>
 
