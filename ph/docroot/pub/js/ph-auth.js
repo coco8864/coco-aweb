@@ -116,7 +116,8 @@ window.ph.auth={
     var origin=encodeURIComponent(location.protocol+'//'+location.host);
     this._url=url;
     this._reqestCb=cb;
-    window[this._authFrameName].location.href=url;
+//    window[this._authFrameName].location.href=url;
+    ph.auth._frame[0].src=url;
   },
   _reqestCallback:function(){
     var reqestCb=ph.auth._reqestCb;
@@ -127,6 +128,7 @@ window.ph.auth={
     reqestCb(res);
   },
   _frameLoad:function(x){
+alert('ph-auth _frameLoad res:' + ph.auth._res +' cb:' + ph.auth._reqestCb +' url:' +ph.auth._url);
     ph.log('_frameLoad:'+(new Date()).getTime());
     if(ph.auth._res){
       ph.auth._reqestCallback();
@@ -161,7 +163,10 @@ ph.jQuery(function(){
   }else if(window.attachEvent){
     window.attachEvent('onmessage',ph.auth._onMessage);
   }
-  ph.jQuery("body").append('<iframe width="0" height="0" frameborder="no" name="' + ph.auth._authFrameName + '" onload=\'ph.auth._frameLoad(this);\'></iframe>');
+//  ph.auth._frame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' + ph.auth._authFrameName + '" onload=\'ph.auth._frameLoad(this);\'></iframe>');
+  ph.auth._frame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' + ph.auth._authFrameName + '" ></iframe>');
+  ph.auth._frame.load(function(x){ph.auth._frameLoad(x);});
+  ph.jQuery("body").append(ph.auth._frame);
 });
 
 })();

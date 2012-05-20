@@ -175,6 +175,7 @@
 //      return this._connections[url];
 //    },
     _xhrLoad:function(url){//xhr会話用のframeがloadされたら呼び出される
+      alert('ph-wsq _xhrLoad:' + url);
       var con=this._connections[url];
       if(!con){
         //異常ありえない
@@ -360,7 +361,11 @@
     this._onTimer();
   };
   wsq._Connection.prototype._onXhrLoad=function(){//frameのonloadから呼び出される。openが呼び出されていない場合error
-    if(this.stat==ph.wsq.STAT_CONNECT){
+alert('ph-wsq stat:' +this.stat);
+    if(this.stat===ph.wsq.STAT_IDEL){
+      this.stat=ph.wsq.STAT_OPEN;
+      return;//正常
+    }else if(this.stat===ph.wsq.STAT_CONNECT){
       return;//正常
     }
     //異常
@@ -371,14 +376,17 @@
   };
   wsq._Connection.prototype._openXhr=function(){
     ph.log('Queue Xhr start');
-    this.stat=ph.wsq.STAT_OPEN;/* wsOpen */
+//  this.stat=ph.wsq.STAT_OPEN;/* wsOpen */
     this._xhrFrameName=ph.wsq._XHR_FRAME_NAME_PREFIX + this.url;
     this._xhrFrame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' +
 //    this.xhrFrame=ph.jQuery('<iframe name="' +
       this._xhrFrameName + 
-      '" onload=\'ph.wsq._xhrLoad(this.url);\' src="' + 
+//    '" onload=\'ph.wsq._xhrLoad(this.url);\' src="' + 
+    '" src="' + 
       this.url + ph.wsq._XHR_FRAME_URL +
       '"></iframe>');
+    var url=this.url;
+    this._xhrFrame.load(function(x){ph.wsq._xhrLoad(url);});
     ph.jQuery("body").append(this._xhrFrame);
   };
   /*message 処理*/
