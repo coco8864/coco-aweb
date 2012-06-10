@@ -617,7 +617,7 @@
   wsq._Connection.prototype.unsubscribe=function(qname,subId){
     var callbacks=this._subscribes[qname];
     if(!callbacks){
-      this._callback(ph.wsq.CB_ERROR,'unsubscribe','unkown qname',false,qname,subId);
+//    this._callback(ph.wsq.CB_ERROR,'unsubscribe','unkown qname',false,qname,subId);
       return;
     }
     if(!subId){
