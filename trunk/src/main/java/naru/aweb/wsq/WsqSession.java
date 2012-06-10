@@ -57,7 +57,7 @@ public class WsqSession {
 		return result;
 	}
 	
-	public synchronized List<WsqPeer> unregs(WsqHandler handler){
+	public synchronized List<WsqPeer> unregs(){
 		List<WsqPeer> result=new ArrayList<WsqPeer>(peers);
 		peers.clear();
 		qnamePeerMap.clear();
