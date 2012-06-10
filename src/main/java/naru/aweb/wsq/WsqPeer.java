@@ -12,6 +12,7 @@ public class WsqPeer extends PoolBase{
 	private String srcPath;
 	private String qname;
 	private String authId;
+	private String pageId;//openŒÄ‚Ño‚µ–ˆ‚ÉÌ”Ô
 	private String subId;
 	private String userId;
 	private List<String> roles;

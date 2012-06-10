@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class WsqSession {
+	//qname -> subid
 	private Map<String,Map<String,WsqPeer>> qnamePeerMap=new HashMap<String,Map<String,WsqPeer>>();
 	private Set<WsqPeer> peers=new HashSet<WsqPeer>();
 	
