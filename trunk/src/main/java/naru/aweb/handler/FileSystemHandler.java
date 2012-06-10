@@ -344,6 +344,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		super.onTimeout(userContext);
 	}
 
+	/*
 	public void onFinished() {
 		logger.debug("#finished.cid:" + getChannelId());
 		if (asyncFile != null) {
@@ -352,6 +353,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		}
 		super.onFinished();
 	}
+	*/
 
 	/* asyncFileからのダウンロード */
 	private CacheBuffer asyncFile;
@@ -371,18 +373,19 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 
 	public void onBufferEnd(Object userContext) {
 		responseEnd();
-		if(asyncFile!=null){
-			asyncFile.close();
-			asyncFile = null;
-		}
 	}
 
 	public void onBufferFailure(Object userContext, Throwable failure) {
 		logger.error("onGotFailure error.", failure);
 		responseEnd();
+	}
+
+	@Override
+	public void recycle() {
 		if(asyncFile!=null){
 			asyncFile.close();
 			asyncFile = null;
 		}
+		super.recycle();
 	}
 }

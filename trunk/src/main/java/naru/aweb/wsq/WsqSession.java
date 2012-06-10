@@ -42,10 +42,10 @@ public class WsqSession {
 	
 	public synchronized List<WsqPeer> unregs(String qname){
 		Map<String,WsqPeer> subscribePeers=qnamePeerMap.get(qname);
-		List<WsqPeer> result=new ArrayList<WsqPeer>();
 		if(subscribePeers==null){
 			return null;
 		}
+		List<WsqPeer> result=new ArrayList<WsqPeer>();
 		Iterator<String> itr=subscribePeers.keySet().iterator();
 		while(itr.hasNext()){
 			String subscribeId=itr.next();
@@ -57,7 +57,7 @@ public class WsqSession {
 		return result;
 	}
 	
-	public synchronized List<WsqPeer> unregs(){
+	public synchronized List<WsqPeer> unregs(WsqHandler handler){
 		List<WsqPeer> result=new ArrayList<WsqPeer>(peers);
 		peers.clear();
 		qnamePeerMap.clear();

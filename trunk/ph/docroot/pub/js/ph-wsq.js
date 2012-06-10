@@ -175,7 +175,7 @@
 //      return this._connections[url];
 //    },
     _xhrLoad:function(url){//xhr会話用のframeがloadされたら呼び出される
-      alert('ph-wsq _xhrLoad:' + url);
+//      alert('ph-wsq _xhrLoad:' + url);
       var con=this._connections[url];
       if(!con){
         //異常ありえない
@@ -361,7 +361,7 @@
     this._onTimer();
   };
   wsq._Connection.prototype._onXhrLoad=function(){//frameのonloadから呼び出される。openが呼び出されていない場合error
-alert('ph-wsq stat:' +this.stat);
+//alert('ph-wsq stat:' +this.stat);
     if(this.stat===ph.wsq.STAT_IDEL){
       this.stat=ph.wsq.STAT_OPEN;
       return;//正常
