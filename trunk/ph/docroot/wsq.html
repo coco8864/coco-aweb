@@ -30,6 +30,7 @@
 <ul>
 <input type="button" value="auth.info" onclick="ph.auth.info(null,function(x){ph.log('++auth.info cb++');ph.dump(x);ph.log('--auth.info cb--');window.wsq=x;});"/>
 <input type="button" value="open" onclick="ph.wsq.open('ws://127.0.0.1:1280/wsq',function(x){ph.log('++open cb++');ph.dump1(x);ph.log('--open cb--');window.wsq=x;});"/>
+<input type="button" value="close" onclick="wsq.close();"/>
 <input type="button" value="deploy" onclick="wsq.deploy('test','naru.aweb.wsq.SampleWsqlet');"/>
 <input type="button" value="subscribe dump" onclick="wsq.subscribe('test',function(x){ph.log('++subscribe d cb++');ph.dump(x);ph.log('--subscribe d cb--');});"/>
 <input type="button" value="subscribe dump1" onclick="wsq.subscribe('test',function(x){ph.log('++subscribe d1 cb++');ph.dump1(x);ph.log('--subscribe d1 cb--');});"/>

@@ -533,7 +533,7 @@
       if(!this._isOpenCallback){
         this._isOpenCallback=true;
         this._callback(ph.wsq.CB_INFO,'open','opened',false);
-//TODO session Strageからpeerを読み出し
+        //最初にconnectする際には、subscribe中のpeerをサーバに通知する
         var peers=ph.wsq._loadFromSS(this._appId);
         for(var key in peers){
           this._send(peers[key]);
@@ -581,7 +581,11 @@
       return;
     }
     this._isCloseRequest=true;
-    this._send({type:'close'});
+    var peers=ph.wsq._loadFromSS(this._appId);
+    for(var key in peers){
+      var peer=peers[key];
+      this.unsubscribe(peer.qname,peer.subId);
+    }
   };
   wsq._Connection.prototype.subscribe=function(qname,onMessageCb,subId){
     if(this.stat!=ph.wsq.STAT_CONNECT){
