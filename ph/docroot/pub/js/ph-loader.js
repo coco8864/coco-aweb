@@ -19,7 +19,7 @@ window.ph={
  adminUrl:'$esc.javascript(${config.adminUrl})',
  publicWebUrl:'$esc.javascript(${config.publicWebUrl})',
  scriptBase:'',
- scripts:['jquery-1.5.1.min.js','ph-jqnoconflict.js','ph-json2.js'],
+ scripts:['jquery-1.5.1.min.js','ph-jqnoconflict.js','ph-json2.js','ph-auth.js','ph-wsq.js'],
  isUseWebSocket:false,//WebSocketを使うか否か?
  isUseSessionStorage:false,//SessionStorageを使うか否か?
  isUseCrossDomain:false,//iframeを使ったクロスドメイン通信を使うか否か?

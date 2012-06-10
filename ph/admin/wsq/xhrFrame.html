@@ -63,6 +63,9 @@ function xhrRequest(isUnload){
       msgs.unshift(subscribes[key]);
     }
   }
+  if(msgs.length==0){
+    return;//何もメッセージがなければsubscribeもない,送信の必要なし
+  }
   var jsonText=ph.JSON.stringify(msgs);
   msgs=[];
   ph.jQuery.ajax({

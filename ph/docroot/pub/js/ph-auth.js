@@ -128,7 +128,7 @@ window.ph.auth={
     reqestCb(res);
   },
   _frameLoad:function(x){
-alert('ph-auth _frameLoad res:' + ph.auth._res +' cb:' + ph.auth._reqestCb +' url:' +ph.auth._url);
+//alert('ph-auth _frameLoad res:' + ph.auth._res +' cb:' + ph.auth._reqestCb +' url:' +ph.auth._url);
     ph.log('_frameLoad:'+(new Date()).getTime());
     if(ph.auth._res){
       ph.auth._reqestCallback();
