@@ -184,6 +184,7 @@
       con._onXhrLoad();
     },
     _xhrOnMessage:function(event){
+      alert("_xhrOnMessage:"+event.data);
 //TODO originチェック
 //      var frameName=event.source.name;
 //      if( !frameName || frameName.lastIndexOf(ph.wsq._XHR_FRAME_NAME_PREFIX, 0) != 0 ){
@@ -319,7 +320,13 @@
     if(this.isWs){
       this._ws.send(jsonText);
     }else{
-      window.frames[this._xhrFrameName].postMessage(jsonText,"*");//TODO origin
+//      alert(this._xhrFrameName +':' +window.frames[this._xhrFrameName].postMessage);
+//      window.frames[this._xhrFrameName].postMessage(jsonText,"*");//TODO origin
+      alert(this._xhrFrameName +':x:' +this._xhrFrame[0].contentWindow.postMessage);
+      this._xhrFrame[0].contentWindow.postMessage(jsonText,"*");//TODO origin
+//contentWindow
+
+
     }
   };
   /* WebSocket */
@@ -585,6 +592,13 @@
     for(var key in peers){
       var peer=peers[key];
       this.unsubscribe(peer.qname,peer.subId);
+    }
+    if(this.isWs){
+      this._ws.close();
+      this._ws=null;
+    }else{
+      this._xhrFrame.remove();
+      this._xhrFrame=null;
     }
   };
   wsq._Connection.prototype.subscribe=function(qname,onMessageCb,subId){

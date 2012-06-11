@@ -6,7 +6,8 @@
 <meta http-equiv="Pragma" content="no-cache"> 
 <meta http-equiv="Cache-Control" content="no-cache"> 
 <meta http-equiv="Expires" content="0"> 
-<script type="text/javascript" src="/pub/js/ph-loader.js"></script>
+<script type="text/javascript" src="/pub/js/jquery-1.5.1.min.js"></script>
+<script type="text/javascript" src="/pub/js/ph-json2.js"></script>
 <script  type="text/javascript"><!--
 
 var subscribes={};
@@ -16,8 +17,8 @@ function sendObjToParent(msg){
 }
 function onMessageFunc(event){
   var msg=ph.JSON.parse(event.data);
-alert('onMessageFunc:'+event.data);
-  if(ph.jQuery.isArray(msg)){
+alert('onMessageFunc2:'+event.data);
+  if(jQuery.isArray(msg)){
     for(var i;i<msg.length;i++){
       objFromParent(msg[i]);
     }
@@ -64,11 +65,12 @@ function xhrRequest(isUnload){
     }
   }
   if(msgs.length==0){
+    setTimeout(xhrRequest,INTERVAL);
     return;//何もメッセージがなければsubscribeもない,送信の必要なし
   }
   var jsonText=ph.JSON.stringify(msgs);
   msgs=[];
-  ph.jQuery.ajax({
+  jQuery.ajax({
     type: 'POST',
     url: xhrUrl,
     contentType : 'application/json',
@@ -92,13 +94,13 @@ var INTERVAL=1000;
 var msgs=[];
 var errorCount=0;
 var xhrUrl;
-ph.jQuery(function(){
+jQuery(function(){
   xhrUrl=frameNameToUrl(window.name);
   if(!xhrUrl){
     return;
   }
   //unload時,queueされていたmessageを送信,subscribeは行わないTODO
-  ph.jQuery(window).unload(function(){
+  jQuery(window).unload(function(){
 alert('unload');
     xhrRequest(true);
   });
