@@ -118,13 +118,21 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 		from.unref();
 	}
 	
-	private void close(List ress){
+	private void close(JSONObject msg,List ress){
+		JSONArray subscribes=msg.getJSONArray("subscribes");
 		JSON res=null;
-		List<WsqPeer> peers=wsqSession.unregs();
-		for(WsqPeer peer:peers){
-			wsqManager.unsubscribe(peer);
-			peer.unref();
-			res=WsqManager.makeMessage(WsqManager.CB_TYPE_INFO,peer.getQname(),peer.getSubId(),"unsubscribe","unsubscribed");
+		for(int i=0;i<subscribes.size();i++){
+			JSONObject subcribe=subscribes.getJSONObject(i);
+			String qname=subcribe.getString("qname");
+			String subId=subcribe.getString("subId");
+			WsqPeer peer=wsqSession.unreg(qname, subId);
+			if(peer!=null){
+				wsqManager.unsubscribe(peer);
+				peer.unref();
+				res=WsqManager.makeMessage(WsqManager.CB_TYPE_INFO,qname, subId,"unsubscribe","unsubscribed");
+			}else{
+				res=WsqManager.makeMessage(WsqManager.CB_TYPE_ERROR,qname, subId,"unsubscribe","not subscribed");
+			}
 			ress.add(res);
 		}
 		res=WsqManager.makeMessage(WsqManager.CB_TYPE_INFO,null,null,"close","closed");
@@ -174,7 +182,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 		}else if("publish".equals(type)){
 			publish(msg,ress);
 		}else if("close".equals(type)){
-			close(ress);
+			close(msg,ress);
 		}else if("getQnames".equals(type)){
 			getQnames(ress);
 		}else if("deploy".equals(type)){

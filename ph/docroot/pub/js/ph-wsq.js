@@ -583,10 +583,14 @@
     }
     this._isCloseRequest=true;
     var peers=ph.wsq._loadFromSS(this._appId);
+    var subscribes=[];
     for(var key in peers){
       var peer=peers[key];
-      this.unsubscribe(peer.qname,peer.subId);
+      subscribes.push({qname:peer.qname,subId:peer.subId});
     }
+    var sendData={type:'close',subscribes:subscribes};
+    this._send(sendData);
+/*
     if(this.isWs){
       if(this._ws){
         this._ws.close();
@@ -598,6 +602,7 @@
       }
       this._xhrFrame=null;
     }
+*/
   };
   wsq._Connection.prototype.subscribe=function(qname,onMessageCb,subId){
     if(this.stat!=ph.wsq.STAT_CONNECT){
