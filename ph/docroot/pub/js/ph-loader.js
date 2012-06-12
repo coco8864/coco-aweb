@@ -1,5 +1,6 @@
 (function(){
-var bk='$!esc.javascript(${parameter.getParameter("bk")})';
+var app='$!esc.javascript(${parameter.getParameter("ph")})'!=='ph';//from phantom proxy system
+var bk='$!esc.javascript(${parameter.getParameter("bk")})';//from bookmarklet
 var include='$!esc.javascript(${parameter.getParameter("include")})'.split(',');
 if(window.ph){
  if(bk){
@@ -19,7 +20,8 @@ window.ph={
  adminUrl:'$esc.javascript(${config.adminUrl})',
  publicWebUrl:'$esc.javascript(${config.publicWebUrl})',
  scriptBase:'',
- scripts:['jquery-1.5.1.min.js','ph-jqnoconflict.js','ph-json2.js','ph-auth.js','ph-wsq.js'],
+ scripts:['jquery-1.5.1.min.js','ph-jqnoconflict.js','ph-json2.js'],
+ appScripts:['ph-auth.js','ph-wsq.js'],
  isUseWebSocket:false,//WebSocketを使うか否か?
  isUseSessionStorage:false,//SessionStorageを使うか否か?
  isUseCrossDomain:false,//iframeを使ったクロスドメイン通信を使うか否か?
@@ -256,12 +258,18 @@ if(ph.isSsl){
  ph.scriptBase='http://';
 }
 
+if(app){
+ for(var i=0;i<ph.appScripts.length;i++){
+   ph.scripts.push(ph.appScripts[i]);
+ }
+}
 for(var i=0;i<include.length;i++){
  if(include[i]==''){
   continue;
  }
  ph.scripts.push(include[i]);
 }
+
 ph.scriptBase+=ph.hostHeader +'/pub/js/';
 if(bk){
   ph.loadScript(ph.scripts);

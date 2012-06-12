@@ -99,7 +99,10 @@ window.ph.auth={
   _onMessage:function(ev){
 //ph.log("_onMessage:"+ev.origin +":"+(new Date()).getTime());
 //  ph.dump1(ev);
-    if(ev.source!==window[ph.auth._authFrameName]){
+    if(!ph.auth._frame){
+      return;
+    }
+    if(ev.source!==ph.auth._frame[0].contentWindow){
       return;
     }
     var url=ph.auth._url;
