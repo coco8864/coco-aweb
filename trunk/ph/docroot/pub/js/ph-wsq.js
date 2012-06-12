@@ -167,13 +167,6 @@
       setTimeout(ph.wsq._onTimer,ph.wsq._INTERVAL);
     },
     //xhr関連
-//    _frameNameToConnection:function(frameName){
-//      if( frameName.lastIndexOf(ph.wsq._XHR_FRAME_NAME_PREFIX,0)!=0 ){
-//        return null;
-//      }
-//      var url=frameName.substring(ph.wsq._XHR_FRAME_NAME_PREFIX.length);
-//      return this._connections[url];
-//    },
     _xhrLoad:function(url){//xhr会話用のframeがloadされたら呼び出される
 //      alert('ph-wsq _xhrLoad:' + url);
       var con=this._connections[url];
@@ -184,25 +177,35 @@
       con._onXhrLoad();
     },
     _xhrOnMessage:function(event){
-      alert("_xhrOnMessage:"+event.data);
 //TODO originチェック
+      var con;
+      for(var url in ph.wsq._connections){
+        var tmp=ph.wsq._connections[url];
+        if(!tmp._xhrFrame){
+          continue;
+        }
+        if(event.source===tmp._xhrFrame[0].contentWindow){
+//          alert("!!!!hit!!!!:"+url);
+          con=tmp;
+          break;
+        }
+      }
 //      var frameName=event.source.name;
 //      if( !frameName || frameName.lastIndexOf(ph.wsq._XHR_FRAME_NAME_PREFIX, 0) != 0 ){
 //        return;
 //      }
-      var allData=event.data;
-      var urlPosition=allData.indexOf('@');
-      if(urlPosition<0){
-        return;
-      }
-      var url=allData.substring(0,urlPosition);
-      var data=allData.substring(urlPosition+1);
-//      var con=ph.wsq._frameNameToConnection(frameName);
-      var con=ph.wsq._connections[url];
+//      var allData=event.data;
+//      var urlPosition=allData.indexOf('@');
+//      if(urlPosition<0){
+//        return;
+//      }
+//      var url=allData.substring(0,urlPosition);
+//      var con=ph.wsq._connections[url];
       if(!con){
         //他のイベント
         return;
       }
+      var data=event.data;
       if(!con._isOpenCallback){
         con._onXhrOpen();
       }else{
@@ -320,13 +323,7 @@
     if(this.isWs){
       this._ws.send(jsonText);
     }else{
-//      alert(this._xhrFrameName +':' +window.frames[this._xhrFrameName].postMessage);
-//      window.frames[this._xhrFrameName].postMessage(jsonText,"*");//TODO origin
-      alert(this._xhrFrameName +':x:' +this._xhrFrame[0].contentWindow.postMessage);
       this._xhrFrame[0].contentWindow.postMessage(jsonText,"*");//TODO origin
-//contentWindow
-
-
     }
   };
   /* WebSocket */
@@ -418,7 +415,6 @@
       cb(msg.message,this);
       return;
     }else if(msg.type==ph.wsq.CB_ERROR && msg.cause=='subscribe'){//subscribe失敗
-      //TODO msg.qname,msg.subId=>session strageから削除
       ph.wsq._removeFromSS(this._appId,{type:'subscribe',qname:msg.qname,subId:msg.subId,isAllowBlob:this._isAllowBlob});
       if(!this.isWs){//xhrの場合frameに覚えているsubscribe情報をクリア
         this._send({type:'xhrUnsubscribe',qname:msg.qname,subId:msg.subId});
@@ -428,10 +424,8 @@
         delete callbacks[msg.subId];
       }
     }else if(msg.type==ph.wsq.CB_INFO && msg.cause=='subscribe'){//subscribe成功
-      //TODO msg.qname,msg.subId=>session strageに保存,subscribeの復帰は来ない
       ph.wsq._addToSS(this._appId,{type:'subscribe',qname:msg.qname,subId:msg.subId,isAllowBlob:this._isAllowBlob});
     }else if(msg.type==ph.wsq.CB_INFO && msg.cause=='unsubscribe'){//正常にunsubscribe
-      //TODO msg.qname,msg.subId=>session strageから削除
       ph.wsq._removeFromSS(this._appId,{type:'subscribe',qname:msg.qname,subId:msg.subId,isAllowBlob:this._isAllowBlob});
       if(!this.isWs){//xhrの場合frameに覚えているsubscribe情報をクリア
         this._send({type:'xhrUnsubscribe',qname:msg.qname,subId:msg.subId});
@@ -594,10 +588,14 @@
       this.unsubscribe(peer.qname,peer.subId);
     }
     if(this.isWs){
-      this._ws.close();
+      if(this._ws){
+        this._ws.close();
+      }
       this._ws=null;
     }else{
-      this._xhrFrame.remove();
+      if(this._xhrFrame){
+        this._xhrFrame.remove();
+      }
       this._xhrFrame=null;
     }
   };

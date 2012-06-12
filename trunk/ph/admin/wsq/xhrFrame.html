@@ -6,19 +6,17 @@
 <meta http-equiv="Pragma" content="no-cache"> 
 <meta http-equiv="Cache-Control" content="no-cache"> 
 <meta http-equiv="Expires" content="0"> 
-<script type="text/javascript" src="/pub/js/jquery-1.5.1.min.js"></script>
-<script type="text/javascript" src="/pub/js/ph-json2.js"></script>
+<script type="text/javascript" src="/pub/js/ph-loader.js?ph=ph"></script>
 <script  type="text/javascript"><!--
 
 var subscribes={};
 function sendObjToParent(msg){
   var jsonText=ph.JSON.stringify(msg);
-  parent.postMessage(xhrUrl+'@'+jsonText,'*');
+  parent.postMessage(jsonText,'*');
 }
 function onMessageFunc(event){
   var msg=ph.JSON.parse(event.data);
-alert('onMessageFunc2:'+event.data);
-  if(jQuery.isArray(msg)){
+  if(ph.jQuery.isArray(msg)){
     for(var i;i<msg.length;i++){
       objFromParent(msg[i]);
     }
@@ -43,7 +41,7 @@ function objFromParent(msg){
 function xhrSuccess(text){
   errorCount=0;
   if(text){//受け取ったtextはそのままparentFrameに送信
-    parent.postMessage(xhrUrl+'@'+text,'*');
+    parent.postMessage(text,'*');
   }
   setTimeout(xhrRequest,INTERVAL);
 }
@@ -69,8 +67,9 @@ function xhrRequest(isUnload){
     return;//何もメッセージがなければsubscribeもない,送信の必要なし
   }
   var jsonText=ph.JSON.stringify(msgs);
+//alert('xhrRequest:'+jsonText);
   msgs=[];
-  jQuery.ajax({
+  ph.jQuery.ajax({
     type: 'POST',
     url: xhrUrl,
     contentType : 'application/json',
@@ -94,22 +93,21 @@ var INTERVAL=1000;
 var msgs=[];
 var errorCount=0;
 var xhrUrl;
-jQuery(function(){
+ph.jQuery(function(){
   xhrUrl=frameNameToUrl(window.name);
   if(!xhrUrl){
     return;
   }
   //unload時,queueされていたmessageを送信,subscribeは行わないTODO
-  jQuery(window).unload(function(){
-alert('unload');
+  ph.jQuery(window).unload(function(){
     xhrRequest(true);
   });
-  sendObjToParent({load:true});//loadされた事を親frameに通知
   if(window.addEventListener){
     window.addEventListener('message',onMessageFunc, false);
   }else if(window.attachEvent){
     window.attachEvent('onmessage',onMessageFunc);
   }
+  sendObjToParent({load:true});//loadされた事を親frameに通知
   xhrRequest();
 });
 // --></script>
