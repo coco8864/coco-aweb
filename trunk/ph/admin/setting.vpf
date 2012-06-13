@@ -223,12 +223,11 @@ function setTimeouts(){
 var isShowdebugTab=false;
 function showDebug(){
   if(isShowdebugTab){
-    jQuery("#tabs").tabs( "remove", 8 );
+    jQuery('#debugLi').hide();
     isShowdebugTab=false;
   }else{
-    jQuery("#tabs").tabs( "add" , "/admin/debug.vsf" , "debug" , 8 );
     isShowdebugTab=true;
-    jQuery("#tabs").tabs("select",8);
+    window.location.hash = '#debug';
   }
 }
 

@@ -221,10 +221,13 @@ public class WebServerHandler extends ServerBaseHandler {
 			for (int i = 0; i < buffers.length; i++) {
 				parameterParser.parse(buffers[i]);
 			}
-			PoolManager.poolArrayInstance(buffers);// 配列を返却
 		} catch (IOException e) {// リクエストに誤りがあった場合、IOExceptionが上がってくる
 			logger.warn("fail to parse body", e);
+			//リクエストを全部読んでいるとは限らないためkeepAliveは禁止
+			getKeepAliveContext().setKeepAlive(false);
 			completeResponse("500", "wrong body");
+		}finally{
+			PoolManager.poolArrayInstance(buffers);// 配列を返却
 		}
 	}
 
