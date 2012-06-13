@@ -40,7 +40,9 @@ window.onhashchange = function(){
     jQuery('#tabs').tabs("select", index);
 };
 ph.jQuery(function() {
-	ph.queue.start('/queue',function(){location=ph.publicWebUrl});
+	ph.queue.start('/queue',function(){
+alert('z');
+/*location=ph.publicWebUrl*/});
 	jQuery("#textEditTextArea").resizable({
 		handles: "se"
 	});
@@ -74,7 +76,7 @@ ph.log("tabs ajaxOptions success.index:"+index +":anchor:"+anchor);
 			}
 		},
 		select: function(event, ui) {
-			window.location.hash = '#' + ui.tab.innerHTML;
+			window.location.hash = ui.tab.hash;
 		},
 		selected:0
 	});
@@ -93,19 +95,19 @@ ph.log("tabs ajaxOptions success.index:"+index +":anchor:"+anchor);
 ##roleによってメニューを変えたい場合・ここを調整する
 <div id="tabs"> 
 	<ul>
-		<li><a href="/admin/status.vsf" hash="#status">status</a></li>
-		<li><a href="#setting">setting</a></li>
-		<li><a href="/admin/mapping.vsf">mapping</a></li>
-		<li><a href="/admin/accessLog.vsf">accessLog</a></li>
-		<li><a href="#trace">trace</a></li>
-		<li><a href="/admin/performance.vsf">stress</a></li>
-		<li><a href="/admin/user.vsf">user</a></li>
+		<li><a title="status" href="/admin/status.vsf" hash="#status">status</a></li>
+		<li><a title="setting" href="#setting">setting</a></li>
+		<li><a title="mapping" href="/admin/mapping.vsf">mapping</a></li>
+		<li><a title="accessLog" href="/admin/accessLog.vsf">accessLog</a></li>
+		<li><a title="trace" href="#trace">trace</a></li>
+		<li><a title="stress" href="/admin/performance.vsf">stress</a></li>
+		<li><a title="user" href="/admin/user.vsf">user</a></li>
 #if($!{parameter.getParameter("filter")})
-		<li><a href="/admin/filter.vsf">filter</a></li>
+		<li><a title="filter" href="/admin/filter.vsf">filter</a></li>
 #end
-		<li><a href="/admin/chat.vsf">chat</a></li>
+		<li><a title="chat" href="/admin/chat.vsf">chat</a></li>
 ##if($!{parameter.getParameter("debug")})
-		<li id="debugLi" ><a href="/admin/debug.vsf">debug</a></li>
+		<li id="debugLi" ><a title="debug" href="/admin/debug.vsf">debug</a></li>
 ##end
 	</ul>
 ##初期表示タブ
