@@ -15,6 +15,7 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
+import java.nio.charset.CodingErrorAction;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -224,11 +225,13 @@ public class ParameterParser extends PoolBase{
 			parseType=ParseType.JSON;
 			Charset charset=Charset.forName(encoding);
 			decoder=charset.newDecoder();
+//			decoder.onMalformedInput(CodingErrorAction.IGNORE);
 			textBuffer=CharBuffer.allocate((int)contentLength);
 		}else if(CONTENT_TYPE_TEXT_PREFIX.equals(contentType)){
 			parseType=ParseType.TEXT;
 			Charset charset=Charset.forName(encoding);
 			decoder=charset.newDecoder();
+//			decoder.onMalformedInput(CodingErrorAction.IGNORE);
 			textBuffer=CharBuffer.allocate((int)contentLength);
 		}else{
 			parseType=ParseType.UNSUPPORTED;
@@ -344,9 +347,9 @@ public class ParameterParser extends PoolBase{
 		}
 		CoderResult result=decoder.decode(buffer, textBuffer, endOfInput);
 		PoolManager.poolBufferInstance(buffer);
-		if(result.isError()){
-			result.throwException();
-		}
+//		if(result.isError()){
+//			result.throwException();
+//		}
 		if(!endOfInput){//ë±Ç´Ç™Ç†ÇÈèÍçá
 			return;
 		}

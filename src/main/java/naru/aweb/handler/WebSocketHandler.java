@@ -153,6 +153,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		doHandshake(subprotocol);
 	}
 	
+	//web socket‚Ìhandshake‚ðŽÀŽ{
 	public final boolean doHandshake(String subProtocol){
 		HeaderParser requestHeader=getRequestHeader();
 		wsProtocol.setup(this);
@@ -172,18 +173,26 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	
 	public void onFailure(Object userContext, Throwable t) {
 		logger.debug("#failer.cid:" +getChannelId() +":"+t.getMessage());
-		closeWebSocket("500");
+		if(isWs){
+			closeWebSocket("500");
+		}
 		super.onFailure(userContext, t);
 	}
 
 	public void onReadTimeout(Object userContext) {
 		logger.debug("#readTimeout.cid:" +getChannelId());
-		wsProtocol.onReadTimeout();
+		if(isWs){
+			wsProtocol.onReadTimeout();
+		}else{
+			super.onReadTimeout(userContext);
+		}
 	}
 	
 	public void onTimeout(Object userContext) {
 		logger.debug("#timeout.cid:" +getChannelId());
-		closeWebSocket("500");
+		if(isWs){
+			closeWebSocket("500");
+		}
 		super.onTimeout(userContext);
 	}
 	

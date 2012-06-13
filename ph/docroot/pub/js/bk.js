@@ -1,6 +1,6 @@
 //alert('start:' + location.href);
-setTimeout(
-  function(){
+//setTimeout(
+  (function(){
     ph.wsq.open(
       'ws://127.0.0.1:1280/wsq',
       function(con){
@@ -16,4 +16,5 @@ setTimeout(
         con.close();
       }
     );
-  },100);
+  })();
+//,100);
