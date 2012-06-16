@@ -1,6 +1,7 @@
 <!DOCTYPE html> 
 <html lang="jp"> 
 <head> 
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta charset="UTF-8" /> 
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 	<meta http-equiv="Pragma" content="no-cache"> 
@@ -19,110 +20,117 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 .welcome{ margin: 0.0em 1.0em;font-size: 125.0%;}
 -->
 </style>
-	<script type="text/javascript"> 
-	ph.jQuery(function() {
-		ph.jQuery("#version").text(ph.version);
-		ph.jQuery("#status").text('running');
-		ph.auth.info(null,function(res){
-            if(!res.result){
-              alert('fail to auth.info.'+res.reason);
-              return;
-            }
-			var user=res.user;
-			var allowUrls=res.allowUrls;
-			var len=allowUrls.length;
-			for(var i=0;i<len;i++){
-                if(allowUrls[i].url.lastIndexOf('http',0)!=0){
-                  continue;
-                }
-				var liTag="<li><a href='#' onclick='checkGo(\"" +allowUrls[i].url+ "\")'>"+allowUrls[i].notes+"</a></li>"
-				ph.jQuery("#links").append(liTag);
-			}
-
-			var inout=ph.jQuery("#loginout");
-			if(user.loginId){
-				ph.jQuery("#welcome").text(user.loginId+"さん ようこそ");
-				inout.attr("src","/pub/images/logout.gif");
-				inout.attr("title","logout");
-				inout.unbind();
-				inout.bind("click",function(){location=ph.authUrl+'/logout';});
-
-				var liTag="<li><a href='#' onclick='checkGo(\"" +ph.authUrl+ "/logout\")'>Phantom Proxy Logout</a></li>"
-				ph.jQuery("#links").append(liTag);
-
-//				ph.jQuery("#loginout")[0].href=ph.authUrl+'/logout';
-			}else{
-				ph.jQuery("#welcome").text("Welcome to Phantom Proxy");
-				inout.attr("src","/pub/images/login.gif");
-				inout.attr("title","login");
-				inout.unbind();
-				inout.bind("click",function(){checkGo(ph.authUrl);});
-
-				var liTag="<li><a href='#' onclick='checkGo(\"" +ph.authUrl+ "\")'>Phantom Proxy Login</a></li>"
-				ph.jQuery("#links").append(liTag);
-
-			}
-
-
-			var useText;
-			if(typeof WebSocket != 'undefined'){
-				useText="利用できます"
-			}else{
-				useText="利用できません"
-			}
-			ph.jQuery("#websocket").text(useText);
-			if(typeof sessionStorage != "undefined"){
-				useText="利用できます"
-			}else{
-				useText="利用できません"
-			}
-			ph.jQuery("#sessionStorage").text(useText);
-			if(typeof window.postMessage != 'undefined'){
-				useText="利用できます"
-			}else{
-				useText="利用できません"
-			}
-			ph.jQuery("#crossDocument").text(useText);
-
-			if(ph.isUseWebSocket){
-				useText="使用します"
-			}else{
-				useText="使用しません"
-			}
-			ph.jQuery("#useWebsocket").text(useText);
-			if(ph.isUseSessionStorage){
-				useText="使用します"
-			}else{
-				useText="使用しません"
-			}
-			ph.jQuery("#useSessionStorage").text(useText);
-			if(ph.isUseCrossDomain){
-				useText="使用します"
-			}else{
-				useText="使用しません"
-			}
-			ph.jQuery("#useCrossDocument").text(useText);
-//			setInterval("check()",5000);
-		});
-	});
-	function goAdmin(){
-		if(typeof ph != "undefined"){
-			checkGo(ph.adminUrl);
-		}else{
-			location.href="/admin";
+<script type="text/javascript"> 
+ph.jQuery(function() {
+	ph.jQuery("#version").text(ph.version);
+	ph.jQuery("#status").text('running');
+	ph.auth.info(null,function(res){
+		if(!res.result){
+			alert('fail to auth.info.'+res.reason);
+			return;
 		}
+		var user=res.user;
+		var allowUrls=res.allowUrls;
+		var len=allowUrls.length;
+		for(var i=0;i<len;i++){
+			if(allowUrls[i].url.lastIndexOf('http',0)!=0){
+				continue;
+			}
+			var liTag="<li><a href='#' onclick='checkGo(\"" +allowUrls[i].url+ "\")'>"+allowUrls[i].notes+"</a></li>"
+			ph.jQuery("#links").append(liTag);
+		}
+		var inout=ph.jQuery("#loginout");
+		if(user.loginId){
+			ph.jQuery("#welcome").text(user.loginId+"さん ようこそ");
+			inout.attr("src","/pub/images/logout.gif");
+			inout.attr("title","logout");
+			inout.unbind();
+			inout.bind("click",function(){location=ph.authUrl+'/logout';});
+			var liTag="<li><a href='#' onclick='checkGo(\"" +ph.authUrl+ "/logout\")'>Phantom Proxy Logout</a></li>"
+			ph.jQuery("#links").append(liTag);
+//				ph.jQuery("#loginout")[0].href=ph.authUrl+'/logout';
+		}else{
+			ph.jQuery("#welcome").text("Welcome to Phantom Proxy");
+			inout.attr("src","/pub/images/login.gif");
+			inout.attr("title","login");
+			inout.unbind();
+			inout.bind("click",function(){checkGo(ph.authUrl);});
+
+			var liTag="<li><a href='#' onclick='checkGo(\"" +ph.authUrl+ "\")'>Phantom Proxy Login</a></li>"
+			ph.jQuery("#links").append(liTag);
+
+		}
+
+
+		var useText;
+		if(typeof WebSocket != 'undefined'){
+			useText="利用できます"
+		}else{
+			useText="利用できません"
+		}
+		ph.jQuery("#websocket").text(useText);
+		if(typeof sessionStorage != "undefined"){
+			useText="利用できます"
+		}else{
+			useText="利用できません"
+		}
+		ph.jQuery("#sessionStorage").text(useText);
+		if(typeof window.postMessage != 'undefined'){
+			useText="利用できます"
+		}else{
+			useText="利用できません"
+		}
+		ph.jQuery("#crossDocument").text(useText);
+
+		if(ph.useWebSocket){
+			useText="使用します"
+		}else{
+			useText="使用しません"
+		}
+		ph.jQuery("#useWebsocket").text(useText);
+		if(ph.useSessionStorage){
+			useText="使用します"
+		}else{
+			useText="使用しません"
+		}
+		ph.jQuery("#useSessionStorage").text(useText);
+		if(ph.useCrossDomain){
+			useText="使用します"
+		}else{
+			useText="使用しません"
+		}
+		ph.jQuery("#useCrossDocument").text(useText);
+		if(ph.useHashChange){
+			useText="使用します"
+		}else{
+			useText="使用しません"
+		}
+		ph.jQuery("#useHashChange").text(useText);
+		if(ph.useBlobBuilder){
+			useText="使用します"
+		}else{
+			useText="使用しません"
+		}
+		ph.jQuery("#useBlobBuilder").text(useText);
+	});
+});
+function goAdmin(){
+	if(typeof ph != "undefined"){
+		checkGo(ph.adminUrl);
+	}else{
+		location.href="/admin";
 	}
-	function checkGo(url){
-		var now = new Date();
-		ph.jQuery.ajax({
-			type: 'GET',
-			url: '/check.html?'+now.getTime(),
-			success: function(){location.href=url;},
-			error: function(){alert('Phatom Proxy停止中');}
-		});
-		
-	}
-	</script>
+}
+function checkGo(url){
+	var now = new Date();
+	ph.jQuery.ajax({
+		type: 'GET',
+		url: '/check.html?'+now.getTime(),
+		success: function(){location.href=url;},
+		error: function(){alert('Phatom Proxy停止中');}
+	});
+}
+</script>
 </head>
 <body>
 <div>
@@ -140,9 +148,11 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 <!--div>Status:<span id="status">checking...</span></div-->
 <H2>Browser support function</H2>
 <table>
-<tr><td>WebSocket API</td><td id="websocket"></td><td id="useWebsocket"></td></tr>
 <tr><td>Web Storage sessionStorage</td><td id="sessionStorage"></td><td id="useSessionStorage"></td></tr>
 <tr><td>Cross-document messaging</td><td id="crossDocument"></td><td id="useCrossDocument"></td></tr>
+<tr><td>WebSocket API</td><td id="websocket"></td><td id="useWebsocket"></td></tr>
+<tr><td>HashChange event</td><td id="websocket"></td><td id="useHashChange"></td></tr>
+<tr><td>BlobBuilder</td><td id="websocket"></td><td id="useBlobBuilder"></td></tr>
 </table>
 <hr/>
 <H2>Version:<span id="version">checking...</span></H2>
