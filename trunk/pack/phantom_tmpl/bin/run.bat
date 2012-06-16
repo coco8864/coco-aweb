@@ -11,11 +11,16 @@ set PH_VM_OPTIONS=
 set CONF_XML=phantomd.xml
 set PH_CONF_XML=phantom.xml
 
-IF NOT "%1"=="debug" goto NEXT
-set PH_DEBUG="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=1234"
+IF NOT "%1"=="debug" goto NEXT1
+set PH_DEBUG="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=1234"
 shift
 
-:NEXT
+:NEXT1
+IF NOT "%1"=="debugSuspend" goto NEXT2
+set PH_DEBUG="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=1234"
+shift
+
+:NEXT2
 set DEBUG_FLAG=
 rem set DEBUG_FLAG=-Xdebug -Xrunjdwp:transport=dt_socket,server=y,address="1234"
 

@@ -221,8 +221,8 @@ function getContentHeaders(accessLog){
 function mkIdtag(accessLog){
 	var textNode=document.createTextNode(accessLog.id);
 	var aTag=document.createElement("a");
-	aTag.setAttribute("href","#");
-	aTag.setAttribute("target","logentry");
+	aTag.setAttribute("href","#traceTab");
+//	aTag.setAttribute("target","logentry");
 	aTag.appendChild(textNode);
 	var inputTag=document.createElement("input");
     inputTag.setAttribute("type","checkBox");
@@ -235,8 +235,11 @@ function mkIdtag(accessLog){
 	tdTag.appendChild(aTag);
 	ph.jQuery(aTag).bind("click",function(){##AccessLog詳細画面へのジャンプ
 			changeEntry(accessLog.id);
-			jQuery("#tabs").tabs("select",4);##AccessLog詳細画面は、5(-1)番目のタグ
-			return false;
+//alert('b:'+window.location.hash);
+//			window.location.hash = "#traceTab";
+//alert('a:'+window.location.hash);
+//			jQuery("#tabs").tabs("select",4);##AccessLog詳細画面は、5(-1)番目のタグ
+			return true;
 		});
 
 	if(!accessLog.responseBodyDigest){

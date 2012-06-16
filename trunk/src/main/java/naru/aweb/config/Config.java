@@ -44,7 +44,6 @@ import naru.aweb.wsq.WsqManager;
 import naru.queuelet.QueueletContext;
 import net.sf.json.JSON;
 import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
 
 import org.apache.commons.codec.binary.Base64;
@@ -58,6 +57,7 @@ import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.log4j.Logger;
 
 public class Config {
+	private static final String USE_FILE_CACHE = "useFileCache";
 	private static final String PHANTOM_SERVER_HEADER = "phantomServerHeader";
 	private static final String KEEP_ALIVE_TIMEOUT = "keepAliveTimeout";
 	private static final String MAX_KEEP_ALIVE_REQUESTS = "maxKeepAliveRequests";
@@ -263,6 +263,11 @@ public class Config {
 	
 	public FileCache getFileCache() {
 		return FileCache.getInstance();
+	}
+	
+	public void setUseFileCache(boolean useCache){
+		getFileCache().setUseCache(useCache);
+		configuration.setProperty(USE_FILE_CACHE, useCache);
 	}
 
 	public Authenticator getAuthenticator() {
@@ -752,6 +757,9 @@ public class Config {
 		updateProxyFinder(pacUrl,proxyServer,sslProxyServer,exceptProxyDomains);
 		broadcaster=new Broadcaster(this);
 		wsqManager=WsqManager.getInstance();
+		
+		boolean useCache=getBoolean(USE_FILE_CACHE);
+		getFileCache().setUseCache(useCache);
 		return true;
 	}
 	

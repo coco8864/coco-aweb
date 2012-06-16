@@ -140,7 +140,7 @@ window.ph.auth={
     if(!ph.auth._reqestCb){
       return;
     }
-    ph.auth._timerId=setTimeout(ph.auth._frameLoad2,100);
+    ph.auth._timerId=setTimeout(ph.auth._frameLoad2,1000);
   },
   _frameLoad2:function(){
 //ph.log("_frameLoad2:"+(new Date()).getTime());
@@ -151,7 +151,7 @@ window.ph.auth={
     }
     var reqestCb=ph.auth._reqestCb;
     if(reqestCb!=null){//frameにloadされたがmessageが来ない
-//ph.log("_frameLoad timeout:"+this._url);
+      ph.log("_frameLoad timeout:"+this._url);
       ph.auth._reqestCb=null;
       ph.auth._url=null;
       reqestCb({result:false,reason:'url error'});
