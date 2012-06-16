@@ -3,6 +3,7 @@ if(window.ph.auth){
   return;
 }
 window.ph.auth={
+  _isInit:false,
   _authFrameName:'__phAuthFrame',
   _urlPtn:/^(?:([^:\/]+:))?(?:\/\/([^\/]*))?(.*)/,
   /* 呼び出しをqueueして順次処理する仕組み */
@@ -59,6 +60,7 @@ window.ph.auth={
   3)primaryは認証未=>このメソッドは復帰せず認証画面に遷移
   */
   auth:function(aplUrl,cb){
+    ph.auth._initIfNecessary();
 //    if(this._cb){
 //      cb({result:false,reason:'duplicate call error'});
 //      return;
@@ -86,6 +88,7 @@ window.ph.auth={
     ph.auth._callback(res);
   },
   info:function(authUrl,cb){
+    ph.auth._initIfNecessary();
     if(!authUrl){//指定がなければ自分をダウンロードしたauthUrl
       authUrl=ph.authUrl;
     }
@@ -156,20 +159,27 @@ window.ph.auth={
       ph.auth._url=null;
       reqestCb({result:false,reason:'url error'});
     }
+  },
+  _initIfNecessary:function(){
+    if(ph.auth._isInit){
+      return;
+    }
+    ph.auth._isInit=true;
+//server側authと通信するiframeを作成
+    if(window.addEventListener){
+      window.addEventListener('message',ph.auth._onMessage, false);
+    }else if(window.attachEvent){
+      window.attachEvent('onmessage',ph.auth._onMessage);
+    }
+//  ph.auth._frame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' + ph.auth._authFrameName + '" onload=\'ph.auth._frameLoad(this);\'></iframe>');
+    ph.auth._frame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' + ph.auth._authFrameName + '" ></iframe>');
+    ph.auth._frame.load(function(x){ph.auth._frameLoad(x);});
+    ph.jQuery("body").append(ph.auth._frame);
   }
 };
 
 ph.jQuery(function(){
-//server側authと通信するiframeを作成
-  if(window.addEventListener){
-    window.addEventListener('message',ph.auth._onMessage, false);
-  }else if(window.attachEvent){
-    window.attachEvent('onmessage',ph.auth._onMessage);
-  }
-//  ph.auth._frame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' + ph.auth._authFrameName + '" onload=\'ph.auth._frameLoad(this);\'></iframe>');
-  ph.auth._frame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' + ph.auth._authFrameName + '" ></iframe>');
-  ph.auth._frame.load(function(x){ph.auth._frameLoad(x);});
-  ph.jQuery("body").append(ph.auth._frame);
+  ph.auth._initIfNecessary();
 });
 
 })();
