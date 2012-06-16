@@ -132,7 +132,7 @@ if(typeof ph == "undefined"){
 				if(!errorCb){
 					errorCb=function(){ph.log('queue.start error.path:'+path);};
 				}
-				if(ph.isUseWebSocket){
+				if(ph.useWebSocket){
 					if(window.location.protocol=='https:'){
 						this.url="wss://";
 					}else{
@@ -152,7 +152,7 @@ if(typeof ph == "undefined"){
 						ph.queue.onTimer();
 						ph.queue._path=path;
 						ph.queue._errorCb=errorCb;
-						if(ph.isUseSessionStorage){
+						if(ph.useSessionStorage){
 							ph.queue._restoreFromSessionStorage();
 						}
 					}else{
@@ -164,7 +164,7 @@ if(typeof ph == "undefined"){
 				ph.queue._errorCb=null;
 				ph.queue.isAuth=false;
 				ph.queue.appId=null;
-				if(ph.isUseWebSocket){
+				if(ph.useWebSocket){
 					if(ph.queue.ws!=null){
 						ph.queue.ws.close();
 						ph.queue.ws=null;
@@ -173,7 +173,7 @@ if(typeof ph == "undefined"){
 			},
 		//timerハンドラ
 		onTimer:function(){
-				if(ph.isUseWebSocket){
+				if(ph.useWebSocket){
 					if(ph.queue.ws==null){
 						ph.queue._openWebSocket();
 					}
@@ -239,14 +239,14 @@ if(typeof ph == "undefined"){
 				}
 			},
 		_regChId:function(chId,cbqtext){
-				if(ph.isUseSessionStorage){
+				if(ph.useSessionStorage){
 					ph.log('out chid:'+chId);
 					ph.log('out:'+cbqtext);
 					sessionStorage[this.CHANNEL_ID_PREFIX+chId]=cbqtext;
 				}
 			},
 		_unregChId:function(chId){
-				if(ph.isUseSessionStorage){
+				if(ph.useSessionStorage){
 					sessionStorage.removeItem(this.CHANNEL_ID_PREFIX+chId);
 				}
 			},
@@ -306,7 +306,7 @@ if(typeof ph == "undefined"){
 			},
 		_send:function(message){
 		//可能か判断してデータを即座に送信、できなかった場合はfalseで復帰
-				if(!ph.isUseWebSocket){
+				if(!ph.useWebSocket){
 					return false;
 				}
 				if(this.ws==null||this.ws.readyState!=1){
@@ -415,7 +415,7 @@ if(typeof ph == "undefined"){
 				ph.queue.ws=null;
 				//一度もopenできずにcloseされた場合は、WebSocketが使えないと考える
 				if(!ph.queue.isWebSocketOpen){
-					ph.isUseWebSocket=false;
+					ph.useWebSocket=false;
 					ph.queue.url=window.location.protocol + "//" + window.location.host + ph.queue._path;
 					ph.log("change to Polling:"+ ph.queue.url);
 				}

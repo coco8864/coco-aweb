@@ -22,9 +22,25 @@ window.ph={
  scriptBase:'',
  scripts:['jquery-1.5.1.min.js','ph-jqnoconflict.js','ph-json2.js'],
  appScripts:['ph-auth.js','ph-wsq.js'],
- isUseWebSocket:false,//WebSocketを使うか否か?
- isUseSessionStorage:false,//SessionStorageを使うか否か?
- isUseCrossDomain:false,//iframeを使ったクロスドメイン通信を使うか否か?
+ useWebSocket:false,//WebSocketを使うか否か?
+ useSessionStorage:false,//SessionStorageを使うか否か?
+ useCrossDomain:false,//iframeを使ったクロスドメイン通信を使うか否か?
+ useHashChange:false,
+ useBlobBuilder:false,
+ createBlobBuilder:function(){
+  if(BlobBuilder){
+   return new BlobBuilder();
+  }
+  return null;
+ },
+ blobSlice:function(blob,startingByte,endindByte){
+  if(blob.webkitSlice) {
+   return blob.webkitSlice(startingByte, endindByte);
+  }else if (blob.mozSlice) {
+   return blob.mozSlice(startingByte, endindByte);
+  }
+  return blob.slice(startingByte, endindByte);
+ },
  debug:false,##debugメッセージを出力するか否か
  setDebug:function(flag){
   this.debug=flag;
@@ -209,34 +225,47 @@ ph.JSLoader.prototype = {
   }
 };
 
-ph.isUseSessionStorage=$esc.javascript(${config.getBoolean("isUseSessionStorage",true)});
+ph.useSessionStorage=$esc.javascript(${config.getBoolean("useSessionStorage",true)});
 if(typeof sessionStorage == "undefined"){
- ph.isUseSessionStorage=false;
+ ph.useSessionStorage=false;
 }
-
-if(ph.isUseSessionStorage){
+if(ph.useSessionStorage){
  ph.debug=(sessionStorage['ph.debug']==='true');
  ph.showDebug=(sessionStorage['ph.showDebug']==='true');
 }
 
+ph.useCrossDomain=$esc.javascript(${config.getBoolean("useCrossDomain",true)});
+if(typeof window.postMessage == 'undefined'){
+ ph.useCrossDomain=false;
+}
+
 var spec='$esc.javascript(${config.getString("websocketSpecs")})';
 if(spec){
- ph.isUseWebSocket=true;
+ ph.useWebSocket=true;
 }else{
- ph.isUseWebSocket=false;
+ ph.useWebSocket=false;
 }
 if(typeof WebSocket == 'undefined'){
  if(typeof MozWebSocket =='undefined'){
-  ph.isUseWebSocket=false;
+  ph.useWebSocket=false;
  }else{
   window.WebSocket=MozWebSocket;
  }
 }
 
-ph.isUseCrossDomain=$esc.javascript(${config.getBoolean("isUseCrossDomain",true)});
-if(typeof window.postMessage == 'undefined'){
- ph.isUseCrossDomain=false;
+ph.useHashChange=true;
+if(typeof window.onhashchange=='undefined'){
+ ph.useHashChange=false;
 }
+
+ph.useBlobBuilder=true;
+if(typeof window.BlobBuilder=='undefined'){
+ window.BlobBuilder = window.MozBlobBuilder || window.WebKitBlobBuilder;
+ if(typeof window.BlobBuilder=='undefined'){
+  ph.useBlobBuilder=false;
+ }
+}
+
 
 ##画面遷移を表現するオブジェクトtrunsmission
 ph.Tran=function(url,target,type,method,params,enctype){

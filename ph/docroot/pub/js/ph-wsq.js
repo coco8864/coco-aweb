@@ -41,21 +41,6 @@
       delete peers[msg.qname+'@'+msg.subId];
       this._saveToSS(appId,peers);
     },
-    _createBlobBuilder:function(){
-      var BlobBuilder = window.MozBlobBuilder || window.WebKitBlobBuilder;
-      if(!BlobBuilder){
-        return null;
-      }
-      return new BlobBuilder();
-    },
-    _blobSlice:function(blob,startingByte,endindByte){
-      if (blob.webkitSlice) {
-        return blob.webkitSlice(startingByte, endindByte);
-      } else if (blob.mozSlice) {
-        return blob.mozSlice(startingByte, endindByte);
-      }
-      return blob.slice(startingByte, endindByte);
-    },
     //https://github.com/ukyo/jsziptools/blob/master/src/utils.js
     _stringToArrayBuffer:function(str){
       var n = str.length,
@@ -132,7 +117,7 @@
         return;
       }
       if(url.lastIndexOf('ws',0)==0 ){
-        if(!ph.isUseWebSocket){
+        if(!ph.useWebSocket){
           //webSocketが使えなくてurlがws://だったらhttp://に変更
           url="http" + url.substring(2);
         }
@@ -292,7 +277,7 @@
         blobHeader.isGz=false;
       }
 //      var BlobBuilder = window.MozBlobBuilder || window.WebKitBlobBuilder;
-      var bb=ph.wsq._createBlobBuilder();
+      var bb=ph.createBlobBuilder();
       var headerLenBuf=new ArrayBuffer(4);
       var headerText=ph.JSON.stringify(header);
       var headerBuf=ph.wsq._stringToArrayBuffer(headerText);
@@ -474,7 +459,7 @@
             headerLength+=u8array[i];
           }
           ph.log('headerLength:'+headerLength);
-          var headerBlob=wsq._blobSlice(blob,offset,offset+headerLength);
+          var headerBlob=ph.blobSlice(blob,offset,offset+headerLength);
           offset+=headerLength;
           mode=2;
           fr.readAsText(headerBlob);
@@ -482,7 +467,7 @@
         case 2:
           ph.log('header:'+e.target.result);
           header=ph.JSON.parse(e.target.result);
-          var blobHeaderBlob=wsq._blobSlice(blob,offset,offset+header.blobHeaderLength);
+          var blobHeaderBlob=ph.blobSlice(blob,offset,offset+header.blobHeaderLength);
           offset+=header.blobHeaderLength;
           mode=3;
           fr.readAsText(blobHeaderBlob);
@@ -495,7 +480,7 @@
           message.blobData=[];
           for(var i=0;i<metas.length;i++){
             var meta=metas[i];
-            meta.data=wsq._blobSlice(blob,offset,offset+meta.size,meta.mimeType);
+            meta.data=ph.blobSlice(blob,offset,offset+meta.size,meta.mimeType);
             meta.jsType='Blob';
             message.blobData[i]=meta;
             offset+=meta.size;
@@ -506,7 +491,7 @@
       }
     }
     offset=4;
-    var headerLengthBlob=wsq._blobSlice(blob,0,offset);
+    var headerLengthBlob=ph.blobSlice(blob,0,offset);
     fr.readAsArrayBuffer(headerLengthBlob);
   };
   wsq._Connection.prototype._callback=function(cbType,cause,message,isFin,qname,subId){
