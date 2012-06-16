@@ -227,7 +227,7 @@ function showDebug(){
     isShowdebugTab=false;
   }else{
     isShowdebugTab=true;
-    window.location.hash = '#debug';
+    window.location.hash = '#debugTab';
   }
 }
 

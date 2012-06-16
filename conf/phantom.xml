@@ -28,7 +28,9 @@
     <queuelet loaderName="main" factoryClassName="naru.async.store.StoreManager" factoryMethodName="getBufferFileReader"/>
   </terminal>
   <terminal name="storeDispatcher" threadCount="1"><!--ここを複数にすると追い越しが発生する-->
-    <queuelet loaderName="main" factoryClassName="naru.async.store.StoreManager" factoryMethodName="getStoreDispatcher"/>
+    <queuelet loaderName="main" factoryClassName="naru.async.store.StoreManager" factoryMethodName="getStoreDispatcher">
+      <param name="initCompress" value="false"/>
+    </queuelet>
   </terminal>
 
   <terminal name="pool" threadCount="1">

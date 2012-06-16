@@ -18,7 +18,12 @@ CONF_XML=phantomd.xml
 
 if [ "$1" = "debug" ]
 then
-PH_DEBUG="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=1234"
+PH_DEBUG="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=1234"
+fi
+
+if [ "$1" = "debugSuspend" ]
+then
+PH_DEBUG="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=1234"
 fi
 
 DEBUG_FLAG=

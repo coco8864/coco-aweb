@@ -75,7 +75,8 @@ function doStress(){
 //	if(!doStressCb.isComplete){
 //		alert("実行中");
 //	}
-	jQuery("#tabs").tabs("select",5);
+	window.location.hash = "#stressTab";
+//	jQuery("#tabs").tabs("select",5);
 //	if(typeof perfProgress!='undefined'){perfProgress();}
 	if(ph.jQuery('#isStressFile').attr('checked')){
 		ph.jQuery('#fileStressAccessLogList').val( ph.jQuery('#stressAccessLogList').text() );

@@ -6,9 +6,9 @@
 <input type="button" value="実行" onclick="doScript();"/>
 <input type="reset" value="クリア"/>
 </form>
-<input type="button" value="出力" id="debugswitch" onclick="debugSwitch(!ph.debug);"/>
-<input type="button" value="表示/非表示" onclick="ph.jQuery('#debug').toggle();"/>
-<input type="button" value="出力クリア" onclick="ph.jQuery('#phDebugArea').text('');"/>
+<input type="button" value="出力" id="debugswitch" onclick="ph.setDebug(!ph.debug);debugReflesh();"/>
+<input type="button" value="表示/非表示" onclick="ph.setShowDebug(!ph.showDebug);"/>
+<input type="button" value="出力クリア" onclick="ph.clearDebug();"/>
 <h3>使用例</h3>
 <ul>
 <li>ログ出力:ph.log("aa")</li>
@@ -24,16 +24,11 @@ ph.admin.doCommand('getStastics',null,function(s){
 </li>
 </ul>
 <script type="text/javascript"><!--
-function debugSwitch(debug){
-	ph.setDebug(debug);
-	debugReflesh();
-}
-
 function debugReflesh(){
 	if(ph.debug){
-		ph.jQuery('#debugswitch').val('抑止');
+		ph.jQuery('#debugswitch').val('出力中');
 	}else{
-		ph.jQuery('#debugswitch').val('出力');
+		ph.jQuery('#debugswitch').val('抑止中');
 	}
 }
 function doScript(){

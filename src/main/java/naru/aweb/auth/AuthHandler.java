@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import naru.aweb.auth.SessionId.Type;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
 import naru.aweb.config.User;
@@ -97,6 +98,9 @@ public class AuthHandler extends WebServerHandler {
 	}
 	
 	private void setCookie(String setCookieString){
+		if(setCookieString==null){
+			return;
+		}
 		//IEでiframe内のcookieを有効にするヘッダ,http://d.hatena.ne.jp/satoru_net/20090506/1241545178
 		setHeader("P3P", "CP=\"CAO PSA OUR\"");
 		setHeader(HeaderParser.SET_COOKIE_HEADER, setCookieString);
@@ -108,6 +112,9 @@ public class AuthHandler extends WebServerHandler {
 		completeResponse("302");
 	}
 	
+	private void redirect(String location) {
+		redirect(location,null);
+	}
 	
 	/*
 	 * 認証して
@@ -346,6 +353,13 @@ public class AuthHandler extends WebServerHandler {
 			if (url.endsWith(cookiePath) && !url.endsWith("/")) {
 				url = url + "/";// 戻ってきた際には、/xxx;phId=xxxとなるが、chromeではcookieonceが付加されない
 			}
+			//xhr経由でセション切れが発生した場合は、
+			if("XMLHttpRequest".equalsIgnoreCase(requestHeader.getHeader("X-Requested-With"))){
+				url=requestHeader.getHeader("Referer");
+				if(url==null){
+					url=requestHeader.getHeader("Origin");
+				}
+			}
 			SessionId temporaryId = authorizer.createTemporaryId(url,cookiePath);
 			String setCookieString = temporaryId.getSetCookieString();
 			String authId=temporaryId.getAuthId();
@@ -544,6 +558,11 @@ public class AuthHandler extends WebServerHandler {
 		String authId=parameter.getParameter(AUTH_ID);
 //		String url = authorizer.getUrlFromCookieOnceAuthId(authId);
 		if(authId==null){//authIdが付加されていない,単に認証を求めてきた場合
+			if(authorizer.getUserByPrimaryId(cookieId)!=null){//login中かチェック
+				//既にlogin中なので認証処理は必要ない
+				redirect(config.getPublicWebUrl());
+				return;
+			}
 			SessionId temporaryId = authorizer.createTemporaryId(null,authorizer.getAuthPath());
 			authId=temporaryId.getAuthId();
 		}

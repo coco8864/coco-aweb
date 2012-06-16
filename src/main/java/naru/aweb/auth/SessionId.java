@@ -81,7 +81,7 @@ public class SessionId extends PoolBase{
 			String domain=null;//TODO url.substring();
 			return createSessionId(Type.TEMPORARY,url,null,null,isCookieSecure,domain,cookiePath);
 		}
-		return createSessionId(Type.TEMPORARY,url,null,null,false,null,cookiePath);
+		return createSessionId(Type.TEMPORARY,null,null,null,false,null,cookiePath);
 	}
 	
 	//cookieに設定されないのでcookie関連はダミー

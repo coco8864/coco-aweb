@@ -388,7 +388,10 @@ public class KeepAliveContext extends PoolBase {
 	public void setAcceptServer(ServerParser acceptServer){
 		this.acceptServer=acceptServer;
 		this.realHost=config.getRealHost(acceptServer);
-		//realHost‚ªnull‚Å‚Í¢‚é‚È!!!
+		//realHost‚ªnull‚Å‚Í¢‚é
+		if(this.realHost==null){
+			throw new IllegalAccessError("unkown server:"+acceptServer);
+		}
 	}
 	
 	public RealHost getRealHost(){

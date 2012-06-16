@@ -25,13 +25,28 @@ window.ph={
  isUseWebSocket:false,//WebSocketを使うか否か?
  isUseSessionStorage:false,//SessionStorageを使うか否か?
  isUseCrossDomain:false,//iframeを使ったクロスドメイン通信を使うか否か?
- debug:false,
+ debug:false,##debugメッセージを出力するか否か
  setDebug:function(flag){
   this.debug=flag;
 ##sessionStorageが使用できる場合
   if(typeof sessionStorage != "undefined"){
-    sessionStorage['ph.debug']=this.debug;
+    sessionStorage['ph.debug']=flag;
   }
+ },
+ showDebug:false,##debug領域を表示するか否か
+ setShowDebug:function(flag){
+  this.showDebug=flag;
+  if(flag){
+   ph.jQuery('#phDebug').show();
+  }else{
+   ph.jQuery('#phDebug').hide();
+  }
+  if(typeof sessionStorage != "undefined"){
+   sessionStorage['ph.showDebug']=flag;
+  }
+ },
+ clearDebug:function(){
+  ph.jQuery('#phDebugArea').text('');
  },
  dump:function(data){ph.log(ph.JSON.stringify(data))},
  dump1:function(data){
@@ -200,11 +215,8 @@ if(typeof sessionStorage == "undefined"){
 }
 
 if(ph.isUseSessionStorage){
- if(sessionStorage['ph.debug']=='true'){
-	 ph.setDebug(true);
- }else{
-	 ph.setDebug(false);
- }
+ ph.debug=(sessionStorage['ph.debug']==='true');
+ ph.showDebug=(sessionStorage['ph.showDebug']==='true');
 }
 
 var spec='$esc.javascript(${config.getString("websocketSpecs")})';

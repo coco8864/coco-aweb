@@ -403,10 +403,7 @@ public class AdminHandler extends WebServerHandler{
 			responseJson(true);
 		}else if("setFileCache".equals(cmd)){
 			String isChache=parameter.getParameter("isChache");
-			String isFlush=parameter.getParameter("isFlush");
-			FileCache fileCache=FileCache.getInstance();
-			fileCache.setUseCache("true".equalsIgnoreCase(isChache));
-			fileCache.setFlushCache("true".equalsIgnoreCase(isFlush));
+			config.setUseFileCache("true".equalsIgnoreCase(isChache));
 			responseJson(true);
 		}else if("setAuth".equals(cmd)){
 			String scheme=parameter.getParameter("scheme");
