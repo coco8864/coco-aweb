@@ -270,9 +270,42 @@ public class MappingResult extends PoolBase {
 	public void setTargetSecureType(Mapping.SecureType targetSecureType) {
 		this.targetSecureType = targetSecureType;
 	}
+	
+	public String reverseReferer(String referer){
+		if(resolveServer==null){
+			return referer;
+		}
+		Matcher matcher = null;
+		synchronized (locationPattern) {
+			matcher = locationPattern.matcher(referer);
+		}
+		if (!matcher.find()) {
+			return referer;
+		}
+		String locationPath = matcher.group(3);
+		String sourcePath = mapping.getSourcePath();
+		if(!locationPath.startsWith(sourcePath)){
+			return referer;
+		}
+		String destinationPath = mapping.getDestinationPath();
+		StringBuilder sb = new StringBuilder();
+		switch (resolveType) {
+		case HTTP:
+			sb.append("http://");
+			break;
+		case HTTPS:
+			sb.append("https://");
+			break;
+		default:
+			return referer;
+		}
+		sb.append(resolveServer.toString());
+		sb.append(destinationPath);
+		sb.append(locationPath.substring(sourcePath.length()));
+		return sb.toString();
+	}
 
 	private static Pattern locationPattern = Pattern.compile("^([^:]*)://([^/\\s]*)(/\\S*)?");
-
 	/**
 	 * locationヘッダの書き換え用、逆変換する mapping結果が、locationとなるような入力URLは何になるか？
 	 * 

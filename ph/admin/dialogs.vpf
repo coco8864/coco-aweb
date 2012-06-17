@@ -34,7 +34,7 @@ var stressData={
 	msg:null
 };
 ph.jQuery(function(){
-	if(ph.isUseSessionStorage){
+	if(ph.useSessionStorage){
 		var json=sessionStorage['stressData'];
 		if(json!=null){
 			stressData=ph.JSON.parse(json);
@@ -51,7 +51,7 @@ var doStressCb={
 		if(isComplete){
 			stressData.chId=null;
 		}
-		if(ph.isUseSessionStorage){
+		if(ph.useSessionStorage){
 			var json=ph.JSON.stringify(stressData);
 			sessionStorage['stressData']=json;
 		}

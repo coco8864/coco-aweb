@@ -74,11 +74,11 @@ function setWatchCheck(checked){
 function onWatchCheck(){
 	if(isWatchCheck()){
 		watchStastics();
-		if(ph.isUseSessionStorage){
+		if(ph.useSessionStorage){
 			sessionStorage['broardcastWatch']='true';
 		}
 	}else{
-		if(ph.isUseSessionStorage){
+		if(ph.useSessionStorage){
 			sessionStorage['broardcastWatch']='false';
 		}
 	}
@@ -87,7 +87,7 @@ function onWatchCheck(){
 ph.jQuery(function() {
 //	watchStastics();//起動後一回は必ず取得する
 	updateStastics({message:${config.config.stasticsObject}});
-	if(ph.isUseSessionStorage && sessionStorage['broardcastWatch']=='true'){
+	if(ph.useSessionStorage && sessionStorage['broardcastWatch']=='true'){
 		ph.jQuery('#broardcastWatchCheck').attr('checked','checked');
 	}else{
 		ph.jQuery('#broardcastWatchCheck').attr('checked','');

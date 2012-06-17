@@ -24,6 +24,55 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 ph.jQuery(function() {
 	ph.jQuery("#version").text(ph.version);
 	ph.jQuery("#status").text('running');
+	ph.jQuery("#sessionStorage").text("necessary");
+	ph.jQuery("#crossDocument").text("necessary");
+	ph.jQuery("#websocket").text("optional");
+	ph.jQuery("#hashChange").text("optional");
+	ph.jQuery("#boboBuilder").text("optional");
+	
+	var available=true;
+	if(ph.useWebSocket){
+		useText="available"
+	}else{
+		useText="unavailable"
+	}
+	ph.jQuery("#useWebsocket").text(useText);
+
+	if(ph.useCrossDomain){
+		useText="available";
+	}else{
+		useText="unavailable";
+		available=false;
+	}
+	ph.jQuery("#useCrossDocument").text(useText);
+
+	if(ph.useHashChange){
+		useText="available";
+	}else{
+		useText="unavailable";
+	}
+	ph.jQuery("#useHashChange").text(useText);
+
+	if(ph.useSessionStorage){
+		useText="available";
+	}else{
+		useText="unavailable";
+		available=false;
+	}
+	ph.jQuery("#useSessionStorage").text(useText);
+
+	if(ph.useBlobBuilder){
+		useText="available";
+	}else{
+		useText="unavailable";
+	}
+	ph.jQuery("#useBlobBuilder").text(useText);
+
+	if(!available){
+		ph.jQuery("#welcome").text("このブラウザでは利用できません。");
+		ph.jQuery("#loginout").attr("src","/pub/images/logout.gif");
+		return;
+	}
 	ph.auth.info(null,function(res){
 		if(!res.result){
 			alert('fail to auth.info.'+res.reason);
@@ -55,63 +104,10 @@ ph.jQuery(function() {
 			inout.attr("title","login");
 			inout.unbind();
 			inout.bind("click",function(){checkGo(ph.authUrl);});
-
 			var liTag="<li><a href='#' onclick='checkGo(\"" +ph.authUrl+ "\")'>Phantom Proxy Login</a></li>"
 			ph.jQuery("#links").append(liTag);
 
 		}
-
-
-		var useText;
-		if(typeof WebSocket != 'undefined'){
-			useText="利用できます"
-		}else{
-			useText="利用できません"
-		}
-		ph.jQuery("#websocket").text(useText);
-		if(typeof sessionStorage != "undefined"){
-			useText="利用できます"
-		}else{
-			useText="利用できません"
-		}
-		ph.jQuery("#sessionStorage").text(useText);
-		if(typeof window.postMessage != 'undefined'){
-			useText="利用できます"
-		}else{
-			useText="利用できません"
-		}
-		ph.jQuery("#crossDocument").text(useText);
-
-		if(ph.useWebSocket){
-			useText="使用します"
-		}else{
-			useText="使用しません"
-		}
-		ph.jQuery("#useWebsocket").text(useText);
-		if(ph.useSessionStorage){
-			useText="使用します"
-		}else{
-			useText="使用しません"
-		}
-		ph.jQuery("#useSessionStorage").text(useText);
-		if(ph.useCrossDomain){
-			useText="使用します"
-		}else{
-			useText="使用しません"
-		}
-		ph.jQuery("#useCrossDocument").text(useText);
-		if(ph.useHashChange){
-			useText="使用します"
-		}else{
-			useText="使用しません"
-		}
-		ph.jQuery("#useHashChange").text(useText);
-		if(ph.useBlobBuilder){
-			useText="使用します"
-		}else{
-			useText="使用しません"
-		}
-		ph.jQuery("#useBlobBuilder").text(useText);
 	});
 });
 function goAdmin(){
@@ -150,9 +146,9 @@ function checkGo(url){
 <table>
 <tr><td>Web Storage sessionStorage</td><td id="sessionStorage"></td><td id="useSessionStorage"></td></tr>
 <tr><td>Cross-document messaging</td><td id="crossDocument"></td><td id="useCrossDocument"></td></tr>
+<tr><td>HashChange event</td><td id="hashChange"></td><td id="useHashChange"></td></tr>
 <tr><td>WebSocket API</td><td id="websocket"></td><td id="useWebsocket"></td></tr>
-<tr><td>HashChange event</td><td id="websocket"></td><td id="useHashChange"></td></tr>
-<tr><td>BlobBuilder</td><td id="websocket"></td><td id="useBlobBuilder"></td></tr>
+<tr><td>BlobBuilder</td><td id="boboBuilder"></td><td id="useBlobBuilder"></td></tr>
 </table>
 <hr/>
 <H2>Version:<span id="version">checking...</span></H2>

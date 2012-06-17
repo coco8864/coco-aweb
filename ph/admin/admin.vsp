@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="jp">
+<html>
 <head> 
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta charset="UTF-8" /> 
@@ -50,7 +50,7 @@ window.onhashchange = function(){
 ph.jQuery(function() {
 	ph.setShowDebug(ph.showDebug);
 	ph.queue.start('/queue',function(){
-alert('z');
+	ph.log('disconnect ph.queue');
 /*location=ph.publicWebUrl*/});
 	jQuery("#textEditTextArea").resizable({
 		handles: "se"
