@@ -68,6 +68,8 @@ public class HeaderParser extends PoolBase {
 	public static final String IF_MODIFIED_SINCE_HEADER = "If-Modified-Since";
 	public static final String IF_NONE_MATCH = "If-None-Match";
 	public static final String LAST_MODIFIED_HEADER = "Last-Modified";
+	public static final String REFERER = "Referer";
+	
 	public static final String LOCATION_HEADER = "Location";
 	public static final String COOKIE_HEADER = "Cookie";// リクエストヘッダ
 	public static final String SET_COOKIE_HEADER = "Set-Cookie";// レスポンスヘッダ

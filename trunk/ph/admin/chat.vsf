@@ -49,12 +49,12 @@ function queueInfo(){
 	}else{
 		queueInfo="接続中";
 	}
-	if(ph.isUseWebSocket){
+	if(ph.useWebSocket){
 		queueInfo+=":WebSocket";
 	}else{
 		queueInfo+=":Polling("+ph.queue.interval+")";
 	}
-	if(ph.isUseSessionStorage){
+	if(ph.useSessionStorage){
 		queueInfo+=":SessionStorage";
 	}
 	return queueInfo;

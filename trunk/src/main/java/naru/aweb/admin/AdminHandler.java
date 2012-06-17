@@ -398,8 +398,8 @@ public class AdminHandler extends WebServerHandler{
 			WsProtocol.setWebSocketSpecs(websocketSpecs);
 			WsProtocol.setWebSocketMessageLimit(Integer.parseInt(webSocketMessageLimit));
 			WsProtocol.setWebSocketPingInterval(Integer.parseInt(webSocketPingInterval));
-			config.setProperty("isUseSessionStorage", isUseSessionStorage);
-			config.setProperty("isUseCrossDomain", isUseCrossDomain);
+			config.setProperty("useSessionStorage", isUseSessionStorage);
+			config.setProperty("useCrossDomain", isUseCrossDomain);
 			responseJson(true);
 		}else if("setFileCache".equals(cmd)){
 			String isChache=parameter.getParameter("isChache");

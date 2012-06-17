@@ -50,8 +50,10 @@ function setHtml5(){
    websocketSpecs:specs,
    webSocketMessageLimit:ph.jQuery("#webSocketMessageLimit").val(),
    webSocketPingInterval:ph.jQuery("#webSocketPingInterval").val(),
-   isUseSessionStorage:ph.jQuery("#isUseSessionStorage").attr('checked'),
-   isUseCrossDomain:ph.jQuery("#isUseCrossDomain").attr('checked')
+   isUseSessionStorage:true,
+##ph.jQuery("#isUseSessionStorage").attr('checked'),
+   isUseCrossDomain:true
+##ph.jQuery("#isUseCrossDomain").attr('checked')
   },
   function(x){
 ##setHtml5完了
@@ -356,6 +358,9 @@ checked="checked"
 <H2 onclick="ph.jQuery('#html5Div').toggle();">+HTML5設定</H2>
 <div class="settingItem" id="html5Div">
 <p>利用可能なブラウザでHTML5機能を使用するか否かを設定してください</p>
+Web Storage sessionStorage:必須</br>
+Cross-document messaging:必須</br>
+
 WebSocket spec:hixie75:<input type="checkBox" name="isUseHixie75" id="isUseHixie75"
 #if(${config.getString('websocketSpecs').indexOf('hixie75')}>=0)
 checked="checked"
@@ -379,16 +384,16 @@ WebSocketPingInterval:<input type="text" name="webSocketPingInterval" id="webSoc
 value="${config.getInt('webSocketPingInterval',0)}"
 >ms<br/>
 
-Web Storage sessionStorage:<input type="checkBox" name="isUseSessionStorage" id="isUseSessionStorage"
-#if(${config.getBoolean('isUseSessionStorage',true)})
-checked="checked"
-#end
-/><br>
-Cross-document messaging:<input type="checkBox" name="isUseCrossDomain" id="isUseCrossDomain"
-#if(${config.getBoolean('isUseCrossDomain',true)})
-checked="checked"
-#end
-/><br>
+##Web Storage sessionStorage:<input type="checkBox" name="isUseSessionStorage" id="isUseSessionStorage"
+###if(${config.getBoolean('useSessionStorage',true)})
+##checked="checked"
+###end
+##/><br>
+##Cross-document messaging:<input type="checkBox" name="isUseCrossDomain" id="isUseCrossDomain"
+###if(${config.getBoolean('useCrossDomain',true)})
+##checked="checked"
+###end
+##/><br>
 <input type="button" value="設定" onclick="setHtml5();" /><br/>
 </div>
 
