@@ -145,9 +145,10 @@ ph.log("tabs ajaxOptions success.index:"+index +":anchor:"+anchor);
 </form>
 
 ##phlogダウンロード用フォーム
-<form id="phlogDownloadForm" action="admin" style="display:none" target="uploadFrame" method="post">
-<input type="hidden" name="command" value="phlog"/>
-<input type="hidden" name="phlogNumber" id="phlogNumber" value="0"/>
+<form id="logDownloadForm" action="admin" style="display:none" target="uploadFrame" method="post">
+<input type="hidden" name="command" value="logdownload"/>
+<input type="hidden" name="logType"  id="logType"/>
+<input type="hidden" name="logNumber" id="logNumber" value="0"/>
 <input type="hidden" name="token" value="$esc.html(${session.token})"/>
 </form>
 

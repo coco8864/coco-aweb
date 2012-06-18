@@ -457,14 +457,22 @@ public class AdminHandler extends WebServerHandler{
 //			QueueManager queueManager=QueueManager.getInstance();
 //			String chId=queueManager.createQueue();
 //			responseJson(chId,callback);
-		}else if("phlog".equals(cmd)){
-			//ph.logダウンロード
-			String phlogNumber=parameter.getParameter("phlogNumber");
+		}else if("logdownload".equals(cmd)){
+			//ph.log,accesslogダウンロード
+			String logType=parameter.getParameter("logType");
 			String logName;
-			if("0".equals(phlogNumber)){
+			if("accesslog".equals(logType)){
+				logName="accesslog.log";
+			}else if("phlog".equals(logType)){
 				logName="ph.log";
 			}else{
-				logName="ph.log."+phlogNumber;
+				logger.error("logtype error."+logType);
+				completeResponse("500");
+				return;
+			}
+			String logNumber=parameter.getParameter("logNumber");
+			if(!"0".equals(logNumber)){
+				logName=logName +"."+logNumber;
 			}
 			setRequestAttribute(ATTRIBUTE_RESPONSE_CONTENT_DISPOSITION,"attachment; filename=\"" + logName + "\"");
 			setRequestAttribute(ATTRIBUTE_RESPONSE_FILE,new File(config.getPhantomHome(),"/log/" + logName));
