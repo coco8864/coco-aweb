@@ -119,9 +119,10 @@ function restart(){
   });
 }
 
-function phlog(){
-	ph.jQuery('#phlogNumber').val(ph.jQuery('#phlogNumberSelect').val());
-	ph.jQuery('#phlogDownloadForm').submit();
+function logdownload(type){
+	ph.jQuery('#logType').val(type);
+	ph.jQuery('#logNumber').val(ph.jQuery('#logNumberSelect').val());
+	ph.jQuery('#logDownloadForm').submit();
 }
 </script> 
 <H1>動作状況</H1>
@@ -157,8 +158,8 @@ interval:$!esc.html($!{config.getString('broardcastInterval')})ms
 </table>
 
 <Hr/>
-<H2>ph.log</H2>
-履歴:<select id="phlogNumberSelect" size="1">
+<H2>ログダウンロード</H2>
+履歴:<select id="logNumberSelect" size="1">
 <option value="0"></option>
 <option value="1">1</option>
 <option value="2">2</option>
@@ -168,6 +169,6 @@ interval:$!esc.html($!{config.getString('broardcastInterval')})ms
 <option value="6">6</option>
 <option value="7">7</option>
 <option value="8">8</option>
-<option value="9">9</option>
 </select>
-<input type="button" value="download" onclick="phlog();" />
+<input type="button" value="accesslog" onclick="logdownload('accesslog');" />
+<input type="button" value="phlog" onclick="logdownload('phlog');" />
