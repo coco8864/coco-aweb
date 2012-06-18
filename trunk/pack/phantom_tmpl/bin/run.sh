@@ -1,5 +1,6 @@
 #!/bin/sh
 #JAVA_HOME=/your/java/home
+ulimit -n 32763
 CURDIR=`pwd`
 case "$0" in
 /*) BIN_DIR=`dirname "$0"` ;;
