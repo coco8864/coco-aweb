@@ -379,6 +379,10 @@ public class WebServerHandler extends ServerBaseHandler {
 			// doneKeepAlive();
 		}
 	}
+	
+	public boolean isResponseEnd(){
+		return isResponseEnd;
+	}
 
 	private void endOfResponse() {
 //		boolean isGzip = false;

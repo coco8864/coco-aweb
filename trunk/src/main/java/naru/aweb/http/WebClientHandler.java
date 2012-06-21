@@ -161,13 +161,14 @@ public class WebClientHandler extends SslHandler implements Timer {
 				//for sceduler body‚Ì‘—M
 				long length = BuffersUtil.remaining(requestBodyBuffer);
 				requestContentWriteLength += length;
+				ByteBuffer[] buffer=requestBodyBuffer;
+				requestBodyBuffer=null;
 				if(scheduler!=null){
-					scheduler.scheduleWrite(CONTEXT_BODY, requestBodyBuffer);
+					scheduler.scheduleWrite(CONTEXT_BODY, buffer);
 				}else{
 					bodyActualWriteTime=System.currentTimeMillis();
-					asyncWrite(CONTEXT_BODY, requestBodyBuffer);
+					asyncWrite(CONTEXT_BODY, buffer);
 				}
-				requestBodyBuffer=null;
 			}
 		}
 		if (requestContentWriteLength >= requestContentLength) {
