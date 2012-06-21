@@ -8,6 +8,7 @@ import java.util.Map;
 
 import naru.async.BufferGetter;
 import naru.async.pool.BuffersUtil;
+import naru.async.pool.PoolManager;
 import naru.async.store.Store;
 import naru.aweb.http.ChunkContext;
 import naru.aweb.http.GzipContext;
@@ -34,6 +35,27 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 	private long leftLength = 0;
 	//storeを設定した場合は、自分をrefする。endが通知され時にunrefする
 	private Store store = null;
+	
+	/*
+	 * storeを取得した場合は、自分をref,and asyncBufferを呼ぶ
+	 * 自分をunrefするのは、以下のタイミング、同時にstoreにnullを設定
+	 * 1)onBuffer をfalse(次bufferの要求なし)で復帰する直前
+	 * 2)onBufferEnd,onBufferFailureが通知された場合
+	 * 
+	 * onBufferでbufferが通知された場合
+	 * 1)通信中ならbuffer(or その加工物)をレスポンスに返却
+	 * 2)継続の有無により復帰値を制御
+	 * 3)継続しない場合、endOfRequestを呼び出し=>通信中フラグを下げる
+	 * 4)通信中じゃなければ、falseを返却(上記に続く)
+	 * 
+	 * onBufferEnd,onBufferFailureが通知された場合
+	 * 1)通信中なら、endOfRequestを呼び出し=>通信中フラグを下げる
+	 * 2)通信中じゃなければ、何もしない
+	 * 
+	 * 回線の切断が通知された場合
+	 * 1)通信中フラグを下げる
+	 * 
+	 */
 
 	private boolean isCodeConvert=false;
 	private boolean isGzip=false;
@@ -91,10 +113,11 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 		if(getStatusCode()==null){
 			setStatusCode("200");
 		}
-		this.store=store;
-		ref();//storeの面倒をみるため
+		
 		skipLength = offset;
 		leftLength = length;
+		this.store=store;
+		ref();//storeの面倒をみるため
 		store.asyncBuffer(this, store);
 	}
 	
@@ -233,26 +256,10 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 		}
 	}
 
-	private void closeStore(){
-		closeStore(true);
-	}
-
-	private void closeStore(boolean isCallClose){
-		Store tmpStore;//急にnullクリアされるのを防ぐ
-		synchronized(this){
-			tmpStore=store;
-			store=null;
-		}
-		if(tmpStore!=null){
-			if(isCallClose){
-				tmpStore.close(this,store);
-			}
-			unref();//storeとの関係がきれたので
-		}
-	}
-
 	public boolean onBuffer(Object userContext, ByteBuffer[] buffers) {
-		if(store==null){
+		if(isResponseEnd()){//レスポンスが終わってる場合
+			PoolManager.poolBufferInstance(buffers);
+			releaseStore(false);
 			return false;
 		}
 		if(isChunk){
@@ -268,22 +275,19 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 				return true;//次のバッファを要求
 			}
 		}
-		logger.debug("onGot traceStore:" + store.getStoreId() + ":length:"
-				+ BuffersUtil.remaining(buffers));
+		logger.debug("onBuffer traceStore:" + store.getStoreId() + ":length:" + BuffersUtil.remaining(buffers));
 		for (int i = 0; i < buffers.length; i++) {
 			skip(buffers[i]);
 		}
 		if(BuffersUtil.remaining(buffers)==0){
 			return true;//次のバッファを要求
 		}
-		logger.debug("onGot skip traceStore:" + store.getStoreId() + ":length:"
-				+ BuffersUtil.remaining(buffers));
 		if(isCodeConvert){
 			try {
 				buffers=codeConverter.convert(buffers);
 			} catch (IOException e) {
 				logger.error("convert error.",e);
-				closeStore();
+				releaseStore(true);
 				asyncClose(userContext);
 				return false;
 			}
@@ -294,10 +298,25 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 		responseBody(buffers);
 		return false;
 	}
+	
+	private void releaseStore(boolean isClose){
+		if(store==null){
+			return;//無いはず
+		}
+		if(isClose){
+			store.close(this,store);
+		}else{
+			store=null;
+			unref();
+		}
+	}
 
 	public void onBufferEnd(Object userContext) {
+		releaseStore(false);
+		if(isResponseEnd()){//レスポンスが終わってる場合
+			return;
+		}
 		//gzipContextに入っているバッファをフラッシュする
-//		onBuffer(userContext,null);
 		if(isCodeConvert){
 			try {
 				ByteBuffer buffers[]=codeConverter.close();
@@ -307,16 +326,15 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 			}
 		}
 		responseEnd();
-//		onBufferEndが通知されたという事は、storeは開放されている
-		closeStore(false);
 	}
 
 	public void onBufferFailure(Object userContext, Throwable failure) {
-		closeStore();
-		logger.error("onGotFailure error.", failure);
+		logger.error("onBufferFailure error.", failure);
+		releaseStore(false);
+		if(isResponseEnd()){//レスポンスが終わってる場合
+			return;
+		}
 		responseEnd();
-//		onBufferFailureが通知されたという事は、storeは開放されている
-		closeStore(false);
 	}
 
 	public void onWrittenBody() {
@@ -324,14 +342,15 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 			return;
 		}
 		if (leftLength == 0) {
-			closeStore();
+			releaseStore(true);
 		} else {
 			store.asyncBuffer(this, store);
 		}
 	}
 
+	@Override
 	public void onFinished() {
-		closeStore();
+		releaseStore(true);
 		super.onFinished();
 	}
 }
