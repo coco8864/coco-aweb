@@ -314,8 +314,8 @@ public class HeaderParser extends PoolBase {
 		contentLength = -1;
 		contentType=null;
 		// phase=PHASE_FIRST_LINE;
-		PoolManager.poolBufferInstance(bodyBuffers);
 		bodyBuffers.clear();
+		PoolManager.poolBufferInstance(bodyBuffers);
 		isRequest = false;
 		isProxy = false;
 		isSslProxy = false;
