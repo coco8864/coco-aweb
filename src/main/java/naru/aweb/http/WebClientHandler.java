@@ -149,13 +149,15 @@ public class WebClientHandler extends SslHandler implements Timer {
 			logger.debug("startRequest requestHeaderBuffer length:"+BuffersUtil.remaining(requestHeaderBuffer)+":"+getPoolId()+":cid:"+getChannelId());
 			//for sceduler ヘッダの送信
 			requestHeaderLength=BuffersUtil.remaining(requestHeaderBuffer);
+			ByteBuffer[] headerBuf=requestHeaderBuffer;
+			requestHeaderBuffer=null;
 			if(scheduler!=null){
-				scheduler.scheduleWrite(CONTEXT_HEADER, requestHeaderBuffer);
+				scheduler.scheduleWrite(CONTEXT_HEADER, headerBuf);
 			}else{
 				headerActualWriteTime=System.currentTimeMillis();
-				asyncWrite(CONTEXT_HEADER, requestHeaderBuffer);
+				asyncWrite(CONTEXT_HEADER, headerBuf);
 			}
-			requestHeaderBuffer=null;
+			//requestHeaderBuffer=null;
 			if (requestBodyBuffer != null) {
 				stat = STAT_REQUEST_BODY;
 				//for sceduler bodyの送信

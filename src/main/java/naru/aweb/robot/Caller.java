@@ -272,7 +272,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 			Store responseHeaderStore=Store.open(true);
 			webClientHandler.pushReadPeekStore(responseHeaderStore);
 		}
-		if( webClientHandler.startRequest(this, webClientHandler,connectTimeout,PoolManager.duplicateBuffers(requestHeader,true),requestContentLength, isCallerkeepAlive, config.getKeepAliveTimeout())==false){
+		if( webClientHandler.startRequest(this, webClientHandler,connectTimeout,PoolManager.duplicateBuffers(requestHeader),requestContentLength, isCallerkeepAlive, config.getKeepAliveTimeout())==false){
 			logger.error("fail to webClientHandler.startRequest.scenario.getName:"+scenarioName);
 			return;
 		}
