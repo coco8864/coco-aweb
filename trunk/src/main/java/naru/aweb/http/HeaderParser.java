@@ -514,8 +514,7 @@ public class HeaderParser extends PoolBase {
 		if (bodyBuffers.size() == 0) {
 			return null;
 		}
-		ByteBuffer[] result = (ByteBuffer[]) bodyBuffers.toArray(BuffersUtil
-				.newByteBufferArray(bodyBuffers.size()));
+		ByteBuffer[] result = (ByteBuffer[]) bodyBuffers.toArray(BuffersUtil.newByteBufferArray(bodyBuffers.size()));
 		return PoolManager.duplicateBuffers(result);
 	}
 
@@ -523,8 +522,7 @@ public class HeaderParser extends PoolBase {
 		if (bodyBuffers.size() == 0) {
 			return null;
 		}
-		ByteBuffer[] result = (ByteBuffer[]) bodyBuffers.toArray(BuffersUtil
-				.newByteBufferArray(bodyBuffers.size()));
+		ByteBuffer[] result = (ByteBuffer[]) bodyBuffers.toArray(BuffersUtil.newByteBufferArray(bodyBuffers.size()));
 		bodyBuffers.clear();// ¨‚¢‚ ‚Ü‚Á‚Ä“Ç‚ñ‚¶‚á‚Á‚½‚¾‚¯‚¾‚ª‚çƒSƒ~‰ñû‚Ì‚½‚ß‘‚ß‚ÉŠJ•ú‚·‚éB
 		return result;
 	}
