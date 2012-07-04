@@ -299,8 +299,9 @@ public class Scenario extends PoolBase{
 	
 	public void stop(){
 		isReceiveStop=true;
-		for(Browser browser:browsers){
-			browser.asyncStop();
+		Object[] objs=browsers.toArray();
+		for(Object browser:objs){
+			((Browser)browser).asyncStop();
 		}
 	}
 	

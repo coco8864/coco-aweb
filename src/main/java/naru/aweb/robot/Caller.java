@@ -161,6 +161,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 			return null;
 		}
 		ByteBuffer[] dupBuffers=PoolManager.duplicateBuffers(buffers);
+		//logger.info("digest "+System.identityHashCode(dupBuffers));
 		Store store=Store.open(true);
 		store.putBuffer(dupBuffers);
 		store.close();

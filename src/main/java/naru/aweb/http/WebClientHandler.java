@@ -150,6 +150,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 			//for sceduler ヘッダの送信
 			requestHeaderLength=BuffersUtil.remaining(requestHeaderBuffer);
 			ByteBuffer[] headerBuf=requestHeaderBuffer;
+			//先にnullにしとかないと、asyncWriteが復帰する前にendOfResponseが呼び出される
 			requestHeaderBuffer=null;
 			if(scheduler!=null){
 				scheduler.scheduleWrite(CONTEXT_HEADER, headerBuf);
