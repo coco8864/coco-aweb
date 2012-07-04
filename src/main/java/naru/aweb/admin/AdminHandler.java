@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import naru.async.cache.FileCache;
 import naru.async.core.ChannelContext;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
