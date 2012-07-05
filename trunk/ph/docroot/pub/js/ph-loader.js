@@ -1,9 +1,9 @@
 (function(){
 var app='$!esc.javascript(${parameter.getParameter("ph")})'!=='ph';//from phantom proxy system
-var bk='$!esc.javascript(${parameter.getParameter("bk")})';//from bookmarklet
+var bm='$!esc.javascript(${parameter.getParameter("bm")})';//from bookmarklet
 var include='$!esc.javascript(${parameter.getParameter("include")})'.split(',');
 if(window.ph){
- if(bk){
+ if(bm){
 ##bookmarkletから呼ばれた場合、必ずscriptを呼び出す
   ph.loadScript(include);
  }
@@ -12,7 +12,7 @@ if(window.ph){
 window.ph={
 ##このjavascriptの取得経路を記録,proxy or web...
  version:'$esc.javascript(${config.getString("phantomVersion")})',
- isProxy:$esc.javascript(${handler.getRequestHeader().isProxy()}),
+##isProxy:$esc.javascript(${handler.getRequestHeader().isProxy()}),
  isSsl:$esc.javascript(${handler.isSsl()}),
  domain:'$esc.javascript(${handler.getLocalIp()}):$esc.javascript(${handler.getLocalPort()})',
  hostHeader:'$esc.javascript(${handler.getRequestHeader().getServer()})',
@@ -312,7 +312,7 @@ for(var i=0;i<include.length;i++){
 }
 
 ph.scriptBase+=ph.hostHeader +'/pub/js/';
-if(bk){
+if(bm){
   ph.loadScript(ph.scripts);
 }else{
   //alert(scriptBase);

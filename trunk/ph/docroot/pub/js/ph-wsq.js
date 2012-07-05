@@ -106,6 +106,29 @@
     },
     /* */
     open:function(url,cb){/* isSsl,hostPort,cb */
+      if(url.lastIndexOf('ws://',0)===0||url.lastIndexOf('wss://',0)===0){
+        if(!ph.useWebSocket){
+          //webSocketが使えなくてurlがws://だったらhttp://に変更
+          url='http' + url.substring(2);
+        }
+      }else if(url.lastIndexOf('http://',0)===0||url.lastIndexOf('https://',0)===0){
+      }else{
+        var scm;
+        if(ph.useWebSocket){
+          if(ph.isSsl){
+            scm='wss://';
+          }else{
+            scm='ws://';
+          }
+        }else{
+          if(ph.isSsl){
+            scm='https://';
+          }else{
+            scm='http://';
+          }
+        }
+        url=scm+ph.domain+url;
+      }
       var con=this._connections[url];
       if(con){
         if(con._isOpenCallback){
@@ -115,12 +138,6 @@
           con._callback(this.CB_ERROR,'open','aleady openning.');
         }
         return;
-      }
-      if(url.lastIndexOf('ws',0)==0 ){
-        if(!ph.useWebSocket){
-          //webSocketが使えなくてurlがws://だったらhttp://に変更
-          url="http" + url.substring(2);
-        }
       }
       var con=new ph.wsq._Connection(url,cb);
       ph.wsq._connections[url]=con;
