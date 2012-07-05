@@ -6,13 +6,13 @@ import org.apache.log4j.Logger;
 
 public class SampleWsqlet implements Wsqlet {
 	private static Logger logger=Logger.getLogger(SampleWsqlet.class);
-	private WsqCtx controller;
+	private WsqCtx ctx;
 	private String qname;
 
 	@Override
-	public void onStartQueue(String qname, WsqCtx controller) {
+	public void onStartQueue(String qname, WsqCtx ctx) {
 		this.qname=qname;
-		this.controller=controller;
+		this.ctx=ctx;
 	}
 	
 	@Override
@@ -21,21 +21,21 @@ public class SampleWsqlet implements Wsqlet {
 	}
 
 	@Override
-	public void onPublish(WsqPeer from, String message) {
+	public void onPublishText(WsqPeer from, String message) {
 		logger.info("onPublish:"+from);
-		controller.message(message);//来たメッセージをecho back
+		ctx.message(message);//来たメッセージをecho back
 	}
 	@Override
-	public void onPublish(WsqPeer from, JSON message) {
+	public void onPublishObj(WsqPeer from, JSON message) {
 		logger.info("onPublish:"+from);
-		controller.message(message);//来たメッセージをecho back
+		ctx.message(message);//来たメッセージをecho back
 	}
 	@Override
-	public void onPublish(WsqPeer from, BlobMessage message) {
+	public void onPublishBlob(WsqPeer from, BlobMessage message) {
 		logger.info("onPublish:"+from);
 		Blob blob=message.getBlob(0);
 //		ByteBuffer[] buf=blob.read();
-		controller.message(message);//来たメッセージをecho back
+		ctx.message(message);//来たメッセージをecho back
 	}
 
 	@Override
@@ -54,10 +54,10 @@ public class SampleWsqlet implements Wsqlet {
 		return 0;
 	}
 
-	@Override
-	public boolean isBlobMessageOnly() {
-		return true;
-	}
+//	@Override
+//	public boolean isBlobMessageOnly() {
+//		return true;
+//	}
 
 	@Override
 	public boolean useBlob() {
