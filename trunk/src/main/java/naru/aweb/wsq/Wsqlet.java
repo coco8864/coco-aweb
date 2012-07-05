@@ -9,7 +9,7 @@ import net.sf.json.JSON;
  *
  */
 public interface Wsqlet {
-	public void onStartQueue(String wsqName,WsqCtx controller);
+	public void onStartQueue(String wsqName,WsqCtx ctx);
 	public void onEndQueue();
 	
 	/**
@@ -17,9 +17,9 @@ public interface Wsqlet {
 	 * @param from 送信元
 	 * @param message(String or BinaryMessage)
 	 */
-	public void onPublish(WsqPeer from,String message);
-	public void onPublish(WsqPeer from,JSON message);
-	public void onPublish(WsqPeer from,BlobMessage message);
+	public void onPublishText(WsqPeer from,String message);
+	public void onPublishObj(WsqPeer from,JSON message);
+	public void onPublishBlob(WsqPeer from,BlobMessage message);
 	
 	public void onSubscribe(WsqPeer from);
 	public void onUnsubscribe(WsqPeer from);
@@ -41,5 +41,5 @@ public interface Wsqlet {
 	 * ブラウザ側がBlobが利用できない場合の挙動を決める
 	 * @return true BlobMessageを許容しないブラウザにmessageのみを送信する
 	 */
-	public boolean isBlobMessageOnly();
+//	public boolean isBlobMessageOnly();
 }

@@ -144,11 +144,11 @@ public class Wsq extends PoolBase implements WsqCtx,Timer{
 	
 	public void publish(WsqPeer from,Object message){
 		if(message instanceof String){
-			wsqlet.onPublish(from, (String)message);
+			wsqlet.onPublishText(from, (String)message);
 		}else if(message instanceof JSON){
-			wsqlet.onPublish(from, (JSON)message);
+			wsqlet.onPublishObj(from, (JSON)message);
 		}else if(message instanceof BlobMessage){
-			wsqlet.onPublish(from, (BlobMessage)message);
+			wsqlet.onPublishBlob(from, (BlobMessage)message);
 		}else{
 			logger.error("publish type error");
 		}
