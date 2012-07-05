@@ -9,7 +9,7 @@ import net.sf.json.JSON;
  *
  */
 public interface Wsqlet {
-	public void onStartQueue(String wsqName,WsqController controller);
+	public void onStartQueue(String wsqName,WsqCtx controller);
 	public void onEndQueue();
 	
 	/**

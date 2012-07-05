@@ -9,13 +9,13 @@ import naru.aweb.auth.AuthSession;
 import naru.aweb.config.User;
 
 public class WsqPeer extends PoolBase{
-	private String srcPath;
-	private String qname;
-	private String authId;
-	private String subId;
-	private String userId;
-	private List<String> roles;
-	private boolean isAllowBlob;
+	private String srcPath;//接続path
+	private String qname;//queue名
+	private String authId;//認証id
+	private String subId;//クライアントid(認証idが同じでもブラウザの違い等により、clientは別のpeerで接続できる)
+	private String userId;//userId
+	private List<String> roles;//所属ロール群
+	private boolean isAllowBlob;//blobメッセージの送信を許すか否か
 	public static WsqPeer create(AuthSession session,String srcPath,String qname,String subId){
 		return create(session, srcPath, qname, subId,false);
 	}

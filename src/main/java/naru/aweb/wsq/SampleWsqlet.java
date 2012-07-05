@@ -1,18 +1,16 @@
 package naru.aweb.wsq;
 
-import java.nio.ByteBuffer;
-
 import net.sf.json.JSON;
 
 import org.apache.log4j.Logger;
 
 public class SampleWsqlet implements Wsqlet {
 	private static Logger logger=Logger.getLogger(SampleWsqlet.class);
-	private WsqController controller;
+	private WsqCtx controller;
 	private String qname;
 
 	@Override
-	public void onStartQueue(String qname, WsqController controller) {
+	public void onStartQueue(String qname, WsqCtx controller) {
 		this.qname=qname;
 		this.controller=controller;
 	}

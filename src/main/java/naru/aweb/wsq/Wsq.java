@@ -1,12 +1,13 @@
 package naru.aweb.wsq;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 
@@ -17,7 +18,7 @@ import naru.async.timer.TimerManager;
 import net.sf.json.JSON;
 import net.sf.json.JSONObject;
 
-public class Wsq extends PoolBase implements WsqController,Timer{
+public class Wsq extends PoolBase implements WsqCtx,Timer{
 	private static Logger logger=Logger.getLogger(Wsq.class);
 	
 	/* stress,connection,’èŠú“I‚Éî•ñ‚ğ”­M */
@@ -305,5 +306,14 @@ public class Wsq extends PoolBase implements WsqController,Timer{
 			info.setHandler(null,null);
 		}
 		return true;
+	}
+
+	@Override
+	public Set<WsqPeer> getSubscribePeers() {
+		Set<WsqPeer> result=null;
+		synchronized(subscribeInfos){
+			result=Collections.unmodifiableSet(subscribeInfos.keySet());
+		}
+		return result;
 	}
 }
