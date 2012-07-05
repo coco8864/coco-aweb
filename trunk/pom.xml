@@ -10,7 +10,7 @@
   <properties>
     <naru.async.version>1.2.2</naru.async.version>
     <queuelet-boot.version>1.2.0</queuelet-boot.version>
-    <queuelet-common.version>1.2.1</queuelet-common.version>
+    <queuelet-common.version>1.2.2</queuelet-common.version>
     <queuelet-system.version>1.2.3</queuelet-system.version>
   </properties>
 

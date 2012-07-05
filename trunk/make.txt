@@ -2,6 +2,7 @@ Phantom Proxy 1.4.0‚ÌˆË‘¶
 naru.aweb 1.4.0
 naru.async 1.2.2
 
+queuelet-common 1.2.2
 queuelet-system 1.2.3
 
 
