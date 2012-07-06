@@ -184,7 +184,9 @@ public class Wsq extends PoolBase implements WsqCtx,Timer{
 			timerId=-1;
 		}
 		synchronized(subscribeInfos){
-			for(WsqPeer peer:subscribeInfos.keySet()){
+			Object[] peers=subscribeInfos.keySet().toArray();
+			for(Object obj:peers){
+				WsqPeer peer=(WsqPeer)obj;
 				unsubscribe(peer);
 			}
 		}
