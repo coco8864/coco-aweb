@@ -1,6 +1,7 @@
 package naru.aweb.handler;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
@@ -148,16 +149,30 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		asyncFile.asyncBuffer(this, asyncFile);
 	}
 
+	private boolean fileListIfNessesary(MappingResult mapping,String selfPath,File dir,boolean isBase){
+		boolean listing = isListing(mapping);
+		if (listing && dir.isDirectory()) {// ディレクトリだったら
+			// velocityPageからリスト出力
+			return snedFileList(mapping,selfPath, dir, isBase);
+		}
+		logger.debug("Not allow listing");
+		completeResponse("404");
+		return true;
+	}
+	
 	// 存在確認済みのディレクトリを一覧レスポンスする。
-	private boolean snedFileList(String uri, FileInfo info, boolean isBase) {
+	private boolean snedFileList(MappingResult mapping,String uri, File dir, boolean isBase) {
 		if (!uri.endsWith("/")) {
 			uri = uri + "/";
 		}
 		setRequestAttribute("isBase", isBase);
 		setRequestAttribute("base", uri);
-		setRequestAttribute("source", info.getCanonicalFile());
-		setRequestAttribute("fileList", info.listFiles());
-		MappingResult mapping = getRequestMapping();
+		try {
+			setRequestAttribute("source", dir.getCanonicalFile());
+		} catch (IOException e) {
+			setRequestAttribute("source", null);
+		}
+		setRequestAttribute("fileList", dir.listFiles());
 
 		mapping.setResolvePath(LISTING_PAGE);
 		mapping.setDesitinationFile(getConfig().getAdminDocumentRoot());
@@ -295,9 +310,9 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 			File dir=info.getCanonicalFile();
 			asyncFile.close();
 			asyncFile=welcomPage(dir, welcomeFiles);
-			if(asyncFile==null){
-				completeResponse("404", "file not exists");
-				return true;
+			if(asyncFile==null){//welcomfileが無かった
+//				completeResponse("404", "file not exists");
+				return fileListIfNessesary(mapping, selfPath, dir,"/".equals(path));
 			}
 			info=asyncFile.getFileInfo();
 			if (info.exists() && info.canRead() && !path.endsWith("/")) {
@@ -322,15 +337,10 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 			return sendFile(mapping, baseDirectory, path, ifModifiedSince, asyncFile);
 		}
 		asyncFile.close();
-		boolean listing = isListing(mapping);
-		if (listing && info.isDirectory()) {// ディレクトリだったら
-			// velocityPageからリスト出力
-			return snedFileList(selfPath, info, "/".equals(path));
-		}
-		logger.debug("Not allow listing");
-		completeResponse("404");
-		return true;
+		File dir=info.getCanonicalFile();
+		return fileListIfNessesary(mapping, selfPath, dir,"/".equals(path));
 	}
+	
 
 	public void onFailure(Object userContext, Throwable t) {
 		logger.debug("#failer.cid:" + getChannelId() + ":" + t.getMessage());
