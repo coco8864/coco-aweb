@@ -183,6 +183,7 @@ function realHostDialog(realHost){
 function realHostList(realHostsStr){
 	ph.log("realHostList");
 	var realHosts=ph.JSON.parse(realHostsStr);
+    ph.admin.realHosts=realHosts;
 	ph.jQuery("#realHostData").empty();
 	var targetTag=document.getElementById("realHostData");
 	for(var i=0;i<realHosts.length;i++){

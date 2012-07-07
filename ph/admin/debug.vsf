@@ -1,3 +1,6 @@
+<H1>debugTrace</H1>
+<hr/>
+<input id="debugTraceBt" type="button">
 <H1>javascriptテスト</H1>
 <hr/>
 <form id="scriptForm" name="scriptForm">
@@ -24,6 +27,26 @@ ph.admin.doCommand('getStastics',null,function(s){
 </li>
 </ul>
 <script type="text/javascript"><!--
+function updateDebugTrace(debugTrace){
+	ph.log('updateDebugTrace:'+debugTrace);
+	if(debugTrace=='true'){
+		ph.jQuery("#debugTraceBt").val('採取中');
+		ph.jQuery("#debugTraceBt").unbind();
+		ph.jQuery("#debugTraceBt").bind('click',function(){
+			ph.admin.doCommand('debugTrace',{debugTrace:false},updateDebugTrace);
+			}
+		);
+	}else{
+		ph.jQuery("#debugTraceBt").val('停止');
+		ph.jQuery("#debugTraceBt").unbind();
+		ph.jQuery("#debugTraceBt").bind('click',function(){
+			ph.admin.doCommand('debugTrace',{debugTrace:true},updateDebugTrace);
+			}
+		);
+	}
+}
+updateDebugTrace("$esc.javascript(${config.getBoolean('debugTrace')})");
+
 function debugReflesh(){
 	if(ph.debug){
 		ph.jQuery('#debugswitch').val('出力中');

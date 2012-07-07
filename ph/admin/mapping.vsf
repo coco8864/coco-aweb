@@ -55,9 +55,17 @@ function mappingLine(trTag,mapping){
 	aTag.appendChild(textNode);
 	tdTag.appendChild(aTag);
 	jQuery(aTag).bind("click",function(){
+			jQuery('#mappingDialog .map1').show();
+			jQuery('#mappingDialog .map2').hide();
 			jQuery("#mappingId").text(mapping.id);
 			jQuery("#mappingEnabled").attr("checked",mapping.enabled);
 			jQuery("#mappingNotes").val(mapping.notes);
+			var domRealHost=jQuery("#mappingRealHost");
+			jQuery("#mappingRealHost").empty();
+			for(var i in ph.admin.realHosts){
+				var realHost=ph.admin.realHosts[i];
+				domRealHost.append('<option value="' + realHost.name +'">' + realHost.name + '</option>');
+			}
 			jQuery("#mappingRealHost").val(mapping.realHostName);
 			jQuery("#mappingSourceType").val(mapping.sourceType);
 			jQuery("#mappingSecureType").val(mapping.secureType);
@@ -68,10 +76,10 @@ function mappingLine(trTag,mapping){
 			jQuery("#mappingDestinationPath").val(mapping.destinationPath);
 			jQuery("#mappingRoles").val(mapping.roles);
 			jQuery("#mappingOptions").val(mapping.options);
+			jQuery("#mappingDialog").dialog('option',{height:450});
 			jQuery("#mappingDialog").dialog('open');
 			return false;
 		});
-//	tdTag=ph.admin.mkTdTag(mapping.id);
 	trTag.appendChild(tdTag);
 	tdTag=ph.admin.mkTdTag(mapping.enabled);
 	trTag.appendChild(tdTag);
@@ -98,41 +106,67 @@ function mappingLine(trTag,mapping){
 	tdTag=ph.admin.mkTdTag(mapping.options);
 	trTag.appendChild(tdTag);
 }
-mappingTableRefresh();
 
-function updateDebugTrace(debugTrace){
-	ph.log('updateDebugTrace:'+debugTrace);
-	if(debugTrace=='true'){
-		ph.jQuery("#debugTraceSt").text('採取中');
-		ph.jQuery("#debugTraceBt").val('停止');
-		ph.jQuery("#debugTraceBt").unbind();
-		ph.jQuery("#debugTraceBt").bind('click',function(){
-			ph.admin.doCommand('debugTrace',{debugTrace:false},updateDebugTrace);
-			}
-		);
-	}else{
-		ph.jQuery("#debugTraceSt").text('停止');
-		ph.jQuery("#debugTraceBt").val('採取');
-		ph.jQuery("#debugTraceBt").unbind();
-		ph.jQuery("#debugTraceBt").bind('click',function(){
-			ph.admin.doCommand('debugTrace',{debugTrace:true},updateDebugTrace);
-			}
-		);
-	}
+function mappingInsert2(){
+	var form=document.forms['mappingForm'];
+	form.command.value='mappingInsert2';
+	form.mappingNotes.value=jQuery("#mappingNotes").val();
+	form.mappingRealHost.value=jQuery("#mappingRealHost").val();
+	form.mappingRoles.value=jQuery("#mappingRoles").val();
+	form.mappingSourcePath.value=jQuery("#mappingSourcePath").val();
+	form.destinationUrl.value=jQuery("#destinationUrl").val();
+	form.submit();
+	form.command.value='importsMappings';
+	jQuery('#mappingDialog').dialog('close');
 }
-updateDebugTrace("$esc.javascript(${config.getBoolean('debugTrace')})");
+
+function mappingOpen2(){
+	jQuery('#mappingDialog .map1').hide();
+	jQuery('#mappingDialog .map2').show();
+	jQuery("#mappingEnabled").attr("checked",false);
+	jQuery("#mappingNotes").val('');
+	jQuery("#mappingRealHost").empty();
+	var domRealHost=jQuery("#mappingRealHost");
+	for(var i in ph.admin.realHosts){
+		var realHost=ph.admin.realHosts[i];
+		domRealHost.append('<option value="' + realHost.name +'">' + realHost.name + '</option>');
+	}
+	jQuery("#mappingRealHost").val('mainHost');
+	jQuery("#mappingSourceServer").val('');
+	jQuery("#mappingSourcePath").val('');
+	jQuery("#mappingDestinationServer").val('');
+	jQuery("#mappingDestinationPath").val('');
+	if(document.forms['mappingForm'].importsFile.value){
+		jQuery("#destinationUrl").val(document.forms['mappingForm'].importsFile.value);
+		jQuery("#destinationUrl").attr("disabled","disabed");
+		jQuery('#mappingDialog .map3').show();
+	}else{
+		jQuery("#destinationUrl").val('');
+		jQuery("#destinationUrl").attr("disabled","");
+	}
+	jQuery("#mappingRoles").val('');
+	jQuery("#mappingOptions").val('');
+	jQuery("#mappingDialog").dialog('option',{height:200});
+	jQuery('#mappingDialog').dialog('open');
+}
+mappingTableRefresh();
 </script>
 
 <h1>Mapping list</h1>
 <hr/>
-<form method="post" enctype="multipart/form-data" action="mapping" target="uploadFrame">
+<form method="post" enctype="multipart/form-data" action="mapping" name="mappingForm" target="uploadFrame">
 <input type="button" value="更新" onClick="mappingTableRefresh()">
 <input type="button" value="反映" onClick="ph.admin.doPramCommand('mapping','reloadMappings',null,function(){alert('反映完了');})">
 <input type="hidden" name="command" value="importsMappings" />
+<input type="hidden" name="mappingNotes" />
+<input type="hidden" name="mappingRealHost" />
+<input type="hidden" name="mappingRoles" />
+<input type="hidden" name="mappingSourcePath" />
+<input type="hidden" name="destinationUrl" />
 <input type="hidden" name="token" value="$esc.html(${session.token})"/>
-移入ファイル指定:<input type="file" name="importsFile" id="importsFile" />
-<input type="submit" value="移入"/>
-debugTrace:<span id="debugTraceSt"></span><input id="debugTraceBt" type="button">
+ファイル指定:<input type="file" name="importsFile" id="importsFile" />
+<input type="submit" value="一括移入"/>
+<input type="button" value="簡易登録" onClick="mappingOpen2()">
 </form>
 <div style="margin: 0.4em 0.0em; padding: 0.0em 0.0em;background: #fff none; border: solid 0pt #000;">
 <table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">

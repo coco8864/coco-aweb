@@ -1,5 +1,6 @@
 package naru.aweb.admin;
 
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Collection;
 
@@ -7,6 +8,7 @@ import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
 import naru.aweb.http.ParameterParser;
 import naru.aweb.http.WebServerHandler;
+import naru.aweb.util.ServerParser;
 import net.sf.json.JSON;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -53,6 +55,36 @@ public class AdminMappingHandler extends WebServerHandler{
 			}
 			completeResponse("205");
 			return;
+		}else if("mappingInsert2".equals(command)){
+			/* 簡易登録でリバースproxyとWebサイトを簡単に登録できるようにする */
+			DiskFileItem item=parameter.getItem("importsFile");
+			String mappingNotes=parameter.getParameter("mappingNotes");
+			String mappingRealHost=parameter.getParameter("mappingRealHost");
+			String mappingRoles=parameter.getParameter("mappingRoles");
+			String mappingSourcePath=parameter.getParameter("mappingSourcePath");
+			String destinationUrl=parameter.getParameter("destinationUrl");
+			
+			Collection<Mapping> mappings=Mapping.query("WHERE notes='"+mappingNotes+"'", -1, 0, null);
+			Mapping mapping;
+			if(mappings.size()!=0){
+				mapping=mappings.iterator().next();
+			}else{
+				mapping=new Mapping();
+			}
+			mapping.setEnabled(true);
+			mapping.setNotes(mappingNotes);
+			mapping.setRealHostName(mappingRealHost);
+			mapping.setRoles(mappingRoles);
+			if(mapping.getOptions()==null){
+				mapping.setOptions("{}");
+			}
+			
+			if("".equals(item.getFieldName())){
+				createReverseProxy(mapping,destinationUrl);
+			}else{
+				createWebsite(mapping,mappingSourcePath,item);
+			}
+			return;
 		}else if("reloadMappings".equals(command)){
 			config.getMapper().reloadMappings();
 			completeResponse("205");
@@ -60,6 +92,47 @@ public class AdminMappingHandler extends WebServerHandler{
 		}
 		completeResponse("404");
 	}
+	
+	/*　website */
+	private void createWebsite(Mapping mapping,String mappingSourcePath,DiskFileItem item){
+		if(mappingSourcePath==null||mappingSourcePath.length()==0){
+			mappingSourcePath="/";
+		}
+		mapping.setSourcePath(mappingSourcePath);
+	}
+	
+	/* リバースproxy決め打ち*/
+	private void createReverseProxy(Mapping mapping,String destinationUrl){
+		StringBuilder schemeSb=new StringBuilder();
+		StringBuilder pathSb=new StringBuilder();
+		ServerParser server=ServerParser.parseUrl(destinationUrl,schemeSb,pathSb);
+		if(server==null){
+			completeResponse("205");
+			return;
+		}
+		mapping.setDestinationServer(server.toServerString());
+		server.unref(true);
+		mapping.setSourceType(Mapping.SourceType.WEB);
+		if(pathSb.length()==0){
+			pathSb.append('/');
+		}
+		mapping.setSourcePath(pathSb.toString());
+		mapping.setDestinationPath(pathSb.toString());
+		String scheme=schemeSb.toString();
+		if(scheme.equals("http")){
+			mapping.setSecureType(Mapping.SecureType.PLAIN);
+			mapping.setDestinationType(Mapping.DestinationType.HTTP);
+		}else if(scheme.equals("https")){
+			mapping.setSecureType(Mapping.SecureType.SSL);
+			mapping.setDestinationType(Mapping.DestinationType.HTTPS);
+		}else{
+			completeResponse("205");
+			return;
+		}
+		mapping.save();
+		completeResponse("205");
+	}
+	
 	void doObjCommand(String command,Object paramObj){
 		if("mappingInsert".equals(command)){
 			Mapping mapping=Mapping.fromJson(paramObj.toString());

@@ -343,22 +343,31 @@ url:<span id="checkUrl"></span><br/>
 
 ##mapping入力用ダイアログ
 <div id="mappingDialog">
+<div class="map1">
 id:<span id="mappingId"></span>
-enable:<input id="mappingEnabled" type="checkBox"><br/>
-notes:<input id="mappingNotes" type="text" size="64"><br/>
-realHost:<input id="mappingRealHost" type="text" size="40"><br/>
+enable:<input id="mappingEnabled" type="checkBox">
+</div><div>
+notes:<input id="mappingNotes" type="text" size="64">
+</div><div>
+realHost:<select id="mappingRealHost" size="1">
+</select>
+</div><div  class="map1">
 sourceType:<select id="mappingSourceType" size="1">
 <option value="PROXY">PROXY</option>
 <option value="WEB">WEB</option>
 <option value="WS">WS</option>
 <option value="WS_PROXY">WS_PROXY</option>
-</select><br/>
+</select>
+</div><div class="map1">
 secureType:<select id="mappingSecureType" size="1">
 <option value="PLAIN">PLAIN</option>
 <option value="SSL">SSL</option>
-</select><br/>
-sourceServer:<input id="mappingSourceServer" type="text" size="64"><br/>
-sourcePath:<input id="mappingSourcePath" type="text" size="64"><br/>
+</select>
+</div><div class="map1">
+sourceServer:<input id="mappingSourceServer" type="text" size="64">
+</div><div class="map1 map3">
+sourcePath:<input id="mappingSourcePath" type="text" size="64">
+</div><div class="map1">
 destinationType:<select id="mappingDestinationType" size="1">
 <option value="HTTP">HTTP</option>
 <option value="HTTPS">HTTPS</option>
@@ -366,15 +375,25 @@ destinationType:<select id="mappingDestinationType" size="1">
 <option value="WSS">WSS</option>
 <option value="FILE">FILE</option>
 <option value="HANDLER">HANDLER</option>
-</select><br/>
-destinationServer:<input id="mappingDestinationServer" type="text" size="64"><br/>
-destinationPath:<input id="mappingDestinationPath" type="text" size="64"><br/>
+</select>
+</div><div class="map1">
+destinationServer:<input id="mappingDestinationServer" type="text" size="64">
+</div><div class="map1">
+destinationPath:<input id="mappingDestinationPath" type="text" size="64">
+</div><div>
 roles:<input id="mappingRoles" type="text" size="64"><br/>
-options:<textArea id="mappingOptions"rows="4" cols="64"></textArea><br/>
-<input type="button" value="save" onClick='doMappingCommand("mappingUpdate");'>
-<input type="button" value="save new" onClick='doMappingCommand("mappingInsert");'>
-<input type="button" value="delete" onClick='doMappingCommand("mappingDelete");'>
+</div><div  class="map1">
+options:<textArea id="mappingOptions"rows="4" cols="64"></textArea>
+</div><div>
+</div><div  class="map2">
+destinationUrl:<input id="destinationUrl" type="text" size="72">
+</div><div>
+<input type="button" value="save" onClick='doMappingCommand("mappingUpdate");' class="map1">
+<input type="button" value="save new" onClick='doMappingCommand("mappingInsert");' class="map1">
+<input type="button" value="delete" onClick='doMappingCommand("mappingDelete");' class="map1">
+<input type="button" value="create" onClick='mappingInsert2();' class="map2">
 <input type="button" value="cancel" onClick="jQuery('#mappingDialog').dialog('close')">
+</div>
 </div> 
 
 ##realHost入力用ダイアログ

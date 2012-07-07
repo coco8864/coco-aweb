@@ -74,12 +74,11 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 	}
 
 	private boolean isListing(MappingResult mapping) {
-		String listing = (String) mapping
-				.getOption(MappingResult.PARAMETER_FILE_LISTING);
+		Object listing = mapping.getOption(MappingResult.PARAMETER_FILE_LISTING);
 		if (listing == null) {
 			return defaultListing;
 		}
-		return !"false".equalsIgnoreCase(listing);
+		return Boolean.TRUE.toString().equalsIgnoreCase(listing.toString());
 	}
 
 	/*
