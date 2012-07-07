@@ -155,7 +155,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 			break;
 		case WsHybiFrame.PCODE_CLOSE:
 			logger.debug("WsHybi10#doFrame pcode CLOSE");
-			PoolManager.poolBufferInstance(payloadBuffers);
+//			PoolManager.poolBufferInstance(payloadBuffers);
 			//close受信
 			traceOnClose(frame.getCloseCode(),frame.getCloseReason());
 			//必要ならclose送信
@@ -169,7 +169,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 			break;
 		case WsHybiFrame.PCODE_PONG:
 			logger.debug("WsHybi10#doFrame pcode PONG");
-			PoolManager.poolBufferInstance(payloadBuffers);
+//			PoolManager.poolBufferInstance(payloadBuffers);
 			tracePingPong("PONG");
 			//do nothing
 			break;
