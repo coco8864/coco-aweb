@@ -79,6 +79,7 @@ public class Config {
 	private static final String SSL_PROXY_SERVER = "sslProxyServer";
 	private static final String PROXY_PORT = "proxyPort";
 	private static final String PROXY_SERVER = "proxyServer";
+	private static final String PATH_APPS_DOCROOT = "path.appsDocroot";
 	private static final String PATH_PUBLIC_DOCROOT = "path.publicDocroot";
 	private static final String PATH_PORTAL_DOCROOT = "path.portalDocroot";
 	private static final String PATH_ADMIN_DOCROOT = "path.adminDocroot";
@@ -97,6 +98,7 @@ public class Config {
 	private File adminDocumentRoot;// adminで見えるところ(内部的に使うリソースもここ）
 	private File portalDocumentRoot;// for portal
 	private File publicDocumentRoot;// 誰でも見えるところ
+	private File appsDocumentRoot;//配備先ディレクトリ
 	private File injectionDir;// 注入コンテンツを格納するディレクトリ
 	private static SSLContext sslContext;
 //	private File baseDir;
@@ -717,6 +719,8 @@ public class Config {
 			dir = configuration.getString(PATH_INJECTION_DIR);
 			injectionDir = new File(dir).getCanonicalFile();
 			injectionHelper = new InjectionHelper(this);
+			dir = configuration.getString(PATH_APPS_DOCROOT);
+			appsDocumentRoot = new File(dir).getCanonicalFile();
 		} catch (IOException e) {
 			logger.error("getCanonicalFile error.",e);
 			return false;
@@ -1111,6 +1115,10 @@ public class Config {
 
 	public File getPublicDocumentRoot() {
 		return publicDocumentRoot;
+	}
+	
+	public File getAppsDocumentRoot() {
+		return appsDocumentRoot;
 	}
 
 	public File getPortalDocumentRoot() {
