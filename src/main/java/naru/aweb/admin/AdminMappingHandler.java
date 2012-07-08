@@ -60,7 +60,9 @@ public class AdminMappingHandler extends WebServerHandler{
 			} catch (RuntimeException e) {
 				logger.debug("importsMappings",e);
 			}
-			completeResponse("205");
+			setContentType("text/html");
+			completeResponse("200",//TODO vsfにfowardするのがスマート
+				"<script>parent.mappingTableRefresh();</script>");
 			return;
 		}else if("mappingInsert2".equals(command)){
 			/* 簡易登録でリバースproxyとWebサイトを簡単に登録できるようにする */
@@ -72,6 +74,7 @@ public class AdminMappingHandler extends WebServerHandler{
 			String mappingSourcePath=parameter.getParameter("mappingSourcePath");
 			String mappingDestinationType=parameter.getParameter("mappingDestinationType");
 			String destinationUrl=parameter.getParameter("destinationUrl");
+			String trace=parameter.getParameter("trace");
 			Collection<Mapping> mappings=Mapping.query("WHERE notes=='"+mappingNotes+"'", -1, 0, null);
 			Mapping mapping;
 			if(mappings.size()!=0){
@@ -84,15 +87,22 @@ public class AdminMappingHandler extends WebServerHandler{
 			mapping.setRealHostName(mappingRealHost);
 			mapping.setSourceType(Mapping.SourceType.WEB);
 			mapping.setRoles(mappingRoles);
-			if(mapping.getOptions()==null){
-				mapping.setOptions("{}");
+//			if(mapping.getOptions()==null){
+//				mapping.setOptions("{}");
+//			}
+			if("true".equalsIgnoreCase(trace)){
+				mapping.setOption("logType", "trace");
+			}else{
+				mapping.setOption("logType", "none");
 			}
+			String script=null;
 			//uploadファイルがあれば、それでサイトを構築する
 			if("FILE".equalsIgnoreCase(mappingDestinationType)){
-				createWebsite(mapping,mappingSourcePath,mappingSecureType,item);
+				script=createWebsite(mapping,mappingSourcePath,mappingSecureType,item);
 			}else{
-				createReverseProxy(mapping,destinationUrl);
+				script=createReverseProxy(mapping,destinationUrl);
 			}
+			completeResponse("200",script);
 			return;
 		}else if("reloadMappings".equals(command)){
 			config.getMapper().reloadMappings();
@@ -102,8 +112,10 @@ public class AdminMappingHandler extends WebServerHandler{
 		completeResponse("404");
 	}
 	
+	private static String SCRIPT_MAPPING_REFRESH="<script>parent.mappingTableRefresh();</script>";
+	
 	/*　website */
-	private void createWebsite(Mapping mapping,String mappingSourcePath,String mappingSecureType,DiskFileItem item){
+	private String createWebsite(Mapping mapping,String mappingSourcePath,String mappingSecureType,DiskFileItem item){
 		if(mappingSourcePath==null||mappingSourcePath.length()==0){
 			mappingSourcePath="/";
 		}
@@ -130,17 +142,16 @@ public class AdminMappingHandler extends WebServerHandler{
 		} catch (IOException e) {
 			logger.warn("createWebsite",e);
 		}
-		completeResponse("205");
+		return SCRIPT_MAPPING_REFRESH;
 	}
 	
 	/* リバースproxy決め打ち*/
-	private void createReverseProxy(Mapping mapping,String destinationUrl){
+	private String createReverseProxy(Mapping mapping,String destinationUrl){
 		StringBuilder schemeSb=new StringBuilder();
 		StringBuilder pathSb=new StringBuilder();
 		ServerParser server=ServerParser.parseUrl(destinationUrl,schemeSb,pathSb);
 		if(server==null){
-			completeResponse("205");
-			return;
+			return "<script>alert('url fomat error');</script>";
 		}
 		mapping.setDestinationServer(server.toServerString());
 		server.unref(true);
@@ -157,11 +168,10 @@ public class AdminMappingHandler extends WebServerHandler{
 			mapping.setSecureType(Mapping.SecureType.SSL);
 			mapping.setDestinationType(Mapping.DestinationType.HTTPS);
 		}else{
-			completeResponse("205");
-			return;
+			return "<script>alert('url scheme error');</script>";
 		}
 		mapping.save();
-		completeResponse("205");
+		return SCRIPT_MAPPING_REFRESH;
 	}
 	
 	void doObjCommand(String command,Object paramObj){

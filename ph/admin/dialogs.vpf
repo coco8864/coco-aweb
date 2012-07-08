@@ -382,11 +382,13 @@ destinationServer:<input id="mappingDestinationServer" type="text" size="64">
 destinationPath:<input id="mappingDestinationPath" type="text" size="64">
 </div><div>
 roles:<input id="mappingRoles" type="text" size="64"><br/>
-</div><div  class="map1">
+</div><div class="map1">
 options:<textArea id="mappingOptions"rows="4" cols="64"></textArea>
 </div><div>
-</div><div  class="map2">
-destinationUrl:<input id="destinationUrl" type="text" size="72">
+</div><div class="map2">
+destinationUrl:<input id="mappingDestinationUrl" type="text" size="72">
+</div><div class="map2">
+trace:<input id="mappingTrace" type="checkBox">
 </div><div>
 <input type="button" value="save" onClick='doMappingCommand("mappingUpdate");' class="map1">
 <input type="button" value="save new" onClick='doMappingCommand("mappingInsert");' class="map1">
