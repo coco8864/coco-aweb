@@ -172,12 +172,15 @@ public class WebServerHandler extends ServerBaseHandler {
 	 */
 	public final void startParseRequestBody() {
 		HeaderParser requestHeader = getRequestHeader();
+		if(requestHeader==null){
+			asyncClose(null);
+			return;
+		}
 		requestReadBody = 0;
 		requestContentLength = requestHeader.getContentLength();
 
 		ParameterParser parameterParser = getParameterParser();
-		parameterParser.init(requestHeader.getMethod(), requestHeader
-				.getContentType(), requestContentLength);
+		parameterParser.init(requestHeader.getMethod(), requestHeader.getContentType(), requestContentLength);
 		String query = requestHeader.getQuery();
 		if (query != null && !"".equals(query)) {
 			parameterParser.parseQuery(query);

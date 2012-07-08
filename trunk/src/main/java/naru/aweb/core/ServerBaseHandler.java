@@ -52,7 +52,12 @@ public abstract class ServerBaseHandler extends SslHandler {
 	}
 	
 	public HeaderParser getRequestHeader(){
-		return getRequestContext().getRequestHeader();
+		RequestContext requestContext=getRequestContext();
+		if(requestContext==null){
+			logger.warn("getRequestHeader requestContext is null.",new Throwable());
+			return null;
+		}
+		return requestContext.getRequestHeader();
 	}
 	
 	public void setRequestAttribute(String name,Object value){
