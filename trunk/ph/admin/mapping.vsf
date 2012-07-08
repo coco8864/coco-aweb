@@ -116,7 +116,8 @@ function mappingInsert2(){
 	form.mappingRoles.value=jQuery("#mappingRoles").val();
 	form.mappingSourcePath.value=jQuery("#mappingSourcePath").val();
 	form.mappingDestinationType.value=jQuery("#mappingDestinationType").val();
-	form.destinationUrl.value=jQuery("#destinationUrl").val();
+	form.destinationUrl.value=jQuery("#mappingDestinationUrl").val();
+	form.trace.value=ph.jQuery("#mappingTrace").attr('checked');
 
 	form.submit();
 	form.command.value='importsMappings';
@@ -148,14 +149,15 @@ function mappingOpen2(){
 	jQuery("#mappingSourcePath").val('');
 	jQuery("#mappingDestinationServer").val('');
 	jQuery("#mappingDestinationPath").val('');
+	ph.jQuery("#mappingTrace").attr('checked','checked');
 	if(document.forms['mappingForm'].importsFile.value){
-		jQuery("#destinationUrl").val(document.forms['mappingForm'].importsFile.value);
-		jQuery("#destinationUrl").attr("disabled","disabed");
+		jQuery("#mappingDestinationUrl").val(document.forms['mappingForm'].importsFile.value);
+		jQuery("#mappingDestinationUrl").attr("disabled","disabed");
 		jQuery('#mappingDialog .map3').show();
 		jQuery("#mappingDestinationType").val("FILE");
 	}else{
-		jQuery("#destinationUrl").val('');
-		jQuery("#destinationUrl").attr("disabled","");
+		jQuery("#mappingDestinationUrl").val('');
+		jQuery("#mappingDestinationUrl").attr("disabled","");
 		jQuery("#mappingDestinationType").val("HTTP");##確定ではない,HTTPSかもしれない
 	}
 	jQuery("#mappingRoles").val('');
@@ -179,6 +181,7 @@ mappingTableRefresh();
 <input type="hidden" name="mappingSourcePath" />
 <input type="hidden" name="mappingDestinationType" />
 <input type="hidden" name="destinationUrl" />
+<input type="hidden" name="trace" />
 <input type="hidden" name="token" value="$esc.html(${session.token})"/>
 ファイル指定:<input type="file" name="importsFile" id="importsFile" />
 <input type="submit" value="一括移入"/>
