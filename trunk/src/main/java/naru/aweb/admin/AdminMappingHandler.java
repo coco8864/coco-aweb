@@ -1,14 +1,20 @@
 package naru.aweb.admin;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Collection;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
 import naru.aweb.http.ParameterParser;
 import naru.aweb.http.WebServerHandler;
 import naru.aweb.util.ServerParser;
+import naru.aweb.util.StreamUtil;
 import net.sf.json.JSON;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -50,8 +56,9 @@ public class AdminMappingHandler extends WebServerHandler{
 					save(json);
 				}
 			} catch (UnsupportedEncodingException e) {
+				logger.debug("importsMappings",e);
 			} catch (RuntimeException e) {
-				e.printStackTrace();
+				logger.debug("importsMappings",e);
 			}
 			completeResponse("205");
 			return;
@@ -61,10 +68,11 @@ public class AdminMappingHandler extends WebServerHandler{
 			String mappingNotes=parameter.getParameter("mappingNotes");
 			String mappingRealHost=parameter.getParameter("mappingRealHost");
 			String mappingRoles=parameter.getParameter("mappingRoles");
+			String mappingSecureType=parameter.getParameter("mappingSecureType");
 			String mappingSourcePath=parameter.getParameter("mappingSourcePath");
+			String mappingDestinationType=parameter.getParameter("mappingDestinationType");
 			String destinationUrl=parameter.getParameter("destinationUrl");
-			
-			Collection<Mapping> mappings=Mapping.query("WHERE notes='"+mappingNotes+"'", -1, 0, null);
+			Collection<Mapping> mappings=Mapping.query("WHERE notes=='"+mappingNotes+"'", -1, 0, null);
 			Mapping mapping;
 			if(mappings.size()!=0){
 				mapping=mappings.iterator().next();
@@ -74,15 +82,16 @@ public class AdminMappingHandler extends WebServerHandler{
 			mapping.setEnabled(true);
 			mapping.setNotes(mappingNotes);
 			mapping.setRealHostName(mappingRealHost);
+			mapping.setSourceType(Mapping.SourceType.WEB);
 			mapping.setRoles(mappingRoles);
 			if(mapping.getOptions()==null){
 				mapping.setOptions("{}");
 			}
-			
-			if("".equals(item.getFieldName())){
-				createReverseProxy(mapping,destinationUrl);
+			//uploadファイルがあれば、それでサイトを構築する
+			if("FILE".equalsIgnoreCase(mappingDestinationType)){
+				createWebsite(mapping,mappingSourcePath,mappingSecureType,item);
 			}else{
-				createWebsite(mapping,mappingSourcePath,item);
+				createReverseProxy(mapping,destinationUrl);
 			}
 			return;
 		}else if("reloadMappings".equals(command)){
@@ -94,11 +103,34 @@ public class AdminMappingHandler extends WebServerHandler{
 	}
 	
 	/*　website */
-	private void createWebsite(Mapping mapping,String mappingSourcePath,DiskFileItem item){
+	private void createWebsite(Mapping mapping,String mappingSourcePath,String mappingSecureType,DiskFileItem item){
 		if(mappingSourcePath==null||mappingSourcePath.length()==0){
 			mappingSourcePath="/";
 		}
+		String path="test";
+		if("SSL".equalsIgnoreCase(mappingSecureType)){
+			mapping.setSecureType(Mapping.SecureType.SSL);
+		}else{
+			mapping.setSecureType(Mapping.SecureType.PLAIN);
+		}
+		mapping.setDestinationType(Mapping.DestinationType.FILE);
 		mapping.setSourcePath(mappingSourcePath);
+		File appsDir=config.getAppsDocumentRoot();
+		File deployDir=new File(appsDir,path);
+		mapping.setDestinationPath(deployDir.getAbsolutePath());
+		if(deployDir.exists()){
+			File packupDir=new File(appsDir,path+System.currentTimeMillis());
+			deployDir.renameTo(packupDir);
+		}
+		InputStream is;
+		try {
+			is = item.getInputStream();
+			StreamUtil.unzip(deployDir, is);
+			mapping.save();
+		} catch (IOException e) {
+			logger.warn("createWebsite",e);
+		}
+		completeResponse("205");
 	}
 	
 	/* リバースproxy決め打ち*/
@@ -112,7 +144,6 @@ public class AdminMappingHandler extends WebServerHandler{
 		}
 		mapping.setDestinationServer(server.toServerString());
 		server.unref(true);
-		mapping.setSourceType(Mapping.SourceType.WEB);
 		if(pathSb.length()==0){
 			pathSb.append('/');
 		}

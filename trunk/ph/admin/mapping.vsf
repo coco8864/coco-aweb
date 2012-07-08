@@ -112,9 +112,12 @@ function mappingInsert2(){
 	form.command.value='mappingInsert2';
 	form.mappingNotes.value=jQuery("#mappingNotes").val();
 	form.mappingRealHost.value=jQuery("#mappingRealHost").val();
+	form.mappingSecureType.value=jQuery("#mappingSecureType").val();
 	form.mappingRoles.value=jQuery("#mappingRoles").val();
 	form.mappingSourcePath.value=jQuery("#mappingSourcePath").val();
+	form.mappingDestinationType.value=jQuery("#mappingDestinationType").val();
 	form.destinationUrl.value=jQuery("#destinationUrl").val();
+
 	form.submit();
 	form.command.value='importsMappings';
 	jQuery('#mappingDialog').dialog('close');
@@ -127,11 +130,20 @@ function mappingOpen2(){
 	jQuery("#mappingNotes").val('');
 	jQuery("#mappingRealHost").empty();
 	var domRealHost=jQuery("#mappingRealHost");
+	var hostCount=0;
 	for(var i in ph.admin.realHosts){
 		var realHost=ph.admin.realHosts[i];
+		if(realHost.name==='mainHost'){
+			continue;
+		}
+		hostCount++;
 		domRealHost.append('<option value="' + realHost.name +'">' + realHost.name + '</option>');
 	}
-	jQuery("#mappingRealHost").val('mainHost');
+	if(hostCount==0){
+		alert('mainHost以外のrealHostが必要です');
+		return;
+	}
+//	jQuery("#mappingRealHost").val('mainHost');
 	jQuery("#mappingSourceServer").val('');
 	jQuery("#mappingSourcePath").val('');
 	jQuery("#mappingDestinationServer").val('');
@@ -140,9 +152,11 @@ function mappingOpen2(){
 		jQuery("#destinationUrl").val(document.forms['mappingForm'].importsFile.value);
 		jQuery("#destinationUrl").attr("disabled","disabed");
 		jQuery('#mappingDialog .map3').show();
+		jQuery("#mappingDestinationType").val("FILE");
 	}else{
 		jQuery("#destinationUrl").val('');
 		jQuery("#destinationUrl").attr("disabled","");
+		jQuery("#mappingDestinationType").val("HTTP");##確定ではない,HTTPSかもしれない
 	}
 	jQuery("#mappingRoles").val('');
 	jQuery("#mappingOptions").val('');
@@ -160,8 +174,10 @@ mappingTableRefresh();
 <input type="hidden" name="command" value="importsMappings" />
 <input type="hidden" name="mappingNotes" />
 <input type="hidden" name="mappingRealHost" />
+<input type="hidden" name="mappingSecureType" />
 <input type="hidden" name="mappingRoles" />
 <input type="hidden" name="mappingSourcePath" />
+<input type="hidden" name="mappingDestinationType" />
 <input type="hidden" name="destinationUrl" />
 <input type="hidden" name="token" value="$esc.html(${session.token})"/>
 ファイル指定:<input type="file" name="importsFile" id="importsFile" />

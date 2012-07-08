@@ -308,7 +308,7 @@ public class Mapping{
 	private ServerParser destinationServerParser;
 	
 	@NotPersistent
-	private JSONObject optionsJson;
+	private JSONObject optionsJson=new JSONObject();
 	
 	@NotPersistent
 	private boolean isSourceMatchEntry;//正規表現でマッチさせるまでdestinationが決まらないEntry
