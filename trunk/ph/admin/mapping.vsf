@@ -150,19 +150,23 @@ function mappingOpen2(){
 	jQuery("#mappingDestinationServer").val('');
 	jQuery("#mappingDestinationPath").val('');
 	ph.jQuery("#mappingTrace").attr('checked','checked');
+
+    var height=0
 	if(document.forms['mappingForm'].importsFile.value){
 		jQuery("#mappingDestinationUrl").val(document.forms['mappingForm'].importsFile.value);
 		jQuery("#mappingDestinationUrl").attr("disabled","disabed");
 		jQuery('#mappingDialog .map3').show();
 		jQuery("#mappingDestinationType").val("FILE");
+        height=250;
 	}else{
 		jQuery("#mappingDestinationUrl").val('');
 		jQuery("#mappingDestinationUrl").attr("disabled","");
 		jQuery("#mappingDestinationType").val("HTTP");##確定ではない,HTTPSかもしれない
+        height=200;
 	}
 	jQuery("#mappingRoles").val('');
 	jQuery("#mappingOptions").val('');
-	jQuery("#mappingDialog").dialog('option',{height:200});
+	jQuery("#mappingDialog").dialog('option',{height:height});
 	jQuery('#mappingDialog').dialog('open');
 }
 mappingTableRefresh();
