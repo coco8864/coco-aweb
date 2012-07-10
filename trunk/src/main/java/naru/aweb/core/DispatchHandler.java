@@ -94,8 +94,8 @@ public class DispatchHandler extends ServerBaseHandler {
 		super.recycle();
 	}
 
-	private long startTotalReadLength;
-	private long startTotalWriteLength;
+//	private long startTotalReadLength;
+//	private long startTotalWriteLength;
 	
 	/*
 	 * ‰‰ñconnectionŠJİ‚¨‚æ‚ÑAKeepAlive‚ÉŒÄ‚Ño‚³‚ê‚é
@@ -103,8 +103,8 @@ public class DispatchHandler extends ServerBaseHandler {
 	public void onStartRequest() {
 		logger.debug("#startRequest.cid:" + getChannelId());
 		headerPage.recycle();
-		startTotalReadLength=getTotalReadLength();
-		startTotalWriteLength=getTotalWriteLength();
+//		startTotalReadLength=getTotalReadLength();
+//		startTotalWriteLength=getTotalWriteLength();
 		asyncRead(null);
 	}
 

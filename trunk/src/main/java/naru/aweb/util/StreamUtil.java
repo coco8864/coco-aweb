@@ -2,7 +2,6 @@ package naru.aweb.util;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,7 +11,11 @@ import java.net.SocketAddress;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import org.apache.log4j.Logger;
+
 public class StreamUtil {
+	private static Logger logger=Logger.getLogger(StreamUtil.class);
+	
 	/**
 	 * InputStreamにあるデータを一気に読み込む
 	 * 主にテスト用
@@ -76,10 +79,15 @@ public class StreamUtil {
 		}
 	}
 	
-	/* zipファイルをbaseに展開する　*/
-	public static boolean unzip(File base,InputStream is){
+	/**
+	 *  zipファイルをbaseに展開する
+	 * @return 展開したファイル,ディレクトリ数
+	 */
+	public static int unzip(File base,InputStream is){
 		ZipInputStream zis = new ZipInputStream(is);
+		int count=0;
 		try {
+			int x=zis.available();
 			String baseCan=base.getCanonicalPath();
 			while (true) {
 				ZipEntry ze = zis.getNextEntry();
@@ -89,10 +97,10 @@ public class StreamUtil {
 				String fileName = ze.getName();
 				File file=new File(base,fileName);
 				if(!file.getCanonicalPath().startsWith(baseCan)){
-					return false;
+					return count;
 				}
 				if(file.exists()){
-					return false;
+					return count;
 				}
 				if(ze.isDirectory()){
 					file.mkdirs();
@@ -103,13 +111,14 @@ public class StreamUtil {
 				createFile(file,zis);
 			}
 		} catch (IOException e) {
-			return false;
+			logger.warn("unzip error",e);
+			return count;
 		}finally{
 			try {
 				zis.close();
 			} catch (IOException ignore) {
 			}
 		}
-		return true;
+		return count;
 	}
 }
