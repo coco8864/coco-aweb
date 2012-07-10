@@ -119,7 +119,11 @@ public class AdminMappingHandler extends WebServerHandler{
 		if(mappingSourcePath==null||mappingSourcePath.length()==0){
 			mappingSourcePath="/";
 		}
-		String path="test";
+		String path=item.getName();
+		int pos=path.lastIndexOf(".");
+		if(pos>=0){
+			path=path.substring(0,pos);
+		}
 		if("SSL".equalsIgnoreCase(mappingSecureType)){
 			mapping.setSecureType(Mapping.SecureType.SSL);
 		}else{
@@ -137,7 +141,10 @@ public class AdminMappingHandler extends WebServerHandler{
 		InputStream is;
 		try {
 			is = item.getInputStream();
-			StreamUtil.unzip(deployDir, is);
+			int count=StreamUtil.unzip(deployDir, is);
+			if(count==0){
+				return "<script>alert('upload file error');</script>";
+			}
 			mapping.save();
 		} catch (IOException e) {
 			logger.warn("createWebsite",e);
