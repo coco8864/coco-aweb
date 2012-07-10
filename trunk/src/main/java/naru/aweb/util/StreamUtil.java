@@ -87,7 +87,6 @@ public class StreamUtil {
 		ZipInputStream zis = new ZipInputStream(is);
 		int count=0;
 		try {
-			int x=zis.available();
 			String baseCan=base.getCanonicalPath();
 			while (true) {
 				ZipEntry ze = zis.getNextEntry();
@@ -102,6 +101,7 @@ public class StreamUtil {
 				if(file.exists()){
 					return count;
 				}
+				count++;
 				if(ze.isDirectory()){
 					file.mkdirs();
 					continue;
