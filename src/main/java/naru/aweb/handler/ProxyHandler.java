@@ -102,9 +102,9 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 			requestHeader.removeHeader(HeaderParser.IF_NONE_MATCH);
 		}
 		//reverse proxy‚Ìê‡referer‚ğ‘‚«Š·‚¦‚é
-		if(mapping.getMapping().getSourceType()!=Mapping.SourceType.WEB){
-			return;
-		}
+		//if(mapping.getMapping().getSourceType()!=Mapping.SourceType.WEB){
+		//	return;
+		//}
 		String referer=requestHeader.getHeader(HeaderParser.REFERER);
 		if(referer==null){
 			return;

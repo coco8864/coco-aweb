@@ -272,6 +272,10 @@ public class MappingResult extends PoolBase {
 	}
 	
 	public String reverseReferer(String referer){
+		Mapping.SourceType sourceType=getMapping().getSourceType();
+		if(sourceType!=Mapping.SourceType.PROXY&&sourceType!=Mapping.SourceType.WEB){
+			return referer;
+		}
 		if(resolveServer==null){
 			return referer;
 		}
@@ -282,12 +286,6 @@ public class MappingResult extends PoolBase {
 		if (!matcher.find()) {
 			return referer;
 		}
-		String locationPath = matcher.group(3);
-		String sourcePath = mapping.getSourcePath();
-		if(!locationPath.startsWith(sourcePath)){
-			return referer;
-		}
-		String destinationPath = mapping.getDestinationPath();
 		StringBuilder sb = new StringBuilder();
 		switch (resolveType) {
 		case HTTP:
@@ -300,8 +298,24 @@ public class MappingResult extends PoolBase {
 			return referer;
 		}
 		sb.append(resolveServer.toString());
-		sb.append(destinationPath);
-		sb.append(locationPath.substring(sourcePath.length()));
+		String locationPath = matcher.group(3);
+		if(sourceType==Mapping.SourceType.PROXY){
+			String server= matcher.group(2);
+			targetServer.getHost();
+			if(!server.contains(targetServer.getHost())){
+				return referer;
+			}
+			sb.append(locationPath);
+		}else{
+			String sourcePath = mapping.getSourcePath();
+			if(!locationPath.startsWith(sourcePath)){
+				return referer;
+			}
+			String destinationPath = mapping.getDestinationPath();
+			
+			sb.append(destinationPath);
+			sb.append(locationPath.substring(sourcePath.length()));
+		}
 		return sb.toString();
 	}
 
