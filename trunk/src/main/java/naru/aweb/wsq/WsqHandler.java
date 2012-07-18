@@ -139,9 +139,9 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 		ress.add(res);
 	}
 	
-	private void getQnames(List ress){
-		Collection<String> qnames=wsqManager.getQnames(srcPath);
-		JSON res=WsqManager.makeMessage(WsqManager.CB_TYPE_INFO,null, null,"getQnames",qnames);
+	private void qnames(List ress){
+		Collection<String> qnames=wsqManager.qnames(srcPath);
+		JSON res=WsqManager.makeMessage(WsqManager.CB_TYPE_INFO,null, null,"qnames",qnames);
 		ress.add(res);
 	}
 	
@@ -183,8 +183,8 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 			publish(msg,ress);
 		}else if("close".equals(type)){
 			close(msg,ress);
-		}else if("getQnames".equals(type)){
-			getQnames(ress);
+		}else if("qnames".equals(type)){
+			qnames(ress);
 		}else if("deploy".equals(type)){
 			String qname=msg.getString("qname");
 			String className=msg.getString("className");

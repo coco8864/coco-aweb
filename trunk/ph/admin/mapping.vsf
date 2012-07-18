@@ -55,6 +55,10 @@ function mappingLine(trTag,mapping){
 	aTag.appendChild(textNode);
 	tdTag.appendChild(aTag);
 	jQuery(aTag).bind("click",function(){
+##jsonlibの問題からoptionsは先頭にスペースをつけて送信されてくる
+			if(mapping.options.charAt(0)===' '){
+				mapping.options=mapping.options.substring(1);
+			}
 			jQuery('#mappingDialog .map1').show();
 			jQuery('#mappingDialog .map2').hide();
 			jQuery("#mappingId").text(mapping.id);
@@ -83,7 +87,18 @@ function mappingLine(trTag,mapping){
 	trTag.appendChild(tdTag);
 	tdTag=ph.admin.mkTdTag(mapping.enabled);
 	trTag.appendChild(tdTag);
-	tdTag=ph.admin.mkTdTag(mapping.notes);
+
+	if(mapping.sourceUrl){
+		tdTag=document.createElement("td");
+		var textNode=document.createTextNode(mapping.notes);
+		var aTag=document.createElement("a");
+		aTag.setAttribute("href",mapping.sourceUrl);
+		aTag.appendChild(textNode);
+		tdTag.appendChild(aTag);
+	}else{
+		tdTag=ph.admin.mkTdTag(mapping.notes);
+	}
+
 	trTag.appendChild(tdTag);
 	tdTag=ph.admin.mkTdTag(mapping.realHostName);
 	trTag.appendChild(tdTag);
@@ -95,12 +110,12 @@ function mappingLine(trTag,mapping){
 	trTag.appendChild(tdTag);
 	tdTag=ph.admin.mkTdTag(mapping.sourcePath);
 	trTag.appendChild(tdTag);
-	tdTag=ph.admin.mkTdTag(mapping.destinationType);
-	trTag.appendChild(tdTag);
-	tdTag=ph.admin.mkTdTag(mapping.destinationServer);
-	trTag.appendChild(tdTag);
-	tdTag=ph.admin.mkTdTag(mapping.destinationPath);
-	trTag.appendChild(tdTag);
+##	tdTag=ph.admin.mkTdTag(mapping.destinationType);
+##	trTag.appendChild(tdTag);
+##	tdTag=ph.admin.mkTdTag(mapping.destinationServer);
+##	trTag.appendChild(tdTag);
+##	tdTag=ph.admin.mkTdTag(mapping.destinationPath);
+##	trTag.appendChild(tdTag);
 	tdTag=ph.admin.mkTdTag(mapping.roles);
 	trTag.appendChild(tdTag);
 	tdTag=ph.admin.mkTdTag(mapping.options);
@@ -196,7 +211,7 @@ mappingTableRefresh();
 <thead>
 <tr><th title='id'>ID</th><th title='enabled'>en</th><th title='notes'>notes</th><th title='realHostName'>realHost</th>
 <th title='sourceType'>source</th><th title='secureType'>secure</th><th title='sourceServer'>srcServer</th><th title='sourcePath'>srcPath</th>
-<th title='destinationType'>desType</th><th title='destinationServer'>desServer</th><th title='destinationPath'>desPath</th>
+##<th title='destinationType'>desType</th><th title='destinationServer'>desServer</th><th title='destinationPath'>desPath</th>
 <th title='roles'>roles</th><th  title='options'>options</th>
 </tr>
 </thead>

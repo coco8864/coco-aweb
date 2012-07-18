@@ -53,7 +53,7 @@ public class WsqManager {
 		return json;
 	}
 	
-	public Collection<String> getQnames(String srcPath){
+	public Collection<String> qnames(String srcPath){
 		Map<String,Wsq> qmap=wsqs.get(srcPath);
 		if(qmap==null){
 			return null;

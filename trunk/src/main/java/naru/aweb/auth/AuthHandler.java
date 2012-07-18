@@ -430,11 +430,14 @@ public class AuthHandler extends WebServerHandler {
 		response.element("user",userJson);
 		
 		//íºê⁄égÇ¶ÇÈWebURLÇóÒãì
-		List<Mapping> allowMappings=config.getMapper().getRoleWebMappings(userRoles);
+		List<Mapping> allowMappings=config.getMapper().getRoleMappings(userRoles);
 		JSONArray allowUrls=new JSONArray();
 		for(Mapping allowMapping:allowMappings){
-			String notes=allowMapping.getNotes();
 			String url=allowMapping.calcSourceUrl();
+			if(url==null){
+				continue;
+			}
+			String notes=allowMapping.getNotes();
 			JSONObject urlJson=new JSONObject();
 			urlJson.put("notes", notes);
 			urlJson.put("url", url);

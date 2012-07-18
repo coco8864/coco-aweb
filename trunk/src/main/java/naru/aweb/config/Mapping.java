@@ -81,7 +81,7 @@ public class Mapping{
 		jsonConfig=new JsonConfig();
 		jsonConfig.setRootClass(Mapping.class);
 		jsonConfig.setIgnoreTransientFields(true);
-		jsonConfig.setExcludes(new String[]{"admin","auth","destinationFile","logType","userId","sourceServerHost","rolesList","sessionUpdate"});
+		jsonConfig.setExcludes(new String[]{"admin","auth","destinationFile","logType","userId","sourceServerHost","rolesList","sessionUpdate","mappingAuth"});
 		jsonConfig.setNewBeanInstanceStrategy(new MappingInstanceStrategy());
 	}
 	
@@ -183,7 +183,12 @@ public class Mapping{
 	}
 	
 	public static JSON collectionToJson(Collection<Mapping> mappings){
-		return JSONSerializer.toJSON(mappings,jsonConfig);
+		JSONArray result=new JSONArray();
+		for(Mapping mapping:mappings){
+			result.add(mapping.toJson());
+		}
+		return result;
+//		return JSONSerializer.toJSON(mappings,jsonConfig);
 	}
 	
 	private Config config=Config.getConfig();
@@ -394,7 +399,15 @@ public class Mapping{
 	private Set<String> allowOrigins=null;
 	
 	public JSON toJson(){
-		JSON json=JSONSerializer.toJSON(this,jsonConfig);
+		JSONObject json=(JSONObject)JSONSerializer.toJSON(this,jsonConfig);
+		String options=(String)json.get("options");
+		try {
+			optionsJson=(JSONObject)JSONSerializer.toJSON(options);
+		} catch (JSONException e) {//json•¶Žš—ñ‚Å‚Í‚È‚©‚Á‚½ê‡
+			optionsJson=new JSONObject();
+		}
+		json.put("options", " "+json.get("options"));
+		json.put("sourceUrl",calcSourceUrl());
 		return json;
 	}
 	
@@ -958,6 +971,17 @@ public class Mapping{
 	
 	//‚±‚ÌMapping‚ðŒÄ‚Ño‚·‚½‚ß‚ÌURL
 	public String calcSourceUrl(){
+		RealHost realHost=RealHost.getRealHost(realHostName);
+		if(!enabled){
+			return null;
+		}
+		if(!realHost.isBinding()){//“®ì’†‚Å‚È‚¢realHost‚Ìurl‚Í•Ô‹p‚µ‚È‚¢
+			return null;
+		}
+		if( options.indexOf("listing:false")>=0 ){
+//		if( Boolean.FALSE.equals(getOption("listing"))){
+			return null;
+		}
 		StringBuffer sb=new StringBuffer();
 		int defaultPort;
 		switch(sourceType){
@@ -970,6 +994,7 @@ public class Mapping{
 				defaultPort=443;
 			}
 			break;
+		/*
 		case WS:
 			if(secureType==SecureType.PLAIN){
 				sb.append("ws://");
@@ -979,6 +1004,7 @@ public class Mapping{
 				defaultPort=443;
 			}
 			break;
+		*/
 		default:
 			return null;
 		}
@@ -987,7 +1013,6 @@ public class Mapping{
 		}else{
 			sb.append(config.getSelfDomain());
 		}
-		RealHost realHost=RealHost.getRealHost(realHostName);
 		int port=realHost.getBindPort();
 		if(defaultPort!=port){
 			sb.append(":");

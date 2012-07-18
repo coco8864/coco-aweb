@@ -285,7 +285,7 @@ if(typeof ph == "undefined"){
 					data: sendText,
 					success: this.onCallback,
 					error: function(){
-						ph.auth.getAppId(ph.queue._path,function(res/*isAuth,appId*/){
+						ph.auth.auth(ph.queue._path,function(res/*isAuth,appId*/){
 							if(res.result){
 								ph.log('2:appId'+res.appId);
 								ph.queue.isAuth=true;
@@ -419,7 +419,7 @@ if(typeof ph == "undefined"){
 					ph.queue.url=window.location.protocol + "//" + window.location.host + ph.queue._path;
 					ph.log("change to Polling:"+ ph.queue.url);
 				}
-				ph.auth.getAppId(ph.queue._path,function(res/*isAuth,appId*/){
+				ph.auth.auth(ph.queue._path,function(res/*isAuth,appId*/){
 					if(res.result){
 						ph.log('3:appId'+res.appId);
 						ph.queue.isAuth=true;
