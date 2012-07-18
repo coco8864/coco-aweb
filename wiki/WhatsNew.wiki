@@ -3,6 +3,14 @@
 = 新着情報=
 
  Phatom Proxyの改版情報を提供します。
+ ==  2012.7.19 Phatom Proxy1.4.0 公開 ==
+ * sessionStorage,Cross-document messagingを必須とした
+ * クロスサイト認証を可能とした
+ * !WebSocketsフレームワークwsqを追加
+ * mappingの簡易作成機能
+ * バグ修正
+
+
  ==  2012.1.14 Phatom Proxy1.3.0 公開 ==
  * 認証方式の見直し
  * welcome画面では、roleに従って利用可能なWeb mappingをリスト
