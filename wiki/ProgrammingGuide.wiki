@@ -45,3 +45,7 @@
      接続を解除します
  # ServerAPI
   現状javaインタフェースだが、javascriptインタフェースを用意したい
+  naru.aweb.wsq.Wsqletインタフェースを実装
+  * naru.aweb.wsq.Wsqletクラス
+  * naru.aweb.wsq.WsqCtxクラス
+  * naru.aweb.wsq.Peerクラス
