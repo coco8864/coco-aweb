@@ -5,13 +5,12 @@
 !WebSocketsアプリケーションフレームワーク wsq
 
  # アプリケーションモデル
-   * アプリケーションを、１つのurl配下に構築
-   * url中に複数のqueueを配備、ブラウザより、queueに対して、更新(publish),参照(subscribe)することにより動作
+   アプリケーションを、１つのurl配下に構築、url中に複数のqueueを配備、ブラウザより、queueに対して、更新(publish),参照(subscribe)することにより動作します。
   特徴
-   * !WebSocketの特徴を生かした、リアルタイムなフィードバック
+   * !WebSocketsの特徴を生かした、リアルタイムなフィードバック
    * Phantom Proxyの認証機能（roleベース）が利用可能
    * blobデータの送受信に対応、ドラッグアンドドロップ等よるバイナリデータが扱えます
-   * !WebSocketが利用できないブラウザでは、XHRにて動作、機能をシミュレート
+   * !WebSocketsが利用できないブラウザでは、XHRにて動作、機能をシミュレート
    * クロスドメインで利用可能、ドメイン制限も可能
    * bookmarkletからアプリ呼び出し可能
  # javascriptAPI
