@@ -1,4 +1,4 @@
-#summary !WebSocketsアプリケーションフレームワーク
+#summary WebSocketsアプリケーションフレームワーク
 
 = プログラミングガイド =
 
