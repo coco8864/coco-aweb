@@ -6,8 +6,7 @@
 
  # アプリケーションモデル
    * アプリケーションを、１つのurl配下に構築
-   * url中に複数のqueueを配備する
-   * ブラウザより、queueに対して、更新(publish),参照(subscribe)することにより動作
+   * url中に複数のqueueを配備、ブラウザより、queueに対して、更新(publish),参照(subscribe)することにより動作
   特徴
    * !WebSocketの特徴を生かした、リアルタイムなフィードバック
    * Phantom Proxyの認証機能（roleベース）が利用可能
@@ -16,4 +15,31 @@
    * クロスドメインで利用可能、ドメイン制限も可能
    * bookmarkletからアプリ呼び出し可能
  # javascriptAPI
+  # 接続メソッド
+   * ph.wsq.open(url,openCb,eventCb)
+    認証、アプリケーションへの接続を行う
+    url:'/path';
+    'http(s)://host:port/path'
+    'ws(s)://host:port/path'
+    openCb:openリクエストの結果が通知される。
+    evnetCb:このconnectionに関するイベントが通知される。
+    connection.cbType INFO|ERROR|MESSAGE
+    connection.cause  open|subscribe|publish|qnames|close|unsubscribe|server
+    connection.message opend|closed|
+    connection.qname 対象qname
+    connection.subId 対象subid
+    connection.qnameList qnameメソッドの復帰情報、このurlに登録されているqueue名群
+    openCbでconnectionを受け取る
+    openCbは、その後のconnectionイベントの通知も受ける
+  ## connectionオブジェクト
+    各queueへの操作や接続の解消を行う
+    connection.publish(qname,message,subid);
+    message:string or object or blob
+    connection.subscribe(qname,subscribeCb,subid);
+    subscribeCb:subscribeCb(message);
+    connection.unsubscribe(qname,subid);
+    connection.qnames();
+    open時に指定したurl配下にあるqname一覧を要求します
+    connection.close();
+    接続を解除します
  # ServerAPI
