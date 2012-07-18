@@ -37,6 +37,7 @@
 <input type="button" value="publish string" onclick="wsq.publish('test','testAAA');"/>
 <input type="button" value="publish object" onclick="wsq.publish('test',{aaa:'testBBB'});"/>
 <input type="button" value="publish bin" onclick="wsq.publish('test',{aaa:'testCCC',blobData:[{data:'aaaa'},{data:'bbbbb'}]});"/>
+<input type="button" value="qnames" onclick="wsq.qnames();"/>
 </ul>
 <div id='target'><p>dorag and dromp file upload</p></div>
 <div>
@@ -55,6 +56,12 @@ ph.jQuery(function(){
       ph.log('++open cb++ message:'+con.message);
       ph.dump1(con);
       ph.log('--open cb--');
+      window.wsq=con;
+    },
+    function(con){
+      ph.log('++event cb++ message:'+con.message);
+      ph.dump1(con);
+      ph.log('--event cb--');
       window.wsq=con;
     }
   );

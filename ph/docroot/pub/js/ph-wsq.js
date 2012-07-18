@@ -71,7 +71,7 @@
     },
     _connections:{},
     /* 接続毎に作られるオブジェクト */
-    _Connection:function(url,cb){
+    _Connection:function(url,openCb,cb){
       /* callback通知情報 */
       if(url.lastIndexOf('ws',0)==0 ){
         this.isWs=true;/* WebSocket */
@@ -80,7 +80,7 @@
       }
       this.url=url;
       this.stat=this.STAT_INIT;/* init auth idle open connect close */
-      this.qnames=[];
+      this.qnameList=[];
 
       /* callback通知情報 */
       this.cbType=null;
@@ -92,6 +92,10 @@
 
       /* 内部制御情報 */
       this._isAllowBlob=this.isWs;//TODO check File Api too BlobBuilder...
+      this._openCb=openCb;
+      if(!cb){
+        cb=function(){};//event通知が必要ない場合
+      }
       this._cb=cb;
       this._appId=null;//not authrize yet
       this._errCount=0;/* 連続してerrorになった数 */
@@ -105,7 +109,7 @@
       this._xhrFrame=null;/*xhr使用時frame*/
     },
     /* */
-    open:function(url,cb){/* isSsl,hostPort,cb */
+    open:function(url,openCb,eventCb){/* isSsl,hostPort,cb */
       if(url.lastIndexOf('ws://',0)===0||url.lastIndexOf('wss://',0)===0){
         if(!ph.useWebSocket){
           //webSocketが使えなくてurlがws://だったらhttp://に変更
@@ -139,7 +143,7 @@
         }
         return;
       }
-      var con=new ph.wsq._Connection(url,cb);
+      var con=new ph.wsq._Connection(url,openCb,eventCb);
       ph.wsq._connections[url]=con;
       con.stat=this.STAT_AUTH;/* auth */
       ph.auth.auth(url,function(auth){
@@ -436,8 +440,8 @@
       if(callbacks){
         delete callbacks[msg.subId];
       }
-    }else if(msg.type==ph.wsq.CB_INFO && msg.cause=='getQnames'){//正常にgetQnames
-      this.qnames=msg.message;
+    }else if(msg.type==ph.wsq.CB_INFO && msg.cause=='qnames'){//正常にqnames
+      this.qnameList=msg.message;
     }else if(msg.type==ph.wsq.CB_INFO && msg.cause=='close'){//正常にclose
       if(this.isWs){
         this._ws.close();
@@ -520,6 +524,9 @@
     if(isFin){
       this.isFin=true;
       delete ph.wsq._connections[this.url];
+    }
+    if(cause==='open'){//open操作に関するcallbackはopenCbに通知
+      this._openCb(this);
     }
     this._cb(this);
   };
@@ -680,12 +687,12 @@
       ph.wsq._buildBlobs(header,message,blobData,this);
     }
   };
-  wsq._Connection.prototype.getQnames=function(){
+  wsq._Connection.prototype.qnames=function(){
     if(this.stat!=ph.wsq.STAT_CONNECT){
-      this._callback(ph.wsq.CB_ERROR,'getQnames','stat error',false,null,null);
+      this._callback(ph.wsq.CB_ERROR,'qnames','stat error',false,null,null);
       return;
     }
-    var sendData={type:'getQnames'};
+    var sendData={type:'qnames'};
     this._send(sendData);
   };
   wsq._Connection.prototype.deploy=function(qname,className){

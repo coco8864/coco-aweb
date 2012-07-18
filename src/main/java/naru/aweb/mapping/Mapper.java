@@ -444,9 +444,10 @@ public class Mapper {
 		return false;
 	}
 	
-	public List<Mapping> getRoleWebMappings(List<String> userRoles){
+	public List<Mapping> getRoleMappings(List<String> userRoles){
 		List<Mapping> mappings=new ArrayList<Mapping>();
 		for(Mapping mapping:activeMappings){
+			/*
 			switch(mapping.getSourceType()){
 			case WEB:
 			case WS:
@@ -457,6 +458,7 @@ public class Mapper {
 			if( Boolean.FALSE.equals(mapping.getOption("listing")) ){
 				continue;
 			}
+			*/
 			List<String> mappingRoles=mapping.getRolesList();
 			if(matchRoles(userRoles,mappingRoles)){
 				mappings.add(mapping);

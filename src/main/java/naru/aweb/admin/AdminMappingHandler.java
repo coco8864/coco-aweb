@@ -1,13 +1,11 @@
 package naru.aweb.admin;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Collection;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import java.util.List;
 
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
@@ -33,11 +31,10 @@ public class AdminMappingHandler extends WebServerHandler{
 	
 	void doCommand(String command,ParameterParser parameter){
 		if("mappingList".equals(command)){
+//			List<String>userRoles=getAuthSession().getUser().getRolesList();
+//			List<Mapping> allowMappings=config.getMapper().getRoleMappings(userRoles);
 			String order=parameter.getParameter("order");
 			Collection<Mapping> mappings=Mapping.query(null, -1, 0, order);
-//			TreeSet<Mapping> sortMappings=new TreeSet<Mapping>(Mapping.mappingComparator);
-//			sortMappings.addAll(mappings);
-//			JSON mappingsJson=Mapping.collectionToJson(sortMappings);
 			JSON mappingsJson=Mapping.collectionToJson(mappings);
 			responseJson(mappingsJson);
 			return;
