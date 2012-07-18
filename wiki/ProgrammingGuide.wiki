@@ -5,9 +5,25 @@
 WebSocketアプリケーションフレームワーク wsq
 
 
-= アプリケーションモデル =
+ == アプリケーションモデル ==
 
-Add your content here.  Format your content with:
+ アプリケーションは、１つのurlで表現
+ url中に複数のqueueを配備する
+ ブラウザより、queueに対して、更新(publish),参照(subscribe)することにより動作
+
+特徴
+ * WebSocketの特徴を生かした、リアルタイムなフィードバック
+ * blobデータの送受信に対応、ドラッグアンドドロップ等よるバイナリデータが扱えます
+ * WebSocketが利用できないブラウザでは、XHRにて動作、機能をシミュレート
+ * queueへのアクセスは、クロスドメインで可能、ドメイン制限も可能
+
   * Text in *bold* or _italic_
   * Headings, paragraphs, and lists
   * Automatic links to other wiki pages
+
+
+ == javascriptAPI ==
+
+
+
+ == ServerAPI ==
