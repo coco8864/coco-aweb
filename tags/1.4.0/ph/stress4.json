@@ -1,0 +1,13 @@
+[
+{"name":"testT100","browserCount":"1000","loopCount":"1000000","isCallerKeepAlive":"true",thinkingTime:1000},
+{"name":"testT90","browserCount":"1000","loopCount":"1000000","isCallerKeepAlive":"true",thinkingTime:900},
+{"name":"testT80","browserCount":"1000","loopCount":"1000000","isCallerKeepAlive":"true",thinkingTime:800},
+{"name":"testT70","browserCount":"1000","loopCount":"1000000","isCallerKeepAlive":"true",thinkingTime:700},
+{"name":"testT60","browserCount":"1000","loopCount":"1000000","isCallerKeepAlive":"true",thinkingTime:600},
+{"name":"testT50","browserCount":"1000","loopCount":"1000000","isCallerKeepAlive":"true",thinkingTime:500},
+{"name":"testT40","browserCount":"1000","loopCount":"1000000","isCallerKeepAlive":"true",thinkingTime:400},
+{"name":"testT30","browserCount":"1000","loopCount":"1000000","isCallerKeepAlive":"true",thinkingTime:300},
+{"name":"testT20","browserCount":"1000","loopCount":"1000000","isCallerKeepAlive":"true",thinkingTime:200},
+{"name":"testT10","browserCount":"1000","loopCount":"1000000","isCallerKeepAlive":"true",thinkingTime:100},
+{"name":"testT00","browserCount":"1000","loopCount":"1000000","isCallerKeepAlive":"true",thinkingTime:0}
+]

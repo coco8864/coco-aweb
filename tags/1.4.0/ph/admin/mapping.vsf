@@ -1,0 +1,221 @@
+<script type="text/javascript"> 
+
+function doMappingCommand(command){
+	var mapping={
+		id:jQuery("#mappingId").text(),
+		enabled:jQuery("#mappingEnabled").attr("checked"),
+		notes:jQuery("#mappingNotes").val(),
+		realHostName:jQuery("#mappingRealHost").val(),
+		sourceType:jQuery("#mappingSourceType").val(),
+		secureType:jQuery("#mappingSecureType").val(),
+		sourceServer:jQuery("#mappingSourceServer").val(),
+		sourcePath:jQuery("#mappingSourcePath").val(),
+		destinationType:jQuery("#mappingDestinationType").val(),
+		destinationServer:jQuery("#mappingDestinationServer").val(),
+		destinationPath:jQuery("#mappingDestinationPath").val(),
+		roles:jQuery("#mappingRoles").val(),
+##jsonlibが引用譜を除いて'{'で始まる文字列は、jsonと判定してしまう。
+		options:' ' + jQuery("#mappingOptions").val()
+	}
+	if(command=="mappingInsert"){
+		delete mapping.id;
+	}
+	ph.admin.doObjCommand('mapping',command,mapping,function(json){
+				ph.log('doMappingSave:'+json);
+				mappingTableRefresh();
+			});
+	jQuery("#mappingDialog").dialog('close');
+}
+
+
+function mappingTableRefresh(){
+	ph.log("mappingTableRefresh");
+	ph.admin.doPramCommand('mapping','mappingList',{order:'realHostName, sourceType,sourceServer,sourcePath'},function(json){
+		var mappings=ph.JSON.parse(json);
+		mappingTable(mappings);
+	});
+}
+
+function mappingTable(lines){
+	ph.jQuery("#mappingData").empty();
+	var targetTag=document.getElementById("mappingData");
+	for(i in lines){
+		var trTag=document.createElement("tr");
+		mappingLine(trTag,lines[i]);
+		targetTag.appendChild(trTag);
+	}
+}
+
+function mappingLine(trTag,mapping){
+	var tdTag;
+	tdTag=document.createElement("td");
+	var textNode=document.createTextNode(mapping.id);
+	var aTag=document.createElement("a");
+	aTag.setAttribute("href","#");
+	aTag.appendChild(textNode);
+	tdTag.appendChild(aTag);
+	jQuery(aTag).bind("click",function(){
+##jsonlibの問題からoptionsは先頭にスペースをつけて送信されてくる
+			if(mapping.options.charAt(0)===' '){
+				mapping.options=mapping.options.substring(1);
+			}
+			jQuery('#mappingDialog .map1').show();
+			jQuery('#mappingDialog .map2').hide();
+			jQuery("#mappingId").text(mapping.id);
+			jQuery("#mappingEnabled").attr("checked",mapping.enabled);
+			jQuery("#mappingNotes").val(mapping.notes);
+			var domRealHost=jQuery("#mappingRealHost");
+			jQuery("#mappingRealHost").empty();
+			for(var i in ph.admin.realHosts){
+				var realHost=ph.admin.realHosts[i];
+				domRealHost.append('<option value="' + realHost.name +'">' + realHost.name + '</option>');
+			}
+			jQuery("#mappingRealHost").val(mapping.realHostName);
+			jQuery("#mappingSourceType").val(mapping.sourceType);
+			jQuery("#mappingSecureType").val(mapping.secureType);
+			jQuery("#mappingSourceServer").val(mapping.sourceServer);
+			jQuery("#mappingSourcePath").val(mapping.sourcePath);
+			jQuery("#mappingDestinationType").val(mapping.destinationType);
+			jQuery("#mappingDestinationServer").val(mapping.destinationServer);
+			jQuery("#mappingDestinationPath").val(mapping.destinationPath);
+			jQuery("#mappingRoles").val(mapping.roles);
+			jQuery("#mappingOptions").val(mapping.options);
+			jQuery("#mappingDialog").dialog('option',{height:450});
+			jQuery("#mappingDialog").dialog('open');
+			return false;
+		});
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(mapping.enabled);
+	trTag.appendChild(tdTag);
+
+	if(mapping.sourceUrl){
+		tdTag=document.createElement("td");
+		var textNode=document.createTextNode(mapping.notes);
+		var aTag=document.createElement("a");
+		aTag.setAttribute("href",mapping.sourceUrl);
+		aTag.appendChild(textNode);
+		tdTag.appendChild(aTag);
+	}else{
+		tdTag=ph.admin.mkTdTag(mapping.notes);
+	}
+
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(mapping.realHostName);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(mapping.sourceType);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(mapping.secureType);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(mapping.sourceServer);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(mapping.sourcePath);
+	trTag.appendChild(tdTag);
+##	tdTag=ph.admin.mkTdTag(mapping.destinationType);
+##	trTag.appendChild(tdTag);
+##	tdTag=ph.admin.mkTdTag(mapping.destinationServer);
+##	trTag.appendChild(tdTag);
+##	tdTag=ph.admin.mkTdTag(mapping.destinationPath);
+##	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(mapping.roles);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(mapping.options);
+	trTag.appendChild(tdTag);
+}
+
+function mappingInsert2(){
+	var form=document.forms['mappingForm'];
+	form.command.value='mappingInsert2';
+	form.mappingNotes.value=jQuery("#mappingNotes").val();
+	form.mappingRealHost.value=jQuery("#mappingRealHost").val();
+	form.mappingSecureType.value=jQuery("#mappingSecureType").val();
+	form.mappingRoles.value=jQuery("#mappingRoles").val();
+	form.mappingSourcePath.value=jQuery("#mappingSourcePath").val();
+	form.mappingDestinationType.value=jQuery("#mappingDestinationType").val();
+	form.destinationUrl.value=jQuery("#mappingDestinationUrl").val();
+	form.trace.value=ph.jQuery("#mappingTrace").attr('checked');
+
+	form.submit();
+	form.command.value='importsMappings';
+	jQuery('#mappingDialog').dialog('close');
+}
+
+function mappingOpen2(){
+	jQuery('#mappingDialog .map1').hide();
+	jQuery('#mappingDialog .map2').show();
+	jQuery("#mappingEnabled").attr("checked",false);
+	jQuery("#mappingNotes").val('');
+	jQuery("#mappingRealHost").empty();
+	var domRealHost=jQuery("#mappingRealHost");
+	var hostCount=0;
+	for(var i in ph.admin.realHosts){
+		var realHost=ph.admin.realHosts[i];
+		if(realHost.name==='mainHost'){
+			continue;
+		}
+		hostCount++;
+		domRealHost.append('<option value="' + realHost.name +'">' + realHost.name + '</option>');
+	}
+	if(hostCount==0){
+		alert('mainHost以外のrealHostが必要です');
+		return;
+	}
+//	jQuery("#mappingRealHost").val('mainHost');
+	jQuery("#mappingSourceServer").val('');
+	jQuery("#mappingSourcePath").val('');
+	jQuery("#mappingDestinationServer").val('');
+	jQuery("#mappingDestinationPath").val('');
+	ph.jQuery("#mappingTrace").attr('checked','checked');
+
+    var height=0
+	if(document.forms['mappingForm'].importsFile.value){
+		jQuery("#mappingDestinationUrl").val(document.forms['mappingForm'].importsFile.value);
+		jQuery("#mappingDestinationUrl").attr("disabled","disabed");
+		jQuery('#mappingDialog .map3').show();
+		jQuery("#mappingDestinationType").val("FILE");
+        height=250;
+	}else{
+		jQuery("#mappingDestinationUrl").val('');
+		jQuery("#mappingDestinationUrl").attr("disabled","");
+		jQuery("#mappingDestinationType").val("HTTP");##確定ではない,HTTPSかもしれない
+        height=200;
+	}
+	jQuery("#mappingRoles").val('');
+	jQuery("#mappingOptions").val('');
+	jQuery("#mappingDialog").dialog('option',{height:height});
+	jQuery('#mappingDialog').dialog('open');
+}
+mappingTableRefresh();
+</script>
+
+<h1>Mapping list</h1>
+<hr/>
+<form method="post" enctype="multipart/form-data" action="mapping" name="mappingForm" target="uploadFrame">
+<input type="button" value="更新" onClick="mappingTableRefresh()">
+<input type="button" value="反映" onClick="ph.admin.doPramCommand('mapping','reloadMappings',null,function(){alert('反映完了');})">
+<input type="hidden" name="command" value="importsMappings" />
+<input type="hidden" name="mappingNotes" />
+<input type="hidden" name="mappingRealHost" />
+<input type="hidden" name="mappingSecureType" />
+<input type="hidden" name="mappingRoles" />
+<input type="hidden" name="mappingSourcePath" />
+<input type="hidden" name="mappingDestinationType" />
+<input type="hidden" name="destinationUrl" />
+<input type="hidden" name="trace" />
+<input type="hidden" name="token" value="$esc.html(${session.token})"/>
+ファイル指定:<input type="file" name="importsFile" id="importsFile" />
+<input type="submit" value="一括移入"/>
+<input type="button" value="簡易登録" onClick="mappingOpen2()">
+</form>
+<div style="margin: 0.4em 0.0em; padding: 0.0em 0.0em;background: #fff none; border: solid 0pt #000;">
+<table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
+<thead>
+<tr><th title='id'>ID</th><th title='enabled'>en</th><th title='notes'>notes</th><th title='realHostName'>realHost</th>
+<th title='sourceType'>source</th><th title='secureType'>secure</th><th title='sourceServer'>srcServer</th><th title='sourcePath'>srcPath</th>
+##<th title='destinationType'>desType</th><th title='destinationServer'>desServer</th><th title='destinationPath'>desPath</th>
+<th title='roles'>roles</th><th  title='options'>options</th>
+</tr>
+</thead>
+<tbody id="mappingData"></tbody>
+</table>
+</div>
+

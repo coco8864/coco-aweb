@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="jp">
+<head> 
+  <meta charset="UTF-8" /> 
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Pragma" content="no-cache"> 
+  <meta http-equiv="Cache-Control" content="no-cache"> 
+  <meta http-equiv="Expires" content="0"> 
+  <title>wsqテスト</title>
+
+  <link type="text/css" href="/pub/css/jquery-ui-1.8.2.custom.css" rel="stylesheet" />
+  <script type="text/javascript" src="/pub/js/ph-loader.js"></script>
+  <script type="text/javascript" src="/pub/js/dateformat.js"></script>
+  <script type="text/javascript" src="/pub/js/jquery-1.5.1.min.js"></script>
+  <script type="text/javascript" src="/pub/js/jquery-ui-1.8.2.custom.min.js"></script>
+  <link type="text/css" href="/pub/css/ph.css" rel="stylesheet" /> 
+</head>
+<body>
+<H1>wsqテスト</H1>
+<hr/>
+<form id="scriptForm" name="scriptForm">
+<textarea name="script" rows="10" cols="80">
+</textarea><br>
+<input type="button" value="実行" onclick="doScript();"/>
+<input type="reset" value="クリア"/>
+</form>
+<input type="button" value="出力クリア" onclick="ph.jQuery('#phDebugArea').text('');"/>
+<h3>使用例</h3>
+<ul>
+<input type="button" value="auth.info" onclick="ph.auth.info(null,function(x){ph.log('++auth.info cb++');ph.dump(x);ph.log('--auth.info cb--');window.wsq=x;});"/>
+<input type="button" value="open" onclick="ph.wsq.open('/wsq',function(x){ph.log('++open cb++');ph.dump1(x);ph.log('--open cb--');window.wsq=x;});"/>
+<input type="button" value="close" onclick="wsq.close();"/>
+<input type="button" value="deploy" onclick="wsq.deploy('test','naru.aweb.wsq.SampleWsqlet');"/>
+<input type="button" value="subscribe dump" onclick="wsq.subscribe('test',function(x){ph.log('++subscribe d cb++');ph.dump(x);ph.log('--subscribe d cb--');});"/>
+<input type="button" value="unsubscribe" onclick="wsq.unsubscribe('test');"/>
+
+<input type="button" value="publish string" onclick="wsq.publish('test','testAAA');"/>
+<input type="button" value="publish object" onclick="wsq.publish('test',{aaa:'testBBB'});"/>
+<input type="button" value="publish bin" onclick="wsq.publish('test',{aaa:'testCCC',blobData:[{data:'aaaa'},{data:'bbbbb'}]});"/>
+<input type="button" value="qnames" onclick="wsq.qnames();"/>
+</ul>
+<div id='target'><p>dorag and dromp file upload</p></div>
+<div>
+<ul>
+<li><a id='bookmarklet'>WsqBookmarklet</a></li>
+</ul>
+</div>
+
+<script type="text/javascript"><!--
+ph.jQuery(function(){
+  var href="javascript:(function(){var%20url='" + ph.scriptBase + "ph-loader.js?bm=bm&include=bm.js?c=' + (new Date()).valueOf();var%20d=document;var%20e=d.createElement('script');e.src=url;d.getElementsByTagName('head')[0].appendChild(e);})();"
+  $("#bookmarklet").attr('href',href);
+  ph.wsq.open(
+    '/wsq',
+    function(con){
+      ph.log('++open cb++ message:'+con.message);
+      ph.dump1(con);
+      ph.log('--open cb--');
+      window.wsq=con;
+    },
+    function(con){
+      ph.log('++event cb++ message:'+con.message);
+      ph.dump1(con);
+      ph.log('--event cb--');
+      window.wsq=con;
+    }
+  );
+// ドラッグドロップからの入力
+  $("body").bind("drop", function (e) {
+  // ドラッグされたファイル情報を取得
+    var files = e.originalEvent.dataTransfer.files;
+	var blobData=[];
+    for (var i = 0; i < files.length; i++) {
+      blobData.push({data:files[i],memo:'memo'+i});
+    }
+    wsq.publish('test',{requestType:'fileUploadTest',blobData:blobData});
+// アップロード処理
+  })
+  .bind("dragenter", function () {
+    // false を返してデフォルトの処理を実行しないようにする
+    return false;
+  })
+  .bind("dragover", function () {
+    // false を返してデフォルトの処理を実行しないようにする
+    return false;
+  });
+  ph.setDebug(true);
+  if(window.addEventListener){
+    window.addEventListener('message',messageRcv, false);
+  }else if(window.attachEvent){
+    window.attachEvent('onmessage',messageRcv);
+  }
+});
+
+function messageRcv(ev){
+  ph.log('>>>onMessageFunc');
+  ph.dump(ev.data);
+  ph.log('<<<onMessageFunc');
+}
+
+function doScript(){
+  var form = document.getElementById("scriptForm");
+  window.eval(form.script.value);
+}
+// --></script>
+
+<div id="debug">
+<p>デバッグ情報</p>
+<Hr/>
+<pre id="phDebugArea"></pre>
+</div>
+<!--iframe name="_phAuthFrameChildxxxxx" onload="ph.log('_phAuthFrameChild onload')";></iframe-->
+</body> 
+</html>
