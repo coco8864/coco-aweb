@@ -81,7 +81,7 @@ public class GzipContext extends PoolBase{
 				if(isLast){
 					gzipOutputStream.close();
 				}else{
-					gzipOutputStream.flush();
+					gzipOutputStream.finish();
 				}
 			}
 		} catch (IOException e) {

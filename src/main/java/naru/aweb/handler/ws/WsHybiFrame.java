@@ -447,11 +447,7 @@ public class WsHybiFrame {
 		if(parseStat!=ParseStat.END){
 			throw new RuntimeException("parseNextFrame");
 		}
-		int size=nextFrameBuffers.size();
-		ByteBuffer[] framedBuffers=BuffersUtil.newByteBufferArray(size);
-		for(int i=0;i<size;i++){
-			framedBuffers[i]=nextFrameBuffers.get(i);
-		}
+		ByteBuffer[] framedBuffers=BuffersUtil.toByteBufferArray(nextFrameBuffers);
 		nextFrameBuffers.clear();
 		init();
 		for(ByteBuffer buffer:framedBuffers){
