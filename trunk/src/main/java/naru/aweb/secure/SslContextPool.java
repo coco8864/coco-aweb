@@ -30,11 +30,11 @@ public class SslContextPool {
 	private static final String TRUST_STORE_DIR = "trustStoreDir";
 	private static final String KEYTOOL = "keytool";
 	
-//	private Config config=Config.getConfig();
 	private File trustStoreDir;
 	private String password;
 	private Map<String,SSLContext> sslContexts;
 	private String keytool;
+	private boolean useSslStdProvider=false;//標準Providerを使うか否か、標準の場合はSPDYに対応できない
 	
 	public SslContextPool(Config config){
 		sslContexts=new HashMap<String,SSLContext>();
@@ -48,6 +48,7 @@ public class SslContextPool {
 			String javaHome=System.getProperty("java.home");//JAVA_HOME
 			keytool=javaHome +"/bin/keytool";
 		}
+		useSslStdProvider=config.getBoolean("useSslStdProvider", false);
 		logger.info("keytool command:"+keytool);
 	}
 	
@@ -123,7 +124,13 @@ public class SslContextPool {
 		KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
 		kmf.init(ks, keystorePass);
 		TrustManager[] tms=new TrustManager[]{new PhatomTrustManager(ks)};
-		SSLContext  sslContext = SSLContext.getInstance("TLS");
+		
+		SSLContext sslContext=null;
+		if(useSslStdProvider){
+			sslContext = SSLContext.getInstance("TLSv1");
+		}else{
+			sslContext = SSLContext.getInstance("TLSv1", new sslnpn.net.ssl.internal.ssl.Provider());
+		}
 		sslContext.init(kmf.getKeyManagers(), tms, null);
 		return sslContext;
 	}

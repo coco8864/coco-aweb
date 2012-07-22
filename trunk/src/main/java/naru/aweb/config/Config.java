@@ -289,11 +289,19 @@ public class Config {
 	}
 
 	public SSLEngine getSslEngine(ServerParser server) {
-		if (server == null) {
-			return sslContext.createSSLEngine(null, 443);
-		} else {
+		if (server == null) {//server engine‚Ì‰Šú‰»
+			SSLEngine engine=sslContext.createSSLEngine(null, 443);
+//			if(engine instanceof sslnpn.ssl.SSLEngineImpl){
+//				((sslnpn.ssl.SSLEngineImpl)engine).setAdvertisedNextProtocols("spdy/2","http/1.1");
+//			}
+			return engine;
+		} else {//client engine‚Ì‰Šú‰»
 			SSLContext sc = sslContextPool.getSSLContext(server.getHost());
-			return sc.createSSLEngine(server.getHost(), server.getPort());
+			SSLEngine engine=sc.createSSLEngine(server.getHost(), server.getPort());
+//			if(engine instanceof sslnpn.ssl.SSLEngineImpl){
+//				((sslnpn.ssl.SSLEngineImpl)engine).setAdvertisedNextProtocols("http/1.1", "spdy/2");
+//			}
+			return engine;
 		}
 	}
 

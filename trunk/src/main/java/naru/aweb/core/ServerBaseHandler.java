@@ -2,6 +2,8 @@ package naru.aweb.core;
 
 import java.util.Iterator;
 
+import javax.net.ssl.SSLEngine;
+
 import org.apache.log4j.Logger;
 
 import naru.async.pool.PoolManager;
@@ -113,5 +115,11 @@ public abstract class ServerBaseHandler extends SslHandler {
 	public void onFinished() {
 		logger.debug("#finished.cid:"+getChannelId());
 		super.onFinished();
+	}
+	
+	/* DsipatchHandlerでoverrideする他ハンドラは必要なし */
+	@Override
+	public SSLEngine getSSLEngine() {
+		return null;
 	}
 }

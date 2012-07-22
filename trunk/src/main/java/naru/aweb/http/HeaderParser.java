@@ -419,6 +419,11 @@ public class HeaderParser extends PoolBase {
 	}
 
 	private int parseLine(byte[] headers, int position, int end) {
+		//完全ではないが、可読文字をチェック、早期にparseを失敗させる
+		if(Character.isISOControl(headers[position])){
+			parseSt = ST.ERROR;
+			return position + 1;
+		}
 		int posR;
 		switch (parseSt) {
 		case INIT:

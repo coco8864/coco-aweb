@@ -28,6 +28,7 @@ import naru.aweb.http.RequestContext;
 import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.Mapper;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.spdy.SpdyHandler;
 import naru.aweb.util.ServerParser;
 import net.sf.json.JSONObject;
 
@@ -134,12 +135,26 @@ public class DispatchHandler extends ServerBaseHandler {
 		asyncClose(null);
 	}
 
+	
+	private static final String PROTOCOL_SPDY2="spdy/2";
+	
 	/**
 	 * ssl確立後、次データを要求する。(return true)
 	 */
 	public boolean onHandshaked() {
 		logger.debug("#handshaked.cid:" + getChannelId());
 		handshakeTime=System.currentTimeMillis()-startTime.getTime();
+		if(sslNpnEngine==null){
+			return true;
+		}
+		String nextProtocol=sslNpnEngine.getNegotiatedNextProtocol();
+		if(PROTOCOL_SPDY2.equals(nextProtocol)){
+			SpdyHandler handler=(SpdyHandler)forwardHandler(SpdyHandler.class);
+			if(handler==null){//既にcloseされていた
+				return false;
+			}
+			return handler.onHandshaked();
+		}
 		return true;
 	}
 
@@ -672,10 +687,16 @@ public class DispatchHandler extends ServerBaseHandler {
 		forwardMapping(realHost, requestHeader, mapping, auth,isWs);
 	}
 
+	private sslnpn.ssl.SSLEngineImpl sslNpnEngine;
 	public SSLEngine getSSLEngine() {
 		KeepAliveContext keepAliveContext = getKeepAliveContext();
 		ServerParser sslServer = keepAliveContext.getProxyTargetServer();
-		return getConfig().getSslEngine(sslServer);
+		SSLEngine engine=getConfig().getSslEngine(sslServer);
+		if(engine instanceof sslnpn.ssl.SSLEngineImpl){
+			sslNpnEngine=(sslnpn.ssl.SSLEngineImpl)engine;
+			sslNpnEngine.setAdvertisedNextProtocols("spdy/2","http/1.1");
+		}
+		return engine;
 	}
 
 	/**

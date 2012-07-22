@@ -75,11 +75,11 @@ public class WebServerHandler extends ServerBaseHandler {
 	private boolean isResponseEnd;
 
 	// DispatcherÇ≈åƒÇ—èoÇ≥ÇÍÇÈÇÃÇ≈égÇÌÇÍÇ»Ç¢
-	public SSLEngine getSSLEngine() {
-		KeepAliveContext keepAliveContext = getKeepAliveContext();
-		ServerParser sslServer = keepAliveContext.getProxyTargetServer();
-		return config.getSslEngine(sslServer);
-	}
+	//public SSLEngine getSSLEngine() {
+	//	KeepAliveContext keepAliveContext = getKeepAliveContext();
+	//	ServerParser sslServer = keepAliveContext.getProxyTargetServer();
+	//	return config.getSslEngine(sslServer);
+	//}
 
 	public void recycle() {
 		requestContentLength = requestReadBody = 0;
