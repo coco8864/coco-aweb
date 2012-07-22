@@ -102,6 +102,9 @@ public class SpdyFrame {
 	private static Config config=Config.getConfig(); 
 //	private static int webSocketMessageLimit=config.getInt("webSocketMessageLimit",2048000);
 	
+	public static final String PROTOCOL_V2="spdy/2";
+	public static final String PROTOCOL_V3="spdy/3";
+	
 	public static final short TYPE_SYN_STREAM = 0x0001;
 	public static final short TYPE_SYN_REPLY = 0x0002;
 	public static final short TYPE_RST_STREAM = 0x0003;
