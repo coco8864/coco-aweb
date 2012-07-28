@@ -226,6 +226,15 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 	}
 
 	public void startResponseReqBody() {
+		MappingResult mapping=getRequestMapping();
+		if(Boolean.TRUE.equals(mapping.getOption("replay"))){
+			ReplayHelper helper=Config.getConfig().getReplayHelper();
+//			ByteBuffer[] body=bodyPage.getBuffer();
+			if(helper.doReplay(this,null)){
+				return;//replay‚Å‚«‚½,body‚ÍÁ”ï‚³‚ê‚Ä‚¢‚é
+			}
+		}
+		
 		if (response()) {
 			responseEnd();// TODO•K—v‚È‚¢‚Æv‚¤
 			return;

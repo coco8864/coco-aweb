@@ -30,9 +30,13 @@ public class ReplayHelper {
 	}
 	
 	private AccessLog searchAccessLog(AccessLog myAccessLog,HeaderParser requestHeader,MappingResult mapping){
-		String resolveDigest=getResolveDigest(requestHeader,mapping);
+		//String resolveDigest=getResolveDigest(requestHeader,mapping);
 		//TODO resolveDigestÇ∆bodyDigestÇÉLÅ[Ç…íTÇ∑
-		Collection<AccessLog> accessLogs=AccessLog.query("WHERE destinationType!='R' && statusCode!=null && responseBodyDigest!=null && resolveDigest=='"+resolveDigest+"' ORDER BY id DESC");
+//		Collection<AccessLog> accessLogs=AccessLog.query("WHERE destinationType!='R' && statusCode!=null && responseBodyDigest!=null && resolveDigest=='"+resolveDigest+"' ORDER BY id DESC");
+		
+		String path=mapping.getResolvePath();
+		
+		Collection<AccessLog> accessLogs=AccessLog.query("WHERE destinationType!='R' && statusCode!=null && requestLine!=null && requestLine.matches('.*"+path+".*') ORDER BY id DESC");
 		Iterator<AccessLog> itr=accessLogs.iterator();
 		AccessLog accessLog=null;
 		while(itr.hasNext()){
@@ -40,6 +44,7 @@ public class ReplayHelper {
 			myAccessLog.setOriginalLogId(accessLog.getId());
 			return accessLog; 
 		}
+		System.out.println("miss:" + myAccessLog.getRequestLine());
 		return null; 
 	}
 	
@@ -99,7 +104,7 @@ public class ReplayHelper {
 	
 	/**
 	 */
-	public boolean doReplay(ProxyHandler handler,ByteBuffer[] body){
+	public boolean doReplay(WebServerHandler handler,ByteBuffer[] body){
 		logger.debug("#doReplay cid:"+handler.getChannelId());
 //		Set history=getUserSetting().getReplayHistory();
 		AccessLog accessLog=handler.getAccessLog();

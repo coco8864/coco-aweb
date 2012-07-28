@@ -9,6 +9,7 @@ import org.apache.log4j.Logger;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.aweb.core.ServerBaseHandler;
+import naru.aweb.http.HeaderParser;
 
 /**
  * @author Naru
@@ -17,14 +18,17 @@ import naru.aweb.core.ServerBaseHandler;
 public class SpdyHandler extends ServerBaseHandler {
 	private static Logger logger=Logger.getLogger(SpdyHandler.class);
 	private SpdyFrame frame=new SpdyFrame();
-	
+	private NameValueParser nameValueParser=new NameValueParser();
+	private NameValueBuilder nameValueBuilder=new NameValueBuilder();
 	
 	@Override
 	public void recycle() {
+		frame.init();
 		super.recycle();
 	}
 
-	public boolean onHandshaked() {
+	public boolean onHandshaked(String protocol) {
+		nameValueParser.init(protocol);
 		asyncRead(null);
 		return false;//Ž©—Í‚ÅasyncRead‚µ‚½‚½‚ß
 	}
@@ -68,15 +72,18 @@ public class SpdyHandler extends ServerBaseHandler {
 			int associatedToStreamId=frame.getIntFromData();
 			short priAndSlot=frame.getShortFromData();
 			dataBuffer=frame.getDataBuffers();
-			BuffersUtil.hexDump("Name/value header block in", dataBuffer);
+//			BuffersUtil.hexDump("Name/value header block in", dataBuffer);
+			HeaderParser header=nameValueParser.decode(dataBuffer);
+//			BuffersUtil.hexDump("header", header.getHeaderBuffer());
 			
+			/*
 			Inflater decompresser = new Inflater();
 		    for(ByteBuffer buf:dataBuffer){
 			    decompresser.setInput(buf.array(), buf.position(), buf.remaining());
 			    
 			    while(true){
 				    if(decompresser.needsDictionary()){
-					    decompresser.setDictionary(DICTIONARY_V2);
+//					    decompresser.setDictionary(DICTIONARY_V2);
 				    }
 //			    	ByteBuffer b1=PoolManager.getBufferInstance();
 			    	byte[] a=new byte[10240];
@@ -92,8 +99,7 @@ public class SpdyHandler extends ServerBaseHandler {
 			    	}
 			    }
 		    }
-			
-			
+		    */
 //			reqGzipContext.putZipedBuffer(dataBuffer);
 //			ByteBuffer[] plainBuffer=reqGzipContext.getPlainBuffer();
 //			BuffersUtil.hexDump("Name/value header block out", plainBuffer);
@@ -103,8 +109,6 @@ public class SpdyHandler extends ServerBaseHandler {
 			int statusCode=frame.getIntFromData();
 			break;
 		}
-		
-		
 	}
 		
 

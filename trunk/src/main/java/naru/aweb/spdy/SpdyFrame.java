@@ -98,6 +98,26 @@ import naru.aweb.config.Config;
  *
  */
 public class SpdyFrame {
+	private static ByteBuffer buildControlFrame(short version,short type,char flags,int length,Object data){
+		ByteBuffer frame = PoolManager.getBufferInstance();
+		frame.order(ByteOrder.BIG_ENDIAN);
+		int work=MASK_C|((int)version)<<16|type;
+		frame.putInt(work);
+		work=((int)flags)<<24|length;
+		frame.putInt(work);
+		return frame;
+	}
+	
+	private static ByteBuffer buildDataFrame(int streamId,char flags,int length,Object data){
+		ByteBuffer frame = PoolManager.getBufferInstance();
+		frame.order(ByteOrder.BIG_ENDIAN);
+		frame.putInt(streamId);
+		int work=((int)flags)<<24|length;
+		frame.putInt(work);
+		return frame;
+	}
+	
+	
 	private static Logger logger=Logger.getLogger(SpdyFrame.class);
 	private static Config config=Config.getConfig(); 
 //	private static int webSocketMessageLimit=config.getInt("webSocketMessageLimit",2048000);
@@ -164,6 +184,14 @@ public class SpdyFrame {
 		nextFrameBuffers.clear();
 		workBuffer.clear();
 		workBuffer.order(ByteOrder.BIG_ENDIAN);
+	}
+	
+	
+	
+	public ByteBuffer[] buildSynReply(int streamId,ByteBuffer[] buffers){
+	}
+	
+	public ByteBuffer[] buildRstStream(int streamId,int statusCode){
 	}
 	
 	/**
