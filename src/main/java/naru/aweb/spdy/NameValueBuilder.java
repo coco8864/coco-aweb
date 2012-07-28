@@ -1,0 +1,127 @@
+package naru.aweb.spdy;
+
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.zip.Deflater;
+
+import naru.async.pool.BuffersUtil;
+import naru.async.pool.PoolManager;
+import naru.aweb.http.HeaderParser;
+
+public class NameValueBuilder {
+	private String version;
+	private ByteBuffer workBuffer=ByteBuffer.allocate(16);
+	private Deflater compresser=new Deflater();
+
+	public void init(String version) {
+		if(SpdyFrame.PROTOCOL_V2.equals(version)){
+			this.version = SpdyFrame.PROTOCOL_V2;
+		}else if(SpdyFrame.PROTOCOL_V3.equals(version)){
+			this.version = SpdyFrame.PROTOCOL_V3;
+		}else{
+			throw new IllegalArgumentException(version);
+		}
+		workBuffer.order(ByteOrder.BIG_ENDIAN);
+	}
+	
+	private void setDictionary() {
+		if (version == SpdyFrame.PROTOCOL_V2) {
+			compresser.setDictionary(NameValueParser.DICTIONARY_V2);
+		} else if (version == SpdyFrame.PROTOCOL_V3) {
+			compresser.setDictionary(NameValueParser.DICTIONARY_V3);
+		}
+	}
+	
+	private void buildStart() {
+		compresser.reset();
+		setDictionary();
+	}
+
+	private void buildEnd() {
+	}
+	
+	private void putLength(int data){
+		workBuffer.clear();
+		if(version==SpdyFrame.PROTOCOL_V2){
+			workBuffer.putShort((short)data);
+		}else if(version==SpdyFrame.PROTOCOL_V3){
+			workBuffer.putInt(data);
+		}
+		compresser.setInput(workBuffer.array(),0,workBuffer.position());
+	}
+	
+	private void putString(String data){
+		try {
+			byte[] bytes=data.getBytes(NameValueParser.ENCODE);
+			putLength(bytes.length);
+			compresser.setInput(bytes,0,bytes.length);
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	private void build(HeaderParser header){
+		String status=header.getStatusCode();
+		String version=header.getResHttpVersion();
+		//”O‚Ì‚½‚ß
+		//String transfer=header.getHeader(HeaderParser.TRANSFER_ENCODING_HEADER);
+		//header.removeHeader(HeaderParser.TRANSFER_ENCODING_HEADER);
+		header.removeHeader(HeaderParser.KEEP_ALIVE_HEADER);
+		
+		Set<String> headerNames=header.getHeaderNames();
+		putLength(headerNames.size()+2);
+		putString("status");
+		putString(status);
+		putString("version");
+		putString(version);
+		StringBuffer sb=new StringBuffer();
+		for(String headerName:headerNames){
+			List<String>values=header.getHeaders(headerName);
+			int size=values.size();
+			if(size==0){
+				continue;
+			}
+			putString(headerName.toLowerCase());
+			if(size==1){
+				putString(values.get(0));
+			}else{
+				sb.setLength(0);
+				sb.append(values.get(0));
+				for(int i=1;i<size;i++){
+					sb.append('\0');
+					sb.append(values.get(i));
+				}
+				putString(sb.toString());
+			}
+		}
+	}
+	
+	public ByteBuffer[] encode(HeaderParser header) {
+		buildStart();
+		try{
+			build(header);
+			compresser.finish();
+			List<ByteBuffer> buffers=new ArrayList<ByteBuffer>();
+			while(true){
+				ByteBuffer buffer=PoolManager.getBufferInstance();
+				int length=compresser.deflate(buffer.array());
+				if(length<0){
+					PoolManager.poolBufferInstance(buffer);
+					break;
+				}
+				buffer.limit(length);
+				buffers.add(buffer);
+				if(compresser.finished()){
+					break;
+				}
+			}
+			return BuffersUtil.toByteBufferArray(buffers);
+		}finally{
+			buildEnd();
+		}
+	}
+}

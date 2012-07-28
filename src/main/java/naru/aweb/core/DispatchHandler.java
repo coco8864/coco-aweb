@@ -28,6 +28,7 @@ import naru.aweb.http.RequestContext;
 import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.Mapper;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.spdy.SpdyFrame;
 import naru.aweb.spdy.SpdyHandler;
 import naru.aweb.util.ServerParser;
 import net.sf.json.JSONObject;
@@ -136,7 +137,7 @@ public class DispatchHandler extends ServerBaseHandler {
 	}
 
 	
-	private static final String PROTOCOL_SPDY2="spdy/2";
+//	private static final String PROTOCOL_SPDY2="spdy/2";
 	
 	/**
 	 * ssl確立後、次データを要求する。(return true)
@@ -148,12 +149,12 @@ public class DispatchHandler extends ServerBaseHandler {
 			return true;
 		}
 		String nextProtocol=sslNpnEngine.getNegotiatedNextProtocol();
-		if(PROTOCOL_SPDY2.equals(nextProtocol)){
+		if(SpdyFrame.PROTOCOL_V2.equalsIgnoreCase(nextProtocol)){
 			SpdyHandler handler=(SpdyHandler)forwardHandler(SpdyHandler.class);
 			if(handler==null){//既にcloseされていた
 				return false;
 			}
-			return handler.onHandshaked();
+			return handler.onHandshaked(SpdyFrame.PROTOCOL_V2);
 		}
 		return true;
 	}
@@ -694,7 +695,7 @@ public class DispatchHandler extends ServerBaseHandler {
 		SSLEngine engine=getConfig().getSslEngine(sslServer);
 		if(engine instanceof sslnpn.ssl.SSLEngineImpl){
 			sslNpnEngine=(sslnpn.ssl.SSLEngineImpl)engine;
-			sslNpnEngine.setAdvertisedNextProtocols("spdy/2","http/1.1");
+			sslNpnEngine.setAdvertisedNextProtocols(SpdyFrame.PROTOCOL_V2,"http/1.1");
 		}
 		return engine;
 	}

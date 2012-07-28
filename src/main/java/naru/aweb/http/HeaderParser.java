@@ -420,10 +420,10 @@ public class HeaderParser extends PoolBase {
 
 	private int parseLine(byte[] headers, int position, int end) {
 		//完全ではないが、可読文字をチェック、早期にparseを失敗させる
-		if(Character.isISOControl(headers[position])){
-			parseSt = ST.ERROR;
-			return position + 1;
-		}
+//		if(Character.isISOControl(headers[position])){
+//			parseSt = ST.ERROR;
+//			return position + 1;
+//		}
 		int posR;
 		switch (parseSt) {
 		case INIT:
@@ -812,6 +812,12 @@ public class HeaderParser extends PoolBase {
 		headers.remove(realName);
 	}
 
+	public void setHeader(String name, String[] values) {
+		for(String value:values){
+			addHeader(name,value);
+		}
+	}
+	
 	public void setHeader(String name, String value) {
 		List<String> values = getHeaders(name);
 		if (values == null) {
@@ -1044,9 +1050,16 @@ public class HeaderParser extends PoolBase {
 		return Long.parseLong(value);
 	}
 
+	/*
 	public Iterator<String> getHeaderNames() {
 		return headers.keySet().iterator();
 	}
+	*/
+	
+	public Set<String> getHeaderNames() {
+		return headers.keySet();
+	}
+	
 
 	public void setContentType(String contentType) {
 		setHeader(CONTENT_TYPE_HEADER, contentType);
