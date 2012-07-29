@@ -145,6 +145,7 @@ public class DispatchHandler extends ServerBaseHandler {
 	public boolean onHandshaked() {
 		logger.debug("#handshaked.cid:" + getChannelId());
 		handshakeTime=System.currentTimeMillis()-startTime.getTime();
+		/*
 		if(sslNpnEngine==null){
 			return true;
 		}
@@ -156,6 +157,7 @@ public class DispatchHandler extends ServerBaseHandler {
 			}
 			return handler.onHandshaked(SpdyFrame.PROTOCOL_V2);
 		}
+		*/
 		return true;
 	}
 
@@ -183,6 +185,18 @@ public class DispatchHandler extends ServerBaseHandler {
 	public void onReadPlain(Object userContext, ByteBuffer[] buffers) {
 		logger.debug("#onReadPlain.cid:" + getChannelId()
 				+ ":buffers.hashCode:" + buffers.hashCode());
+		if(sslNpnEngine!=null){
+			String nextProtocol=sslNpnEngine.getNegotiatedNextProtocol();
+			if(SpdyFrame.PROTOCOL_V2.equalsIgnoreCase(nextProtocol)){
+				SpdyHandler handler=(SpdyHandler)forwardHandler(SpdyHandler.class);
+				if(handler!=null){//既にcloseされていた
+					handler.onHandshaked(nextProtocol);
+					handler.onReadPlain(userContext, buffers);
+					return;
+				}
+			}
+		}
+		
 		if (startTime == null) {// keepAliveからのリクエストの場合ここがリクエストの基点となる
 			startTime = new Date();
 		}

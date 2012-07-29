@@ -13,52 +13,53 @@ import naru.async.pool.PoolManager;
 import naru.aweb.http.HeaderParser;
 
 public class NameValueBuilder {
-	private String version;
-	private ByteBuffer workBuffer=ByteBuffer.allocate(16);
+	private short version;
+	private ByteBuffer workBuffer;
+//	private ByteBuffer workBuffer=ByteBuffer.allocate(16);
 	private Deflater compresser=new Deflater();
 
-	public void init(String version) {
-		if(SpdyFrame.PROTOCOL_V2.equals(version)){
-			this.version = SpdyFrame.PROTOCOL_V2;
-		}else if(SpdyFrame.PROTOCOL_V3.equals(version)){
-			this.version = SpdyFrame.PROTOCOL_V3;
-		}else{
-			throw new IllegalArgumentException(version);
-		}
-		workBuffer.order(ByteOrder.BIG_ENDIAN);
+	public void init(short version) {
+		this.version=version;
 	}
 	
 	private void setDictionary() {
-		if (version == SpdyFrame.PROTOCOL_V2) {
-			compresser.setDictionary(NameValueParser.DICTIONARY_V2);
-		} else if (version == SpdyFrame.PROTOCOL_V3) {
-			compresser.setDictionary(NameValueParser.DICTIONARY_V3);
+		if (version == SpdyFrame.VERSION_V2) {
+			compresser.setDictionary(SpdyFrame.DICTIONARY_V2);
+		} else if (version == SpdyFrame.VERSION_V3) {
+			compresser.setDictionary(SpdyFrame.DICTIONARY_V3);
 		}
 	}
 	
 	private void buildStart() {
 		compresser.reset();
 		setDictionary();
+		workBuffer=PoolManager.getBufferInstance();
+		workBuffer.order(ByteOrder.BIG_ENDIAN);
 	}
 
 	private void buildEnd() {
+		if(workBuffer!=null){
+			PoolManager.poolBufferInstance(workBuffer);
+			workBuffer=null;
+		}
 	}
 	
 	private void putLength(int data){
-		workBuffer.clear();
-		if(version==SpdyFrame.PROTOCOL_V2){
+//		workBuffer.clear();
+		if(version==SpdyFrame.VERSION_V2){
 			workBuffer.putShort((short)data);
-		}else if(version==SpdyFrame.PROTOCOL_V3){
+		}else if(version==SpdyFrame.VERSION_V3){
 			workBuffer.putInt(data);
 		}
-		compresser.setInput(workBuffer.array(),0,workBuffer.position());
+//		compresser.setInput(workBuffer.array(),0,workBuffer.position());
 	}
 	
 	private void putString(String data){
 		try {
-			byte[] bytes=data.getBytes(NameValueParser.ENCODE);
+			byte[] bytes=data.getBytes(SpdyFrame.ENCODE);
 			putLength(bytes.length);
-			compresser.setInput(bytes,0,bytes.length);
+			workBuffer.put(bytes);
+//			compresser.setInput(bytes,0,bytes.length);
 		} catch (UnsupportedEncodingException e) {
 			throw new RuntimeException(e);
 		}
@@ -104,6 +105,7 @@ public class NameValueBuilder {
 		buildStart();
 		try{
 			build(header);
+			compresser.setInput(workBuffer.array(),0,workBuffer.position());
 			compresser.finish();
 			List<ByteBuffer> buffers=new ArrayList<ByteBuffer>();
 			while(true){
@@ -114,6 +116,7 @@ public class NameValueBuilder {
 					break;
 				}
 				buffer.limit(length);
+//				buffer.flip();
 				buffers.add(buffer);
 				if(compresser.finished()){
 					break;

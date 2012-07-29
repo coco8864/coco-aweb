@@ -1,8 +1,6 @@
 package naru.aweb.spdy;
 
 import java.nio.ByteBuffer;
-import java.util.zip.DataFormatException;
-import java.util.zip.Inflater;
 
 import org.apache.log4j.Logger;
 
@@ -18,18 +16,16 @@ import naru.aweb.http.HeaderParser;
 public class SpdyHandler extends ServerBaseHandler {
 	private static Logger logger=Logger.getLogger(SpdyHandler.class);
 	private SpdyFrame frame=new SpdyFrame();
-	private NameValueParser nameValueParser=new NameValueParser();
-	private NameValueBuilder nameValueBuilder=new NameValueBuilder();
 	
 	@Override
 	public void recycle() {
-		frame.init();
 		super.recycle();
 	}
 
 	public boolean onHandshaked(String protocol) {
-		nameValueParser.init(protocol);
-		asyncRead(null);
+		logger.debug("#handshaked.cid:" + getChannelId() +":"+protocol);
+		frame.init(protocol);
+//		asyncRead(null);
 		return false;//Ž©—Í‚ÅasyncRead‚µ‚½‚½‚ß
 	}
 	
@@ -39,9 +35,9 @@ public class SpdyHandler extends ServerBaseHandler {
 			for(ByteBuffer buffer:buffers){
 				if( frame.parse(buffer) ){
 					doFrame();
-					ByteBuffer[] dataBuffers=frame.getDataBuffers();
-					BuffersUtil.hexDump("SPDY c->s dataBuffers",dataBuffers);
-					frame.init();
+//					ByteBuffer[] dataBuffers=frame.getDataBuffers();
+//					BuffersUtil.hexDump("SPDY c->s dataBuffers",dataBuffers);
+					frame.prepareNext();
 				}
 			}
 			PoolManager.poolArrayInstance(buffers);
@@ -58,55 +54,34 @@ public class SpdyHandler extends ServerBaseHandler {
 	
 	private void doFrame(){
 		logger.debug("SpdyHandler#doFrame cid:"+getChannelId());
-		int streamId;
+		int streamId=frame.getStreamId();
 		ByteBuffer[] dataBuffer;
+		HeaderParser header;
+		int statusCode;
 		if(!frame.isControle()){
-			streamId=frame.getStreamId();
 			dataBuffer=frame.getDataBuffers();
 			return;
 		}
 		short type=frame.getType();
 		switch(type){
 		case SpdyFrame.TYPE_SYN_STREAM:
-			streamId=frame.getIntFromData();
-			int associatedToStreamId=frame.getIntFromData();
-			short priAndSlot=frame.getShortFromData();
-			dataBuffer=frame.getDataBuffers();
-//			BuffersUtil.hexDump("Name/value header block in", dataBuffer);
-			HeaderParser header=nameValueParser.decode(dataBuffer);
-//			BuffersUtil.hexDump("header", header.getHeaderBuffer());
+			header=frame.getHeader();
+			header.unref();
+			HeaderParser response=(HeaderParser)PoolManager.getInstance(HeaderParser.class);
 			
-			/*
-			Inflater decompresser = new Inflater();
-		    for(ByteBuffer buf:dataBuffer){
-			    decompresser.setInput(buf.array(), buf.position(), buf.remaining());
-			    
-			    while(true){
-				    if(decompresser.needsDictionary()){
-//					    decompresser.setDictionary(DICTIONARY_V2);
-				    }
-//			    	ByteBuffer b1=PoolManager.getBufferInstance();
-			    	byte[] a=new byte[10240];
-			    	int length=0;
-			    	try {
-			    		length=decompresser.inflate(a);
-					} catch (DataFormatException e) {
-						e.printStackTrace();
-					}
-					BuffersUtil.hexDump("Name/value header block out",a,0,length);
-			    	if(decompresser.needsInput()){
-			    		break;
-			    	}
-			    }
-		    }
-		    */
-//			reqGzipContext.putZipedBuffer(dataBuffer);
-//			ByteBuffer[] plainBuffer=reqGzipContext.getPlainBuffer();
-//			BuffersUtil.hexDump("Name/value header block out", plainBuffer);
+			response.setStatusCode("200");
+			response.setResHttpVersion(HeaderParser.HTTP_VESION_11);
+			response.setContentType("text/plain");
+			ByteBuffer[] res=frame.buildSynReply(streamId, header);
+			asyncWrite(null, res);
+			ByteBuffer resBody=ByteBuffer.wrap("test OK".getBytes());
+			res=frame.buildDataFrame(streamId, SpdyFrame.FLAG_FIN, BuffersUtil.toByteBufferArray(resBody));
+			asyncWrite(null, res);
+//			res=frame.buildRstStream(streamId, 200);
+//			asyncWrite(null, res);
 			break;
 		case SpdyFrame.TYPE_RST_STREAM:
-			streamId=frame.getIntFromData();
-			int statusCode=frame.getIntFromData();
+			statusCode=frame.getStatusCode();
 			break;
 		}
 	}

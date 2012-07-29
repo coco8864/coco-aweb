@@ -10,6 +10,7 @@ import org.apache.log4j.Logger;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.aweb.config.Config;
+import naru.aweb.http.HeaderParser;
 
 /**
  * http://dev.chromium.org/spdy/spdy-protocol/spdy-protocol-draft3
@@ -44,7 +45,7 @@ import naru.aweb.config.Config;
 +------------------------------------+
 |X| Associated-To-Stream-ID (31bits) |
 +------------------------------------+
-| Pri|Unused | Slot |                |
+| Pri|Unused | Slot |                | == spdy/2‚Å‚Ípri 2bit‚¾‚¯(slot‚È‚µ)
 +-------------------+                |
 | Number of Name/Value pairs (int32) |   <+
 +------------------------------------+    |
@@ -98,32 +99,65 @@ import naru.aweb.config.Config;
  *
  */
 public class SpdyFrame {
-	private static ByteBuffer buildControlFrame(short version,short type,char flags,int length,Object data){
-		ByteBuffer frame = PoolManager.getBufferInstance();
-		frame.order(ByteOrder.BIG_ENDIAN);
-		int work=MASK_C|((int)version)<<16|type;
-		frame.putInt(work);
-		work=((int)flags)<<24|length;
-		frame.putInt(work);
-		return frame;
-	}
-	
-	private static ByteBuffer buildDataFrame(int streamId,char flags,int length,Object data){
-		ByteBuffer frame = PoolManager.getBufferInstance();
-		frame.order(ByteOrder.BIG_ENDIAN);
-		frame.putInt(streamId);
-		int work=((int)flags)<<24|length;
-		frame.putInt(work);
-		return frame;
-	}
-	
-	
 	private static Logger logger=Logger.getLogger(SpdyFrame.class);
 	private static Config config=Config.getConfig(); 
 //	private static int webSocketMessageLimit=config.getInt("webSocketMessageLimit",2048000);
 	
 	public static final String PROTOCOL_V2="spdy/2";
 	public static final String PROTOCOL_V3="spdy/3";
+	
+	public static final short VERSION_V2=2;
+	public static final short VERSION_V3=3;
+	
+	public static final String ENCODE="UTF-8"; 
+	
+	public static final byte[] DICTIONARY_V2 = (
+			"optionsgetheadpostputdeletetraceacceptaccept-charsetaccept-encodingaccept-"
+			+ "languageauthorizationexpectfromhostif-modified-sinceif-matchif-none-matchi"
+			+ "f-rangeif-unmodifiedsincemax-forwardsproxy-authorizationrangerefererteuser"
+			+ "-agent10010120020120220320420520630030130230330430530630740040140240340440"
+			+ "5406407408409410411412413414415416417500501502503504505accept-rangesageeta"
+			+ "glocationproxy-authenticatepublicretry-afterservervarywarningwww-authentic"
+			+ "ateallowcontent-basecontent-encodingcache-controlconnectiondatetrailertran"
+			+ "sfer-encodingupgradeviawarningcontent-languagecontent-lengthcontent-locati"
+			+ "oncontent-md5content-rangecontent-typeetagexpireslast-modifiedset-cookieMo"
+			+ "ndayTuesdayWednesdayThursdayFridaySaturdaySundayJanFebMarAprMayJunJulAugSe"
+			+ "pOctNovDecchunkedtext/htmlimage/pngimage/jpgimage/gifapplication/xmlapplic"
+			+ "ation/xhtmltext/plainpublicmax-agecharset=iso-8859-1utf-8gzipdeflateHTTP/1"
+			+ ".1statusversionurl\u0000").getBytes();
+
+	public static final byte[] DICTIONARY_V3 = (
+			"\u0000\u0000\u0000\u0007options\u0000\u0000\u0000\u0004head\u0000\u0000\u0000\u0004post"
+			+ "\u0000\u0000\u0000\u0003put\u0000\u0000\u0000\u0006delete\u0000\u0000\u0000\u0005trace"
+			+ "\u0000\u0000\u0000\u0006accept\u0000\u0000\u0000\u000Eaccept-charset"
+			+ "\u0000\u0000\u0000\u000Faccept-encoding\u0000\u0000\u0000\u000Faccept-language"
+			+ "\u0000\u0000\u0000\raccept-ranges\u0000\u0000\u0000\u0003age\u0000\u0000\u0000\u0005allow"
+			+ "\u0000\u0000\u0000\rauthorization\u0000\u0000\u0000\rcache-control"
+			+ "\u0000\u0000\u0000\nconnection\u0000\u0000\u0000\fcontent-base\u0000\u0000\u0000\u0010content-encoding"
+			+ "\u0000\u0000\u0000\u0010content-language\u0000\u0000\u0000\u000Econtent-length"
+			+ "\u0000\u0000\u0000\u0010content-location\u0000\u0000\u0000\u000Bcontent-md5"
+			+ "\u0000\u0000\u0000\rcontent-range\u0000\u0000\u0000\fcontent-type\u0000\u0000\u0000\u0004date"
+			+ "\u0000\u0000\u0000\u0004etag\u0000\u0000\u0000\u0006expect\u0000\u0000\u0000\u0007expires"
+			+ "\u0000\u0000\u0000\u0004from\u0000\u0000\u0000\u0004host\u0000\u0000\u0000\bif-match"
+			+ "\u0000\u0000\u0000\u0011if-modified-since\u0000\u0000\u0000\rif-none-match\u0000\u0000\u0000\bif-range"
+			+ "\u0000\u0000\u0000\u0013if-unmodified-since\u0000\u0000\u0000\rlast-modified"
+			+ "\u0000\u0000\u0000\blocation\u0000\u0000\u0000\fmax-forwards\u0000\u0000\u0000\u0006pragma"
+			+ "\u0000\u0000\u0000\u0012proxy-authenticate\u0000\u0000\u0000\u0013proxy-authorization"
+			+ "\u0000\u0000\u0000\u0005range\u0000\u0000\u0000\u0007referer\u0000\u0000\u0000\u000Bretry-after"
+			+ "\u0000\u0000\u0000\u0006server\u0000\u0000\u0000\u0002te\u0000\u0000\u0000\u0007trailer"
+			+ "\u0000\u0000\u0000\u0011transfer-encoding\u0000\u0000\u0000\u0007upgrade\u0000\u0000\u0000\nuser-agent"
+			+ "\u0000\u0000\u0000\u0004vary\u0000\u0000\u0000\u0003via\u0000\u0000\u0000\u0007warning"
+			+ "\u0000\u0000\u0000\u0010www-authenticate\u0000\u0000\u0000\u0006method\u0000\u0000\u0000\u0003get"
+			+ "\u0000\u0000\u0000\u0006status\u0000\u0000\u0000\u0006200 OK\u0000\u0000\u0000\u0007version"
+			+ "\u0000\u0000\u0000\bHTTP/1.1\u0000\u0000\u0000\u0003url\u0000\u0000\u0000\u0006public"
+			+ "\u0000\u0000\u0000\nset-cookie\u0000\u0000\u0000\nkeep-alive\u0000\u0000\u0000\u0006origin"
+			+ "100101201202205206300302303304305306307402405406407408409410411412413414415416417502504505"
+			+ "203 Non-Authoritative Information204 No Content301 Moved Permanently400 Bad Request401 Unauthorized"
+			+ "403 Forbidden404 Not Found500 Internal Server Error501 Not Implemented503 Service Unavailable"
+			+ "Jan Feb Mar Apr May Jun Jul Aug Sept Oct Nov Dec 00:00:00 Mon, Tue, Wed, Thu, Fri, Sat, Sun, GMT"
+			+ "chunked,text/html,image/png,image/jpg,image/gif,application/xml,application/xhtml+xml,text/plain,"
+			+ "text/javascript,publicprivatemax-age=gzip,deflate,sdchcharset=utf-8charset=iso-8859-1,utf-,*,enq=0.")
+			.getBytes();	
 	
 	public static final short TYPE_SYN_STREAM = 0x0001;
 	public static final short TYPE_SYN_REPLY = 0x0002;
@@ -134,7 +168,7 @@ public class SpdyFrame {
 	public static final short TYPE_HEADERS = 0x0008;
 	public static final short TYPE_WINDOW_UPDATE = 0x0009;
 	
-	public static final char FLAGS_FIN=(char)0x01;
+	public static final char FLAG_FIN=(char)0x01;
 	public static final char FLAG_UNIDIRECTIONAL=(char)0x02;
 
 	private static final int MASK_C =           (int)(0x80000000);
@@ -144,7 +178,20 @@ public class SpdyFrame {
 	private static final int MASK_FLAGS =       (int)(0xFF000000);
 	private static final int MASK_DATA_LENGTH = (int)(0x00FFFFFF);
 	
-//	private static final String ENCODE="utf-8";
+	private static ByteBuffer setupControlFrame(ByteBuffer frame,short version,short type,char flags,int length){
+		int work=MASK_C|((int)version)<<16|type;
+		frame.putInt(work);
+		work=((int)flags)<<24|length;
+		frame.putInt(work);
+		return frame;
+	}
+	
+	private static ByteBuffer buildDataFrame(ByteBuffer frame,int streamId,char flags,int length){
+		frame.putInt(streamId);
+		int work=((int)flags)<<24|length;
+		frame.putInt(work);
+		return frame;
+	}
 
 	public static ByteBuffer[] createFrame(boolean isFin,ByteBuffer[] payloadBuffers) {
 		return null;
@@ -166,17 +213,30 @@ public class SpdyFrame {
 	private short type;
 	private int streamId;
 	
+	private int associatedToStreamId;
+	private char pri;//v2 2bit v3 3bit
+	private short slot;//v3‚Ì‚Ý
+	private int statusCode;
+	private HeaderParser header;
+	
+	private NameValueParser nameValueParser=new NameValueParser();
+	private NameValueBuilder nameValueBuilder=new NameValueBuilder();
+	
 	private List<ByteBuffer> dataBuffers=new ArrayList<ByteBuffer>();
 	private List<ByteBuffer> nextFrameBuffers=new ArrayList<ByteBuffer>();
 	
-//	private short closeCode;
-//	private String closeReason;
-	
-	public SpdyFrame(){
-		init();
+	public void init(String protocol){
+		if(PROTOCOL_V2.equals(protocol)){
+			version=VERSION_V2;
+		}else if(PROTOCOL_V3.equals(protocol)){
+			version=VERSION_V3;
+		}
+		nameValueParser.init(version);
+		nameValueBuilder.init(version);
+		prepareNext();
 	}
 	
-	public void init(){
+	public void prepareNext(){
 		parseStat=ParseStat.START;
 		dataLength=0;
 		curDataPos=0;
@@ -186,12 +246,60 @@ public class SpdyFrame {
 		workBuffer.order(ByteOrder.BIG_ENDIAN);
 	}
 	
-	
-	
-	public ByteBuffer[] buildSynReply(int streamId,ByteBuffer[] buffers){
+	public ByteBuffer[] buildSynReply(int streamId,HeaderParser header){
+		ByteBuffer frame = PoolManager.getBufferInstance();
+		frame.order(ByteOrder.BIG_ENDIAN);
+		ByteBuffer[] buffers=nameValueBuilder.encode(header);
+		//header=nameValueParser.decode(buffers);
+		int length=6+(int)BuffersUtil.remaining(buffers);
+		setupControlFrame(frame, (short)version, (short)TYPE_SYN_REPLY, (char)0, length);
+		frame.putInt(streamId);
+		frame.putShort((short)0);
+		frame.flip();
+		
+		return BuffersUtil.concatenate(frame,buffers,null);
 	}
 	
 	public ByteBuffer[] buildRstStream(int streamId,int statusCode){
+		ByteBuffer frame = PoolManager.getBufferInstance();
+		frame.order(ByteOrder.BIG_ENDIAN);
+		setupControlFrame(frame, (short)version, (short)TYPE_RST_STREAM, (char)0, 8);
+		frame.putInt(streamId);
+		frame.putInt(statusCode);
+		return BuffersUtil.toByteBufferArray(frame);
+	}
+	
+	public ByteBuffer[] buildDataFrame(int streamId,char flags,ByteBuffer[] data){
+		ByteBuffer frame = PoolManager.getBufferInstance();
+		frame.order(ByteOrder.BIG_ENDIAN);
+		frame.putInt(streamId);
+		int length=(int)BuffersUtil.remaining(data);
+		int work=((int)flags)<<24|length;
+		frame.putInt(work);
+		frame.flip();
+		return BuffersUtil.concatenate(frame,data,null);
+	}
+	
+	private void parseType(){
+		switch(type){
+		case SpdyFrame.TYPE_SYN_STREAM:
+			streamId=getIntFromData();
+			associatedToStreamId=getIntFromData();
+			short pri=getShortFromData();
+			ByteBuffer[] dataBuffer=getDataBuffers();
+			header=nameValueParser.decode(dataBuffer);
+			break;
+		case SpdyFrame.TYPE_RST_STREAM:
+			streamId=getIntFromData();
+			statusCode=getIntFromData();
+			break;
+		case SpdyFrame.TYPE_GOAWAY:
+		case SpdyFrame.TYPE_HEADERS:
+		case SpdyFrame.TYPE_PING:
+		case SpdyFrame.TYPE_SETTINGS:
+		case SpdyFrame.TYPE_WINDOW_UPDATE:
+		case SpdyFrame.TYPE_SYN_REPLY://—ˆ‚È‚¢
+		}
 	}
 	
 	/**
@@ -209,7 +317,9 @@ public class SpdyFrame {
 		case DATA:
 			boolean rc=parseData(buffer);
 			if(parseStat==ParseStat.DATA){
-				break;
+				return false;//ŽŸ‚Ìbuffer‚ª‚ ‚éê‡
+			}else if(parseStat==ParseStat.END){
+				parseType();
 			}
 			if(rc){//buffer‚ðÁ”ï‚µ‚½ê‡
 				return true;
@@ -309,7 +419,7 @@ public class SpdyFrame {
 		}
 		ByteBuffer[] framedBuffers=BuffersUtil.toByteBufferArray(nextFrameBuffers);
 		nextFrameBuffers.clear();
-		init();
+		prepareNext();
 		for(ByteBuffer buffer:framedBuffers){
 			parse(buffer);
 		}
@@ -347,7 +457,7 @@ public class SpdyFrame {
 		return payload;
 	}
 	
-	public int getIntFromData(){
+	private int getIntFromData(){
 		if(parseStat!=ParseStat.END){
 			throw new RuntimeException("getIntFromData");
 		}
@@ -360,7 +470,7 @@ public class SpdyFrame {
 		throw new RuntimeException("getIntFromData");
 	}
 	
-	public short getShortFromData(){
+	private short getShortFromData(){
 		if(parseStat!=ParseStat.END){
 			throw new RuntimeException("getIntFromData");
 		}
@@ -371,6 +481,22 @@ public class SpdyFrame {
 			}
 		}
 		throw new RuntimeException("getIntFromData");
+	}
+
+	public char getFlags() {
+		return flags;
+	}
+
+	public int getAssociatedToStreamId() {
+		return associatedToStreamId;
+	}
+
+	public int getStatusCode() {
+		return statusCode;
+	}
+
+	public HeaderParser getHeader() {
+		return header;
 	}
 	
 }
