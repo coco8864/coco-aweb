@@ -69,7 +69,7 @@ public class SpdyHandler extends ServerBaseHandler {
 			header.unref();
 			HeaderParser response=(HeaderParser)PoolManager.getInstance(HeaderParser.class);
 			
-			response.setStatusCode("200");
+			response.setStatusCode("200 OK");
 			response.setResHttpVersion(HeaderParser.HTTP_VESION_11);
 			response.setContentType("text/plain");
 			ByteBuffer[] res=frame.buildSynReply(streamId, header);

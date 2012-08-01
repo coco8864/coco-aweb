@@ -106,12 +106,12 @@ public class NameValueBuilder {
 		try{
 			build(header);
 			compresser.setInput(workBuffer.array(),0,workBuffer.position());
-			compresser.finish();
+//			compresser.finish();
 			List<ByteBuffer> buffers=new ArrayList<ByteBuffer>();
 			while(true){
 				ByteBuffer buffer=PoolManager.getBufferInstance();
-				int length=compresser.deflate(buffer.array());
-				if(length<0){
+				int length=compresser.deflate(buffer.array(),0,buffer.capacity(),Deflater.FULL_FLUSH);
+				if(length<=0){
 					PoolManager.poolBufferInstance(buffer);
 					break;
 				}
