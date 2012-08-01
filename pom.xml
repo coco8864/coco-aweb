@@ -373,6 +373,15 @@
   <version>0.2-SNAPSHOT</version>
 </dependency>  
 
+		
+<dependency>
+	<groupId>org.eclipse.jetty.spdy</groupId>
+	<artifactId>spdy-jetty</artifactId>
+	<version>8.1.4.v20120524</version>
+</dependency>		
+
+
+
 <dependency>
         <groupId>org.seleniumhq.selenium</groupId>
         <artifactId>selenium-remote-control</artifactId>
