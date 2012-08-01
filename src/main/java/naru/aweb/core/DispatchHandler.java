@@ -702,7 +702,7 @@ public class DispatchHandler extends ServerBaseHandler {
 		forwardMapping(realHost, requestHeader, mapping, auth,isWs);
 	}
 
-	private sslnpn.ssl.SSLEngineImpl sslNpnEngine;
+//	private sslnpn.ssl.SSLEngineImpl sslNpnEngine;
 	public SSLEngine getSSLEngine() {
 		KeepAliveContext keepAliveContext = getKeepAliveContext();
 		ServerParser sslServer = keepAliveContext.getProxyTargetServer();

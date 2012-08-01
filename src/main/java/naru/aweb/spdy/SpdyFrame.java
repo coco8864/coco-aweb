@@ -248,8 +248,7 @@ public class SpdyFrame {
 	
 	public ByteBuffer[] buildSynReply(int streamId,HeaderParser header){
 		ByteBuffer frame = PoolManager.getBufferInstance();
-//		frame.order(ByteOrder.BIG_ENDIAN);
-//		frame.order(ByteOrder.LITTLE_ENDIAN);
+		frame.order(ByteOrder.BIG_ENDIAN);
 		ByteBuffer[] buffers=nameValueBuilder.encode(header);
 		//header=nameValueParser.decode(buffers);
 		int length;
