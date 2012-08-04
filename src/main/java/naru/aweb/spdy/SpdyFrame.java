@@ -67,7 +67,7 @@ import naru.aweb.http.HeaderParser;
 +------------------------------------+
 |  Flags (8)  |  Length (24 bits)    |
 +------------------------------------+
-|X|           Stream-ID (31bits)     |
+|X|           Stream-ID (31bits)     | == spdy/2‚Å‚Í‚±‚ÌŒã‚ë‚É16bit unuse‚ª‚ ‚é
 +------------------------------------+
 | Number of Name/Value pairs (int32) |   <+
 +------------------------------------+    |
@@ -105,6 +105,8 @@ public class SpdyFrame {
 	
 	public static final String PROTOCOL_V2="spdy/2";
 	public static final String PROTOCOL_V3="spdy/3";
+	public static final String PROTOCOL_HTTP_11="http/1.1";
+	public static final String PROTOCOL_HTTP_10="http/1.0";
 	
 	public static final short VERSION_V2=2;
 	public static final short VERSION_V3=3;

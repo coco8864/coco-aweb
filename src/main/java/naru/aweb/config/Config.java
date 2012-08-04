@@ -37,6 +37,7 @@ import naru.aweb.handler.ReplayHelper;
 import naru.aweb.mapping.Mapper;
 import naru.aweb.queue.QueueManager;
 import naru.aweb.secure.SslContextPool;
+import naru.aweb.spdy.SpdyConfig;
 import naru.aweb.util.JdoUtil;
 import naru.aweb.util.JsonUtil;
 import naru.aweb.util.ServerParser;
@@ -109,6 +110,7 @@ public class Config {
 	private Authenticator authenticator;
 	private Authorizer authorizer;
 	private LogPersister logPersister;
+	private SpdyConfig spdyConfig;
 	private SslContextPool sslContextPool;
 	private ReplayHelper replayHelper;
 	private FilterHelper filterHelper;
@@ -681,7 +683,8 @@ public class Config {
 		filterHelper = new FilterHelper();
 		authenticator = new Authenticator(this,isCleanup);
 		logPersister = new LogPersister(this);
-		sslContextPool = new SslContextPool(this);
+		spdyConfig=new SpdyConfig(this);
+		sslContextPool = new SslContextPool(this,spdyConfig.getSslProvider());
 		sslContext = sslContextPool.getSSLContext(getSelfDomain());
 
 		String[] hostsArray = Config.getStringArray(configuration, REAL_HOSTS);
@@ -701,16 +704,6 @@ public class Config {
 		authorizer=new Authorizer(configuration);
 		mapper = new Mapper(this);
 		
-		// コンテンツ圧縮
-		// contentEncoding = configuration.getString("contentEncoding");
-
-		// keepAlive関連
-		// isProxyKeepAlive = configuration.getBoolean("isProxyKeepAlive",
-		// false);
-		// isWebKeepAlive = configuration.getBoolean("isWebKeepAlive", false);
-		// maxKeepAliveRequests =
-		// configuration.getInt("maxKeepAliveRequests",100);
-		// keepAliveTimeout = configuration.getInt("keepAliveTimeout", 15000);
 		try {
 			String dir = configuration.getString(PATH_PUBLIC_DOCROOT);
 			publicDocumentRoot = new File(dir).getCanonicalFile();
@@ -1242,11 +1235,16 @@ public class Config {
 		setProperty(PHANTOM_SERVER_HEADER, serverHeader);
 		this.serverHeader=serverHeader;
 	}
+	
 	public String getServerHeader(){
 		return serverHeader;
 	}
 	
 	public JSONArray getPoolInfo100(){
 		return poolInfo_100;
+	}
+	
+	public SpdyConfig getSpsyConfig(){
+		return spdyConfig;
 	}
 }

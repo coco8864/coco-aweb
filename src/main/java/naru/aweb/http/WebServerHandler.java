@@ -8,8 +8,6 @@ import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.util.Date;
 
-import javax.net.ssl.SSLEngine;
-
 import org.apache.log4j.Logger;
 
 import naru.async.ChannelHandler;
@@ -22,7 +20,7 @@ import naru.aweb.config.Config;
 import naru.aweb.core.DispatchHandler;
 import naru.aweb.core.ServerBaseHandler;
 import naru.aweb.mapping.MappingResult;
-import naru.aweb.util.ServerParser;
+import naru.aweb.spdy.SpdySession;
 
 /**
  * HTTPプロトコルを基本に、主にレスポンスをハンドリングする。 HTTPプロトコルのスキームに入らないプロトコルをハンドリングする場合には、
@@ -73,6 +71,9 @@ public class WebServerHandler extends ServerBaseHandler {
 	private boolean isFlushFirstResponse;
 	private ByteBuffer[] firstBody;
 	private boolean isResponseEnd;
+	
+	//spdy経由で呼び出されている場合設定される、この場合、ChannelHandler系のメソッドは使えない
+	private SpdySession spdySession;
 
 	// Dispatcherで呼び出されるので使われない
 	//public SSLEngine getSSLEngine() {
@@ -90,7 +91,7 @@ public class WebServerHandler extends ServerBaseHandler {
 		isFlushFirstResponse = false;
 		isResponseEnd = false;// 微妙な動きをするのでpoolにあるうちはtrueにしたいが・・・
 		firstBody = null;
-		// gzipContext=null;
+		spdySession=null;
 		super.recycle();
 	}
 
