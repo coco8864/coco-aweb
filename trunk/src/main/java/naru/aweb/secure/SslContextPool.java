@@ -10,6 +10,7 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.Provider;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.HashMap;
@@ -34,9 +35,10 @@ public class SslContextPool {
 	private String password;
 	private Map<String,SSLContext> sslContexts;
 	private String keytool;
-	private boolean useSslStdProvider=false;//標準Providerを使うか否か、標準の場合はSPDYに対応できない
+	private Provider sslProvider;
 	
-	public SslContextPool(Config config){
+	public SslContextPool(Config config,Provider sslProvider){
+		this.sslProvider=sslProvider;
 		sslContexts=new HashMap<String,SSLContext>();
 		trustStoreDir=new File(config.getString(TRUST_STORE_DIR));
 		if(!trustStoreDir.exists()){
@@ -48,7 +50,6 @@ public class SslContextPool {
 			String javaHome=System.getProperty("java.home");//JAVA_HOME
 			keytool=javaHome +"/bin/keytool";
 		}
-		useSslStdProvider=config.getBoolean("useSslStdProvider", false);
 		logger.info("keytool command:"+keytool);
 	}
 	
@@ -126,11 +127,7 @@ public class SslContextPool {
 		TrustManager[] tms=new TrustManager[]{new PhatomTrustManager(ks)};
 		
 		SSLContext sslContext=null;
-		if(useSslStdProvider){
-			sslContext = SSLContext.getInstance("TLSv1");
-		}else{
-			sslContext = SSLContext.getInstance("TLSv1", new sslnpn.net.ssl.internal.ssl.Provider());
-		}
+		sslContext = SSLContext.getInstance("TLSv1", sslProvider);
 		sslContext.init(kmf.getKeyManagers(), tms, null);
 		return sslContext;
 	}

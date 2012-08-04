@@ -295,6 +295,8 @@ public class RealHost {
 	private Set<String> virtualHosts=new HashSet<String>();
 	private String blackPattern;
 	private String whitePattern;
+	private boolean isSpdyAvailable=true;//TODO 
+	
 //	private boolean isProxy;
 //	private boolean isSslproxy;
 //	private boolean isWeb;
@@ -312,39 +314,6 @@ public class RealHost {
 		return backlog;
 	}
 
-	/*
-	public InetSocketAddress getInetSocketAddress() {
-		InetAddress inetAdder=null;
-		if(!"*".equals(bindHost)){
-			try {
-				inetAdder=InetAddress.getByName(bindHost);
-			} catch (UnknownHostException e) {
-				logger.warn("fail to getByName:"+bindHost,e);
-				return null;
-			}
-		}
-		return new InetSocketAddress(inetAdder, bindPort);
-	}
-	*/
-	
-	
-/*
-	public boolean isProxy() {
-		return isProxy;
-	}
-
-	public boolean isSslproxy() {
-		return isSslproxy;
-	}
-
-	public boolean isWeb() {
-		return isWeb;
-	}
-
-	public boolean isSslweb() {
-		return isSslweb;
-	}
-*/
 	public RealHost(String name,String bindHost,int bindPort,int backlog) throws UnknownHostException{
 		this(name, bindHost, bindPort, backlog, null);
 	}
@@ -423,4 +392,9 @@ public class RealHost {
 	public void setWhitePattern(String whitePattern) {
 		this.whitePattern = whitePattern;
 	}
+	
+	public boolean isSpdyAvailable(){
+		return isSpdyAvailable;
+	}
+
 }

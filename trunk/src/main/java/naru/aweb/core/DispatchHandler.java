@@ -28,7 +28,7 @@ import naru.aweb.http.RequestContext;
 import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.Mapper;
 import naru.aweb.mapping.MappingResult;
-import naru.aweb.spdy.SpdyFrame;
+import naru.aweb.spdy.SpdyConfig;
 import naru.aweb.spdy.SpdyHandler;
 import naru.aweb.util.ServerParser;
 import net.sf.json.JSONObject;
@@ -93,6 +93,7 @@ public class DispatchHandler extends ServerBaseHandler {
 		//acceptやsslProxyの場合、そのタイミングでtrue,
 		//KeepAliveで継続する時のためここはfalseで初期化
 		isFirstRead=false;
+		isSpdyAvailable=false;
 		super.recycle();
 	}
 
@@ -135,29 +136,16 @@ public class DispatchHandler extends ServerBaseHandler {
 		logger.debug("Dispatcher failure.poolId:" + getPoolId(), t);
 		asyncClose(null);
 	}
-
 	
-//	private static final String PROTOCOL_SPDY2="spdy/2";
-	
+	boolean isSpdyAvailable;
 	/**
 	 * ssl確立後、次データを要求する。(return true)
 	 */
-	public boolean onHandshaked() {
+	public boolean onHandshaked(boolean isSpdyAvailable) {
 		logger.debug("#handshaked.cid:" + getChannelId());
 		handshakeTime=System.currentTimeMillis()-startTime.getTime();
-		/*
-		if(sslNpnEngine==null){
-			return true;
-		}
-		String nextProtocol=sslNpnEngine.getNegotiatedNextProtocol();
-		if(SpdyFrame.PROTOCOL_V2.equalsIgnoreCase(nextProtocol)){
-			SpdyHandler handler=(SpdyHandler)forwardHandler(SpdyHandler.class);
-			if(handler==null){//既にcloseされていた
-				return false;
-			}
-			return handler.onHandshaked(SpdyFrame.PROTOCOL_V2);
-		}
-		*/
+		//SPDYのため、ここでfowardするとうまくいかない、原因調査要
+		this.isSpdyAvailable=isSpdyAvailable;
 		return true;
 	}
 
@@ -185,18 +173,18 @@ public class DispatchHandler extends ServerBaseHandler {
 	public void onReadPlain(Object userContext, ByteBuffer[] buffers) {
 		logger.debug("#onReadPlain.cid:" + getChannelId()
 				+ ":buffers.hashCode:" + buffers.hashCode());
-		if(sslNpnEngine!=null){
-			String nextProtocol=sslNpnEngine.getNegotiatedNextProtocol();
-			if(SpdyFrame.PROTOCOL_V2.equalsIgnoreCase(nextProtocol)){
-				SpdyHandler handler=(SpdyHandler)forwardHandler(SpdyHandler.class);
-				if(handler!=null){//既にcloseされていた
-					handler.onHandshaked(nextProtocol);
-					handler.onReadPlain(userContext, buffers);
-					return;
-				}
-			}
-		}
 		
+		if(isSpdyAvailable){
+			SpdyHandler handler=(SpdyHandler)forwardHandler(SpdyHandler.class);
+			if(handler!=null){//既にcloseされていた
+				handler.onHandshaked(isSpdyAvailable);
+				handler.onReadPlain(userContext, buffers);
+				return;
+			}
+			logger.error("fail to forward SpdyHandler");
+			asyncClose(null);
+			return;
+		}
 		if (startTime == null) {// keepAliveからのリクエストの場合ここがリクエストの基点となる
 			startTime = new Date();
 		}
@@ -362,13 +350,13 @@ public class DispatchHandler extends ServerBaseHandler {
 		setupTraceLog(realHostName, requestHeader, mapping, user,isWs);
 		setRequestMapping(mapping);
 		Class<WebServerHandler> responseClass = mapping.getHandlerClass();
-		WebServerHandler response = (WebServerHandler) forwardHandler(responseClass);
-		if (response == null) {
+		WebServerHandler responseHandler = (WebServerHandler) forwardHandler(responseClass);
+		if (responseHandler == null) {
 			logger.warn("fail to forwardHandler:cid:" + getChannelId() + ":" + this);
 			return;
 		}
-		logger.debug("responseObject:cid:" + getChannelId() + ":" + response + ":" + this);
-		response.startResponse();
+		logger.debug("responseObject:cid:" + getChannelId() + ":" + responseHandler + ":" + this);
+		responseHandler.startResponse();
 	}
 
 	private static final String SSL_PROXY_OK_CONTEXT = "sslProxyOkContext";
@@ -707,10 +695,14 @@ public class DispatchHandler extends ServerBaseHandler {
 		KeepAliveContext keepAliveContext = getKeepAliveContext();
 		ServerParser sslServer = keepAliveContext.getProxyTargetServer();
 		SSLEngine engine=getConfig().getSslEngine(sslServer);
-		if(engine instanceof sslnpn.ssl.SSLEngineImpl){
-			sslNpnEngine=(sslnpn.ssl.SSLEngineImpl)engine;
-			sslNpnEngine.setAdvertisedNextProtocols(SpdyFrame.PROTOCOL_V2,"http/1.1");
+		if(keepAliveContext.getRealHost().isSpdyAvailable()){
+			SpdyConfig spdyConfig=getConfig().getSpsyConfig();
+			spdyConfig.setNextProtocols(engine);
 		}
+//		if(engine instanceof sslnpn.ssl.SSLEngineImpl){
+//			sslNpnEngine=(sslnpn.ssl.SSLEngineImpl)engine;
+//			sslNpnEngine.setAdvertisedNextProtocols(SpdyFrame.PROTOCOL_V2,"http/1.1");
+//		}
 		return engine;
 	}
 
