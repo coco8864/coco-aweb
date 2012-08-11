@@ -21,6 +21,7 @@ import naru.aweb.core.DispatchHandler;
 import naru.aweb.core.ServerBaseHandler;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.spdy.SpdySession;
+import naru.aweb.util.ServerParser;
 
 /**
  * HTTPプロトコルを基本に、主にレスポンスをハンドリングする。 HTTPプロトコルのスキームに入らないプロトコルをハンドリングする場合には、
@@ -561,8 +562,7 @@ public class WebServerHandler extends ServerBaseHandler {
 	 *            送信データ
 	 * @return 実writeしたか否か？
 	 */
-	private boolean internalWriteBody(boolean isLast, boolean needCallback,
-			ByteBuffer[] buffers) {
+	private boolean internalWriteBody(boolean isLast, boolean needCallback,ByteBuffer[] buffers) {
 		KeepAliveContext keepAliveContext = getKeepAliveContext();
 		/* 必要があればchunkedして出力する */
 		buffers = keepAliveContext.chunkedIfNeed(isLast, buffers);
@@ -1018,14 +1018,6 @@ public class WebServerHandler extends ServerBaseHandler {
 		}
 		responseEnd();
 	}
-
-	public RequestContext getRequestContext(){
-		KeepAliveContext keepAliveContext=getKeepAliveContext();
-		if(keepAliveContext==null){
-			return null;
-		}
-		return keepAliveContext.getRequestContext();
-	}
 	
 	public AuthSession getAuthSession(){
 		RequestContext requestContext=getRequestContext();
@@ -1035,4 +1027,27 @@ public class WebServerHandler extends ServerBaseHandler {
 		return requestContext.getAuthSession();
 	}
 	
+	
+	/* spdy対応 */
+	public KeepAliveContext getKeepAliveContext(boolean isCreate){
+		if(spdySession==null){
+			return super.getKeepAliveContext(isCreate);
+		}
+		KeepAliveContext keepAliveContext=spdySession.getKeepAliveContext();
+		if(isCreate && keepAliveContext==null){
+			keepAliveContext=(KeepAliveContext)PoolManager.getInstance(KeepAliveContext.class);
+			keepAliveContext.setAcceptServer(spdySession.getAcceptServer());
+			setKeepAliveContext(keepAliveContext);
+		}
+		return keepAliveContext;
+	}
+	
+	
+	public void setKeepAliveContext(KeepAliveContext keepAliveContext){
+		if(spdySession==null){
+			super.setKeepAliveContext(keepAliveContext);
+			return;
+		}
+		spdySession.setKeepAliveContext(keepAliveContext);
+	}
 }

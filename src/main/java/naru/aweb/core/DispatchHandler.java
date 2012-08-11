@@ -137,15 +137,18 @@ public class DispatchHandler extends ServerBaseHandler {
 		asyncClose(null);
 	}
 	
-	boolean isSpdyAvailable;
+	private SSLEngine sslEngine;
+	private boolean isSpdyAvailable;
+	private String nextProtocol;
 	/**
 	 * ssl確立後、次データを要求する。(return true)
 	 */
-	public boolean onHandshaked(boolean isSpdyAvailable) {
+	public boolean onHandshaked() {
 		logger.debug("#handshaked.cid:" + getChannelId());
 		handshakeTime=System.currentTimeMillis()-startTime.getTime();
 		//SPDYのため、ここでfowardするとうまくいかない、原因調査要
-		this.isSpdyAvailable=isSpdyAvailable;
+		this.nextProtocol=getConfig().getSpsyConfig().getNextProtocol(sslEngine);
+		this.isSpdyAvailable=nextProtocol.startsWith("spdy/");
 		return true;
 	}
 
@@ -177,7 +180,7 @@ public class DispatchHandler extends ServerBaseHandler {
 		if(isSpdyAvailable){
 			SpdyHandler handler=(SpdyHandler)forwardHandler(SpdyHandler.class);
 			if(handler!=null){//既にcloseされていた
-				handler.onHandshaked(isSpdyAvailable);
+				handler.onHandshaked(nextProtocol);
 				handler.onReadPlain(userContext, buffers);
 				return;
 			}
@@ -690,7 +693,6 @@ public class DispatchHandler extends ServerBaseHandler {
 		forwardMapping(realHost, requestHeader, mapping, auth,isWs);
 	}
 
-//	private sslnpn.ssl.SSLEngineImpl sslNpnEngine;
 	public SSLEngine getSSLEngine() {
 		KeepAliveContext keepAliveContext = getKeepAliveContext();
 		ServerParser sslServer = keepAliveContext.getProxyTargetServer();
@@ -703,6 +705,7 @@ public class DispatchHandler extends ServerBaseHandler {
 //			sslNpnEngine=(sslnpn.ssl.SSLEngineImpl)engine;
 //			sslNpnEngine.setAdvertisedNextProtocols(SpdyFrame.PROTOCOL_V2,"http/1.1");
 //		}
+		this.sslEngine=engine;
 		return engine;
 	}
 
