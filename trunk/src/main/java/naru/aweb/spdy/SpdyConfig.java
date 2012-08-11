@@ -16,12 +16,12 @@ public class SpdyConfig {
 	public SpdyConfig(Config config){
 		isSpdyAvailable=false;
 		//ê›íËÇ™SpdyÇégÇ§éñÇéwé¶ÇµÇƒÇ¢ÇÈÇ±Ç∆
-		boolean useSslStdProvider=config.getBoolean("useSslStdProvider", false);
+		boolean useSslStdProvider=config.getBoolean("useSslStdProvider", true);
 		if(!useSslStdProvider){
 			return;
 		}
 		//JDK7à»è„Ç≈ìÆçÏÇµÇƒÇ¢ÇÈÇ±Ç∆
-		System.getProperty("");
+		String vesion=System.getProperty("java.version");
 		
 		isSpdyAvailable=true;
 		logger.info("SPDY available.");
@@ -47,6 +47,17 @@ public class SpdyConfig {
 			sslnpn.ssl.SSLEngineImpl sslNpnEngine=(sslnpn.ssl.SSLEngineImpl)engine;
 			sslNpnEngine.setAdvertisedNextProtocols(SpdyFrame.PROTOCOL_V2,SpdyFrame.PROTOCOL_HTTP_11);
 		}
+	}
+	
+	public String getNextProtocol(SSLEngine engine){
+		if(isSpdyAvailable && engine instanceof sslnpn.ssl.SSLEngineImpl){
+			sslnpn.ssl.SSLEngineImpl sslNpnEngine=(sslnpn.ssl.SSLEngineImpl)engine;
+			String nextProtocol=sslNpnEngine.getNegotiatedNextProtocol();
+			if(nextProtocol!=null){
+				return nextProtocol;
+			}
+		}
+		return SpdyFrame.PROTOCOL_HTTP_11;
 	}
 	
 	public boolean isSpdyNextProtocol(SSLEngine engine){

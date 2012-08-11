@@ -161,6 +161,7 @@ public class SpdyFrame {
 			+ "text/javascript,publicprivatemax-age=gzip,deflate,sdchcharset=utf-8charset=iso-8859-1,utf-,*,enq=0.")
 			.getBytes();	
 	
+	public static final short TYPE_DATA_FRAME = 0x0000;
 	public static final short TYPE_SYN_STREAM = 0x0001;
 	public static final short TYPE_SYN_REPLY = 0x0002;
 	public static final short TYPE_RST_STREAM = 0x0003;
@@ -267,7 +268,6 @@ public class SpdyFrame {
 			frame.putShort((short)0);
 		}
 		frame.flip();
-		
 		return BuffersUtil.concatenate(frame,buffers,null);
 	}
 	
@@ -383,6 +383,7 @@ public class SpdyFrame {
 			version=(short)((work&MASK_VERSION)>>16);
 			type=(short)(work&MASK_TYPE);
 		}else{
+			type=TYPE_DATA_FRAME;
 			streamId=work&MASK_STREAMID;
 		}
 		work=readBuffer.getInt();
