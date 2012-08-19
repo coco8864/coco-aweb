@@ -498,6 +498,11 @@ public class SpdyFrame {
 	public char getFlags() {
 		return flags;
 	}
+	
+	public boolean isFin(){
+		return (flags&FLAG_FIN)!=0;
+	}
+	
 
 	public int getAssociatedToStreamId() {
 		return associatedToStreamId;

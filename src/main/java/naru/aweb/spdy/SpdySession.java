@@ -3,6 +3,7 @@ package naru.aweb.spdy;
 import java.nio.ByteBuffer;
 
 import naru.async.pool.PoolBase;
+import naru.async.pool.PoolManager;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.KeepAliveContext;
 import naru.aweb.http.WebServerHandler;
@@ -16,14 +17,13 @@ public class SpdySession extends PoolBase{
 	private boolean isInputClose=false;
 	private KeepAliveContext keepAliveContext;
 	
-	public boolean init(SpdyHandler spdyHandler,int streamId,HeaderParser requestHeader){
-		this.spdyHandler=spdyHandler;
-		this.streamId=streamId;
-		
-		webserverHandler.getLocalIp();
-		webserverHandler.getLocalPort();
-		
-		return true;
+	public static SpdySession create(SpdyHandler spdyHandler,int streamId,HeaderParser requestHeader){
+		SpdySession session=(SpdySession)PoolManager.getInstance(SpdySession.class);
+		session.spdyHandler=spdyHandler;
+		session.streamId=streamId;
+//		webserverHandler.getLocalIp();
+//		webserverHandler.getLocalPort();
+		return session;
 	}
 	
 	//SpdyHandlerë§Ç©ÇÁåƒÇ—èoÇ≥ÇÍÇÈ
