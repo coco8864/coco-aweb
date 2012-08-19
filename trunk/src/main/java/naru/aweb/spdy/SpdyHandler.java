@@ -82,15 +82,12 @@ public class SpdyHandler extends ServerBaseHandler {
 					frame.prepareNext();
 				}
 			}
-			PoolManager.poolArrayInstance(buffers);
-//			if(frame.getPayloadLength()>getWebSocketMessageLimit()){
-//				logger.debug("WsHybi10#doFrame too long frame.frame.getPayloadLength():"+frame.getPayloadLength());
-//				sendClose(WsHybiFrame.CLOSE_MESSAGE_TOO_BIG,"too long frame");
-//			}
 			asyncRead(null);
 		} catch (RuntimeException e) {
 			logger.error("SpdyHandler parse error.",e);
 			asyncClose(null);
+		}finally{
+			PoolManager.poolArrayInstance(buffers);
 		}
 	}
 	
@@ -98,17 +95,20 @@ public class SpdyHandler extends ServerBaseHandler {
 		logger.debug("SpdyHandler#doFrame cid:"+getChannelId());
 		int streamId=frame.getStreamId();
 		ByteBuffer[] dataBuffer;
-		HeaderParser header;
+//		HeaderParser header;
+		SpdySession session=null;
 		int statusCode;
 		short type=frame.getType();
 		switch(type){
 		case SpdyFrame.TYPE_DATA_FRAME:
 			dataBuffer=frame.getDataBuffers();
+			session=sessions.get(streamId);
+			session.responseBody(frame.isFin(),dataBuffer);
 			break;
 		case SpdyFrame.TYPE_SYN_STREAM:
-			header=frame.getHeader();
-			//spdySession作成
-			//mapping処理
+			HeaderParser requestHeader=frame.getHeader();
+			session=SpdySession.create(this, streamId, requestHeader);
+			sessions.put(streamId, session);
 			
 			/*
 			header.unref();
@@ -124,8 +124,10 @@ public class SpdyHandler extends ServerBaseHandler {
 			*/
 			break;
 		case SpdyFrame.TYPE_RST_STREAM:
+			session=sessions.get(streamId);
 			statusCode=frame.getStatusCode();
 			break;
+		case SpdyFrame.TYPE_HEADERS:
 		default:
 		}
 	}
@@ -348,7 +350,7 @@ public class SpdyHandler extends ServerBaseHandler {
 		}
 		setRequestAttribute(ServerBaseHandler.ATTRIBUTE_USER, user);
 		// 処理の起点がaccessLogの中に採られる
-		setupTraceLog(realHostName, requestHeader, mapping, user);
+//		setupTraceLog(realHostName, requestHeader, mapping, user);
 		setRequestMapping(mapping);
 		Class<WebServerHandler> responseClass = mapping.getHandlerClass();
 		WebServerHandler responseHandler = (WebServerHandler) forwardHandler(responseClass);
@@ -360,6 +362,7 @@ public class SpdyHandler extends ServerBaseHandler {
 		responseHandler.startResponse();
 	}
 	
+	/*
 	private AccessLog setupTraceLog(String realHostName,
 			HeaderParser requestHeader, MappingResult mapping, User user) {
 		// ブラウザから入力されたＵＲＬ,target
@@ -413,7 +416,7 @@ public class SpdyHandler extends ServerBaseHandler {
 			accessLog.setResolveOrigin(origin);// 本当の接続先が設定されている。
 		}
 		accessLog.setRequestLine(requestHeader.getRequestLine());
-		accessLog.setRequestHeaderLength(0/*connectHeaderLength+requestHeader.getHeaderLength()*/);
+		accessLog.setRequestHeaderLength(0/*connectHeaderLength+requestHeader.getHeaderLength());
 		accessLog.setChannelId(getChannelId());
 		accessLog.setLocalIp(getLocalIp());
 		logger.debug("cid:" + getChannelId() + ":requestLine:"+ accessLog.getRequestLine());
@@ -448,6 +451,7 @@ public class SpdyHandler extends ServerBaseHandler {
 		accessLog.setPersist(true);
 		return accessLog;
 	}
+*/
 	
 	
 }
