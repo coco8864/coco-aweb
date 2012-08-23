@@ -103,13 +103,18 @@ public class SpdyHandler extends ServerBaseHandler {
 		case SpdyFrame.TYPE_DATA_FRAME:
 			dataBuffer=frame.getDataBuffers();
 			session=sessions.get(streamId);
-			session.responseBody(frame.isFin(),dataBuffer);
+			if(session!=null){
+				session.responseBody(frame.isFin(),dataBuffer);
+			}else{
+				logger.error("illegal streamId:"+streamId);
+				PoolManager.poolBufferInstance(dataBuffer);
+			}
 			break;
 		case SpdyFrame.TYPE_SYN_STREAM:
 			HeaderParser requestHeader=frame.getHeader();
 			session=SpdySession.create(this, streamId, requestHeader);
 			sessions.put(streamId, session);
-			
+			mappingHandler(session);
 			/*
 			header.unref();
 			HeaderParser response=(HeaderParser)PoolManager.getInstance(HeaderParser.class);
@@ -177,10 +182,11 @@ public class SpdyHandler extends ServerBaseHandler {
 		super.onFinished();
 	}
 	
-	private void mappingHandler(HeaderParser requestHeader) {
+	private void mappingHandler(SpdySession session) {
 		/* cookieIdÇÕêÿÇËéÊÇ¡ÇƒrequestAttributeÇ…à⁄ÇµïœÇ¶ÇÈ */
-		KeepAliveContext keepAliveContext=null;
-		RequestContext requestContext=null;
+		HeaderParser requestHeader=session.getRequestHeader();
+		KeepAliveContext keepAliveContext=session.getKeepAliveContext();
+		RequestContext requestContext=session.getRequestContext();
 		
 		String cookieId=requestHeader.getAndRemoveCookieHeader(SessionId.SESSION_ID);
 		if(cookieId!=null){
