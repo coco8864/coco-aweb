@@ -394,6 +394,10 @@ public class KeepAliveContext extends PoolBase {
 		}
 	}
 	
+	public ServerParser getAcceptServer(){
+		return acceptServer;
+	}
+	
 	public RealHost getRealHost(){
 		return realHost;
 	}
