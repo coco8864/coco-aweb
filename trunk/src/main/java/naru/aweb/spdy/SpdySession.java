@@ -70,5 +70,13 @@ public class SpdySession extends PoolBase{
 	public int getStreamId() {
 		return streamId;
 	}
+
+	public WebServerHandler getWebserverHandler() {
+		return webserverHandler;
+	}
+
+	public void setWebserverHandler(WebServerHandler webserverHandler) {
+		this.webserverHandler = webserverHandler;
+	}
 	
 }

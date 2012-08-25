@@ -358,6 +358,10 @@ public class HeaderParser extends PoolBase {
 		lestOfHeader = lest;
 	}
 
+	public void setParseOk(){
+		parseSt=ST.OK;
+	}
+	
 	private void parseLestOfHeader() {
 		if (lestOfHeader != null) {
 			addLine(lestOfHeader, 0, lestOfHeader.length);
@@ -553,31 +557,13 @@ public class HeaderParser extends PoolBase {
 		if (CONNECT_METHOD.equalsIgnoreCase(getMethod())) {
 			isProxy = true;// SSL proxy
 			isSslProxy = true;
-			server = ServerParser.parse(uri, 443);
+			setServer(uri, 443);
 			return;
 		}
 		Matcher matcher = null;
 		synchronized (httpServerPattern) {
 			matcher = httpServerPattern.matcher(uri);
 		}
-		/*
-		 * java.lang.IllegalArgumentException: fail to match.uri:version="1.0"
-		 * at naru.aweb.http.HeaderParser.parseFinish(HeaderParser.java:512) at
-		 * naru.aweb.http.HeaderParser.parse(HeaderParser.java:442) at
-		 * naru.aweb.http.WebClientHandler.onReadPlain(WebClientHandler.java:260)
-		 * at naru.async.ssl.SslHandler.callbackReadPlain(SslHandler.java:156)
-		 * at naru.async.ssl.SslHandler.onRead(SslHandler.java:164) at
-		 * naru.aweb.http.WebClientHandler.onRead(WebClientHandler.java:242) at
-		 * naru.async.core.Order.internalCallback(Order.java:191) at
-		 * naru.async.core.Order.callback(Order.java:228) at
-		 * naru.async.core.ChannelContext.callback(ChannelContext.java:347) at
-		 * naru.async.core.DispatchManager.service(DispatchManager.java:34) at
-		 * naru.queuelet.core.QueueletWrapper.service(QueueletWrapper.java:268)
-		 * at naru.queuelet.core.Terminal.service(Terminal.java:487) at
-		 * naru.queuelet.core.ServiceThread.run(ServiceThread.java:56) at
-		 * java.lang.Thread.run(Thread.java:619) こんなエラーがでる事がある。
-		 * debugをやめる、keepAliveは関係なし いつもbodyを受信している サーバも自分
-		 */
 		if (!matcher.matches()) {//
 			logger.error("fail to match.uri:" + uri);
 			// throw new IllegalArgumentException("fail to match.uri:"+uri);
@@ -600,7 +586,7 @@ public class HeaderParser extends PoolBase {
 		if (serverString != null) {// httpで始まっていたということは、proxyとして動作している
 		// proxyへのリクエスト
 			isProxy = true;
-			server = ServerParser.parse(serverString, 80);
+			setServer(serverString, 80);
 		} else {//TODO WebSocketリクエストをproxyする場合はどうするの？
 			String upgradeHeader = getHeader(UPGRADE_HEADER);
 			if (WEB_SOCKET.equalsIgnoreCase(upgradeHeader)) {
@@ -609,11 +595,19 @@ public class HeaderParser extends PoolBase {
 			// Webサーバへのリクエスト,sslproxyの場合もここを通るので、ポート番号の省略値は決められない
 			isProxy = false;
 			serverString = getHeader(HOST_HEADER);
-			if (serverString != null) {
-				server = ServerParser.parse(serverString, -1);
-			} else {// hostヘッダがない...
-				server = null;
-			}
+			setServer(serverString);
+		}
+	}
+	
+	public void setServer(String hostHeader){
+		setServer(hostHeader,-1);
+	}
+	
+	public void setServer(String hostHeader,int defaultPort){
+		if(hostHeader!=null){
+			server = ServerParser.parse(hostHeader, defaultPort);
+		}else{
+			server=null;
 		}
 	}
 
