@@ -600,11 +600,11 @@ public class WebServerHandler extends ServerBaseHandler {
 			asyncClose(null);// âÒê¸Çêÿíf
 			return;// âΩÇÇµÇƒÇ‡ñ≥ë 
 		}
-		getAccessLog().setTimeCheckPint(AccessLog.TimePoint.responseHeader);
+		AccessLog accessLog = getAccessLog();
+		accessLog.setTimeCheckPint(AccessLog.TimePoint.responseHeader);
 		responseHeaderLength = BuffersUtil.remaining(headerBuffer);
 		Store responsePeek = null;
 		MappingResult mapping=getRequestMapping();
-		AccessLog accessLog = getAccessLog();
 		if(mapping!=null){
 			switch (mapping.getLogType()) {
 			case RESPONSE_TRACE:
@@ -1048,6 +1048,19 @@ public class WebServerHandler extends ServerBaseHandler {
 			super.setKeepAliveContext(keepAliveContext);
 			return;
 		}
-		spdySession.setKeepAliveContext(keepAliveContext);
+//		spdySession.setKeepAliveContext(keepAliveContext);
 	}
+	
+	@Override
+	public AccessLog getAccessLog(){
+		if(spdySession!=null){
+			return spdySession.getRequestContext().getAccessLog();
+		}
+		return super.getAccessLog();
+	}
+	
+	public void setSpdySession(SpdySession spdySession){
+		this.spdySession=spdySession;
+	}
+	
 }

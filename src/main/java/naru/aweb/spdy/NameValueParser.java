@@ -8,6 +8,7 @@ import java.util.zip.Inflater;
 
 import naru.async.pool.PoolManager;
 import naru.aweb.http.HeaderParser;
+import naru.aweb.util.ServerParser;
 
 /**
  * @author Owner
@@ -111,17 +112,21 @@ public class NameValueParser {
 				if("method".equals(name)){
 					header.setMethod(values[0]);
 				}else if("url".equals(name)){
-					header.setReqHttpVersion(values[0]);
+					header.setRequestUri(values[0]);
+					header.setPath(values[0]);
 				}else if("version".equals(name)){
 					header.setReqHttpVersion(values[0]);
 				}else if("scheme".equals(name)){
 					//header.
+				}else if("host".equals(name)){
+					header.setServer(values[0], 443);
 				}else{
 					header.setHeader(name, values);
 				}
 				curNameValue++;
 				if (numberOfNameValue == curNameValue) {
 					phase = Phase.END;
+					header.setParseOk();
 					return true;
 				}
 				phase = Phase.NumberOfNameValue;
@@ -192,6 +197,8 @@ public class NameValueParser {
 			if (phase == Phase.END) {
 				HeaderParser result=this.header;
 				this.header=null;
+				
+				
 				return result;
 			}
 			if (phase == Phase.ERROR) {

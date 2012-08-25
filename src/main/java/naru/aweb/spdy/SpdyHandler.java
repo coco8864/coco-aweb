@@ -219,7 +219,7 @@ public class SpdyHandler extends ServerBaseHandler {
 		
 		/* dispatchHandlerÇèoçqÇ∑ÇÈÇ∆Ç´Ç…AccessLogÇïtâ¡ */
 		requestContext.allocAccessLog();
-		forwardMapping(realHost, requestHeader, mapping, auth);
+		forwardMapping(session,realHost, requestHeader, mapping, auth);
 	}
 	
 	// private static final String PROXY_AUTHENTICATION_PATH="/authentication";
@@ -348,7 +348,7 @@ public class SpdyHandler extends ServerBaseHandler {
 		return DispatchResponseHandler.crossDomainFrame(response);
 	}
 	
-	private void forwardMapping(String realHostName, HeaderParser requestHeader,
+	private void forwardMapping(SpdySession session,String realHostName, HeaderParser requestHeader,
 			MappingResult mapping, AuthSession auth) {
 		User user = null;
 		if (auth != null) {
@@ -359,11 +359,14 @@ public class SpdyHandler extends ServerBaseHandler {
 //		setupTraceLog(realHostName, requestHeader, mapping, user);
 		setRequestMapping(mapping);
 		Class<WebServerHandler> responseClass = mapping.getHandlerClass();
-		WebServerHandler responseHandler = (WebServerHandler) forwardHandler(responseClass);
+		WebServerHandler responseHandler = (WebServerHandler) allocHandler(responseClass);
 		if (responseHandler == null) {
 			logger.warn("fail to forwardHandler:cid:" + getChannelId() + ":" + this);
 			return;
 		}
+		session.setWebserverHandler(responseHandler);
+		responseHandler.setSpdySession(session);
+		
 		logger.debug("responseObject:cid:" + getChannelId() + ":" + responseHandler + ":" + this);
 		responseHandler.startResponse();
 	}
