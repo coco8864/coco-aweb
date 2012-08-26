@@ -20,6 +20,8 @@ public class NameValueBuilder {
 
 	public void init(short version) {
 		this.version=version;
+		compresser.reset();
+		setDictionary();
 	}
 	
 	private void setDictionary() {
@@ -31,8 +33,6 @@ public class NameValueBuilder {
 	}
 	
 	private void buildStart() {
-		compresser.reset();
-		setDictionary();
 		workBuffer=PoolManager.getBufferInstance();
 		workBuffer.order(ByteOrder.BIG_ENDIAN);
 	}
