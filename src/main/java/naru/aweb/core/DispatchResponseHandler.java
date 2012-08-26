@@ -19,8 +19,7 @@ import org.apache.log4j.Logger;
  * 
  */
 public class DispatchResponseHandler extends WebServerHandler {
-	private static Logger logger = Logger
-			.getLogger(DispatchResponseHandler.class);
+	private static Logger logger = Logger.getLogger(DispatchResponseHandler.class);
 	private static Config config = Config.getConfig();
 	private static final String TYPE = "type";
 	private static final String MESSAGE = "message";

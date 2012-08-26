@@ -92,8 +92,8 @@ public class SpdyHandler extends ServerBaseHandler {
 	}
 	
 	private void doFrame(){
-		logger.debug("SpdyHandler#doFrame cid:"+getChannelId());
 		int streamId=frame.getStreamId();
+		logger.debug("SpdyHandler#doFrame cid:"+getChannelId()+":streamId:"+streamId);
 		ByteBuffer[] dataBuffer;
 //		HeaderParser header;
 		SpdySession session=null;
@@ -164,7 +164,7 @@ public class SpdyHandler extends ServerBaseHandler {
 	}
 	
 	public synchronized boolean asyncWrite(Object context,ByteBuffer[] buffers){
-		return asyncWrite(context,buffers);
+		return super.asyncWrite(context,buffers);
 	}
 	
 	@Override
@@ -366,6 +366,7 @@ public class SpdyHandler extends ServerBaseHandler {
 		}
 		session.setWebserverHandler(responseHandler);
 		responseHandler.setSpdySession(session);
+		responseHandler.setRequestMapping(mapping);
 		
 		logger.debug("responseObject:cid:" + getChannelId() + ":" + responseHandler + ":" + this);
 		responseHandler.startResponse();

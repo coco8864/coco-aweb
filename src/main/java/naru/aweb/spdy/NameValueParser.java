@@ -6,6 +6,8 @@ import java.nio.ByteOrder;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
+import org.apache.log4j.Logger;
+
 import naru.async.pool.PoolManager;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.util.ServerParser;
@@ -15,7 +17,7 @@ import naru.aweb.util.ServerParser;
  * 
  */
 public class NameValueParser {
-
+	private static Logger logger = Logger.getLogger(NameValueParser.class);
 
 	private enum Phase {
 		START, NumberOfNameValue, LengthOfName, Name, LengthOfValue, Value, END, ERROR,
@@ -34,6 +36,7 @@ public class NameValueParser {
 	
 	public void init(short version) {
 		this.version=version;
+		decompresser.reset();
 	}
 	
 	private void parseStart() {
@@ -41,7 +44,6 @@ public class NameValueParser {
 		header = (HeaderParser) PoolManager.getInstance(HeaderParser.class);
 		workBuffer = PoolManager.getBufferInstance();
 		workBuffer.order(ByteOrder.BIG_ENDIAN);
-		decompresser.reset();
 		curNameValue = 0;
 	}
 
@@ -158,6 +160,7 @@ public class NameValueParser {
 			try {
 				length = decompresser.inflate(array, pos, length);
 			} catch (DataFormatException e) {
+				logger.error("infrate error",e);
 				//inflate error
 				phase=Phase.ERROR;
 				return true;
@@ -197,8 +200,6 @@ public class NameValueParser {
 			if (phase == Phase.END) {
 				HeaderParser result=this.header;
 				this.header=null;
-				
-				
 				return result;
 			}
 			if (phase == Phase.ERROR) {
