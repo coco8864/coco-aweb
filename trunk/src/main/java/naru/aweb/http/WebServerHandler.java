@@ -370,6 +370,12 @@ public class WebServerHandler extends ServerBaseHandler {
 	// TODO keepAliveでfowardした後responseEndが呼び出される事がある。
 	// handlerが初期化されているので、判定する方法がない。
 	public void responseEnd() {
+		if(spdySession!=null){
+			if (isFlushFirstResponse == false) {
+				spdySesponseBody(null);
+			}
+			return;
+		}
 		synchronized (this) {
 			if (isResponseEnd || getChannelId() == -1) {
 				return;
@@ -749,12 +755,50 @@ public class WebServerHandler extends ServerBaseHandler {
 		}
 	}
 
+	
+	private void spdySesponseBody(ByteBuffer[] buffers){
+		boolean isCallbackOnWrittenBody = false;//排他の中からcallbackされるのを防ぐ
+		boolean isLast=false;
+		if(buffers==null){
+			isLast=true;
+		}else{
+			isLast=needMoreResponse();
+		}
+		synchronized(this){
+			if (isFlushFirstResponse == false && firstBody == null) {
+				firstBody = buffers;// すぐには出力せず持ちこたえる
+				isCallbackOnWrittenBody=true;
+			}else if(isFlushFirstResponse == false && firstBody != null) {
+				/* 基本headerの確定 */
+				setupResponseHeader();
+				spdySession.responseHeader(responseHeader);
+				isFlushFirstResponse = true;
+				buffers = BuffersUtil.concatenate(firstBody,buffers);
+			}
+		}
+		if (isCallbackOnWrittenBody) {
+			onWrittenBody();
+			return;// TODO
+		}
+		buffers = zipedIfNeed(isLast, buffers);
+		if(buffers==null){
+			onWrittenBody();
+			return;// TODO
+		}
+		spdySession.responseBody(isLast, buffers);
+	}
+	
 	public final void responseBody(ByteBuffer[] buffers) {
 		// bodyとしてwrite要求した長さを加算、write完了した長さは、SSLの場合もあるので難しい
 		responseWriteBodyApl += BuffersUtil.remaining(buffers);
+		if(spdySession!=null){
+			spdySesponseBody(buffers);
+			return;
+		}
 		boolean isCallbackOnWrittenBody = false;
 		synchronized (this) {
 			if (getChannelId() == -1) {
+				PoolManager.poolBufferInstance(buffers);
 				return;// 既に切れている
 			}
 			if (isFlushFirstResponse == false && firstBody != null) {
