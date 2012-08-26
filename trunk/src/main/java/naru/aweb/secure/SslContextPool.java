@@ -127,7 +127,11 @@ public class SslContextPool {
 		TrustManager[] tms=new TrustManager[]{new PhatomTrustManager(ks)};
 		
 		SSLContext sslContext=null;
-		sslContext = SSLContext.getInstance("TLSv1", sslProvider);
+		if(sslProvider!=null){
+			sslContext = SSLContext.getInstance("TLSv1", sslProvider);
+		}else{
+			sslContext = SSLContext.getInstance("TLSv1");
+		}
 		sslContext.init(kmf.getKeyManagers(), tms, null);
 		return sslContext;
 	}

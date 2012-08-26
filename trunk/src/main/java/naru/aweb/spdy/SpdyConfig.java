@@ -37,8 +37,10 @@ public class SpdyConfig {
 			} catch (ClassNotFoundException e) {
 			} catch (InstantiationException e) {
 			} catch (IllegalAccessException e) {
+			} catch (UnsupportedClassVersionError e){
 			}
 		}
+		isSpdyAvailable=false;
 		return null;
 	}
 	
