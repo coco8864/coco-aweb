@@ -215,6 +215,7 @@ public class SpdyFrame {
 	private char flags;
 	private short type;
 	private int streamId;
+	private int pingId;
 	
 	private int associatedToStreamId;
 	private char pri;//v2 2bit v3 3bit
@@ -277,6 +278,7 @@ public class SpdyFrame {
 		setupControlFrame(frame, (short)version, (short)TYPE_RST_STREAM, (char)0, 8);
 		frame.putInt(streamId);
 		frame.putInt(statusCode);
+		frame.flip();
 		return BuffersUtil.toByteBufferArray(frame);
 	}
 	
@@ -287,8 +289,18 @@ public class SpdyFrame {
 		int length=(int)BuffersUtil.remaining(data);
 		int work=((int)flags)<<24|length;
 		frame.putInt(work);
+		System.out.println(Integer.toHexString(work));
 		frame.flip();
 		return BuffersUtil.concatenate(frame,data,null);
+	}
+	
+	public ByteBuffer[] buildPIngFrame(int pingId){
+		ByteBuffer frame = PoolManager.getBufferInstance();
+		frame.order(ByteOrder.BIG_ENDIAN);
+		setupControlFrame(frame, (short)version, (short)TYPE_PING, (char)0, 4);
+		frame.putInt(pingId);
+		frame.flip();
+		return BuffersUtil.toByteBufferArray(frame);
 	}
 	
 	private void parseType(){
@@ -304,9 +316,11 @@ public class SpdyFrame {
 			streamId=getIntFromData();
 			statusCode=getIntFromData();
 			break;
+		case SpdyFrame.TYPE_PING:
+			pingId=getIntFromData();
+			break;
 		case SpdyFrame.TYPE_GOAWAY:
 		case SpdyFrame.TYPE_HEADERS:
-		case SpdyFrame.TYPE_PING:
 		case SpdyFrame.TYPE_SETTINGS:
 		case SpdyFrame.TYPE_WINDOW_UPDATE:
 		case SpdyFrame.TYPE_SYN_REPLY://—ˆ‚È‚¢
@@ -514,6 +528,10 @@ public class SpdyFrame {
 
 	public HeaderParser getHeader() {
 		return header;
+	}
+
+	public int getPingId() {
+		return pingId;
 	}
 	
 }

@@ -163,12 +163,19 @@ public class WebServerHandler extends ServerBaseHandler {
 	}
 
 	public final void setResponseHeader(HeaderParser header) {
-		responseHeader.setStatusCode(header.getStatusCode(), header
-				.getReasonPhrase());
+		responseHeader.setStatusCode(header.getStatusCode(), header.getReasonPhrase());
 		responseHeader.setResHttpVersion(header.getResHttpVersion());
 		responseHeader.setAllHeaders(header);
 	}
 
+	@Override
+	public HeaderParser getRequestHeader(){
+		if(spdySession!=null){
+			return spdySession.getRequestContext().getRequestHeader();
+		}
+		return super.getRequestHeader();
+	}
+	
 	/**
 	 * ボディの解析処理を開始します。 doResponse呼び出し時には、read要求を出していないので、黙っているとbodyは到着しない。
 	 */
@@ -754,16 +761,13 @@ public class WebServerHandler extends ServerBaseHandler {
 			internalWriteBody(false, true, bodyBuffers);
 		}
 	}
-
 	
 	private void spdySesponseBody(ByteBuffer[] buffers){
-		boolean isCallbackOnWrittenBody = false;//排他の中からcallbackされるのを防ぐ
 		boolean isLast=false;
 		if(buffers==null){
 			isLast=true;
-		}else{
-			isLast=needMoreResponse();
 		}
+		boolean isCallbackOnWrittenBody = false;//排他の中からcallbackされるのを防ぐ
 		synchronized(this){
 			if (isFlushFirstResponse == false && firstBody == null) {
 				firstBody = buffers;// すぐには出力せず持ちこたえる
@@ -779,6 +783,9 @@ public class WebServerHandler extends ServerBaseHandler {
 		if (isCallbackOnWrittenBody) {
 			onWrittenBody();
 			return;// TODO
+		}
+		if(!isLast){
+			isLast=!needMoreResponse();
 		}
 		buffers = zipedIfNeed(isLast, buffers);
 		if(buffers==null){
@@ -869,7 +876,14 @@ public class WebServerHandler extends ServerBaseHandler {
 		// request bodyを全部読んでfowardしようとしているのか？読まずにfowardしようとしているかが問題
 		handler.requestContentLength = requestContentLength;
 		handler.requestReadBody = requestReadBody;
-		super.forwardHandler(handler);
+		if(spdySession==null){
+			super.forwardHandler(handler);
+		}else{
+			handler.spdySession=spdySession;
+			spdySession.setWebserverHandler(handler);
+			spdySession=null;
+			unref();//自ハンドラは開放可能
+		}
 		// WebServerHandler handler=
 		// (WebServerHandler)super.forwardHandler(handlerClass);
 		if (callStartMethod) {
@@ -1103,8 +1117,71 @@ public class WebServerHandler extends ServerBaseHandler {
 		return super.getAccessLog();
 	}
 	
+	@Override
+	public long getReadTimeout() {
+		if(spdySession!=null){
+			return 60000;
+		}
+		return super.getReadTimeout();
+	}
+
+	@Override
+	public void setReadTimeout(long readTimeout) {
+		if(spdySession!=null){
+			return;
+		}
+		super.setReadTimeout(readTimeout);
+	}
+
+	@Override
+	public long getWriteTimeout() {
+		if(spdySession!=null){
+			return 60000;
+		}
+		return super.getWriteTimeout();
+	}
+
+	@Override
+	public void setWriteTimeout(long writeTimeout) {
+		if(spdySession!=null){
+			return;
+		}
+		super.setWriteTimeout(writeTimeout);
+	}
+	
+	@Override
+	public String getRemoteIp(){
+		if(spdySession!=null){
+			return spdySession.getSpdyHandler().getRemoteIp();
+		}
+		return	super.getRemoteIp();
+	}
+	
+	@Override
+	public int getRemotePort(){
+		if(spdySession!=null){
+			return spdySession.getSpdyHandler().getRemotePort();
+		}
+		return	super.getRemotePort();
+	}
+	
+	@Override
+	public String getLocalIp(){
+		if(spdySession!=null){
+			return spdySession.getSpdyHandler().getLocalIp();
+		}
+		return	super.getLocalIp();
+	}
+	
+	@Override
+	public int getLocalPort(){
+		if(spdySession!=null){
+			return spdySession.getSpdyHandler().getLocalPort();
+		}
+		return	super.getLocalPort();
+	}
+	
 	public void setSpdySession(SpdySession spdySession){
 		this.spdySession=spdySession;
 	}
-	
 }

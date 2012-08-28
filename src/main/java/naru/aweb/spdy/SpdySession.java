@@ -17,14 +17,27 @@ public class SpdySession extends PoolBase{
 	private boolean isOutputClose=false;
 	private boolean isInputClose=false;
 	private KeepAliveContext keepAliveContext;
-	private HeaderParser requestHeader;
+//	private HeaderParser requestHeader;
 	
-	public static SpdySession create(SpdyHandler spdyHandler,int streamId,HeaderParser requestHeader){
+	public static SpdySession create(SpdyHandler spdyHandler,int streamId,HeaderParser parseHeader){
 		SpdySession session=(SpdySession)PoolManager.getInstance(SpdySession.class);
 		session.spdyHandler=spdyHandler;
 		session.streamId=streamId;
-		session.requestHeader=requestHeader;
 		session.keepAliveContext=(KeepAliveContext)PoolManager.getInstance(KeepAliveContext.class);
+		HeaderParser requestHeader=session.getRequestHeader();
+		requestHeader.setMethod(parseHeader.getHeader("method"));
+		String url=parseHeader.getHeader("url");
+		//String scheme=parseHeader.getHeader("scheme");//https‚Ì‚Í‚¸
+		requestHeader.parseUri(url);
+		requestHeader.setReqHttpVersion(parseHeader.getHeader("version"));
+		requestHeader.setAllHeaders(parseHeader);
+		requestHeader.removeHeader("method");
+		requestHeader.removeHeader("url");
+		requestHeader.removeHeader("scheme");
+		requestHeader.removeHeader("version");
+		requestHeader.setServer(parseHeader.getHeader(HeaderParser.HOST_HEADER), 443);
+		//session.getRequestContext().getAccessLog();
+		parseHeader.unref();
 		session.keepAliveContext.setAcceptServer(requestHeader.getServer());
 		return session;
 	}
@@ -51,7 +64,7 @@ public class SpdySession extends PoolBase{
 	}
 
 	public HeaderParser getRequestHeader() {
-		return requestHeader;
+		return getRequestContext().getRequestHeader();
 	}
 	
 	public KeepAliveContext getKeepAliveContext() {
@@ -77,6 +90,10 @@ public class SpdySession extends PoolBase{
 
 	public void setWebserverHandler(WebServerHandler webserverHandler) {
 		this.webserverHandler = webserverHandler;
+	}
+	
+	public SpdyHandler getSpdyHandler(){
+		return spdyHandler;
 	}
 	
 }

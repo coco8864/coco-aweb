@@ -111,20 +111,7 @@ public class NameValueParser {
 				this.values=valuesString.split("\0");
 				phase = Phase.Value;
 			case Value:
-				if("method".equals(name)){
-					header.setMethod(values[0]);
-				}else if("url".equals(name)){
-					header.setRequestUri(values[0]);
-					header.setPath(values[0]);
-				}else if("version".equals(name)){
-					header.setReqHttpVersion(values[0]);
-				}else if("scheme".equals(name)){
-					//header.
-				}else if("host".equals(name)){
-					header.setServer(values[0], 443);
-				}else{
-					header.setHeader(name, values);
-				}
+				header.setHeader(name, values);
 				curNameValue++;
 				if (numberOfNameValue == curNameValue) {
 					phase = Phase.END;

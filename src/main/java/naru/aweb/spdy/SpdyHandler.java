@@ -82,6 +82,7 @@ public class SpdyHandler extends ServerBaseHandler {
 					frame.prepareNext();
 				}
 			}
+			setReadTimeout(60000);
 			asyncRead(null);
 		} catch (RuntimeException e) {
 			logger.error("SpdyHandler parse error.",e);
@@ -93,12 +94,12 @@ public class SpdyHandler extends ServerBaseHandler {
 	
 	private void doFrame(){
 		int streamId=frame.getStreamId();
-		logger.debug("SpdyHandler#doFrame cid:"+getChannelId()+":streamId:"+streamId);
 		ByteBuffer[] dataBuffer;
 //		HeaderParser header;
 		SpdySession session=null;
 		int statusCode;
 		short type=frame.getType();
+		logger.debug("SpdyHandler#doFrame cid:"+getChannelId()+":streamId:"+streamId+":" +type);
 		switch(type){
 		case SpdyFrame.TYPE_DATA_FRAME:
 			dataBuffer=frame.getDataBuffers();
@@ -112,6 +113,7 @@ public class SpdyHandler extends ServerBaseHandler {
 			break;
 		case SpdyFrame.TYPE_SYN_STREAM:
 			HeaderParser requestHeader=frame.getHeader();
+			logger.info("url:" + requestHeader.getHeader("url"));
 			session=SpdySession.create(this, streamId, requestHeader);
 			sessions.put(streamId, session);
 			mappingHandler(session);
@@ -131,6 +133,13 @@ public class SpdyHandler extends ServerBaseHandler {
 		case SpdyFrame.TYPE_RST_STREAM:
 			session=sessions.get(streamId);
 			statusCode=frame.getStatusCode();
+			break;
+		case SpdyFrame.TYPE_PING:
+			int pingId=frame.getPingId();
+			if(pingId%2==1){
+				ByteBuffer[] pingFrame=frame.buildPIngFrame(pingId);
+				asyncWrite(null, pingFrame);
+			}
 			break;
 		case SpdyFrame.TYPE_HEADERS:
 		default:
