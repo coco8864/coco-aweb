@@ -54,45 +54,45 @@ public class HeaderParser extends PoolBase {
 	}
 	public static final String HTTP_VESION_10 = "HTTP/1.0";
 	public static final String HTTP_VESION_11 = "HTTP/1.1";
-	public static final String HOST_HEADER = "Host";
+	public static final String HOST_HEADER = "host";
 	public static final String CONNECT_METHOD = "CONNECT";
 	public static final String GET_METHOD = "GET";
 	public static final String POST_METHOD = "POST";
 	public static final String HEAD_METHOD = "HEAD";
-	public static final String CONNECION_KEEP_ALIVE = "Keep-Alive";
+	public static final String CONNECION_KEEP_ALIVE = "keep-alive";
 	public static final String CONNECION_CLOSE = "close";
 	public static final String TRANSFER_ENCODING_CHUNKED = "chunked";
-	public static final String CONTENT_LENGTH_HEADER = "Content-Length";
-	public static final String CONTENT_TYPE_HEADER = "Content-Type";
-	public static final String CONTENT_DISPOSITION_HEADER = "Content-Disposition";
-	public static final String IF_MODIFIED_SINCE_HEADER = "If-Modified-Since";
-	public static final String IF_NONE_MATCH = "If-None-Match";
-	public static final String LAST_MODIFIED_HEADER = "Last-Modified";
-	public static final String REFERER = "Referer";
+	public static final String CONTENT_LENGTH_HEADER = "content-length";
+	public static final String CONTENT_TYPE_HEADER = "content-type";
+	public static final String CONTENT_DISPOSITION_HEADER = "content-disposition";
+	public static final String IF_MODIFIED_SINCE_HEADER = "if-modified-since";
+	public static final String IF_NONE_MATCH = "if-none-match";
+	public static final String LAST_MODIFIED_HEADER = "last-modified";
+	public static final String REFERER = "referer";
 	
-	public static final String LOCATION_HEADER = "Location";
-	public static final String COOKIE_HEADER = "Cookie";// リクエストヘッダ
-	public static final String SET_COOKIE_HEADER = "Set-Cookie";// レスポンスヘッダ
-	public static final String PROXY_AUTHORIZATION_HEADER = "Proxy-Authorization";// リクエストヘッダ
-	public static final String PROXY_AUTHENTICATE_HEADER = "Proxy-Authenticate";// レスポンスヘッダ
-	public static final String WWW_AUTHORIZATION_HEADER = "Authorization";
-	public static final String WWW_AUTHENTICATE_HEADER = "WWW-Authenticate";
-	public static final String ACCESS_CONTROL_ALLOW_ORIGIN="Access-Control-Allow-Origin";
+	public static final String LOCATION_HEADER = "location";
+	public static final String COOKIE_HEADER = "cookie";// リクエストヘッダ
+	public static final String SET_COOKIE_HEADER = "set-cookie";// レスポンスヘッダ
+	public static final String PROXY_AUTHORIZATION_HEADER = "proxy-authorization";// リクエストヘッダ
+	public static final String PROXY_AUTHENTICATE_HEADER = "proxy-authenticate";// レスポンスヘッダ
+	public static final String WWW_AUTHORIZATION_HEADER = "authorization";
+	public static final String WWW_AUTHENTICATE_HEADER = "www-Authenticate";
+	public static final String ACCESS_CONTROL_ALLOW_ORIGIN="access-control-allow-origin";
 	
-	public static final String CONNECTION_HEADER = "Connection";
-	public static final String SERVER_HEADER = "Server";
-	public static final String PROXY_CONNECTION_HEADER = "Proxy-Connection";
-	public static final String KEEP_ALIVE_HEADER = "Keep-Alive";
-	public static final String UPGRADE_HEADER = "Upgrade";
+	public static final String CONNECTION_HEADER = "connection";
+	public static final String SERVER_HEADER = "server";
+	public static final String PROXY_CONNECTION_HEADER = "proxy-connection";
+	public static final String KEEP_ALIVE_HEADER = "keep-alive";
+	public static final String UPGRADE_HEADER = "upgrade";
 	public static final String WEB_SOCKET = "WebSocket";
 	public static final String WEB_SOCKET_CONNECTION = "Upgrade";
 	// リクエストに指定される、ブラウザが解釈できる圧縮タイプ,例）Accept-Encoding: gzip, deflate
-	public static final String ACCEPT_ENCODING_HEADER = "Accept-Encoding";
+	public static final String ACCEPT_ENCODING_HEADER = "accept-encoding";
 	// レスポンスに指定される、コンテンツの圧縮タイプ,例）Content-Encoding: gzip
-	public static final String CONTENT_ENCODING_HEADER = "Content-Encoding";
+	public static final String CONTENT_ENCODING_HEADER = "content-encoding";
 	public static final String CONTENT_ENCODING_GZIP = "gzip";
 	// chunkedか否か,例）Transfer-encoding: chunked
-	public static final String TRANSFER_ENCODING_HEADER = "Transfer-encoding";
+	public static final String TRANSFER_ENCODING_HEADER = "transfer-encoding";
 	public static final String HEADER_ENCODE = "ISO8859_1";
 	public static final byte[] HEADER_SEP = ": ".getBytes();
 	public static final byte[] CRLF = "\r\n".getBytes();
@@ -573,14 +573,7 @@ public class HeaderParser extends PoolBase {
 		String serverString = matcher.group(1);
 		path = matcher.group(2);
 		query = matcher.group(3);
-		if (path != null) {
-			// int pos=path.lastIndexOf("/");
-			// if(pos>0){
-			// file=path.substring(pos+1);
-			// }else{
-			// file=path;
-			// }
-		} else {
+		if (path == null) {
 			path = "/";
 		}
 		if (serverString != null) {// httpで始まっていたということは、proxyとして動作している
@@ -597,6 +590,25 @@ public class HeaderParser extends PoolBase {
 			serverString = getHeader(HOST_HEADER);
 			setServer(serverString);
 		}
+	}
+	
+	public void parseUri(String uri){
+		Matcher matcher = null;
+		synchronized (httpServerPattern) {
+			matcher = httpServerPattern.matcher(uri);
+		}
+		if (!matcher.matches()) {//
+			logger.error("fail to match.uri:" + uri);
+			// throw new IllegalArgumentException("fail to match.uri:"+uri);
+			parseSt = ST.ERROR;
+			return;
+		}
+		path = matcher.group(2);
+		query = matcher.group(3);
+		if (path == null) {
+			path = "/";
+		}
+		setRequestUri(uri);
 	}
 	
 	public void setServer(String hostHeader){
@@ -936,10 +948,12 @@ public class HeaderParser extends PoolBase {
 
 	// GET [/xxxx|http://xxx] HTTP1.1
 	// HTTP1.1 200 OK
+	/**
+	 * overloadHeaders,deleteHeadersのキーは、lowercaseで設定すること
+	 */
 	public ByteBuffer[] getHeaderBuffer(String requestLine,
 			Map<String, String> overloadHeaders, Set<String> deleteHeaders) {
-		if (requestLine == null
-				&& (firstLineToken1 == null || firstLineToken2 == null)) {
+		if (requestLine == null	&& (firstLineToken1 == null || firstLineToken2 == null)) {
 			logger.warn("getHeaderBuffer return null.firstLineToken1:"
 					+ firstLineToken1 + ":firstLineToken2:" + firstLineToken2);
 			return null;// statusCodeが確定していない場合
@@ -960,11 +974,11 @@ public class HeaderParser extends PoolBase {
 			Iterator<String> itr = headers.keySet().iterator();
 			while (itr.hasNext()) {
 				String name = itr.next();
-				if (overloadHeaders != null
-						&& overloadHeaders.get(name) != null) {
+				String lowerName=name.toLowerCase();
+				if (overloadHeaders != null	&& overloadHeaders.get(lowerName) != null) {
 					continue;// overloadされたヘッダは出力しない
 				}
-				if (deleteHeaders != null && deleteHeaders.contains(name)) {
+				if (deleteHeaders != null && deleteHeaders.contains(lowerName)) {
 					continue;
 				}
 				List<String> values = headers.get(name);
