@@ -378,9 +378,8 @@ public class WebServerHandler extends ServerBaseHandler {
 	// handlerが初期化されているので、判定する方法がない。
 	public void responseEnd() {
 		if(spdySession!=null){
-			if (isFlushFirstResponse == false) {
-				spdySesponseBody(null);
-			}
+			/* 必要な場合ヘッダをflushする */
+			spdyFlushResponseHeader(true);
 			return;
 		}
 		synchronized (this) {
@@ -762,39 +761,41 @@ public class WebServerHandler extends ServerBaseHandler {
 		}
 	}
 	
-	private void spdySesponseBody(ByteBuffer[] buffers){
-		boolean isLast=false;
-		if(buffers==null){
-			isLast=true;
-		}
-		boolean isCallbackOnWrittenBody = false;//排他の中からcallbackされるのを防ぐ
-		synchronized(this){
-			if (isFlushFirstResponse == false && firstBody == null) {
-				firstBody = buffers;// すぐには出力せず持ちこたえる
-				isCallbackOnWrittenBody=true;
-			}else if(isFlushFirstResponse == false && firstBody != null) {
-				/* 基本headerの確定 */
-				setupResponseHeader();
-				spdySession.responseHeader(responseHeader);
-				isFlushFirstResponse = true;
-				buffers = BuffersUtil.concatenate(firstBody,buffers);
+	private synchronized void spdyFlushResponseHeader(boolean isFin){
+		if(isFlushFirstResponse){
+			if(isFin){
+				spdySession.responseBody(isFin, null);
 			}
+			return;
 		}
-		if (isCallbackOnWrittenBody) {
-			onWrittenBody();
-			return;// TODO
-		}
-		if(!isLast){
-			isLast=!needMoreResponse();
-		}
-		buffers = zipedIfNeed(isLast, buffers);
-		if(buffers==null){
-			onWrittenBody();
-			return;// TODO
-		}
-		spdySession.responseBody(isLast, buffers);
+		setupResponseHeader();
+		spdySession.responseHeader(isFin,responseHeader);
+		isFlushFirstResponse = true;
 	}
 	
+	/* spdyの場合、firstBody出力時にヘッダを出力、バッファ処理はしない */
+	private void spdySesponseBody(ByteBuffer[] buffers){
+		boolean isFin=false;//最後のSpdyDataか否か
+		if(buffers==null){//buffersがnullって事は後続がない
+			isFin=true;
+		}
+		spdyFlushResponseHeader(isFin);
+		if(isFin){
+			onWrittenBody();
+			return;
+		}else{//contentLengthを設定したので、終わりになったかもしれない
+			isFin=!needMoreResponse();
+		}
+		buffers = zipedIfNeed(isFin, buffers);
+		if(buffers==null){
+			onWrittenBody();
+			return;
+		}
+		spdySession.responseBody(isFin, buffers);
+	}
+	
+	/* 通常時（spdyじゃない場合）、１つめのbodyを一旦firstBodyに覚えてバッファする,
+	   必要な処理なのか？ */
 	public final void responseBody(ByteBuffer[] buffers) {
 		// bodyとしてwrite要求した長さを加算、write完了した長さは、SSLの場合もあるので難しい
 		responseWriteBodyApl += BuffersUtil.remaining(buffers);
@@ -855,7 +856,9 @@ public class WebServerHandler extends ServerBaseHandler {
 			requestBody(requestChunkContext.decodeChunk(buffers));
 		}
 		if (!requestChunkContext.isEndOfData()) {
-			asyncRead(null);
+			if(spdySession==null){
+				asyncRead(null);
+			}
 			return;
 		}
 		// リクエストbody終了
@@ -1179,6 +1182,33 @@ public class WebServerHandler extends ServerBaseHandler {
 			return spdySession.getSpdyHandler().getLocalPort();
 		}
 		return	super.getLocalPort();
+	}
+	
+	@Override
+	/* channelContext単位の属性 */
+	public Object getAttribute(String name){
+		if(spdySession!=null){
+			return spdySession.getAttribute(name);
+		}
+		return	super.getAttribute(name);
+	}
+	
+	@Override
+	public void setAttribute(String name, Object value) {
+		if(spdySession!=null){
+			spdySession.setAttribute(name,value);
+			return;
+		}
+		super.setAttribute(name,value);
+	}
+	
+	
+	@Override
+	public boolean isSsl() {
+		if(spdySession!=null){
+			return true;
+		}
+		return	super.isSsl();
 	}
 	
 	public void setSpdySession(SpdySession spdySession){

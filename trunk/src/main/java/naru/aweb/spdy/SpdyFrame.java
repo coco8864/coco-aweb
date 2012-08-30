@@ -250,7 +250,7 @@ public class SpdyFrame {
 		workBuffer.order(ByteOrder.BIG_ENDIAN);
 	}
 	
-	public ByteBuffer[] buildSynReply(int streamId,HeaderParser header){
+	public ByteBuffer[] buildSynReply(int streamId,char flags,HeaderParser header){
 		ByteBuffer frame = PoolManager.getBufferInstance();
 		frame.order(ByteOrder.BIG_ENDIAN);
 		ByteBuffer[] buffers=nameValueBuilder.encode(header);
@@ -263,7 +263,7 @@ public class SpdyFrame {
 		}else{
 			throw new RuntimeException();
 		}
-		setupControlFrame(frame, (short)version, (short)TYPE_SYN_REPLY, (char)0, length);
+		setupControlFrame(frame, (short)version, (short)TYPE_SYN_REPLY, flags, length);
 		frame.putInt(streamId);
 		if(version==VERSION_V2){
 			frame.putShort((short)0);

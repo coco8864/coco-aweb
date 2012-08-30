@@ -105,7 +105,7 @@ public class SpdyHandler extends ServerBaseHandler {
 			dataBuffer=frame.getDataBuffers();
 			session=sessions.get(streamId);
 			if(session!=null){
-				session.responseBody(frame.isFin(),dataBuffer);
+				session.onReadPlain(dataBuffer);
 			}else{
 				logger.error("illegal streamId:"+streamId);
 				PoolManager.poolBufferInstance(dataBuffer);
@@ -158,8 +158,12 @@ public class SpdyHandler extends ServerBaseHandler {
 		}
 	}
 	
-	public void responseHeader(SpdySession spdySession,HeaderParser responseHeader){
-		ByteBuffer[] synReplyFrame=frame.buildSynReply(spdySession.getStreamId(), responseHeader);
+	public void responseHeader(SpdySession spdySession,boolean isFin,HeaderParser responseHeader){
+		char flags=0;
+		if(isFin){
+			flags=SpdyFrame.FLAG_FIN;
+		}
+		ByteBuffer[] synReplyFrame=frame.buildSynReply(spdySession.getStreamId(),flags,responseHeader);
 		asyncWrite(new SpdyCtx(spdySession,WRITE_CONTEXT_HEADER), synReplyFrame);
 	}
 	
@@ -178,6 +182,9 @@ public class SpdyHandler extends ServerBaseHandler {
 	
 	@Override
 	public void onWrittenPlain(Object userContext) {
+		if(userContext==null){//ping�̏ꍇ
+			return;
+		}
 		SpdyCtx spdyCtx=(SpdyCtx)userContext;
 		if(spdyCtx.ctx==WRITE_CONTEXT_HEADER){
 //			spdyCtx.spdySession.onWrittenBody();
