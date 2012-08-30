@@ -31,7 +31,7 @@
 			<plugin>
 				<groupId>org.datanucleus</groupId>
 				<artifactId>maven-datanucleus-plugin</artifactId>
-				<version>3.0.0-m1</version>
+				<version>3.1.0-release</version>
 				<configuration>
 					<fork>false</fork>
 					<mappingIncludes>naru/aweb/config/*.class</mappingIncludes>
@@ -307,17 +307,18 @@
 		<dependency>
 			<groupId>org.datanucleus</groupId>
 			<artifactId>datanucleus-core</artifactId>
-			<version>[3.0.0-m3,)</version>
+			<version>3.1.0-release</version>
+			<scope>runtime</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.datanucleus</groupId>
 			<artifactId>datanucleus-rdbms</artifactId>
-			<version>[3.0.0-m3,)</version>
+			<version>3.1.0-release</version>
 		</dependency>
 		<dependency>
 			<groupId>org.datanucleus</groupId>
 			<artifactId>datanucleus-api-jdo</artifactId>
-			<version>[3.0.0-m3,)</version>
+			<version>3.1.0-release</version>
 		</dependency>
 		<dependency>
 			<groupId>javax.jdo</groupId>
