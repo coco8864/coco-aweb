@@ -1,6 +1,8 @@
 package naru.aweb.spdy;
 
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
@@ -17,10 +19,14 @@ public class SpdySession extends PoolBase{
 	private boolean isOutputClose=false;
 	private boolean isInputClose=false;
 	private KeepAliveContext keepAliveContext;
+	private Map attribute=new HashMap();//handler‚É•t‚·‚é‘®«
+	
 //	private HeaderParser requestHeader;
+	
 	
 	public static SpdySession create(SpdyHandler spdyHandler,int streamId,HeaderParser parseHeader){
 		SpdySession session=(SpdySession)PoolManager.getInstance(SpdySession.class);
+		session.attribute.clear();
 		session.spdyHandler=spdyHandler;
 		session.streamId=streamId;
 		session.keepAliveContext=(KeepAliveContext)PoolManager.getInstance(KeepAliveContext.class);
@@ -43,8 +49,8 @@ public class SpdySession extends PoolBase{
 	}
 	
 	//SpdyHandler‘¤‚©‚çŒÄ‚Ño‚³‚ê‚é
-	public void requestBody(ByteBuffer[] buffers){
-		webserverHandler.requestBody(buffers);
+	public void onReadPlain(ByteBuffer[] buffers){
+		webserverHandler.onReadPlain(null,buffers);
 	}
 	public void onWrittenBody(){
 		webserverHandler.onWrittenBody();
@@ -52,12 +58,20 @@ public class SpdySession extends PoolBase{
 	}
 	
 	//webserverHandler‘¤‚©‚çŒÄ‚Ño‚³‚ê‚é
-	public void responseHeader(HeaderParser responseHeader){
-		spdyHandler.responseHeader(this, responseHeader);
+	public void responseHeader(boolean isLast,HeaderParser responseHeader){
+		if(isOutputClose){
+			return;
+		}else if(isLast){
+			isOutputClose=true;
+		}
+		spdyHandler.responseHeader(this, isLast,responseHeader);
 	}
 	
 	public void responseBody(boolean isLast,ByteBuffer[] buffers){
-		if(isLast){
+		if(isOutputClose){
+			PoolManager.poolBufferInstance(buffers);
+			return;
+		}else if(isLast){
 			isOutputClose=true;
 		}
 		spdyHandler.responseBody(this, isLast,buffers);
@@ -96,4 +110,11 @@ public class SpdySession extends PoolBase{
 		return spdyHandler;
 	}
 	
+	public Object getAttribute(String name){
+		return attribute.get(name);
+	}
+	
+	public void setAttribute(String name, Object value) {
+		attribute.put(name,value);
+	}
 }
