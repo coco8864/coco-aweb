@@ -170,7 +170,12 @@ public class SpdyHandler extends ServerBaseHandler {
 			return;
 		}
 		SpdyCtx spdyCtx=(SpdyCtx)userContext;
+		SpdySession session=spdyCtx.spdySession;
+		if(session.isClosed()){
+			sessions.remove(session.getStreamId());
+		}
 		if(spdyCtx.ctx==WRITE_CONTEXT_HEADER){
+			//ƒwƒbƒ_‚Ì‘‚«‚İ’Ê’m‚Í‚È‚¢
 //			spdyCtx.spdySession.onWrittenBody();
 		}else if(spdyCtx.ctx==WRITE_CONTEXT_BODY){
 			spdyCtx.spdySession.onWrittenBody();

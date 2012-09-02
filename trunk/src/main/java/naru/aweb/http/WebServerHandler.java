@@ -784,8 +784,10 @@ public class WebServerHandler extends ServerBaseHandler {
 		/* 必要な場合ヘッダをflushする */
 		if (isFlushFirstResponse == false){
 			if(firstBody==null){
+				//ヘッダだけのレスポンス205
 				spdyFlushResponseHeader(true);
 			}else{
+				//bodyが１バッファだけのレスポンス
 				spdyFlushResponseHeader(false);
 				firstBody = zipedIfNeed(true, firstBody);
 				spdySession.responseBody(true, firstBody);
