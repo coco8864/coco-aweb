@@ -8,7 +8,6 @@ import org.apache.log4j.Logger;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
-import naru.aweb.auth.AuthSession;
 import naru.aweb.config.Config;
 import naru.aweb.core.RealHost;
 import naru.aweb.util.ServerParser;

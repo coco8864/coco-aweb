@@ -80,10 +80,7 @@ public class WebServerHandler extends ServerBaseHandler {
 		isFlushFirstResponse = false;
 		isResponseEnd = false;// 微妙な動きをするのでpoolにあるうちはtrueにしたいが・・・
 		firstBody = null;
-		if(spdySession!=null){
-			spdySession.unref();
-			spdySession=null;
-		}
+		spdySession=null;
 		super.recycle();
 	}
 
@@ -791,11 +788,11 @@ public class WebServerHandler extends ServerBaseHandler {
 				spdyFlushResponseHeader(false);
 				firstBody = zipedIfNeed(true, firstBody);
 				spdySession.responseBody(true, firstBody);
+				firstBody=null;
 			}
 		}else{
 			spdySession.responseBody(true, null);
 		}
-		spdySession.responseEnd();
 	}
 	
 	/* 短いリクエストの場合には、contentLengthを設定しなるべくKeepAliveが有効になるように制御 
@@ -862,6 +859,8 @@ public class WebServerHandler extends ServerBaseHandler {
 		if (!requestChunkContext.isEndOfData()) {
 			if(spdySession==null){
 				asyncRead(null);
+			}else{
+				spdySession.asyncRead(null);
 			}
 			return;
 		}
@@ -1093,19 +1092,13 @@ public class WebServerHandler extends ServerBaseHandler {
 	}
 	
 	/* spdy対応 */
+	@Override
 	public KeepAliveContext getKeepAliveContext(boolean isCreate){
 		if(spdySession==null){
 			return super.getKeepAliveContext(isCreate);
 		}
-		KeepAliveContext keepAliveContext=spdySession.getKeepAliveContext();
-		if(isCreate && keepAliveContext==null){
-			keepAliveContext=(KeepAliveContext)PoolManager.getInstance(KeepAliveContext.class);
-			keepAliveContext.setAcceptServer(spdySession.getAcceptServer());
-			setKeepAliveContext(keepAliveContext);
-		}
-		return keepAliveContext;
+		return spdySession.getKeepAliveContext();
 	}
-	
 	
 	public void setKeepAliveContext(KeepAliveContext keepAliveContext){
 		if(spdySession==null){
@@ -1113,6 +1106,15 @@ public class WebServerHandler extends ServerBaseHandler {
 			return;
 		}
 	}
+	
+	@Override
+	public RequestContext getRequestContext(){
+		if(spdySession==null){
+			return super.getRequestContext();
+		}
+		return spdySession.getRequestContext();
+	}
+	
 	
 	@Override
 	public AccessLog getAccessLog(){
@@ -1204,6 +1206,23 @@ public class WebServerHandler extends ServerBaseHandler {
 		super.setAttribute(name,value);
 	}
 	
+	
+	/*
+	@Override
+	public ParameterParser getParameterParser() {
+		return getRequestContext().getParameterParser();
+	}
+	
+	@Override
+	public GzipContext getGzipContext() {
+		return getRequestContext().getGzipContext();
+	}
+	
+	@Override
+	public MappingResult getRequestMapping() {
+		return getRequestContext().getMapping();
+	}
+	*/
 	
 	@Override
 	public boolean isSsl() {
