@@ -7,17 +7,13 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
-import naru.async.store.Store;
 import naru.aweb.auth.AuthHandler;
 import naru.aweb.auth.AuthSession;
 import naru.aweb.auth.Authorizer;
 import naru.aweb.auth.MappingAuth;
 import naru.aweb.auth.SessionId;
-import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
-import naru.aweb.config.Mapping;
 import naru.aweb.config.User;
 import naru.aweb.core.DispatchResponseHandler;
 import naru.aweb.core.ServerBaseHandler;
@@ -94,18 +90,16 @@ public class SpdyHandler extends ServerBaseHandler {
 	
 	private void doFrame(){
 		int streamId=frame.getStreamId();
-		ByteBuffer[] dataBuffer;
-//		HeaderParser header;
 		SpdySession session=null;
-		int statusCode;
+		
 		short type=frame.getType();
 		logger.debug("SpdyHandler#doFrame cid:"+getChannelId()+":streamId:"+streamId+":" +type);
 		switch(type){
 		case SpdyFrame.TYPE_DATA_FRAME:
-			dataBuffer=frame.getDataBuffers();
+			ByteBuffer[] dataBuffer=frame.getDataBuffers();
 			session=sessions.get(streamId);
 			if(session!=null){
-				session.onReadPlain(dataBuffer);
+				session.onReadPlain(dataBuffer,frame.isFin());
 			}else{
 				logger.error("illegal streamId:"+streamId);
 				PoolManager.poolBufferInstance(dataBuffer);
@@ -114,25 +108,14 @@ public class SpdyHandler extends ServerBaseHandler {
 		case SpdyFrame.TYPE_SYN_STREAM:
 			HeaderParser requestHeader=frame.getHeader();
 			logger.info("url:" + requestHeader.getHeader("url"));
-			session=SpdySession.create(this, streamId, requestHeader);
+			session=SpdySession.create(this, streamId, requestHeader,frame.isFin());
+			
 			sessions.put(streamId, session);
 			mappingHandler(session);
-			/*
-			header.unref();
-			HeaderParser response=(HeaderParser)PoolManager.getInstance(HeaderParser.class);
-			response.setStatusCode("200 OK");
-			response.setResHttpVersion(HeaderParser.HTTP_VESION_11);
-			response.setContentType("text/plain");
-			ByteBuffer[] res=frame.buildSynReply(streamId, header);
-			asyncWrite(null, res);
-			ByteBuffer resBody=ByteBuffer.wrap("test OK".getBytes());
-			res=frame.buildDataFrame(streamId, SpdyFrame.FLAG_FIN, BuffersUtil.toByteBufferArray(resBody));
-			asyncWrite(null, res);
-			*/
 			break;
 		case SpdyFrame.TYPE_RST_STREAM:
 			session=sessions.get(streamId);
-			statusCode=frame.getStatusCode();
+			int statusCode=frame.getStatusCode();
 			break;
 		case SpdyFrame.TYPE_PING:
 			int pingId=frame.getPingId();
@@ -142,6 +125,7 @@ public class SpdyHandler extends ServerBaseHandler {
 			}
 			break;
 		case SpdyFrame.TYPE_HEADERS:
+		case SpdyFrame.TYPE_GOAWAY:
 		default:
 		}
 	}
@@ -206,14 +190,19 @@ public class SpdyHandler extends ServerBaseHandler {
 		
 		String cookieId=requestHeader.getAndRemoveCookieHeader(SessionId.SESSION_ID);
 		if(cookieId!=null){
-			setRequestAttribute(SessionId.SESSION_ID, cookieId);
+			requestContext.setAttribute(SessionId.SESSION_ID, cookieId);
 		}
 		String query=requestHeader.getQuery();
 		if(query!=null){
 			if(query.startsWith(AuthHandler.QUERY_CD_CHECK)){
-				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_CHECK);
+				requestContext.setAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_CHECK);
+			}else if(query.startsWith(AuthHandler.QUERY_CD_WS_CHECK)){
+				requestContext.setAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_WS_CHECK);
+//				isWs=true;
 			}else if(query.startsWith(AuthHandler.QUERY_CD_SET)){
-				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_SET);
+				requestContext.setAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_SET);
+			}else if(query.startsWith(AuthHandler.QUERY_CD_WS_SET)){
+				requestContext.setAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_WS_SET);
 			}
 		}
 		//roleベースの認証は、mapping処理の中で実施
@@ -292,9 +281,9 @@ public class SpdyHandler extends ServerBaseHandler {
 	private MappingResult checkPhAuth(HeaderParser requestHeader,
 			KeepAliveContext keepAliveContext,RequestContext requestContext, 
 			MappingResult mapping) {
-		String authMark=(String)getRequestAttribute(AuthHandler.AUTH_MARK);
+		String authMark=(String)requestContext.getAttribute(AuthHandler.AUTH_MARK);
 		
-		String cookieId=(String)getRequestAttribute(SessionId.SESSION_ID);
+		String cookieId=(String)requestContext.getAttribute(SessionId.SESSION_ID);
 		if(cookieId!=null){
 			//TODO もっと適切な場所がないか？
 			ServerParser domain=requestHeader.getServer();
@@ -333,7 +322,7 @@ public class SpdyHandler extends ServerBaseHandler {
 			authMark=AuthHandler.AUTHORIZE_MARK;
 		}
 		//認可処理
-		setRequestAttribute(AuthHandler.AUTHORIZE_MARK,authMark);
+		requestContext.setAttribute(AuthHandler.AUTHORIZE_MARK,authMark);
 		mapping.forwardAuth();
 		return mapping;
 	}
@@ -370,7 +359,7 @@ public class SpdyHandler extends ServerBaseHandler {
 		if (auth != null) {
 			user = auth.getUser();
 		}
-		setRequestAttribute(ServerBaseHandler.ATTRIBUTE_USER, user);
+		session.getRequestContext().setAttribute(ServerBaseHandler.ATTRIBUTE_USER, user);
 		// 処理の起点がaccessLogの中に採られる
 //		setupTraceLog(realHostName, requestHeader, mapping, user);
 		setRequestMapping(mapping);
