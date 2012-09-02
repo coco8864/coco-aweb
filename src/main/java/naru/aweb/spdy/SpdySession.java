@@ -56,7 +56,6 @@ public class SpdySession extends PoolBase{
 	}
 	public void onWrittenBody(){
 		webserverHandler.onWrittenBody();
-//		webserverHandler.onWrittenPlain(userContext);
 	}
 	
 	//webserverHandlerë§Ç©ÇÁåƒÇ—èoÇ≥ÇÍÇÈ
@@ -80,6 +79,8 @@ public class SpdySession extends PoolBase{
 	}
 	
 	public void responseEnd(){
+		if(isOutputClose && isInputClose){//ê≥èÌclose
+		}
 	}
 
 	public HeaderParser getRequestHeader() {
@@ -121,5 +122,9 @@ public class SpdySession extends PoolBase{
 	
 	public void setAttribute(String name, Object value) {
 		attribute.put(name,value);
+	}
+	
+	public boolean isClosed(){
+		return (isInputClose&&isOutputClose);
 	}
 }
