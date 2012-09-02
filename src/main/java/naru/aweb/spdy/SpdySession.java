@@ -24,11 +24,12 @@ public class SpdySession extends PoolBase{
 //	private HeaderParser requestHeader;
 	
 	
-	public static SpdySession create(SpdyHandler spdyHandler,int streamId,HeaderParser parseHeader){
+	public static SpdySession create(SpdyHandler spdyHandler,int streamId,HeaderParser parseHeader,boolean isInputClose){
 		SpdySession session=(SpdySession)PoolManager.getInstance(SpdySession.class);
 		session.attribute.clear();
 		session.spdyHandler=spdyHandler;
 		session.streamId=streamId;
+		session.isInputClose=isInputClose;
 		session.keepAliveContext=(KeepAliveContext)PoolManager.getInstance(KeepAliveContext.class);
 		HeaderParser requestHeader=session.getRequestHeader();
 		requestHeader.setMethod(parseHeader.getHeader("method"));
@@ -49,7 +50,8 @@ public class SpdySession extends PoolBase{
 	}
 	
 	//SpdyHandlerë§Ç©ÇÁåƒÇ—èoÇ≥ÇÍÇÈ
-	public void onReadPlain(ByteBuffer[] buffers){
+	public void onReadPlain(ByteBuffer[] buffers,boolean isInputClose){
+		this.isInputClose=isInputClose;
 		webserverHandler.onReadPlain(null,buffers);
 	}
 	public void onWrittenBody(){
@@ -75,6 +77,9 @@ public class SpdySession extends PoolBase{
 			isOutputClose=true;
 		}
 		spdyHandler.responseBody(this, isLast,buffers);
+	}
+	
+	public void responseEnd(){
 	}
 
 	public HeaderParser getRequestHeader() {

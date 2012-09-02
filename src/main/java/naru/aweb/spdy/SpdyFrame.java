@@ -181,6 +181,25 @@ public class SpdyFrame {
 	private static final int MASK_FLAGS =       (int)(0xFF000000);
 	private static final int MASK_DATA_LENGTH = (int)(0x00FFFFFF);
 	
+	/*RST_STREAM Status code */
+	public static final int RSTST_PROTOCOL_ERROR = 1;
+	public static final int RSTST_INVALID_STREAM = 2;
+	public static final int RSTST_REFUSED_STREAM = 3;
+	public static final int RSTST_UNSUPPORTED_VERSION = 4;
+	public static final int RSTST_CANCEL = 5;
+	public static final int RSTST_INTERNAL_ERROR = 6;
+	public static final int RSTST_FLOW_CONTROL_ERROR = 7;
+	public static final int RSTST_STREAM_IN_USE = 8;
+	public static final int STREAM_ALREADY_CLOSED = 9;
+	public static final int RSTST_INVALID_CREDENTIALS = 10;
+	public static final int RSTST_FRAME_TOO_LARGE = 11;
+	
+	/*GOAWAY Status code */
+	public static final int GOWST_OK = 0;
+	public static final int GOWST_PROTOCOL_ERROR = 1;
+	public static final int GOWST_INTERNAL_ERROR = 11;
+	
+	
 	private static ByteBuffer setupControlFrame(ByteBuffer frame,short version,short type,char flags,int length){
 		int work=MASK_C|((int)version)<<16|type;
 		frame.putInt(work);
@@ -289,8 +308,8 @@ public class SpdyFrame {
 		int length=(int)BuffersUtil.remaining(data);
 		int work=((int)flags)<<24|length;
 		frame.putInt(work);
-		System.out.println(Integer.toHexString(work));
 		frame.flip();
+		System.out.println(Integer.toHexString(work));
 		return BuffersUtil.concatenate(frame,data,null);
 	}
 	

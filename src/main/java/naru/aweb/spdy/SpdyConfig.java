@@ -47,7 +47,7 @@ public class SpdyConfig {
 	public void setNextProtocols(SSLEngine engine){
 		if(isSpdyAvailable && engine instanceof sslnpn.ssl.SSLEngineImpl){
 			sslnpn.ssl.SSLEngineImpl sslNpnEngine=(sslnpn.ssl.SSLEngineImpl)engine;
-			sslNpnEngine.setAdvertisedNextProtocols(SpdyFrame.PROTOCOL_V2,SpdyFrame.PROTOCOL_HTTP_11);
+			sslNpnEngine.setAdvertisedNextProtocols(/*SpdyFrame.PROTOCOL_V3,*/SpdyFrame.PROTOCOL_V2,SpdyFrame.PROTOCOL_HTTP_11);
 		}
 	}
 	

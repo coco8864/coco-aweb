@@ -21,7 +21,6 @@ import naru.aweb.core.DispatchHandler;
 import naru.aweb.core.ServerBaseHandler;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.spdy.SpdySession;
-import naru.aweb.util.ServerParser;
 
 /**
  * HTTPプロトコルを基本に、主にレスポンスをハンドリングする。 HTTPプロトコルのスキームに入らないプロトコルをハンドリングする場合には、
@@ -32,10 +31,6 @@ import naru.aweb.util.ServerParser;
  */
 public class WebServerHandler extends ServerBaseHandler {
 	/* ここで指定した属性は、Velocityテンプレートから参照できる */
-//	public static final String CONTENT_ENCODING_GZIP = "gzip";
-
-//	private static final String SERVER = "QueueletHttpServer/0.8";
-	// public static final String ENCODE="ISO8859_1";
 	public static final String ENCODE = "utf-8";
 	private static final String WRITE_CONTEXT_BODY = "writeContextBody";
 	private static final String WRITE_CONTEXT_BODY_INTERNAL = "writeContextBodyInternal";
@@ -76,13 +71,6 @@ public class WebServerHandler extends ServerBaseHandler {
 	//spdy経由で呼び出されている場合設定される、この場合、ChannelHandler系のメソッドは使えない
 	private SpdySession spdySession;
 
-	// Dispatcherで呼び出されるので使われない
-	//public SSLEngine getSSLEngine() {
-	//	KeepAliveContext keepAliveContext = getKeepAliveContext();
-	//	ServerParser sslServer = keepAliveContext.getProxyTargetServer();
-	//	return config.getSslEngine(sslServer);
-	//}
-
 	public void recycle() {
 		requestContentLength = requestReadBody = 0;
 		responseWriteBody = responseHeaderLength = responseWriteBodyApl = responseContentLengthApl = 0;
@@ -92,7 +80,10 @@ public class WebServerHandler extends ServerBaseHandler {
 		isFlushFirstResponse = false;
 		isResponseEnd = false;// 微妙な動きをするのでpoolにあるうちはtrueにしたいが・・・
 		firstBody = null;
-		spdySession=null;
+		if(spdySession!=null){
+			spdySession.unref();
+			spdySession=null;
+		}
 		super.recycle();
 	}
 
@@ -378,8 +369,7 @@ public class WebServerHandler extends ServerBaseHandler {
 	// handlerが初期化されているので、判定する方法がない。
 	public void responseEnd() {
 		if(spdySession!=null){
-			/* 必要な場合ヘッダをflushする */
-			spdyFlushResponseHeader(true);
+			spdyResponseEnd();
 			return;
 		}
 		synchronized (this) {
@@ -762,12 +752,6 @@ public class WebServerHandler extends ServerBaseHandler {
 	}
 	
 	private synchronized void spdyFlushResponseHeader(boolean isFin){
-		if(isFlushFirstResponse){
-			if(isFin){
-				spdySession.responseBody(isFin, null);
-			}
-			return;
-		}
 		setupResponseHeader();
 		spdySession.responseHeader(isFin,responseHeader);
 		isFlushFirstResponse = true;
@@ -775,17 +759,18 @@ public class WebServerHandler extends ServerBaseHandler {
 	
 	/* spdyの場合、firstBody出力時にヘッダを出力、バッファ処理はしない */
 	private void spdySesponseBody(ByteBuffer[] buffers){
-		boolean isFin=false;//最後のSpdyDataか否か
-		if(buffers==null){//buffersがnullって事は後続がない
-			isFin=true;
+		if (isFlushFirstResponse == false){
+			if(firstBody == null) {
+				firstBody=buffers;
+				onWrittenBody();
+				return;
+			}else{
+				buffers = BuffersUtil.concatenate(firstBody,buffers);
+			}
+			spdyFlushResponseHeader(false);
+			isFlushFirstResponse=true;
 		}
-		spdyFlushResponseHeader(isFin);
-		if(isFin){
-			onWrittenBody();
-			return;
-		}else{//contentLengthを設定したので、終わりになったかもしれない
-			isFin=!needMoreResponse();
-		}
+		boolean	isFin=!needMoreResponse();
 		buffers = zipedIfNeed(isFin, buffers);
 		if(buffers==null){
 			onWrittenBody();
@@ -794,8 +779,25 @@ public class WebServerHandler extends ServerBaseHandler {
 		spdySession.responseBody(isFin, buffers);
 	}
 	
-	/* 通常時（spdyじゃない場合）、１つめのbodyを一旦firstBodyに覚えてバッファする,
-	   必要な処理なのか？ */
+	/* spdyの場合、firstBody出力時にヘッダを出力、バッファ処理はしない */
+	private void spdyResponseEnd(){
+		/* 必要な場合ヘッダをflushする */
+		if (isFlushFirstResponse == false){
+			if(firstBody==null){
+				spdyFlushResponseHeader(true);
+			}else{
+				spdyFlushResponseHeader(false);
+				firstBody = zipedIfNeed(true, firstBody);
+				spdySession.responseBody(true, firstBody);
+			}
+		}else{
+			spdySession.responseBody(true, null);
+		}
+		spdySession.responseEnd();
+	}
+	
+	/* 短いリクエストの場合には、contentLengthを設定しなるべくKeepAliveが有効になるように制御 
+	 * そのためにfirstBufferは即座に送信せずいちど持ちこたえる */
 	public final void responseBody(ByteBuffer[] buffers) {
 		// bodyとしてwrite要求した長さを加算、write完了した長さは、SSLの場合もあるので難しい
 		responseWriteBodyApl += BuffersUtil.remaining(buffers);
@@ -1088,7 +1090,6 @@ public class WebServerHandler extends ServerBaseHandler {
 		return requestContext.getAuthSession();
 	}
 	
-	
 	/* spdy対応 */
 	public KeepAliveContext getKeepAliveContext(boolean isCreate){
 		if(spdySession==null){
@@ -1109,7 +1110,6 @@ public class WebServerHandler extends ServerBaseHandler {
 			super.setKeepAliveContext(keepAliveContext);
 			return;
 		}
-//		spdySession.setKeepAliveContext(keepAliveContext);
 	}
 	
 	@Override
