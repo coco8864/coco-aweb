@@ -116,6 +116,9 @@ public class SpdyHandler extends ServerBaseHandler {
 		case SpdyFrame.TYPE_RST_STREAM:
 			session=sessions.get(streamId);
 			int statusCode=frame.getStatusCode();
+			if(session!=null){
+				session.onRst(statusCode);
+			}
 			break;
 		case SpdyFrame.TYPE_PING:
 			int pingId=frame.getPingId();
@@ -171,19 +174,31 @@ public class SpdyHandler extends ServerBaseHandler {
 		}
 		SpdyCtx spdyCtx=(SpdyCtx)userContext;
 		SpdySession session=spdyCtx.spdySession;
-		if(session.isClosed()){
-			sessions.remove(session.getStreamId());
-		}
 		if(spdyCtx.ctx==WRITE_CONTEXT_HEADER){
 			//ヘッダの書き込み通知はない
 //			spdyCtx.spdySession.onWrittenBody();
 		}else if(spdyCtx.ctx==WRITE_CONTEXT_BODY){
-			spdyCtx.spdySession.onWrittenBody();
+			session.onWrittenBody();
+		}
+	}
+	
+	//SpdySessionが自分の終了を通知してくる
+	void endOfSession(int streamId){
+		SpdySession session;
+		synchronized(sessions){
+			session=sessions.remove(streamId);
+		}
+		if(session!=null){
+			session.unref();
 		}
 	}
 	
 	public void onFinished() {
 		logger.debug("#finished.cid:"+getChannelId());
+		Object[] ss=sessions.values().toArray();
+		for(Object session:ss){
+			((SpdySession)session).onRst(SpdyFrame.RSTST_REFUSED_STREAM);
+		}
 		super.onFinished();
 	}
 	

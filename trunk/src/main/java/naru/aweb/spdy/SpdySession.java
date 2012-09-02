@@ -2,6 +2,7 @@ package naru.aweb.spdy;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import naru.async.pool.PoolBase;
@@ -20,9 +21,6 @@ public class SpdySession extends PoolBase{
 	private boolean isInputClose=false;
 	private KeepAliveContext keepAliveContext;
 	private Map attribute=new HashMap();//handlerに付随する属性
-	
-//	private HeaderParser requestHeader;
-	
 	
 	public static SpdySession create(SpdyHandler spdyHandler,int streamId,HeaderParser parseHeader,boolean isInputClose){
 		SpdySession session=(SpdySession)PoolManager.getInstance(SpdySession.class);
@@ -45,17 +43,57 @@ public class SpdySession extends PoolBase{
 		requestHeader.setServer(parseHeader.getHeader(HeaderParser.HOST_HEADER), 443);
 		//session.getRequestContext().getAccessLog();
 		parseHeader.unref();
-		session.keepAliveContext.setAcceptServer(requestHeader.getServer());
+		ServerParser server=requestHeader.getServer();
+		server.ref();
+		session.keepAliveContext.setAcceptServer(server);
 		return session;
 	}
 	
+	private void endOfSession(){
+		/*
+		if(webserverHandler!=null){
+			webserverHandler.onReadClosed(readContext);
+			readContext=null;
+			webserverHandler.onFinished();
+			webserverHandler.unref();
+			webserverHandler=null;
+		}
+		keepAliveContext.unref();
+		keepAliveContext=null;
+		Iterator itr=attribute.values().iterator();
+		while(itr.hasNext()){
+			Object value=itr.next();
+			if(value instanceof PoolBase){
+				PoolBase poolBase=(PoolBase)value;
+				poolBase.unref();
+			}
+			itr.remove();
+		}
+		attribute.clear();
+		spdyHandler.endOfSession(streamId);
+		*/
+	}
+	
 	//SpdyHandler側から呼び出される
-	public void onReadPlain(ByteBuffer[] buffers,boolean isInputClose){
-		this.isInputClose=isInputClose;
-		webserverHandler.onReadPlain(null,buffers);
+	public void onReadPlain(ByteBuffer[] buffers,boolean isFin){
+		if(isInputClose){
+			return;//既にクローズされている
+		}
+		isInputClose=isFin;
+		webserverHandler.onReadPlain(readContext,buffers);
+		readContext=null;
+		if(this.isInputClose&&isOutputClose){
+			endOfSession();
+		}
 	}
 	public void onWrittenBody(){
-		webserverHandler.onWrittenBody();
+		if(webserverHandler!=null){
+			webserverHandler.onWrittenBody();
+		}
+	}
+	
+	public void onRst(int statusCode){
+		endOfSession();
 	}
 	
 	//webserverHandler側から呼び出される
@@ -78,9 +116,9 @@ public class SpdySession extends PoolBase{
 		spdyHandler.responseBody(this, isLast,buffers);
 	}
 	
-	public void responseEnd(){
-		if(isOutputClose && isInputClose){//正常close
-		}
+	private Object readContext;
+	public void asyncRead(Object context){
+		this.readContext=context;
 	}
 
 	public HeaderParser getRequestHeader() {
