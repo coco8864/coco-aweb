@@ -28,6 +28,7 @@ public class SpdySession extends PoolBase{
 		session.spdyHandler=spdyHandler;
 		session.streamId=streamId;
 		session.isInputClose=isInputClose;
+		session.isOutputClose=false;
 		session.keepAliveContext=(KeepAliveContext)PoolManager.getInstance(KeepAliveContext.class);
 		HeaderParser requestHeader=session.getRequestHeader();
 		requestHeader.setMethod(parseHeader.getHeader("method"));
@@ -50,15 +51,17 @@ public class SpdySession extends PoolBase{
 	}
 	
 	private void endOfSession(){
-		/*
 		if(webserverHandler!=null){
 			webserverHandler.onReadClosed(readContext);
+			webserverHandler.finishChildHandler();
+			/*
 			readContext=null;
 			webserverHandler.onFinished();
 			webserverHandler.unref();
+			*/
 			webserverHandler=null;
 		}
-		keepAliveContext.unref();
+		/*keepAliveContext.unref();
 		keepAliveContext=null;
 		Iterator itr=attribute.values().iterator();
 		while(itr.hasNext()){
@@ -69,9 +72,8 @@ public class SpdySession extends PoolBase{
 			}
 			itr.remove();
 		}
-		attribute.clear();
+		attribute.clear();*/
 		spdyHandler.endOfSession(streamId);
-		*/
 	}
 	
 	//SpdyHandlerë§Ç©ÇÁåƒÇ—èoÇ≥ÇÍÇÈ
@@ -86,9 +88,19 @@ public class SpdySession extends PoolBase{
 			endOfSession();
 		}
 	}
+	
+	public void onWrittenHeader(){
+		if(this.isInputClose&&isOutputClose){
+			endOfSession();
+		}
+	}
+	
 	public void onWrittenBody(){
 		if(webserverHandler!=null){
 			webserverHandler.onWrittenBody();
+		}
+		if(this.isInputClose&&isOutputClose){
+			endOfSession();
 		}
 	}
 	

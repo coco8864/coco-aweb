@@ -175,8 +175,7 @@ public class SpdyHandler extends ServerBaseHandler {
 		SpdyCtx spdyCtx=(SpdyCtx)userContext;
 		SpdySession session=spdyCtx.spdySession;
 		if(spdyCtx.ctx==WRITE_CONTEXT_HEADER){
-			//ÉwÉbÉ_ÇÃèëÇ´çûÇ›í ímÇÕÇ»Ç¢
-//			spdyCtx.spdySession.onWrittenBody();
+			session.onWrittenHeader();
 		}else if(spdyCtx.ctx==WRITE_CONTEXT_BODY){
 			session.onWrittenBody();
 		}
@@ -384,11 +383,14 @@ public class SpdyHandler extends ServerBaseHandler {
 //		setupTraceLog(realHostName, requestHeader, mapping, user);
 		setRequestMapping(mapping);
 		Class<WebServerHandler> responseClass = mapping.getHandlerClass();
-		WebServerHandler responseHandler = (WebServerHandler) allocHandler(responseClass);
+		WebServerHandler responseHandler = (WebServerHandler) allocChaildHandler(responseClass);
 		if (responseHandler == null) {
 			logger.warn("fail to forwardHandler:cid:" + getChannelId() + ":" + this);
 			return;
 		}
+		KeepAliveContext k=session.getKeepAliveContext();
+		k.ref();
+		responseHandler.setKeepAliveContext(k);
 		session.setWebserverHandler(responseHandler);
 		responseHandler.setSpdySession(session);
 		responseHandler.setRequestMapping(mapping);

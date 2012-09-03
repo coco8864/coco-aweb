@@ -882,14 +882,13 @@ public class WebServerHandler extends ServerBaseHandler {
 		// request bodyを全部読んでfowardしようとしているのか？読まずにfowardしようとしているかが問題
 		handler.requestContentLength = requestContentLength;
 		handler.requestReadBody = requestReadBody;
-		if(spdySession==null){
-			super.forwardHandler(handler);
-		}else{
+		if(spdySession!=null){
 			handler.spdySession=spdySession;
 			spdySession.setWebserverHandler(handler);
 			spdySession=null;
-			unref();//自ハンドラは開放可能
+//			unref();//自ハンドラは開放可能
 		}
+		super.forwardHandler(handler);
 		// WebServerHandler handler=
 		// (WebServerHandler)super.forwardHandler(handlerClass);
 		if (callStartMethod) {
@@ -1092,6 +1091,7 @@ public class WebServerHandler extends ServerBaseHandler {
 	}
 	
 	/* spdy対応 */
+	/*
 	@Override
 	public KeepAliveContext getKeepAliveContext(boolean isCreate){
 		if(spdySession==null){
@@ -1187,9 +1187,11 @@ public class WebServerHandler extends ServerBaseHandler {
 		}
 		return	super.getLocalPort();
 	}
-	
 	@Override
+	*/
+	
 	/* channelContext単位の属性 */
+	/*
 	public Object getAttribute(String name){
 		if(spdySession!=null){
 			return spdySession.getAttribute(name);
@@ -1206,8 +1208,6 @@ public class WebServerHandler extends ServerBaseHandler {
 		super.setAttribute(name,value);
 	}
 	
-	
-	/*
 	@Override
 	public ParameterParser getParameterParser() {
 		return getRequestContext().getParameterParser();
@@ -1221,6 +1221,11 @@ public class WebServerHandler extends ServerBaseHandler {
 	@Override
 	public MappingResult getRequestMapping() {
 		return getRequestContext().getMapping();
+	}
+	
+	@Override
+	public void setRequestMapping(MappingResult mapping) {
+		getRequestContext().setMapping(mapping);
 	}
 	*/
 	
