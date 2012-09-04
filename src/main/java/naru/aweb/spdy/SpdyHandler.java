@@ -65,7 +65,6 @@ public class SpdyHandler extends ServerBaseHandler {
 				while(buffer.hasRemaining()){
 					if( frame.parse(buffer) ){
 						doFrame();
-						frame.prepareNext();
 					}
 				}
 				buffers[i]=null;

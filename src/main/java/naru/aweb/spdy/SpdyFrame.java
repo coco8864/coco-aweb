@@ -258,7 +258,7 @@ public class SpdyFrame {
 		prepareNext();
 	}
 	
-	public void prepareNext(){
+	private void prepareNext(){
 		parseStat=ParseStat.START;
 		dataLength=0;
 		curDataPos=0;
@@ -352,6 +352,8 @@ public class SpdyFrame {
 	public boolean parse(ByteBuffer buffer){
 		boolean rc;
 		switch(parseStat){
+		case END:
+			prepareNext();
 		case START:
 			if(!parseStart(buffer)){
 				rc=false;
@@ -364,7 +366,6 @@ public class SpdyFrame {
 			}else if(parseStat==ParseStat.END){
 				parseType();
 			}
-		case END:
 			rc=true;
 			break;
 		default://ERROR
