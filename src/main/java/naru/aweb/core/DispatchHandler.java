@@ -174,16 +174,16 @@ public class DispatchHandler extends ServerBaseHandler {
 	}
 
 	public void onReadPlain(Object userContext, ByteBuffer[] buffers) {
-		logger.debug("#onReadPlain.cid:" + getChannelId()
-				+ ":buffers.hashCode:" + buffers.hashCode());
-		
+		logger.debug("#onReadPlain.cid:" + getChannelId()+ ":buffers.hashCode:" + buffers.hashCode());
 		if(isSpdyAvailable){
 			SpdyHandler handler=(SpdyHandler)forwardHandler(SpdyHandler.class);
-			if(handler!=null){//Šù‚Éclose‚³‚ê‚Ä‚¢‚½
+			if(handler!=null){
+				logger.debug("#onReadPlain.cid:" + getChannelId()+ "fowardHandler nextProtocol:"+nextProtocol );
 				handler.onHandshaked(nextProtocol);
 				handler.onReadPlain(userContext, buffers);
 				return;
 			}
+			//Šù‚Éclose‚³‚ê‚Ä‚¢‚½
 			logger.error("fail to forward SpdyHandler");
 			asyncClose(null);
 			return;
@@ -353,7 +353,8 @@ public class DispatchHandler extends ServerBaseHandler {
 		setupTraceLog(realHostName, requestHeader, mapping, user,isWs);
 		setRequestMapping(mapping);
 		Class<WebServerHandler> responseClass = mapping.getHandlerClass();
-		WebServerHandler responseHandler = (WebServerHandler) forwardHandler(responseClass);
+		WebServerHandler responseHandler=(WebServerHandler)PoolManager.getInstance(responseClass);
+		responseHandler = (WebServerHandler) forwardHandler(responseHandler);
 		if (responseHandler == null) {
 			logger.warn("fail to forwardHandler:cid:" + getChannelId() + ":" + this);
 			return;
@@ -585,7 +586,7 @@ public class DispatchHandler extends ServerBaseHandler {
 		return mapping;
 	}
 	
-	private void mappingHandler() {
+	public void mappingHandler() {
 		HeaderParser requestHeader = getRequestHeader();
 		KeepAliveContext keepAliveContext = getKeepAliveContext();
 		RequestContext requestContext=getRequestContext();

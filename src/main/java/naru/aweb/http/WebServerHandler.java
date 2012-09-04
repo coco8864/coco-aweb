@@ -68,8 +68,6 @@ public class WebServerHandler extends ServerBaseHandler {
 	private ByteBuffer[] firstBody;
 	private boolean isResponseEnd;
 	
-	//spdy経由で呼び出されている場合設定される、この場合、ChannelHandler系のメソッドは使えない
-	private SpdySession spdySession;
 
 	public void recycle() {
 		requestContentLength = requestReadBody = 0;
@@ -80,7 +78,6 @@ public class WebServerHandler extends ServerBaseHandler {
 		isFlushFirstResponse = false;
 		isResponseEnd = false;// 微妙な動きをするのでpoolにあるうちはtrueにしたいが・・・
 		firstBody = null;
-		spdySession=null;
 		super.recycle();
 	}
 
@@ -154,14 +151,6 @@ public class WebServerHandler extends ServerBaseHandler {
 		responseHeader.setStatusCode(header.getStatusCode(), header.getReasonPhrase());
 		responseHeader.setResHttpVersion(header.getResHttpVersion());
 		responseHeader.setAllHeaders(header);
-	}
-
-	@Override
-	public HeaderParser getRequestHeader(){
-		if(spdySession!=null){
-			return spdySession.getRequestContext().getRequestHeader();
-		}
-		return super.getRequestHeader();
 	}
 	
 	/**
@@ -365,8 +354,9 @@ public class WebServerHandler extends ServerBaseHandler {
 	// TODO keepAliveでfowardした後responseEndが呼び出される事がある。
 	// handlerが初期化されているので、判定する方法がない。
 	public void responseEnd() {
+		SpdySession spdySession=getSpdySession();
 		if(spdySession!=null){
-			spdyResponseEnd();
+			spdyResponseEnd(spdySession);
 			return;
 		}
 		synchronized (this) {
@@ -748,14 +738,14 @@ public class WebServerHandler extends ServerBaseHandler {
 		}
 	}
 	
-	private synchronized void spdyFlushResponseHeader(boolean isFin){
+	private synchronized void spdyFlushResponseHeader(SpdySession spdySession,boolean isFin){
 		setupResponseHeader();
 		spdySession.responseHeader(isFin,responseHeader);
 		isFlushFirstResponse = true;
 	}
 	
 	/* spdyの場合、firstBody出力時にヘッダを出力、バッファ処理はしない */
-	private void spdySesponseBody(ByteBuffer[] buffers){
+	private void spdySesponseBody(SpdySession spdySession,ByteBuffer[] buffers){
 		if (isFlushFirstResponse == false){
 			if(firstBody == null) {
 				firstBody=buffers;
@@ -764,7 +754,7 @@ public class WebServerHandler extends ServerBaseHandler {
 			}else{
 				buffers = BuffersUtil.concatenate(firstBody,buffers);
 			}
-			spdyFlushResponseHeader(false);
+			spdyFlushResponseHeader(spdySession,false);
 			isFlushFirstResponse=true;
 		}
 		boolean	isFin=!needMoreResponse();
@@ -777,15 +767,15 @@ public class WebServerHandler extends ServerBaseHandler {
 	}
 	
 	/* spdyの場合、firstBody出力時にヘッダを出力、バッファ処理はしない */
-	private void spdyResponseEnd(){
+	private void spdyResponseEnd(SpdySession spdySession){
 		/* 必要な場合ヘッダをflushする */
 		if (isFlushFirstResponse == false){
 			if(firstBody==null){
 				//ヘッダだけのレスポンス205
-				spdyFlushResponseHeader(true);
+				spdyFlushResponseHeader(spdySession,true);
 			}else{
 				//bodyが１バッファだけのレスポンス
-				spdyFlushResponseHeader(false);
+				spdyFlushResponseHeader(spdySession,false);
 				firstBody = zipedIfNeed(true, firstBody);
 				spdySession.responseBody(true, firstBody);
 				firstBody=null;
@@ -800,8 +790,9 @@ public class WebServerHandler extends ServerBaseHandler {
 	public final void responseBody(ByteBuffer[] buffers) {
 		// bodyとしてwrite要求した長さを加算、write完了した長さは、SSLの場合もあるので難しい
 		responseWriteBodyApl += BuffersUtil.remaining(buffers);
+		SpdySession spdySession=getSpdySession();
 		if(spdySession!=null){
-			spdySesponseBody(buffers);
+			spdySesponseBody(spdySession,buffers);
 			return;
 		}
 		boolean isCallbackOnWrittenBody = false;
@@ -857,6 +848,7 @@ public class WebServerHandler extends ServerBaseHandler {
 			requestBody(requestChunkContext.decodeChunk(buffers));
 		}
 		if (!requestChunkContext.isEndOfData()) {
+			SpdySession spdySession=getSpdySession();
 			if(spdySession==null){
 				asyncRead(null);
 			}else{
@@ -882,12 +874,6 @@ public class WebServerHandler extends ServerBaseHandler {
 		// request bodyを全部読んでfowardしようとしているのか？読まずにfowardしようとしているかが問題
 		handler.requestContentLength = requestContentLength;
 		handler.requestReadBody = requestReadBody;
-		if(spdySession!=null){
-			handler.spdySession=spdySession;
-			spdySession.setWebserverHandler(handler);
-			spdySession=null;
-//			unref();//自ハンドラは開放可能
-		}
 		super.forwardHandler(handler);
 		// WebServerHandler handler=
 		// (WebServerHandler)super.forwardHandler(handlerClass);
@@ -1229,15 +1215,4 @@ public class WebServerHandler extends ServerBaseHandler {
 	}
 	*/
 	
-	@Override
-	public boolean isSsl() {
-		if(spdySession!=null){
-			return true;
-		}
-		return	super.isSsl();
-	}
-	
-	public void setSpdySession(SpdySession spdySession){
-		this.spdySession=spdySession;
-	}
 }
