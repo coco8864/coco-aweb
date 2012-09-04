@@ -305,17 +305,21 @@ public class WsClientHandler extends SslHandler implements Timer {
 			//do nothing
 			break;
 		}
-		if( frame.parseNextFrame() ){
-			doFrame();
-		}
+//		if( frame.parseNextFrame() ){
+//			doFrame();
+//		}
 	}
 	
 	private void parseFrame(ByteBuffer[] buffers){
 		for (int i = 0; i < buffers.length; i++) {
-			if( frame.parse(buffers[i]) ){
-				//TODO parse ERROR
-				doFrame();
+			ByteBuffer buffer=buffers[i];
+			while(buffer.hasRemaining()){
+				if( frame.parse(buffer) ){
+					doFrame();
+				}
 			}
+			buffers[i]=null;
+			PoolManager.poolBufferInstance(buffer);
 		}
 		PoolManager.poolArrayInstance(buffers);//”z—ñ‚ð•Ô‹p
 	}

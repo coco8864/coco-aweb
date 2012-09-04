@@ -178,9 +178,9 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 			payloadBuffer.unref();
 			payloadBuffer=null;
 		}
-		if( frame.parseNextFrame() ){
-			doFrame();
-		}
+//		if( frame.parseNextFrame() ){
+//			doFrame();
+//		}
 	}
 	
 	/* 回線からデータを受信した */
@@ -188,12 +188,24 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 	public void onBuffer(ByteBuffer[] buffers) {
 		logger.debug("WsHybi10#onBuffer cid:"+handler.getChannelId());
 		try {
+			for(int i=0;i<buffers.length;i++){
+				ByteBuffer buffer=buffers[i];
+				while(buffer.hasRemaining()){
+					if( frame.parse(buffer) ){
+						doFrame();
+					}
+				}
+				buffers[i]=null;
+				PoolManager.poolBufferInstance(buffer);
+			}
+			/*
 			for(ByteBuffer buffer:buffers){
 				if( frame.parse(buffer) ){
 					//TODO parse ERROR
 					doFrame();
 				}
 			}
+			*/
 			PoolManager.poolArrayInstance(buffers);
 			if(frame.getPayloadLength()>getWebSocketMessageLimit()){
 				logger.debug("WsHybi10#doFrame too long frame.frame.getPayloadLength():"+frame.getPayloadLength());
