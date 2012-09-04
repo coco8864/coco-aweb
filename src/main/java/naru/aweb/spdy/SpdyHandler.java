@@ -122,6 +122,7 @@ public class SpdyHandler extends ServerBaseHandler {
 		case SpdyFrame.TYPE_HEADERS:
 		case SpdyFrame.TYPE_GOAWAY:
 		default:
+			PoolManager.poolBufferInstance(frame.getDataBuffers());
 		}
 	}
 	
