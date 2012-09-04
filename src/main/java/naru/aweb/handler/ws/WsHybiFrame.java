@@ -379,7 +379,7 @@ public class WsHybiFrame {
 		}
 		if(payloadLength>webSocketMessageLimit){
 			parseStat=ParseStat.ERROR;//パケットが長すぎる
-			buffer.reset();
+			buffer.position(buffer.limit());
 			return false;
 		}
 		parseStat=ParseStat.MASK;
@@ -414,7 +414,7 @@ public class WsHybiFrame {
 			return true;
 		}else if(payloadLength>=(curPayloadPos+remain)){//全部を対象としてよい
 			payloadBuffer=PoolManager.duplicateBuffer(buffer);
-			buffer.reset();
+			buffer.position(buffer.limit());
 			readLen=remain;
 			rc=true;
 		}else{//途中でFrameが終わっている
