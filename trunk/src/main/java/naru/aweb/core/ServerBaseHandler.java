@@ -6,6 +6,7 @@ import javax.net.ssl.SSLEngine;
 
 import org.apache.log4j.Logger;
 
+import naru.async.ChannelHandler;
 import naru.async.pool.PoolManager;
 import naru.async.ssl.SslHandler;
 import naru.aweb.config.AccessLog;
@@ -17,6 +18,7 @@ import naru.aweb.http.ParameterParser;
 import naru.aweb.http.RequestContext;
 import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.spdy.SpdySession;
 import naru.aweb.util.ServerParser;
 
 public abstract class ServerBaseHandler extends SslHandler {
@@ -38,7 +40,26 @@ public abstract class ServerBaseHandler extends SslHandler {
 	public static final String ATTRIBUTE_KEEPALIVE_CONTEXT="keepAliveContext";
 	
 	public static final String ATTRIBUTE_USER="loginUser";
-//	public static final String ATTRIBUTE_AUTH_SESSION="authSession";
+	
+	//spdy経由で呼び出されている場合設定される、この場合、ChannelHandler系のメソッドは使えない
+	private SpdySession spdySession;
+	
+	public void recycle() {
+		spdySession=null;
+		super.recycle();
+	}
+
+	@Override
+	public ChannelHandler forwardHandler(SslHandler handler) {
+		if(spdySession!=null&&handler instanceof ServerBaseHandler){
+			ServerBaseHandler serverHandler=(ServerBaseHandler)handler;
+			serverHandler.spdySession=spdySession;
+			spdySession.setServerHandler(serverHandler);
+			spdySession=null;
+		}
+		return super.forwardHandler(handler);
+	}
+	
 	
 	public RequestContext getRequestContext(){
 		KeepAliveContext keepAliveContext=getKeepAliveContext();
@@ -122,4 +143,21 @@ public abstract class ServerBaseHandler extends SslHandler {
 	public SSLEngine getSSLEngine() {
 		return null;
 	}
+
+	public SpdySession getSpdySession() {
+		return spdySession;
+	}
+
+	public void setSpdySession(SpdySession spdySession) {
+		this.spdySession = spdySession;
+	}
+	
+	@Override
+	public boolean isSsl() {
+		if(spdySession!=null){
+			return true;
+		}
+		return	super.isSsl();
+	}
+	
 }

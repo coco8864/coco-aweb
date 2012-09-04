@@ -246,7 +246,6 @@ public class SpdyFrame {
 	private NameValueBuilder nameValueBuilder=new NameValueBuilder();
 	
 	private List<ByteBuffer> dataBuffers=new ArrayList<ByteBuffer>();
-	private List<ByteBuffer> nextFrameBuffers=new ArrayList<ByteBuffer>();
 	
 	public void init(String protocol){
 		if(PROTOCOL_V2.equals(protocol)){
@@ -264,7 +263,6 @@ public class SpdyFrame {
 		dataLength=0;
 		curDataPos=0;
 		dataBuffers.clear();
-		nextFrameBuffers.clear();
 		workBuffer.clear();
 		workBuffer.order(ByteOrder.BIG_ENDIAN);
 	}
@@ -352,30 +350,27 @@ public class SpdyFrame {
 	 * @return@¡‰ñ‚Ìparse‚Åframe‚ªŠ®Œ‹‚µ‚½‚©”Û‚©
 	 */
 	public boolean parse(ByteBuffer buffer){
+		boolean rc;
 		switch(parseStat){
 		case START:
 			if(!parseStart(buffer)){
+				rc=false;
 				break;
-//				return false;
 			}
 		case DATA:
-			boolean rc=parseData(buffer);
+			rc=parseData(buffer);
 			if(parseStat==ParseStat.DATA){
 				return false;//Ÿ‚Ìbuffer‚ª‚ ‚éê‡
 			}else if(parseStat==ParseStat.END){
 				parseType();
 			}
-			if(rc){//buffer‚ğÁ”ï‚µ‚½ê‡
-				return true;
-			}
 		case END:
-			if(buffer.hasRemaining()){
-				nextFrameBuffers.add(buffer);
-			}
-			return true;
+			rc=true;
+			break;
 		default://ERROR
+			rc=false;
 		}
-		return false;
+		return rc;
 //		throw new RuntimeException("parseStat:"+parseStat);
 	}
 	
@@ -407,7 +402,6 @@ public class SpdyFrame {
 	private boolean parseStart(ByteBuffer buffer){
 		ByteBuffer readBuffer=fillBuffer(buffer,8);
 		if(readBuffer==null){
-			PoolManager.poolBufferInstance(buffer);
 			return false;
 		}
 		int work=readBuffer.getInt();
@@ -436,10 +430,10 @@ public class SpdyFrame {
 			if(dataLength==0){
 				parseStat=ParseStat.END;
 			}
-			PoolManager.poolBufferInstance(buffer);
 			return true;
 		}else if(dataLength>=(curDataPos+remain)){//‘S•”‚ğ‘ÎÛ‚Æ‚µ‚Ä‚æ‚¢
-			dataBuffer=buffer;
+			dataBuffer=PoolManager.duplicateBuffer(buffer);
+			buffer.position(buffer.limit());
 			readLen=remain;
 			rc=true;
 		}else{//“r’†‚ÅFrame‚ªI‚í‚Á‚Ä‚¢‚é
@@ -456,20 +450,6 @@ public class SpdyFrame {
 			parseStat=ParseStat.END;
 		}
 		return rc;
-	}
-	
-	public boolean parseNextFrame(){
-		if(parseStat!=ParseStat.END){
-			throw new RuntimeException("parseNextFrame");
-		}
-		ByteBuffer[] framedBuffers=BuffersUtil.toByteBufferArray(nextFrameBuffers);
-		nextFrameBuffers.clear();
-		prepareNext();
-		for(ByteBuffer buffer:framedBuffers){
-			parse(buffer);
-		}
-		PoolManager.poolArrayInstance(framedBuffers);
-		return isParseEnd();
 	}
 	
 	public boolean isParseEnd(){

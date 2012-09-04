@@ -7,6 +7,7 @@ import java.util.Map;
 
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
+import naru.aweb.core.ServerBaseHandler;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.KeepAliveContext;
 import naru.aweb.http.RequestContext;
@@ -16,15 +17,15 @@ import naru.aweb.util.ServerParser;
 public class SpdySession extends PoolBase{
 	private SpdyHandler spdyHandler;
 	private int streamId;
-	private WebServerHandler webserverHandler;
+	private ServerBaseHandler serverHandler;
 	private boolean isOutputClose=false;
 	private boolean isInputClose=false;
 	private KeepAliveContext keepAliveContext;
-	private Map attribute=new HashMap();//handlerに付随する属性
+//	private Map attribute=new HashMap();//handlerに付随する属性
 	
 	public static SpdySession create(SpdyHandler spdyHandler,int streamId,HeaderParser parseHeader,boolean isInputClose){
 		SpdySession session=(SpdySession)PoolManager.getInstance(SpdySession.class);
-		session.attribute.clear();
+//		session.attribute.clear();
 		session.spdyHandler=spdyHandler;
 		session.streamId=streamId;
 		session.isInputClose=isInputClose;
@@ -51,29 +52,14 @@ public class SpdySession extends PoolBase{
 	}
 	
 	private void endOfSession(){
-		if(webserverHandler!=null){
-			webserverHandler.onReadClosed(readContext);
-			webserverHandler.finishChildHandler();
-			/*
-			readContext=null;
-			webserverHandler.onFinished();
-			webserverHandler.unref();
-			*/
-			webserverHandler=null;
+		spdyHandler.endOfSession(streamId);
+		if(serverHandler!=null){
+			serverHandler.onReadClosed(readContext);
+			serverHandler.finishChildHandler();
+			serverHandler=null;
 		}
 		/*keepAliveContext.unref();
-		keepAliveContext=null;
-		Iterator itr=attribute.values().iterator();
-		while(itr.hasNext()){
-			Object value=itr.next();
-			if(value instanceof PoolBase){
-				PoolBase poolBase=(PoolBase)value;
-				poolBase.unref();
-			}
-			itr.remove();
-		}
-		attribute.clear();*/
-		spdyHandler.endOfSession(streamId);
+		keepAliveContext=null;*/
 	}
 	
 	//SpdyHandler側から呼び出される
@@ -82,7 +68,7 @@ public class SpdySession extends PoolBase{
 			return;//既にクローズされている
 		}
 		isInputClose=isFin;
-		webserverHandler.onReadPlain(readContext,buffers);
+		serverHandler.onReadPlain(readContext,buffers);
 		readContext=null;
 		if(this.isInputClose&&isOutputClose){
 			endOfSession();
@@ -96,8 +82,8 @@ public class SpdySession extends PoolBase{
 	}
 	
 	public void onWrittenBody(){
-		if(webserverHandler!=null){
-			webserverHandler.onWrittenBody();
+		if(serverHandler!=null&&serverHandler instanceof WebServerHandler){
+			((WebServerHandler)serverHandler).onWrittenBody();
 		}
 		if(this.isInputClose&&isOutputClose){
 			endOfSession();
@@ -154,18 +140,19 @@ public class SpdySession extends PoolBase{
 		return streamId;
 	}
 
-	public WebServerHandler getWebserverHandler() {
-		return webserverHandler;
+	public ServerBaseHandler getServerHandler() {
+		return serverHandler;
 	}
 
-	public void setWebserverHandler(WebServerHandler webserverHandler) {
-		this.webserverHandler = webserverHandler;
+	public void setServerHandler(ServerBaseHandler serverHandler) {
+		this.serverHandler = serverHandler;
 	}
 	
 	public SpdyHandler getSpdyHandler(){
 		return spdyHandler;
 	}
 	
+	/*
 	public Object getAttribute(String name){
 		return attribute.get(name);
 	}
@@ -173,6 +160,7 @@ public class SpdySession extends PoolBase{
 	public void setAttribute(String name, Object value) {
 		attribute.put(name,value);
 	}
+	*/
 	
 	public boolean isClosed(){
 		return (isInputClose&&isOutputClose);

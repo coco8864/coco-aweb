@@ -378,6 +378,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	public static final char SOURCE_TYPE_WS_HANDSHAKE='H';
 	public static final char SOURCE_TYPE_WS_ON_MESSAGE='o';
 	public static final char SOURCE_TYPE_WS_POST_MESSAGE='m';
+	public static final char SOURCE_TYPE_SPDY='Y';
 	
 	@Persistent
 	@Column(name="SOURCE_TYPE")
