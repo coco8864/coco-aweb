@@ -684,6 +684,8 @@ public class WebServerHandler extends ServerBaseHandler {
 			case TRACE:
 				if(headerBuffer==null){//SPDY経由の場合はヘッダバッファはない
 					headerBuffer=responseHeader.getHeaderBuffer();
+				}else{
+					headerBuffer=PoolManager.duplicateBuffers(headerBuffer);
 				}
 				responseHeaderLength = BuffersUtil.remaining(headerBuffer);
 				responsePeek = Store.open(true);
@@ -756,7 +758,7 @@ public class WebServerHandler extends ServerBaseHandler {
 			asyncClose(null);// 回線を切断
 			return;// 何をしても無駄
 		}
-		traceHeader(isHeaderOnlyResponse,PoolManager.duplicateBuffers(headerBuffer));
+		traceHeader(isHeaderOnlyResponse,headerBuffer);
 		asyncWrite(WRITE_CONTEXT_LAST_HEADER, headerBuffer);
 		if(isHeaderOnlyResponse){
 			return;
