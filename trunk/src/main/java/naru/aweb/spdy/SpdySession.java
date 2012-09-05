@@ -10,7 +10,6 @@ import naru.aweb.http.HeaderParser;
 import naru.aweb.http.KeepAliveContext;
 import naru.aweb.http.RequestContext;
 import naru.aweb.http.WebServerHandler;
-import naru.aweb.util.ServerParser;
 
 public class SpdySession extends PoolBase{
 	private SpdyHandler spdyHandler;

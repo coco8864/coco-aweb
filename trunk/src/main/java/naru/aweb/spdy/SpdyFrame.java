@@ -372,7 +372,13 @@ public class SpdyFrame {
 		case SpdyFrame.TYPE_SYN_STREAM:
 			streamId=getIntFromData();
 			associatedToStreamId=getIntFromData();
-			pri=getShortFromData();
+			int priWork=getShortFromData();
+			if(version==VERSION_V2){
+				pri=(short)(priWork>>14);
+			}else if(version==VERSION_V3){
+				pri=(short)(priWork>>13);
+				slot=(short)(priWork&0x00ff);
+			}
 			ByteBuffer[] dataBuffer=getDataBuffers();
 			header=nameValueParser.decode(dataBuffer);
 			break;
