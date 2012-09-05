@@ -3,14 +3,15 @@ package naru.aweb.spdy;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
 import org.apache.log4j.Logger;
-
 import naru.async.pool.PoolManager;
-import naru.aweb.http.HeaderParser;
-import naru.aweb.util.ServerParser;
 
 /**
  * @author Owner
@@ -18,7 +19,6 @@ import naru.aweb.util.ServerParser;
  */
 public class NameValueParser {
 	private static Logger logger = Logger.getLogger(NameValueParser.class);
-
 	private enum Phase {
 		START, NumberOfNameValue, LengthOfName, Name, LengthOfValue, Value, END, ERROR,
 	}
@@ -32,7 +32,7 @@ public class NameValueParser {
 	private int curNameValue = 0;
 	private String name;
 	private String[] values;
-	private HeaderParser header;
+	private Map<String,String[]> header;
 	
 	public void init(short version) {
 		this.version=version;
@@ -41,17 +41,14 @@ public class NameValueParser {
 	
 	private void parseStart() {
 		phase = Phase.START;
-		header = (HeaderParser) PoolManager.getInstance(HeaderParser.class);
+		header=new HashMap<String,String[]>();
 		workBuffer = PoolManager.getBufferInstance();
 		workBuffer.order(ByteOrder.BIG_ENDIAN);
 		curNameValue = 0;
 	}
 
 	private void parseEnd() {
-		if (header != null) {
-			header.unref(true);
-			header=null;
-		}
+		header=null;
 		PoolManager.poolBufferInstance(workBuffer);
 		workBuffer = null;
 		phase = Phase.START;
@@ -111,11 +108,10 @@ public class NameValueParser {
 				this.values=valuesString.split("\0");
 				phase = Phase.Value;
 			case Value:
-				header.setHeader(name, values);
+				header.put(name, values);
 				curNameValue++;
 				if (numberOfNameValue == curNameValue) {
 					phase = Phase.END;
-					header.setParseOk();
 					return true;
 				}
 				phase = Phase.NumberOfNameValue;
@@ -175,7 +171,7 @@ public class NameValueParser {
 	}
 
 	//Ç¢Ç∏ÇÍÇ…ÇµÇÎbuffersÇÕÇ±ÇÃÉÅÉ\ÉbÉhÇ≈è¡îÔÇ∑ÇÈ
-	public HeaderParser decode(ByteBuffer[] buffers) {
+	public Map<String,String[]> decode(ByteBuffer[] buffers) {
 		parseStart();
 		try{
 			for (ByteBuffer buf : buffers) {
@@ -185,9 +181,7 @@ public class NameValueParser {
 				}
 			}
 			if (phase == Phase.END) {
-				HeaderParser result=this.header;
-				this.header=null;
-				return result;
+				return header;
 			}
 			if (phase == Phase.ERROR) {
 				return null;

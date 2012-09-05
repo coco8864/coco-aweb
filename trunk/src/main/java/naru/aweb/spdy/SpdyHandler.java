@@ -7,12 +7,12 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import naru.async.pool.PoolManager;
-import naru.aweb.auth.Authorizer;
-import naru.aweb.config.Config;
 import naru.aweb.core.DispatchHandler;
 import naru.aweb.core.ServerBaseHandler;
 import naru.aweb.http.HeaderParser;
-import naru.aweb.mapping.Mapper;
+import naru.aweb.http.KeepAliveContext;
+import naru.aweb.http.RequestContext;
+import naru.aweb.util.ServerParser;
 
 /**
  * @author Naru
@@ -20,36 +20,9 @@ import naru.aweb.mapping.Mapper;
  */
 public class SpdyHandler extends ServerBaseHandler {
 	private static Logger logger=Logger.getLogger(SpdyHandler.class);
-	private static Config config = null;//Config.getConfig();
-	private static Mapper mapper = null;//config.getMapper();
-	private static Authorizer authorizer=null;//config.getAuthorizer();
-	
-	private static Config getConfig(){
-		if(config==null){
-			config=Config.getConfig();
-		}
-		return config;
-	}
-	private static Mapper getMapper(){
-		if(mapper==null){
-			mapper=getConfig().getMapper();
-		}
-		return mapper;
-	}
-	private static Authorizer getAuthorizer(){
-		if(authorizer==null){
-			authorizer=getConfig().getAuthorizer();
-		}
-		return authorizer;
-	}
 	
 	private SpdyFrame frame=new SpdyFrame();
 	private Map<Integer,SpdySession> sessions=new HashMap<Integer,SpdySession>();
-	
-	@Override
-	public void recycle() {
-		super.recycle();
-	}
 
 	public boolean onHandshaked(String protocol) {
 		logger.debug("#handshaked.cid:" + getChannelId() +":"+protocol);
@@ -98,10 +71,20 @@ public class SpdyHandler extends ServerBaseHandler {
 			}
 			break;
 		case SpdyFrame.TYPE_SYN_STREAM:
-			HeaderParser requestHeader=frame.getHeader();
-			logger.info("url:" + requestHeader.getHeader("url"));
-			session=SpdySession.create(this, streamId, requestHeader,frame.isFin());
-			
+			//KeepAliveContext作って
+			KeepAliveContext keepAliveContext=(KeepAliveContext)PoolManager.getInstance(KeepAliveContext.class);
+			//KeepAliveContextからRequestContext取って
+			RequestContext requestContext=keepAliveContext.getRequestContext();
+			//RequestContextからrequestHeader取って
+			HeaderParser requestHeader=requestContext.getRequestHeader();
+			//ヘッダの内容を設定、ここにSpdyのVLが関係してくるので、SpdyFrameの中で実行
+			frame.setupHeader(requestHeader);
+			ServerParser server=requestHeader.getServer();
+			server.ref();
+			keepAliveContext.setAcceptServer(server);
+			logger.info("url:" + requestHeader.getRequestUri());
+			//KeepAliveContextからSpdySessionを作る
+			session=SpdySession.create(this, streamId, keepAliveContext,frame.isFin());
 			sessions.put(streamId, session);
 			mappingHandler(session);
 			break;
@@ -122,7 +105,6 @@ public class SpdyHandler extends ServerBaseHandler {
 		case SpdyFrame.TYPE_HEADERS:
 		case SpdyFrame.TYPE_GOAWAY:
 		default:
-			PoolManager.poolBufferInstance(frame.getDataBuffers());
 		}
 	}
 	
@@ -202,7 +184,14 @@ public class SpdyHandler extends ServerBaseHandler {
 		}
 		dispatchHandler.setKeepAliveContext(session.getKeepAliveContext());
 		session.setServerHandler(dispatchHandler);
-		dispatchHandler.setSpdySession(session);
+		dispatchHandler.getRequestContext().setAttribute(ATTRIBUTE_SPDY_SESSION, session);
 		dispatchHandler.mappingHandler();
+	}
+	
+	public int getSpdyVersion(){
+		return frame.getVersion();
+	}
+	public int getSpdyPri(){
+		return frame.getPri();
 	}
 }

@@ -35,7 +35,7 @@ public class ChunkContext {
 	
 	private long nextChunk;
 	private boolean isSendLastChunk;
-	private int mode;
+	private int mode=MODE_CHUNK_START;
 	private int chunkBufferPtr=0;
 	private byte[] chunkBuffer=new byte[1024];
 	

@@ -1,12 +1,10 @@
 package naru.aweb.spdy;
 
 import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
+import naru.async.store.Store;
 import naru.aweb.core.ServerBaseHandler;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.KeepAliveContext;
@@ -21,33 +19,25 @@ public class SpdySession extends PoolBase{
 	private boolean isOutputClose=false;
 	private boolean isInputClose=false;
 	private KeepAliveContext keepAliveContext;
-//	private Map attribute=new HashMap();//handlerに付随する属性
+	private Store responseBodyStore = null;
+	private String sessionInfo;
 	
-	public static SpdySession create(SpdyHandler spdyHandler,int streamId,HeaderParser parseHeader,boolean isInputClose){
+	public static SpdySession create(SpdyHandler spdyHandler,int streamId,KeepAliveContext keepAliveContext,boolean isInputClose){
 		SpdySession session=(SpdySession)PoolManager.getInstance(SpdySession.class);
-//		session.attribute.clear();
 		session.spdyHandler=spdyHandler;
 		session.streamId=streamId;
 		session.isInputClose=isInputClose;
 		session.isOutputClose=false;
-		session.keepAliveContext=(KeepAliveContext)PoolManager.getInstance(KeepAliveContext.class);
-		HeaderParser requestHeader=session.getRequestHeader();
-		requestHeader.setMethod(parseHeader.getHeader("method"));
-		String url=parseHeader.getHeader("url");
-		//String scheme=parseHeader.getHeader("scheme");//httpsのはず
-		requestHeader.parseUri(url);
-		requestHeader.setReqHttpVersion(parseHeader.getHeader("version"));
-		requestHeader.setAllHeaders(parseHeader);
-		requestHeader.removeHeader("method");
-		requestHeader.removeHeader("url");
-		requestHeader.removeHeader("scheme");
-		requestHeader.removeHeader("version");
-		requestHeader.setServer(parseHeader.getHeader(HeaderParser.HOST_HEADER), 443);
-		//session.getRequestContext().getAccessLog();
-		parseHeader.unref();
-		ServerParser server=requestHeader.getServer();
-		server.ref();
-		session.keepAliveContext.setAcceptServer(server);
+		StringBuilder sb=new StringBuilder();
+		sb.append(spdyHandler.getSpdyVersion());
+		sb.append('|');
+		sb.append(spdyHandler.getChannelId());
+		sb.append('|');
+		sb.append(streamId);
+		sb.append('|');
+		sb.append(spdyHandler.getSpdyPri());
+		session.sessionInfo=sb.toString();
+		session.keepAliveContext=keepAliveContext;
 		return session;
 	}
 	
@@ -58,8 +48,6 @@ public class SpdySession extends PoolBase{
 			serverHandler.finishChildHandler();
 			serverHandler=null;
 		}
-		/*keepAliveContext.unref();
-		keepAliveContext=null;*/
 	}
 	
 	//SpdyHandler側から呼び出される
@@ -68,15 +56,16 @@ public class SpdySession extends PoolBase{
 			return;//既にクローズされている
 		}
 		isInputClose=isFin;
-		serverHandler.onReadPlain(readContext,buffers);
+		//readTraceを取得するため、onReadPlainではなくcallbackReadPlainを呼ぶ
+		serverHandler.callbackReadPlain(readContext,buffers);
 		readContext=null;
-		if(this.isInputClose&&isOutputClose){
+		if(isInputClose&&isOutputClose){
 			endOfSession();
 		}
 	}
 	
 	public void onWrittenHeader(){
-		if(this.isInputClose&&isOutputClose){
+		if(isInputClose&&isOutputClose){
 			endOfSession();
 		}
 	}
@@ -85,7 +74,7 @@ public class SpdySession extends PoolBase{
 		if(serverHandler!=null&&serverHandler instanceof WebServerHandler){
 			((WebServerHandler)serverHandler).onWrittenBody();
 		}
-		if(this.isInputClose&&isOutputClose){
+		if(isInputClose&&isOutputClose){
 			endOfSession();
 		}
 	}
@@ -111,6 +100,9 @@ public class SpdySession extends PoolBase{
 		}else if(isLast){
 			isOutputClose=true;
 		}
+		if(responseBodyStore!=null&&buffers!=null){
+			responseBodyStore.putBuffer(PoolManager.duplicateBuffers(buffers));
+		}
 		spdyHandler.responseBody(this, isLast,buffers);
 	}
 	
@@ -132,10 +124,6 @@ public class SpdySession extends PoolBase{
 		return requestContext;
 	}
 	
-	public ServerParser getAcceptServer(){
-		return keepAliveContext.getAcceptServer();
-	}
-
 	public int getStreamId() {
 		return streamId;
 	}
@@ -152,17 +140,18 @@ public class SpdySession extends PoolBase{
 		return spdyHandler;
 	}
 	
-	/*
-	public Object getAttribute(String name){
-		return attribute.get(name);
+	public void pushResponseBodyStore(Store responseBodyStore){
+		this.responseBodyStore=responseBodyStore;
 	}
 	
-	public void setAttribute(String name, Object value) {
-		attribute.put(name,value);
+	public Store popSesponseBodyStore(){
+		Store responseBodyPeek=this.responseBodyStore;
+		this.responseBodyStore=null;
+		return responseBodyPeek;
 	}
-	*/
 	
-	public boolean isClosed(){
-		return (isInputClose&&isOutputClose);
+	public String spdyInfo(){
+		return sessionInfo;
 	}
+	
 }

@@ -355,12 +355,16 @@ public class WebServerHandler extends ServerBaseHandler {
 	// handlerが初期化されているので、判定する方法がない。
 	public void responseEnd() {
 		SpdySession spdySession=getSpdySession();
-		if(spdySession!=null){
-			spdyResponseEnd(spdySession);
-			return;
-		}
 		synchronized (this) {
-			if (isResponseEnd || getChannelId() == -1) {
+			if(isResponseEnd){
+				return;
+			}
+			isResponseEnd=true;
+			if(spdySession!=null){
+				spdyResponseEnd(spdySession);
+				return;
+			}
+			if (getChannelId() == -1) {
 				return;
 			}
 			logger.debug("responseEnd called.handler:" + toString());
@@ -378,6 +382,60 @@ public class WebServerHandler extends ServerBaseHandler {
 		return isResponseEnd;
 	}
 
+	/* accessLogは、RequestContextからの参照がきれたタイミングで自動で出力される */
+	private void doAccessLog(){
+		AccessLog accessLog = getAccessLog();
+		accessLog.endProcess();
+		accessLog.setStatusCode(responseHeader.getStatusCode());
+		accessLog.setResponseHeaderLength(responseHeaderLength);
+		accessLog.setContentType(responseHeader.getContentType());
+		accessLog.setTransferEncoding(responseHeader.getHeader(HeaderParser.TRANSFER_ENCODING_HEADER));
+		accessLog.setPlainResponseLength(responseWriteBodyApl);
+		accessLog.setResponseLength(responseWriteBodyApl);
+		accessLog.setContentEncoding(responseHeader.getHeader(HeaderParser.CONTENT_ENCODING_HEADER));
+
+		SpdySession spdySession=getSpdySession();
+		if(spdySession==null){
+			//当該リクエストでの実read長、warite長(sslの場合を考慮)
+			accessLog.setRawRead(getTotalReadLength());
+			accessLog.setRawWrite(getTotalWriteLength());
+		}else{
+			accessLog.setSpdyInfo(spdySession.spdyInfo());
+		}
+		
+		Store readPeek = popReadPeekStore();
+		if (readPeek != null && readPeek.getPutLength() >= 0) {
+			logger.debug("#endOfResponse"+readPeek.getStoreId());
+			accessLog.incTrace();
+			readPeek.close(accessLog,readPeek);//closeが完了したらaccessLogに知らせてね
+			accessLog.setRequestBodyDigest(readPeek.getDigest());
+		} else {
+			if (readPeek != null) {
+				readPeek.close();
+			}
+		}
+		
+		Store writePeek=null;
+		if(spdySession==null){
+			writePeek = popWritePeekStore();
+		}else{
+			writePeek=spdySession.popSesponseBodyStore();
+		}
+		if (writePeek != null && writePeek.getPutLength() > 0) {
+			accessLog.incTrace();
+			writePeek.close(accessLog,writePeek);//closeが完了したらaccessLogに知らせてね
+			accessLog.setResponseBodyDigest(writePeek.getDigest());
+		} else {
+			if (writePeek != null) {
+				writePeek.close();
+			}
+		}
+		//logも別スレッドが出力するのが本来だがデバッグの場合はここで出力する
+		if(logger.isDebugEnabled()){
+			accessLog.log(true);// loggerに出力（常に）
+		}
+	}
+	
 	private void endOfResponse() {
 //		boolean isGzip = false;
 		boolean isReadWrite = false;
@@ -395,54 +453,9 @@ public class WebServerHandler extends ServerBaseHandler {
 		} else {
 			isReadWrite = internalWriteBody(true, false, null);
 		}
-
 		
+		doAccessLog();
 		KeepAliveContext keepAliveContext = getKeepAliveContext();
-		AccessLog accessLog = getAccessLog();
-		accessLog.endProcess();
-		accessLog.setStatusCode(responseHeader.getStatusCode());
-		accessLog.setResponseHeaderLength(responseHeaderLength);
-		accessLog.setContentType(responseHeader.getContentType());
-		accessLog.setTransferEncoding(responseHeader.getHeader(HeaderParser.TRANSFER_ENCODING_HEADER));
-		accessLog.setPlainResponseLength(responseWriteBodyApl);
-		accessLog.setResponseLength(responseWriteBodyApl);
-		accessLog.setContentEncoding(responseHeader.getHeader(HeaderParser.CONTENT_ENCODING_HEADER));
-
-		//当該リクエストでの実read長、warite長(sslの場合を考慮)
-		accessLog.setRawRead(getTotalReadLength());
-		accessLog.setRawWrite(getTotalWriteLength());
-		
-		Store readPeek = popReadPeekStore();
-		if (readPeek != null && readPeek.getPutLength() >= 0) {
-//			accessLog.setRequestBodyTrace(readPeek.getStoreId());
-			logger.debug("#endOfResponse"+readPeek.getStoreId());
-			accessLog.incTrace();
-			readPeek.close(accessLog,readPeek);
-			accessLog.setRequestBodyDigest(readPeek.getDigest());
-		} else {
-//			accessLog.setRequestBodyTrace(Store.FREE_ID);
-			if (readPeek != null) {
-				readPeek.close();
-			}
-		}
-
-		Store writePeek = popWritePeekStore();
-		if (writePeek != null && writePeek.getPutLength() > 0) {
-//			accessLog.setResponseBodyTrace(writePeek.getStoreId());
-			accessLog.incTrace();
-			writePeek.close(accessLog,writePeek);
-			accessLog.setResponseBodyDigest(writePeek.getDigest());
-		} else {
-//			accessLog.setResponseBodyTrace(Store.FREE_ID);
-			if (writePeek != null) {
-				writePeek.close();
-			}
-		}
-		//logも別スレッドが出力するのが本来だがデバッグの場合はここで出力する
-		if(logger.isDebugEnabled()){
-			accessLog.log(true);// loggerに出力（常に）
-		}
-//		accessLog.persist();// dbに出力（場合によって）
 		keepAliveContext.endOfResponse();
 		
 		// このメソッドで実asyncWriteが出なければ、
@@ -661,6 +674,49 @@ public class WebServerHandler extends ServerBaseHandler {
 			asyncClose(null);
 		}
 	}
+	
+	private void traceHeader(boolean isHeaderOnlyResponse,ByteBuffer[] headerBuffer){
+		Store responsePeek = null;
+		MappingResult mapping=getRequestMapping();
+		if(mapping!=null){
+			switch (mapping.getLogType()) {
+			case RESPONSE_TRACE:
+			case TRACE:
+				if(headerBuffer==null){//SPDY経由の場合はヘッダバッファはない
+					headerBuffer=responseHeader.getHeaderBuffer();
+				}
+				responseHeaderLength = BuffersUtil.remaining(headerBuffer);
+				responsePeek = Store.open(true);
+				ByteBuffer[] headerDup = headerBuffer;
+				responsePeek.putBuffer(headerDup);
+				AccessLog accessLog = getAccessLog();
+				logger.debug("#flushFirstResponse"+responsePeek.getStoreId());
+				accessLog.incTrace();
+				responsePeek.close(accessLog,responsePeek);
+				accessLog.setResponseHeaderDigest(responsePeek.getDigest());
+				responsePeek = Store.open(true);
+			}
+		}
+		getAccessLog().setTimeCheckPint(AccessLog.TimePoint.responseHeader);
+		if (isHeaderOnlyResponse) {
+			/* headerだけのレスポンス */
+			getAccessLog().setTimeCheckPint(AccessLog.TimePoint.responseBody);
+			if (responsePeek != null) {
+				responsePeek.close();// ないので...
+			}
+			return;
+		}
+		/* bodyが続くレスポンス */
+		logger.debug("flushFirstResponse cid:" + getChannelId());
+		if (responsePeek != null) {
+			SpdySession spdySession=getSpdySession();
+			if(spdySession==null){
+				pushWritePeekStore(responsePeek);
+			}else{
+				spdySession.pushResponseBodyStore(responsePeek);
+			}
+		}
+	}
 
 	/**
 	 * 1リクエストで1回、初回body実書き込み時に呼び出される
@@ -674,6 +730,12 @@ public class WebServerHandler extends ServerBaseHandler {
 
 		/* bodyを確定する */
 		ByteBuffer[] bodyBuffers = BuffersUtil.concatenate(firstBody,secondBody);
+		boolean isHeaderOnlyResponse=false;
+		if (firstBody == null && secondBody == null) {
+			isHeaderOnlyResponse=true;
+		}
+		firstBody=null;
+		
 		long commitContentLength = -1;
 		if (secondBody == null) {
 			bodyBuffers = zipedIfNeed(true, bodyBuffers);
@@ -694,42 +756,10 @@ public class WebServerHandler extends ServerBaseHandler {
 			asyncClose(null);// 回線を切断
 			return;// 何をしても無駄
 		}
-		responseHeaderLength = BuffersUtil.remaining(headerBuffer);
-
-		Store responsePeek = null;
-		MappingResult mapping=getRequestMapping();
-		if(mapping!=null){
-			switch (mapping.getLogType()) {
-			case RESPONSE_TRACE:
-			case TRACE:
-				responsePeek = Store.open(true);
-				ByteBuffer[] headerDup = PoolManager.duplicateBuffers(headerBuffer);
-				responsePeek.putBuffer(headerDup);
-				AccessLog accessLog = getAccessLog();
-				logger.debug("#flushFirstResponse"+responsePeek.getStoreId());
-				accessLog.incTrace();
-				responsePeek.close(accessLog,responsePeek);
-				accessLog.setResponseHeaderDigest(responsePeek.getDigest());
-				responsePeek = Store.open(true);
-			}
-		}
-		getAccessLog().setTimeCheckPint(AccessLog.TimePoint.responseHeader);
-		if (firstBody == null && secondBody == null) {
-			/* headerだけのレスポンス */
-			getAccessLog().setTimeCheckPint(AccessLog.TimePoint.responseBody);
-			asyncWrite(WRITE_CONTEXT_LAST_HEADER, headerBuffer);
-			if (responsePeek != null) {
-				responsePeek.close();// ないので...
-			}
+		traceHeader(isHeaderOnlyResponse,PoolManager.duplicateBuffers(headerBuffer));
+		asyncWrite(WRITE_CONTEXT_LAST_HEADER, headerBuffer);
+		if(isHeaderOnlyResponse){
 			return;
-		}
-		firstBody = null;
-		/* bodyが続くレスポンス */
-		logger.debug("flushFirstResponse cid:" + getChannelId() + ":header[0]:"
-				+ headerBuffer[0]);
-		asyncWrite(WRITE_CONTEXT_HEADER, headerBuffer);
-		if (responsePeek != null) {
-			pushWritePeekStore(responsePeek);
 		}
 		if (secondBody == null) {// 全レスポンスがある場合これで最後
 			internalWriteBody(true, true, bodyBuffers);
@@ -738,52 +768,6 @@ public class WebServerHandler extends ServerBaseHandler {
 		}
 	}
 	
-	private synchronized void spdyFlushResponseHeader(SpdySession spdySession,boolean isFin){
-		setupResponseHeader();
-		spdySession.responseHeader(isFin,responseHeader);
-		isFlushFirstResponse = true;
-	}
-	
-	/* spdyの場合、firstBody出力時にヘッダを出力、バッファ処理はしない */
-	private void spdySesponseBody(SpdySession spdySession,ByteBuffer[] buffers){
-		if (isFlushFirstResponse == false){
-			if(firstBody == null) {
-				firstBody=buffers;
-				onWrittenBody();
-				return;
-			}else{
-				buffers = BuffersUtil.concatenate(firstBody,buffers);
-			}
-			spdyFlushResponseHeader(spdySession,false);
-			isFlushFirstResponse=true;
-		}
-		boolean	isFin=!needMoreResponse();
-		buffers = zipedIfNeed(isFin, buffers);
-		if(buffers==null){
-			onWrittenBody();
-			return;
-		}
-		spdySession.responseBody(isFin, buffers);
-	}
-	
-	/* spdyの場合、firstBody出力時にヘッダを出力、バッファ処理はしない */
-	private void spdyResponseEnd(SpdySession spdySession){
-		/* 必要な場合ヘッダをflushする */
-		if (isFlushFirstResponse == false){
-			if(firstBody==null){
-				//ヘッダだけのレスポンス205
-				spdyFlushResponseHeader(spdySession,true);
-			}else{
-				//bodyが１バッファだけのレスポンス
-				spdyFlushResponseHeader(spdySession,false);
-				firstBody = zipedIfNeed(true, firstBody);
-				spdySession.responseBody(true, firstBody);
-				firstBody=null;
-			}
-		}else{
-			spdySession.responseBody(true, null);
-		}
-	}
 	
 	/* 短いリクエストの場合には、contentLengthを設定しなるべくKeepAliveが有効になるように制御 
 	 * そのためにfirstBufferは即座に送信せずいちど持ちこたえる */
@@ -1077,142 +1061,56 @@ public class WebServerHandler extends ServerBaseHandler {
 	}
 	
 	/* spdy対応 */
-	/*
-	@Override
-	public KeepAliveContext getKeepAliveContext(boolean isCreate){
-		if(spdySession==null){
-			return super.getKeepAliveContext(isCreate);
-		}
-		return spdySession.getKeepAliveContext();
+	//headerをレスポンス
+	private synchronized void spdyFlushResponseHeader(SpdySession spdySession,boolean isFin){
+		setupResponseHeader();
+		traceHeader(isFin,null);
+		spdySession.responseHeader(isFin,responseHeader);
+		isFlushFirstResponse = true;
 	}
 	
-	public void setKeepAliveContext(KeepAliveContext keepAliveContext){
-		if(spdySession==null){
-			super.setKeepAliveContext(keepAliveContext);
+	/* spdyの場合、firstBody出力時にヘッダを出力、バッファ処理はしない */
+	private void spdySesponseBody(SpdySession spdySession,ByteBuffer[] buffers){
+		if (isFlushFirstResponse == false){
+			if(firstBody == null) {
+				firstBody=buffers;
+				onWrittenBody();
+				return;
+			}else{
+				buffers = BuffersUtil.concatenate(firstBody,buffers);
+			}
+			spdyFlushResponseHeader(spdySession,false);
+			isFlushFirstResponse=true;
+		}
+		boolean	isFin=!needMoreResponse();
+		buffers = zipedIfNeed(isFin, buffers);
+		if(buffers==null){
+			onWrittenBody();
 			return;
 		}
+		//bodyをレスポンス
+		spdySession.responseBody(isFin, buffers);
 	}
 	
-	@Override
-	public RequestContext getRequestContext(){
-		if(spdySession==null){
-			return super.getRequestContext();
+	/* spdyの場合、firstBody出力時にヘッダを出力、バッファ処理はしない */
+	private void spdyResponseEnd(SpdySession spdySession){
+		/* 必要な場合ヘッダをflushする */
+		if (isFlushFirstResponse == false){
+			if(firstBody==null){
+				//ヘッダだけのレスポンス205
+				spdyFlushResponseHeader(spdySession,true);
+			}else{
+				//bodyが１バッファだけのレスポンス
+				spdyFlushResponseHeader(spdySession,false);
+				firstBody = zipedIfNeed(true, firstBody);
+				//bodyをレスポンス
+				spdySession.responseBody(true, firstBody);
+				firstBody=null;
+			}
+		}else{
+			//bodyをレスポンス,既にinFinで送っているかもしれないが、spdySession側で空振りする
+			spdySession.responseBody(true, null);
 		}
-		return spdySession.getRequestContext();
+		doAccessLog();
 	}
-	
-	
-	@Override
-	public AccessLog getAccessLog(){
-		if(spdySession!=null){
-			return spdySession.getRequestContext().getAccessLog();
-		}
-		return super.getAccessLog();
-	}
-	
-	@Override
-	public long getReadTimeout() {
-		if(spdySession!=null){
-			return 60000;
-		}
-		return super.getReadTimeout();
-	}
-
-	@Override
-	public void setReadTimeout(long readTimeout) {
-		if(spdySession!=null){
-			return;
-		}
-		super.setReadTimeout(readTimeout);
-	}
-
-	@Override
-	public long getWriteTimeout() {
-		if(spdySession!=null){
-			return 60000;
-		}
-		return super.getWriteTimeout();
-	}
-
-	@Override
-	public void setWriteTimeout(long writeTimeout) {
-		if(spdySession!=null){
-			return;
-		}
-		super.setWriteTimeout(writeTimeout);
-	}
-	
-	@Override
-	public String getRemoteIp(){
-		if(spdySession!=null){
-			return spdySession.getSpdyHandler().getRemoteIp();
-		}
-		return	super.getRemoteIp();
-	}
-	
-	@Override
-	public int getRemotePort(){
-		if(spdySession!=null){
-			return spdySession.getSpdyHandler().getRemotePort();
-		}
-		return	super.getRemotePort();
-	}
-	
-	@Override
-	public String getLocalIp(){
-		if(spdySession!=null){
-			return spdySession.getSpdyHandler().getLocalIp();
-		}
-		return	super.getLocalIp();
-	}
-	
-	@Override
-	public int getLocalPort(){
-		if(spdySession!=null){
-			return spdySession.getSpdyHandler().getLocalPort();
-		}
-		return	super.getLocalPort();
-	}
-	@Override
-	*/
-	
-	/* channelContext単位の属性 */
-	/*
-	public Object getAttribute(String name){
-		if(spdySession!=null){
-			return spdySession.getAttribute(name);
-		}
-		return	super.getAttribute(name);
-	}
-	
-	@Override
-	public void setAttribute(String name, Object value) {
-		if(spdySession!=null){
-			spdySession.setAttribute(name,value);
-			return;
-		}
-		super.setAttribute(name,value);
-	}
-	
-	@Override
-	public ParameterParser getParameterParser() {
-		return getRequestContext().getParameterParser();
-	}
-	
-	@Override
-	public GzipContext getGzipContext() {
-		return getRequestContext().getGzipContext();
-	}
-	
-	@Override
-	public MappingResult getRequestMapping() {
-		return getRequestContext().getMapping();
-	}
-	
-	@Override
-	public void setRequestMapping(MappingResult mapping) {
-		getRequestContext().setMapping(mapping);
-	}
-	*/
-	
 }
