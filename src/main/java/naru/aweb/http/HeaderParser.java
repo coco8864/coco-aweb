@@ -610,6 +610,10 @@ public class HeaderParser extends PoolBase {
 		}
 		setRequestUri(uri);
 	}
+	public void setupContentHeader() {
+		contentType = getHeader(CONTENT_TYPE_HEADER);
+		contentLength = getLongHeader(CONTENT_LENGTH_HEADER);
+	}
 	
 	public void setServer(String hostHeader){
 		setServer(hostHeader,-1);

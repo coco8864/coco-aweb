@@ -38,28 +38,17 @@ public abstract class ServerBaseHandler extends SslHandler {
 	public static final String ATTRIBUTE_VELOCITY_PAGE="velocityPage";
 	public static final String ATTRIBUTE_VELOCITY_REPOSITORY="velocityRepository";
 	public static final String ATTRIBUTE_KEEPALIVE_CONTEXT="keepAliveContext";
-	
+	public static final String ATTRIBUTE_SPDY_SESSION="spdySession";
 	public static final String ATTRIBUTE_USER="loginUser";
 	
-	//spdy経由で呼び出されている場合設定される、この場合、ChannelHandler系のメソッドは使えない
-	private SpdySession spdySession;
-	
-	public void recycle() {
-		spdySession=null;
-		super.recycle();
-	}
-
 	@Override
 	public ChannelHandler forwardHandler(SslHandler handler) {
-		if(spdySession!=null&&handler instanceof ServerBaseHandler){
-			ServerBaseHandler serverHandler=(ServerBaseHandler)handler;
-			serverHandler.spdySession=spdySession;
-			spdySession.setServerHandler(serverHandler);
-			spdySession=null;
+		SpdySession spdySession=getSpdySession();
+		if(spdySession!=null){
+			spdySession.setServerHandler((ServerBaseHandler)handler);
 		}
 		return super.forwardHandler(handler);
 	}
-	
 	
 	public RequestContext getRequestContext(){
 		KeepAliveContext keepAliveContext=getKeepAliveContext();
@@ -145,16 +134,16 @@ public abstract class ServerBaseHandler extends SslHandler {
 	}
 
 	public SpdySession getSpdySession() {
-		return spdySession;
+		RequestContext requestContext=getRequestContext();
+		if(requestContext==null){
+			return null;
+		}
+		return (SpdySession)requestContext.getAttribute(ATTRIBUTE_SPDY_SESSION);
 	}
 
-	public void setSpdySession(SpdySession spdySession) {
-		this.spdySession = spdySession;
-	}
-	
 	@Override
 	public boolean isSsl() {
-		if(spdySession!=null){
+		if(getSpdySession()!=null){
 			return true;
 		}
 		return	super.isSsl();

@@ -75,9 +75,17 @@ public class NameValueBuilder {
 		
 		Set<String> headerNames=header.getHeaderNames();
 		putLength(headerNames.size()+2);
-		putString("status");
+		if (this.version == SpdyFrame.VERSION_V2) {
+			putString("status");
+		} else if (this.version == SpdyFrame.VERSION_V3) {
+			putString(":status");
+		}
 		putString(status);
-		putString("version");
+		if (this.version == SpdyFrame.VERSION_V2) {
+			putString("version");
+		} else if (this.version == SpdyFrame.VERSION_V3) {
+			putString(":version");
+		}
 		putString(version);
 		StringBuffer sb=new StringBuffer();
 		for(String headerName:headerNames){

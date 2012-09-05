@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -237,10 +238,10 @@ public class SpdyFrame {
 	private int pingId;
 	
 	private int associatedToStreamId;
-	private char pri;//v2 2bit v3 3bit
+	private short pri;//v2 2bit v3 3bit
 	private short slot;//v3‚Ì‚Ý
 	private int statusCode;
-	private HeaderParser header;
+	private Map<String,String[]> header;
 	
 	private NameValueParser nameValueParser=new NameValueParser();
 	private NameValueBuilder nameValueBuilder=new NameValueBuilder();
@@ -262,9 +263,55 @@ public class SpdyFrame {
 		parseStat=ParseStat.START;
 		dataLength=0;
 		curDataPos=0;
+		PoolManager.poolBufferInstance(dataBuffers);
 		dataBuffers.clear();
 		workBuffer.clear();
 		workBuffer.order(ByteOrder.BIG_ENDIAN);
+	}
+	
+	public void setupHeader(HeaderParser requestHeader){
+		for(String name:header.keySet()){
+			String[] values=header.get(name);
+			if(version==VERSION_V2){
+				if("method".equals(name)){
+					requestHeader.setMethod(values[0]);
+					continue;
+				}else if("url".equals(name)){
+					requestHeader.parseUri(values[0]);
+					continue;
+				}else if("scheme".equals(name)){
+					continue;
+				}else if("version".equals(name)){
+					requestHeader.setReqHttpVersion(values[0]);
+					continue;
+				}else if("host".equals(name)){
+					String host=values[0];
+					requestHeader.setServer(host, 443);
+					requestHeader.setHeader(HeaderParser.HOST_HEADER,host);
+					continue;
+				}
+			}else if(version==VERSION_V3){
+				if(":method".equals(name)){
+					requestHeader.setMethod(values[0]);
+					continue;
+				}else if(":path".equals(name)){
+					requestHeader.parseUri(values[0]);
+					continue;
+				}else if(":scheme".equals(name)){
+					continue;
+				}else if(":version".equals(name)){
+					requestHeader.setReqHttpVersion(values[0]);
+					continue;
+				}else if(":host".equals(name)){
+					String host=values[0];
+					requestHeader.setServer(host, 443);
+					requestHeader.setHeader(HeaderParser.HOST_HEADER,host);
+					continue;
+				}
+			}
+			requestHeader.setHeader(name, values);
+		}
+		requestHeader.setupContentHeader();
 	}
 	
 	public ByteBuffer[] buildSynReply(int streamId,char flags,HeaderParser header){
@@ -325,7 +372,7 @@ public class SpdyFrame {
 		case SpdyFrame.TYPE_SYN_STREAM:
 			streamId=getIntFromData();
 			associatedToStreamId=getIntFromData();
-			short pri=getShortFromData();
+			pri=getShortFromData();
 			ByteBuffer[] dataBuffer=getDataBuffers();
 			header=nameValueParser.decode(dataBuffer);
 			break;
@@ -526,12 +573,19 @@ public class SpdyFrame {
 		return statusCode;
 	}
 
-	public HeaderParser getHeader() {
-		return header;
-	}
+//	public HeaderParser getHeader() {
+//		return header;
+//	}
 
 	public int getPingId() {
 		return pingId;
 	}
 	
+	public int getVersion(){
+		return version;
+	}
+	
+	public int getPri(){
+		return pri;
+	}
 }

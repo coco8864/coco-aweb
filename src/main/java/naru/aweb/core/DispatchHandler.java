@@ -30,6 +30,7 @@ import naru.aweb.mapping.Mapper;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.spdy.SpdyConfig;
 import naru.aweb.spdy.SpdyHandler;
+import naru.aweb.spdy.SpdySession;
 import naru.aweb.util.ServerParser;
 import net.sf.json.JSONObject;
 
@@ -153,8 +154,7 @@ public class DispatchHandler extends ServerBaseHandler {
 	}
 
 	public void onRead(Object userContext, ByteBuffer[] buffers) {
-		logger.debug("#onRead.cid:" + getChannelId() + ":buffers.hashCode:"
-				+ buffers.hashCode());
+		logger.debug("#onRead.cid:" + getChannelId() + ":buffers.hashCode:"+ buffers.hashCode());
 		if (isFirstRead) {
 			if (startTime == null) {// keepAliveからのリクエストの場合ここがリクエストの基点となる
 				startTime = new Date();
@@ -317,9 +317,15 @@ public class DispatchHandler extends ServerBaseHandler {
 			// requestHeaderのpeek処理
 			Store readPeekStore = Store.open(true);
 			// headerPageには、読みすぎてしまったbody部分も入っているのでカット
-			ByteBuffer[] buffers = headerPage.getBuffer();
-			BuffersUtil.cut(buffers, connectHeaderLength
-					+ requestHeader.getHeaderLength());
+			SpdySession spdySession=getSpdySession();
+			ByteBuffer[] buffers=null;
+			if(spdySession==null){
+				buffers = headerPage.getBuffer();
+				BuffersUtil.cut(buffers, connectHeaderLength+requestHeader.getHeaderLength());
+			}else{
+				buffers=spdySession.getRequestHeader().getHeaderBuffer();
+				accessLog.setRequestHeaderLength(BuffersUtil.remaining(buffers));
+			}
 			readPeekStore.putBuffer(buffers);
 			logger.debug("#setupTraceLog" + readPeekStore.getStoreId());
 			accessLog.incTrace();
@@ -702,10 +708,6 @@ public class DispatchHandler extends ServerBaseHandler {
 			SpdyConfig spdyConfig=getConfig().getSpsyConfig();
 			spdyConfig.setNextProtocols(engine);
 		}
-//		if(engine instanceof sslnpn.ssl.SSLEngineImpl){
-//			sslNpnEngine=(sslnpn.ssl.SSLEngineImpl)engine;
-//			sslNpnEngine.setAdvertisedNextProtocols(SpdyFrame.PROTOCOL_V2,"http/1.1");
-//		}
 		this.sslEngine=engine;
 		return engine;
 	}

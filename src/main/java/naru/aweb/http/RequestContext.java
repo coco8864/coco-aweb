@@ -23,7 +23,7 @@ public class RequestContext extends PoolBase {
 	private KeepAliveContext keepAliveContext;
 	private AccessLog accessLog;
 	private MappingResult mapping;
-	private ChunkContext chunkContext;//使わない
+//	private ChunkContext chunkContext;//使わない
 	private ChunkContext requestChunkContext=new ChunkContext();
 	private GzipContext gzipContext;//必要な場合に設定
 	private AuthSession authSession;
@@ -39,7 +39,6 @@ public class RequestContext extends PoolBase {
 			mapping.unref();
 			mapping=null;
 		}
-		chunkContext=null;
 		if(accessLog!=null){
 			accessLog.decTrace();//RequestContextからの参照を切る
 			accessLog=null;
@@ -121,14 +120,6 @@ public class RequestContext extends PoolBase {
 		return accessLog;
 	}
 
-	public ChunkContext getChunkContext() {
-		return chunkContext;
-	}
-
-	public void setChunkContext(ChunkContext chunkContext) {
-		this.chunkContext = chunkContext;
-	}
-
 	public HeaderParser getRequestHeader() {
 		return requestHeader;
 	}
@@ -170,9 +161,5 @@ public class RequestContext extends PoolBase {
 
 	public ChunkContext getRequestChunkContext() {
 		return requestChunkContext;
-	}
-
-	public void setRequestChunkContext(ChunkContext requestChunkContext) {
-		this.requestChunkContext = requestChunkContext;
 	}
 }

@@ -422,6 +422,10 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	@Column(name="THINKING_TIME",defaultValue="0")
 	private long thinkingTime;//リクエストする前に待った時間,stressテストのため
 
+	@Persistent
+	@Column(name="SPDY_INFO",jdbcType="VARCHAR", length=128)
+	private String spdyInfo;//spdy version,streamId,pri,slot,handler cidを設定
+	
 	public AccessLog(){
 	}
 	
@@ -480,7 +484,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 			webClientLog.unref();
 			webClientLog=null;
 		}
-//		requestHeaderStore=requestBodyStore=responseHeaderStore=responseBodyStore;
+		spdyInfo=null;
 	}
 	@NotPersistent
 	private boolean isSkipPhlog=false;
@@ -576,6 +580,13 @@ public class AccessLog extends PoolBase implements BufferGetter{
 			sb.append(getResponseBodyTime());//response body処理を開始した時間
 			sb.append(",");
 			sb.append(getChannelId());
+			sb.append(",");
+			String spdyInfo=getSpdyInfo();
+			if(spdyInfo==null){
+				sb.append("*");
+			}else{
+				sb.append(spdyInfo);
+			}
 		}
 		String logText=sb.toString();
 		if(debug){
@@ -1035,6 +1046,14 @@ public class AccessLog extends PoolBase implements BufferGetter{
 
 	public void setWebClientLog(WebClientLog webClientLog) {
 		this.webClientLog = webClientLog;
+	}
+
+	public String getSpdyInfo() {
+		return spdyInfo;
+	}
+
+	public void setSpdyInfo(String spdyInfo) {
+		this.spdyInfo = spdyInfo;
 	}
 
 }
