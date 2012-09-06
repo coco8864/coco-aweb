@@ -1,6 +1,7 @@
 package naru.aweb.spdy;
 
 import java.nio.ByteBuffer;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,7 +23,7 @@ public class SpdyHandler extends ServerBaseHandler {
 	private static Logger logger=Logger.getLogger(SpdyHandler.class);
 	
 	private SpdyFrame frame=new SpdyFrame();
-	private Map<Integer,SpdySession> sessions=new HashMap<Integer,SpdySession>();
+	private Map<Integer,SpdySession> sessions=Collections.synchronizedMap(new HashMap<Integer,SpdySession>());
 
 	public boolean onHandshaked(String protocol) {
 		logger.debug("#handshaked.cid:" + getChannelId() +":"+protocol);
@@ -56,6 +57,9 @@ public class SpdyHandler extends ServerBaseHandler {
 	private void doFrame(){
 		int streamId=frame.getStreamId();
 		SpdySession session=null;
+		if(streamId>0){
+			session=sessions.get(streamId);
+		}
 		
 		short type=frame.getType();
 		logger.debug("SpdyHandler#doFrame cid:"+getChannelId()+":streamId:"+streamId+":" +type);
@@ -67,7 +71,7 @@ public class SpdyHandler extends ServerBaseHandler {
 				session.onReadPlain(dataBuffer,frame.isFin());
 			}else{
 				logger.error("illegal streamId:"+streamId);
-				PoolManager.poolBufferInstance(dataBuffer);
+				sendReset(streamId, SpdyFrame.RSTST_INVALID_STREAM);
 			}
 			break;
 		case SpdyFrame.TYPE_SYN_STREAM:
@@ -98,14 +102,27 @@ public class SpdyHandler extends ServerBaseHandler {
 		case SpdyFrame.TYPE_PING:
 			int pingId=frame.getPingId();
 			if(pingId%2==1){
-				ByteBuffer[] pingFrame=frame.buildPIngFrame(pingId);
-				asyncWrite(null, pingFrame);
+				sendPing(pingId);
 			}
 			break;
-		case SpdyFrame.TYPE_HEADERS:
 		case SpdyFrame.TYPE_GOAWAY:
+			resetAll();
+			asyncClose(null);
+			break;
+		case SpdyFrame.TYPE_SETTINGS:
+		case SpdyFrame.TYPE_HEADERS:
 		default:
 		}
+	}
+	
+	private void sendReset(int streamId,int statusCode){
+		ByteBuffer[] resetFrame=frame.buildRstStream(streamId, statusCode);
+		asyncWrite(null, resetFrame);
+	}
+	
+	private void sendPing(int pingId){
+		ByteBuffer[] pingFrame=frame.buildPIngFrame(pingId);
+		asyncWrite(null, pingFrame);
 	}
 	
 	private static final String WRITE_CONTEXT_BODY = "writeContextBody";
@@ -159,20 +176,22 @@ public class SpdyHandler extends ServerBaseHandler {
 	//SpdySessionÇ™é©ï™ÇÃèIóπÇí ímÇµÇƒÇ≠ÇÈ
 	void endOfSession(int streamId){
 		SpdySession session;
-		synchronized(sessions){
-			session=sessions.remove(streamId);
-		}
+		session=sessions.remove(streamId);
 		if(session!=null){
 			session.unref();
 		}
 	}
 	
-	public void onFinished() {
-		logger.debug("#finished.cid:"+getChannelId());
+	private void resetAll(){
 		Object[] ss=sessions.values().toArray();
 		for(Object session:ss){
 			((SpdySession)session).onRst(SpdyFrame.RSTST_REFUSED_STREAM);
 		}
+	}
+	
+	public void onFinished() {
+		logger.debug("#finished.cid:"+getChannelId());
+		resetAll();
 		super.onFinished();
 	}
 	
@@ -192,6 +211,6 @@ public class SpdyHandler extends ServerBaseHandler {
 		return frame.getVersion();
 	}
 	public int getSpdyPri(){
-		return frame.getPri();
+		return frame.getPriority();
 	}
 }
