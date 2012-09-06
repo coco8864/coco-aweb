@@ -176,6 +176,16 @@ public class DispatchHandler extends ServerBaseHandler {
 	public void onReadPlain(Object userContext, ByteBuffer[] buffers) {
 		logger.debug("#onReadPlain.cid:" + getChannelId()+ ":buffers.hashCode:" + buffers.hashCode());
 		if(isSpdyAvailable){
+			getRequestContext().allocAccessLog();
+			AccessLog accessLog = getAccessLog();
+			accessLog.setStartTime(startTime);
+			accessLog.setConnectTime(connectTime);
+			accessLog.setHandshakeTime(handshakeTime);
+			accessLog.setIp(getRemoteIp());
+			accessLog.setRequestLine(nextProtocol);
+			accessLog.setSourceType(AccessLog.SOURCE_TYPE_SPDY);
+			accessLog.setChannelId(getChannelId());
+			accessLog.setSpdyInfo(nextProtocol);
 			SpdyHandler handler=(SpdyHandler)forwardHandler(SpdyHandler.class);
 			if(handler!=null){
 				logger.debug("#onReadPlain.cid:" + getChannelId()+ "fowardHandler nextProtocol:"+nextProtocol );

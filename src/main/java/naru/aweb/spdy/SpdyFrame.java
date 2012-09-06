@@ -350,7 +350,7 @@ public class SpdyFrame {
 		case SpdyFrame.TYPE_GOAWAY:
 			lastGoodStreamId=getIntFromData();
 			if(version==VERSION_V3){
-				statusCode=getIntFromData();
+//				statusCode=getIntFromData();
 			}
 			break;
 		case SpdyFrame.TYPE_SETTINGS:
