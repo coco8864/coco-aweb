@@ -63,7 +63,6 @@ function setHtml5(){
 
 function setFileCache(){
   var isFileCache=ph.jQuery("#isFileCache").attr('checked');
-
   ph.admin.doCommand('setFileCache',{
     isChache:isFileCache,
     isFlush:!isFileCache
@@ -71,6 +70,19 @@ function setFileCache(){
   function(x){
 ##FileCache設定完了
     alert('FileCache設定完了');
+  });
+}
+
+function setSpdyProtocol(){
+  var isSpdy2=ph.jQuery("#spdy2").attr('checked');
+  var isSpdy3=ph.jQuery("#spdy3").attr('checked');
+  ph.admin.doCommand('setSpdyProtocol',{
+   isSpdy2:isSpdy2,
+   isSpdy3:isSpdy3,
+  },
+  function(x){
+##Spdy設定完了
+    alert('Spdy設定完了');
   });
 }
 
@@ -406,6 +418,41 @@ file cache:<input type="checkBox" name="isFileCache" id="isFileCache"
 checked="checked"
 #end
  onclick='setFileCache();' /><br>
+</div>
+
+<Hr/>
+
+
+#set ($spdy2=false)
+#set ($spdy3=false)
+#foreach($prot in ${config.getSpdyProtocols()})
+ #if($prot=='spdy/2')
+  #set ($spdy2=true)
+ #end
+ #if($prot=='spdy/3')
+  #set ($spdy3=true)
+ #end
+#end
+<H2 onclick="ph.jQuery('#spdySetting').toggle();">+Spdy設定</H2>
+<div class="settingItem" id="spdySetting">
+current: 
+#set ($spdySession=${handler.getSpdySession()})
+#if ($spdySession)
+ spdy/${spdySession.spdyInfo()}
+#else
+ http
+#end
+</br>
+spdy/2:<input type="checkBox" name="spdy2" id="spdy2"
+#if($spdy2)
+checked="checked"
+#end
+ onclick='setSpdyProtocol();' />
+spdy/3:<input type="checkBox" name="spdy3" id="spdy3"
+#if($spdy3)
+checked="checked"
+#end
+ onclick='setSpdyProtocol();' />
 </div>
 
 <Hr/>
