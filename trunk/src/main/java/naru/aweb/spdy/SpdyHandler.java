@@ -8,6 +8,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import naru.async.pool.PoolManager;
+import naru.aweb.config.AccessLog;
 import naru.aweb.core.DispatchHandler;
 import naru.aweb.core.ServerBaseHandler;
 import naru.aweb.http.HeaderParser;
@@ -24,10 +25,11 @@ public class SpdyHandler extends ServerBaseHandler {
 	
 	private SpdyFrame frame=new SpdyFrame();
 	private Map<Integer,SpdySession> sessions=Collections.synchronizedMap(new HashMap<Integer,SpdySession>());
-
+	private long frameCount[];
 	public boolean onHandshaked(String protocol) {
 		logger.debug("#handshaked.cid:" + getChannelId() +":"+protocol);
 		frame.init(protocol);
+		frameCount=new long[SpdyFrame.TYPE_WINDOW_UPDATE+1];
 		return false;//é©óÕÇ≈asyncReadÇµÇΩÇΩÇﬂ
 	}
 	
@@ -60,8 +62,8 @@ public class SpdyHandler extends ServerBaseHandler {
 		if(streamId>0){
 			session=sessions.get(streamId);
 		}
-		
 		short type=frame.getType();
+		frameCount[type]++;//ìùåvèÓïÒ
 		logger.debug("SpdyHandler#doFrame cid:"+getChannelId()+":streamId:"+streamId+":" +type);
 		switch(type){
 		case SpdyFrame.TYPE_DATA_FRAME:
@@ -192,6 +194,18 @@ public class SpdyHandler extends ServerBaseHandler {
 	public void onFinished() {
 		logger.debug("#finished.cid:"+getChannelId());
 		resetAll();
+		AccessLog accessLog=getAccessLog();
+		accessLog.endProcess();
+		accessLog.setRawRead(getTotalReadLength());
+		accessLog.setRawWrite(getTotalWriteLength());
+		StringBuffer sb=new StringBuffer();
+		for(int i=0;i<frameCount.length;i++){
+			sb.append(i);
+			sb.append(':');
+			sb.append(frameCount[i]);
+			sb.append(' ');
+		}
+		accessLog.setRequestLine(sb.toString());
 		super.onFinished();
 	}
 	
