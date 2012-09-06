@@ -38,6 +38,7 @@ import naru.aweb.mapping.Mapper;
 import naru.aweb.queue.QueueManager;
 import naru.aweb.secure.SslContextPool;
 import naru.aweb.spdy.SpdyConfig;
+import naru.aweb.spdy.SpdyFrame;
 import naru.aweb.util.JdoUtil;
 import naru.aweb.util.JsonUtil;
 import naru.aweb.util.ServerParser;
@@ -58,6 +59,7 @@ import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.log4j.Logger;
 
 public class Config {
+	private static final String SPDY_PROTOCOLS = "spdyProtocols";
 	private static final String USE_FILE_CACHE = "useFileCache";
 	private static final String PHANTOM_SERVER_HEADER = "phantomServerHeader";
 	private static final String KEEP_ALIVE_TIMEOUT = "keepAliveTimeout";
@@ -102,10 +104,7 @@ public class Config {
 	private File appsDocumentRoot;//配備先ディレクトリ
 	private File injectionDir;// 注入コンテンツを格納するディレクトリ
 	private static SSLContext sslContext;
-//	private File baseDir;
 	private File phantomHome;
-//	private Set<RealHost> realHosts = new HashSet<RealHost>();
-//	private Map<ServerParser, RealHost> serverRealHostMap = new HashMap<ServerParser, RealHost>();
 	private Mapper mapper;
 	private Authenticator authenticator;
 	private Authorizer authorizer;
@@ -118,10 +117,7 @@ public class Config {
 	private Configuration configuration = null;
 	private QueueletContext queueletContext = null;
 	private Object stasticsObject;
-	// private Map authHeaders;
-	// private Map replayHistory;
-	// private Map replayPaths;
-	// private Pattern exceptProxyDomainsPattern;
+	private String[] spdyProtocols;
 	private File tmpDir;
 	private DiskFileItemFactory uploadItemFactory;
 	private File settingDir;
@@ -757,6 +753,10 @@ public class Config {
 		broadcaster=new Broadcaster(this);
 		wsqManager=WsqManager.getInstance();
 		
+		spdyProtocols = getStringArray(SPDY_PROTOCOLS);
+		if(spdyProtocols==null||spdyProtocols.length==0){
+			spdyProtocols=new String[]{SpdyFrame.PROTOCOL_V3,SpdyFrame.PROTOCOL_V2,SpdyFrame.PROTOCOL_HTTP_11};
+		}
 		boolean useCache=getBoolean(USE_FILE_CACHE);
 		getFileCache().setUseCache(useCache);
 		return true;
@@ -1246,5 +1246,14 @@ public class Config {
 	
 	public SpdyConfig getSpsyConfig(){
 		return spdyConfig;
+	}
+
+	public String[] getSpdyProtocols() {
+		return spdyProtocols;
+	}
+
+	public void setSpdyProtocols(String[] spdyProtocols) {
+		setStringArray(configuration, SPDY_PROTOCOLS, spdyProtocols);
+		this.spdyProtocols = spdyProtocols;
 	}
 }
