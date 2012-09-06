@@ -67,7 +67,7 @@ public class NameValueBuilder {
 	
 	private void build(HeaderParser header){
 		String status=header.getStatusCode();
-		String version=header.getResHttpVersion();
+		String v=header.getResHttpVersion();
 		//”O‚Ì‚½‚ß
 		//String transfer=header.getHeader(HeaderParser.TRANSFER_ENCODING_HEADER);
 		//header.removeHeader(HeaderParser.TRANSFER_ENCODING_HEADER);
@@ -75,18 +75,18 @@ public class NameValueBuilder {
 		
 		Set<String> headerNames=header.getHeaderNames();
 		putLength(headerNames.size()+2);
-		if (this.version == SpdyFrame.VERSION_V2) {
+		if (version == SpdyFrame.VERSION_V2) {
 			putString("status");
-		} else if (this.version == SpdyFrame.VERSION_V3) {
+		} else if (version == SpdyFrame.VERSION_V3) {
 			putString(":status");
 		}
 		putString(status);
-		if (this.version == SpdyFrame.VERSION_V2) {
+		if (version == SpdyFrame.VERSION_V2) {
 			putString("version");
-		} else if (this.version == SpdyFrame.VERSION_V3) {
+		} else if (version == SpdyFrame.VERSION_V3) {
 			putString(":version");
 		}
-		putString(version);
+		putString(v);
 		StringBuffer sb=new StringBuffer();
 		for(String headerName:headerNames){
 			List<String>values=header.getHeaders(headerName);

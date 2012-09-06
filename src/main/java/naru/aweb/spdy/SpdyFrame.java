@@ -234,13 +234,15 @@ public class SpdyFrame {
 	private int curDataPos;
 	private char flags;
 	private short type;
+	
 	private int streamId;
 	private int pingId;
-	
 	private int associatedToStreamId;
 	private short pri;//v2 2bit v3 3bit
 	private short slot;//v3‚Ì‚Ý
 	private int statusCode;
+	private int lastGoodStreamId;
+	
 	private Map<String,String[]> header;
 	
 	private NameValueParser nameValueParser=new NameValueParser();
@@ -261,57 +263,13 @@ public class SpdyFrame {
 	
 	private void prepareNext(){
 		parseStat=ParseStat.START;
+		streamId=-1;
 		dataLength=0;
 		curDataPos=0;
 		PoolManager.poolBufferInstance(dataBuffers);
 		dataBuffers.clear();
 		workBuffer.clear();
 		workBuffer.order(ByteOrder.BIG_ENDIAN);
-	}
-	
-	public void setupHeader(HeaderParser requestHeader){
-		for(String name:header.keySet()){
-			String[] values=header.get(name);
-			if(version==VERSION_V2){
-				if("method".equals(name)){
-					requestHeader.setMethod(values[0]);
-					continue;
-				}else if("url".equals(name)){
-					requestHeader.parseUri(values[0]);
-					continue;
-				}else if("scheme".equals(name)){
-					continue;
-				}else if("version".equals(name)){
-					requestHeader.setReqHttpVersion(values[0]);
-					continue;
-				}else if("host".equals(name)){
-					String host=values[0];
-					requestHeader.setServer(host, 443);
-					requestHeader.setHeader(HeaderParser.HOST_HEADER,host);
-					continue;
-				}
-			}else if(version==VERSION_V3){
-				if(":method".equals(name)){
-					requestHeader.setMethod(values[0]);
-					continue;
-				}else if(":path".equals(name)){
-					requestHeader.parseUri(values[0]);
-					continue;
-				}else if(":scheme".equals(name)){
-					continue;
-				}else if(":version".equals(name)){
-					requestHeader.setReqHttpVersion(values[0]);
-					continue;
-				}else if(":host".equals(name)){
-					String host=values[0];
-					requestHeader.setServer(host, 443);
-					requestHeader.setHeader(HeaderParser.HOST_HEADER,host);
-					continue;
-				}
-			}
-			requestHeader.setHeader(name, values);
-		}
-		requestHeader.setupContentHeader();
 	}
 	
 	public ByteBuffer[] buildSynReply(int streamId,char flags,HeaderParser header){
@@ -390,8 +348,15 @@ public class SpdyFrame {
 			pingId=getIntFromData();
 			break;
 		case SpdyFrame.TYPE_GOAWAY:
-		case SpdyFrame.TYPE_HEADERS:
+			lastGoodStreamId=getIntFromData();
+			if(version==VERSION_V3){
+				statusCode=getIntFromData();
+			}
+			break;
 		case SpdyFrame.TYPE_SETTINGS:
+			
+			break;
+		case SpdyFrame.TYPE_HEADERS:
 		case SpdyFrame.TYPE_WINDOW_UPDATE:
 		case SpdyFrame.TYPE_SYN_REPLY://—ˆ‚È‚¢
 		}
@@ -561,37 +526,73 @@ public class SpdyFrame {
 		}
 		throw new RuntimeException("getIntFromData");
 	}
-
+	public void setupHeader(HeaderParser requestHeader){
+		for(String name:header.keySet()){
+			String[] values=header.get(name);
+			if(version==VERSION_V2){
+				if("method".equals(name)){
+					requestHeader.setMethod(values[0]);
+					continue;
+				}else if("url".equals(name)){
+					requestHeader.parseUri(values[0]);
+					continue;
+				}else if("scheme".equals(name)){
+					continue;
+				}else if("version".equals(name)){
+					requestHeader.setReqHttpVersion(values[0]);
+					continue;
+				}else if("host".equals(name)){
+					String host=values[0];
+					requestHeader.setServer(host, 443);
+					requestHeader.setHeader(HeaderParser.HOST_HEADER,host);
+					continue;
+				}
+			}else if(version==VERSION_V3){
+				if(":method".equals(name)){
+					requestHeader.setMethod(values[0]);
+					continue;
+				}else if(":path".equals(name)){
+					requestHeader.parseUri(values[0]);
+					continue;
+				}else if(":scheme".equals(name)){
+					continue;
+				}else if(":version".equals(name)){
+					requestHeader.setReqHttpVersion(values[0]);
+					continue;
+				}else if(":host".equals(name)){
+					String host=values[0];
+					requestHeader.setServer(host, 443);
+					requestHeader.setHeader(HeaderParser.HOST_HEADER,host);
+					continue;
+				}
+			}
+			requestHeader.setHeader(name, values);
+		}
+		requestHeader.setupContentHeader();
+	}
+	
 	public char getFlags() {
 		return flags;
 	}
-	
 	public boolean isFin(){
 		return (flags&FLAG_FIN)!=0;
 	}
-	
-
 	public int getAssociatedToStreamId() {
 		return associatedToStreamId;
 	}
-
 	public int getStatusCode() {
 		return statusCode;
 	}
-
-//	public HeaderParser getHeader() {
-//		return header;
-//	}
-
 	public int getPingId() {
 		return pingId;
 	}
-	
 	public int getVersion(){
 		return version;
 	}
-	
-	public int getPri(){
+	public short getPriority(){
 		return pri;
+	}
+	public short getSlot(){
+		return slot;
 	}
 }
