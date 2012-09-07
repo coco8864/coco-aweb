@@ -406,15 +406,15 @@ public class AdminHandler extends WebServerHandler{
 			config.setUseFileCache("true".equalsIgnoreCase(isChache));
 			responseJson(true);
 		}else if("setSpdyProtocol".equals(cmd)){
-			String isSpdy2=parameter.getParameter("isSpdy2");
 			String isSpdy3=parameter.getParameter("isSpdy3");
+			String isSpdy2=parameter.getParameter("isSpdy2");
 			StringBuffer protocol=new StringBuffer();
-			if("true".equalsIgnoreCase(isSpdy2)){
-				protocol.append(SpdyFrame.PROTOCOL_V2);
-				protocol.append(",");
-			}
 			if("true".equalsIgnoreCase(isSpdy3)){
 				protocol.append(SpdyFrame.PROTOCOL_V3);
+				protocol.append(",");
+			}
+			if("true".equalsIgnoreCase(isSpdy2)){
+				protocol.append(SpdyFrame.PROTOCOL_V2);
 				protocol.append(",");
 			}
 			protocol.append(SpdyFrame.PROTOCOL_HTTP_11);
