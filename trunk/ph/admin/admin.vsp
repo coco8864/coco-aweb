@@ -86,8 +86,7 @@ ph.log("tabs ajaxOptions success.index:"+index +":anchor:"+anchor);
 		},
 		select: function(event, ui) {
 			window.location.hash = ui.tab.hash;
-		},
-		selected:0
+		}
 	});
 	jQuery('#debugLi').hide();
 	window.onhashchange();
