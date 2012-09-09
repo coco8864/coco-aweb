@@ -1111,8 +1111,13 @@ public class WebServerHandler extends ServerBaseHandler {
 				firstBody=null;
 			}
 		}else{
+			GzipContext gzipContext = getGzipContext();
+			ByteBuffer[] lastBuffer=null;
+			if (gzipContext != null) {
+				lastBuffer = gzipContext.getZipedBuffer(true);
+			}
 			//bodyをレスポンス,既にinFinで送っているかもしれないが、spdySession側で空振りする
-			spdySession.responseBody(true, null);
+			spdySession.responseBody(true, lastBuffer);
 		}
 		doAccessLog();
 	}
