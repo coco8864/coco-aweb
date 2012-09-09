@@ -244,13 +244,14 @@ public class SpdyFrame {
 	private int lastGoodStreamId;
 	
 	private Map<String,String[]> header;
-	
 	private NameValueParser nameValueParser=new NameValueParser();
 	private NameValueBuilder nameValueBuilder=new NameValueBuilder();
 	
 	private List<ByteBuffer> dataBuffers=new ArrayList<ByteBuffer>();
+	private long frameLimit;
 	
-	public void init(String protocol){
+	public void init(String protocol,long frameLimit){
+		this.frameLimit=frameLimit;
 		if(PROTOCOL_V2.equals(protocol)){
 			version=VERSION_V2;
 		}else if(PROTOCOL_V3.equals(protocol)){
@@ -258,10 +259,14 @@ public class SpdyFrame {
 		}
 		nameValueParser.init(version);
 		nameValueBuilder.init(version);
+		parseStat=ParseStat.START;
 		prepareNext();
 	}
 	
-	private void prepareNext(){
+	public void prepareNext(){
+		if(isError()){//一旦エラーになったら以降parseできない
+			return;
+		}
 		parseStat=ParseStat.START;
 		streamId=-1;
 		dataLength=0;
@@ -292,6 +297,22 @@ public class SpdyFrame {
 		}
 		frame.flip();
 		return BuffersUtil.concatenate(frame,buffers,null);
+	}
+	
+	public ByteBuffer[] buildGoaway(int lastGoodStreamId,int statusCode){
+		ByteBuffer frame = PoolManager.getBufferInstance();
+		frame.order(ByteOrder.BIG_ENDIAN);
+		int length=0;
+		if(version==VERSION_V2){
+			length=4;
+		}else if(version==VERSION_V3){
+			length=8;
+		}
+		setupControlFrame(frame, (short)version, (short)TYPE_GOAWAY, (char)0, length);
+		frame.putInt(lastGoodStreamId);
+		frame.putInt(statusCode);
+		frame.flip();
+		return BuffersUtil.toByteBufferArray(frame);
 	}
 	
 	public ByteBuffer[] buildRstStream(int streamId,int statusCode){
@@ -339,6 +360,9 @@ public class SpdyFrame {
 			}
 			ByteBuffer[] dataBuffer=getDataBuffers();
 			header=nameValueParser.decode(dataBuffer);
+			if(header==null){
+				parseStat=ParseStat.ERROR;
+			}
 			break;
 		case SpdyFrame.TYPE_RST_STREAM:
 			streamId=getIntFromData();
@@ -350,16 +374,29 @@ public class SpdyFrame {
 		case SpdyFrame.TYPE_GOAWAY:
 			lastGoodStreamId=getIntFromData();
 			if(version==VERSION_V3){
-//				statusCode=getIntFromData();
+				statusCode=getIntFromData();
 			}
 			break;
 		case SpdyFrame.TYPE_SETTINGS:
-			
+			//TODO 今のところ確認だけ
+			int numberOfEntries=getIntFromData();
+			logger.debug("spdy settings numberOfEntries:"+numberOfEntries);
+			for(int i=0;i<numberOfEntries;i++){
+				int id=getIntFromData();
+				int flag=id>>24;
+				id&=0x00FFFF;
+				int value=getIntFromData();
+				logger.debug("flag:"+flag +":id:"+id +":value:"+value);
+			}
 			break;
 		case SpdyFrame.TYPE_HEADERS:
 		case SpdyFrame.TYPE_WINDOW_UPDATE:
 		case SpdyFrame.TYPE_SYN_REPLY://来ない
 		}
+	}
+	
+	public boolean isError(){
+		return (parseStat==ParseStat.ERROR);
 	}
 	
 	/**
@@ -384,10 +421,15 @@ public class SpdyFrame {
 			}else if(parseStat==ParseStat.END){
 				parseType();
 			}
+			if(isError()){
+				buffer.position(buffer.limit());
+			}
 			rc=true;
 			break;
-		default://ERROR
-			rc=false;
+		case ERROR:
+		default:
+			buffer.position(buffer.limit());
+			rc=true;
 		}
 		return rc;
 //		throw new RuntimeException("parseStat:"+parseStat);
@@ -436,6 +478,11 @@ public class SpdyFrame {
 		flags=(char)((work&MASK_FLAGS)>>24);
 		dataLength=work&MASK_DATA_LENGTH;
 		parseStat=ParseStat.DATA;
+		if(dataLength>frameLimit){
+			logger.error("too long frame:"+dataLength+":limit:"+frameLimit);
+			parseStat=ParseStat.ERROR;
+			buffer.position(buffer.limit());
+		}
 		return true;
 	}
 	
@@ -511,7 +558,7 @@ public class SpdyFrame {
 				return readBuffer.getInt();
 			}
 		}
-		throw new RuntimeException("getIntFromData");
+		throw new RuntimeException("getIntFromData lack of data");
 	}
 	
 	private short getShortFromData(){
