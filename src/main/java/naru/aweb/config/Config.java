@@ -59,7 +59,6 @@ import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.log4j.Logger;
 
 public class Config {
-	private static final String SPDY_PROTOCOLS = "spdyProtocols";
 	private static final String USE_FILE_CACHE = "useFileCache";
 	private static final String PHANTOM_SERVER_HEADER = "phantomServerHeader";
 	private static final String KEEP_ALIVE_TIMEOUT = "keepAliveTimeout";
@@ -115,9 +114,9 @@ public class Config {
 	private FilterHelper filterHelper;
 	private InjectionHelper injectionHelper;
 	private Configuration configuration = null;
-	private QueueletContext queueletContext = null;
+//	private QueueletContext queueletContext = null;
 	private Object stasticsObject;
-	private String[] spdyProtocols;
+//	private String[] spdyProtocols;
 	private File tmpDir;
 	private DiskFileItemFactory uploadItemFactory;
 	private File settingDir;
@@ -170,6 +169,10 @@ public class Config {
 			return new String[0];
 		}
 		return value.split(",");
+	}
+	
+	public void setStringArray(String key,String[] values){
+		setStringArray(configuration,key,values);
 	}
 
 	public static void setStringArray(Configuration configuraion, String key,
@@ -602,7 +605,7 @@ public class Config {
 	}
 	
 	public boolean init(QueueletContext queueletContext, boolean isCleanup) {
-		this.queueletContext = queueletContext;
+//		this.queueletContext = queueletContext;
 		configuration = crateConfiguration(queueletContext, isCleanup);
 		// 新規にCONFIGテーブルを作った場合はcleanupの動作をおこなう
 		if (configuration.getBoolean(CONFIG_MARK_CREATE, false)) {
@@ -753,10 +756,6 @@ public class Config {
 		broadcaster=new Broadcaster(this);
 		wsqManager=WsqManager.getInstance();
 		
-		spdyProtocols = getStringArray(SPDY_PROTOCOLS);
-		if(spdyProtocols==null||spdyProtocols.length==0){
-			spdyProtocols=new String[]{SpdyFrame.PROTOCOL_V3,SpdyFrame.PROTOCOL_V2,SpdyFrame.PROTOCOL_HTTP_11};
-		}
 		boolean useCache=getBoolean(USE_FILE_CACHE);
 		getFileCache().setUseCache(useCache);
 		return true;
@@ -1248,6 +1247,7 @@ public class Config {
 		return spdyConfig;
 	}
 
+	/*
 	public String[] getSpdyProtocols() {
 		return spdyProtocols;
 	}
@@ -1256,4 +1256,5 @@ public class Config {
 		setStringArray(configuration, SPDY_PROTOCOLS, spdyProtocols);
 		this.spdyProtocols = spdyProtocols;
 	}
+	*/
 }

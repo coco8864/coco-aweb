@@ -7,8 +7,10 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.aweb.config.AccessLog;
+import naru.aweb.config.Config;
 import naru.aweb.core.DispatchHandler;
 import naru.aweb.core.ServerBaseHandler;
 import naru.aweb.http.HeaderParser;
@@ -22,31 +24,46 @@ import naru.aweb.util.ServerParser;
  */
 public class SpdyHandler extends ServerBaseHandler {
 	private static Logger logger=Logger.getLogger(SpdyHandler.class);
+	private static SpdyConfig spdyConfig=Config.getConfig().getSpsyConfig();
 	
 	private SpdyFrame frame=new SpdyFrame();
 	private Map<Integer,SpdySession> sessions=Collections.synchronizedMap(new HashMap<Integer,SpdySession>());
-	private long frameCount[];
+	private long inFrameCount[];
+	private long outFrameCount[];
+	private int lastGoodStreamId;
+	private char sendGoawayStatusCode;
+	private char rcvGoawayStatusCode;
+	private long readLength;
+	private long writeLength;
+	
+	
 	public boolean onHandshaked(String protocol) {
 		logger.debug("#handshaked.cid:" + getChannelId() +":"+protocol);
-		frame.init(protocol);
-		frameCount=new long[SpdyFrame.TYPE_WINDOW_UPDATE+1];
+		frame.init(protocol,spdyConfig.getSpdyFrameLimit());
+		inFrameCount=new long[SpdyFrame.TYPE_WINDOW_UPDATE+1];
+		outFrameCount=new long[SpdyFrame.TYPE_WINDOW_UPDATE+1];
+		lastGoodStreamId=0;
+		sendGoawayStatusCode=rcvGoawayStatusCode='*';
+		readLength=writeLength=0;
 		return false;//自力でasyncReadしたため
 	}
 	
 	public void onReadPlain(Object userContext, ByteBuffer[] buffers) {
 //		BuffersUtil.hexDump("SPDY c->s row data",buffers);
+		readLength+=BuffersUtil.remaining(buffers);
 		try {
 			for(int i=0;i<buffers.length;i++){
 				ByteBuffer buffer=buffers[i];
 				while(buffer.hasRemaining()){
 					if( frame.parse(buffer) ){
 						doFrame();
+						frame.prepareNext();
 					}
 				}
 				buffers[i]=null;
 				PoolManager.poolBufferInstance(buffer);
 			}
-			setReadTimeout(60000);
+			setReadTimeout(spdyConfig.getSpdyTimeout());
 			asyncRead(null);
 		} catch (RuntimeException e) {
 			logger.error("SpdyHandler parse error.",e);
@@ -57,18 +74,21 @@ public class SpdyHandler extends ServerBaseHandler {
 	}
 	
 	private void doFrame(){
+		if(frame.isError()){
+			sendGoaway(SpdyFrame.GOWST_PROTOCOL_ERROR);
+			return;
+		}
 		int streamId=frame.getStreamId();
 		SpdySession session=null;
 		if(streamId>0){
 			session=sessions.get(streamId);
 		}
 		short type=frame.getType();
-		frameCount[type]++;//統計情報
+		inFrameCount[type]++;//統計情報
 		logger.debug("SpdyHandler#doFrame cid:"+getChannelId()+":streamId:"+streamId+":" +type);
 		switch(type){
 		case SpdyFrame.TYPE_DATA_FRAME:
 			ByteBuffer[] dataBuffer=frame.getDataBuffers();
-			session=sessions.get(streamId);
 			if(session!=null){
 				session.onReadPlain(dataBuffer,frame.isFin());
 			}else{
@@ -77,6 +97,12 @@ public class SpdyHandler extends ServerBaseHandler {
 			}
 			break;
 		case SpdyFrame.TYPE_SYN_STREAM:
+			if(session!=null){
+				logger.error("aleady exist streamId:"+streamId);
+				sendReset(streamId, SpdyFrame.RSTST_STREAM_IN_USE);
+				break;
+			}
+			lastGoodStreamId=streamId;
 			//KeepAliveContext作って
 			KeepAliveContext keepAliveContext=(KeepAliveContext)PoolManager.getInstance(KeepAliveContext.class);
 			//KeepAliveContextからRequestContext取って
@@ -95,7 +121,6 @@ public class SpdyHandler extends ServerBaseHandler {
 			mappingHandler(session);
 			break;
 		case SpdyFrame.TYPE_RST_STREAM:
-			session=sessions.get(streamId);
 			int statusCode=frame.getStatusCode();
 			if(session!=null){
 				session.onRst(statusCode);
@@ -108,6 +133,12 @@ public class SpdyHandler extends ServerBaseHandler {
 			}
 			break;
 		case SpdyFrame.TYPE_GOAWAY:
+			statusCode=frame.getStatusCode();
+			if(statusCode<16){
+				rcvGoawayStatusCode=Integer.toHexString(statusCode).charAt(0);
+			}else{
+				rcvGoawayStatusCode='$';
+			}
 			resetAll();
 			asyncClose(null);
 			break;
@@ -117,12 +148,40 @@ public class SpdyHandler extends ServerBaseHandler {
 		}
 	}
 	
+	@Override
+	public void onFailure(Object userContext, Throwable t) {
+		logger.warn("onFailure.cid:"+getChannelId(),t);
+		sendGoaway(SpdyFrame.GOWST_INTERNAL_ERROR);
+		super.onFailure(userContext, t);
+	}
+
+	@Override
+	public void onReadTimeout(Object userContext) {
+		logger.warn("onReadTimeout.cid:"+getChannelId());
+		sendGoaway(SpdyFrame.GOWST_INTERNAL_ERROR);
+		super.onReadTimeout(userContext);
+	}
+	
+	private void sendGoaway(int statusCode){
+		if(statusCode<16){
+			sendGoawayStatusCode=Integer.toHexString(statusCode).charAt(0);
+		}else{
+			sendGoawayStatusCode='$';
+		}
+		outFrameCount[SpdyFrame.TYPE_GOAWAY]++;
+		ByteBuffer[] resetFrame=frame.buildGoaway(lastGoodStreamId, statusCode);
+		asyncWrite(null, resetFrame);
+	}
+	
+	
 	private void sendReset(int streamId,int statusCode){
+		outFrameCount[SpdyFrame.TYPE_RST_STREAM]++;
 		ByteBuffer[] resetFrame=frame.buildRstStream(streamId, statusCode);
 		asyncWrite(null, resetFrame);
 	}
 	
 	private void sendPing(int pingId){
+		outFrameCount[SpdyFrame.TYPE_PING]++;
 		ByteBuffer[] pingFrame=frame.buildPIngFrame(pingId);
 		asyncWrite(null, pingFrame);
 	}
@@ -145,6 +204,7 @@ public class SpdyHandler extends ServerBaseHandler {
 			flags=SpdyFrame.FLAG_FIN;
 		}
 		ByteBuffer[] synReplyFrame=frame.buildSynReply(spdySession.getStreamId(),flags,responseHeader);
+		outFrameCount[SpdyFrame.TYPE_SYN_REPLY]++;
 		asyncWrite(new SpdyCtx(spdySession,WRITE_CONTEXT_HEADER), synReplyFrame);
 	}
 	
@@ -154,10 +214,13 @@ public class SpdyHandler extends ServerBaseHandler {
 			flags=SpdyFrame.FLAG_FIN;
 		}
 		ByteBuffer[] dataFrame=frame.buildDataFrame(spdySession.getStreamId(), flags, body);
+		outFrameCount[SpdyFrame.TYPE_DATA_FRAME]++;
 		asyncWrite(new SpdyCtx(spdySession,WRITE_CONTEXT_BODY), dataFrame);
 	}
 	
+	/* 同期するためにオーバライド,けどそもそもsynchronizedがいい */
 	public synchronized boolean asyncWrite(Object context,ByteBuffer[] buffers){
+		writeLength+=BuffersUtil.remaining(buffers);
 		return super.asyncWrite(context,buffers);
 	}
 	
@@ -196,16 +259,34 @@ public class SpdyHandler extends ServerBaseHandler {
 		resetAll();
 		AccessLog accessLog=getAccessLog();
 		accessLog.endProcess();
+		KeepAliveContext keepAliveContext=getKeepAliveContext();
+		accessLog.setRealHost(keepAliveContext.getRealHost().getName());
 		accessLog.setRawRead(getTotalReadLength());
 		accessLog.setRawWrite(getTotalWriteLength());
-		StringBuffer sb=new StringBuffer();
-		for(int i=0;i<frameCount.length;i++){
+		StringBuffer sb=new StringBuffer("in[");
+		for(int i=0;i<inFrameCount.length;i++){
 			sb.append(i);
 			sb.append(':');
-			sb.append(frameCount[i]);
+			sb.append(inFrameCount[i]);
 			sb.append(' ');
 		}
+		sb.append("]out[");
+		for(int i=0;i<outFrameCount.length;i++){
+			sb.append(i);
+			sb.append(':');
+			sb.append(outFrameCount[i]);
+			sb.append(' ');
+		}
+		sb.append("]lastGoodStreamId:");
+		sb.append(lastGoodStreamId);
 		accessLog.setRequestLine(sb.toString());
+		sb.setLength(0);
+		sb.append(sendGoawayStatusCode);
+		sb.append('_');
+		sb.append(rcvGoawayStatusCode);
+		accessLog.setStatusCode(sb.toString());
+		accessLog.setResponseHeaderLength(readLength);
+		accessLog.setRequestHeaderLength(writeLength);
 		super.onFinished();
 	}
 	
@@ -227,4 +308,5 @@ public class SpdyHandler extends ServerBaseHandler {
 	public int getSpdyPri(){
 		return frame.getPriority();
 	}
+
 }

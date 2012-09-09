@@ -29,6 +29,7 @@ import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.queue.QueueManager;
 import naru.aweb.robot.Browser;
+import naru.aweb.spdy.SpdyConfig;
 import naru.aweb.spdy.SpdyFrame;
 import naru.aweb.util.ServerParser;
 import net.sf.json.JSON;
@@ -405,9 +406,12 @@ public class AdminHandler extends WebServerHandler{
 			String isChache=parameter.getParameter("isChache");
 			config.setUseFileCache("true".equalsIgnoreCase(isChache));
 			responseJson(true);
-		}else if("setSpdyProtocol".equals(cmd)){
+		}else if("setSpdy".equals(cmd)){
+			SpdyConfig spdyConfig=config.getSpsyConfig();
 			String isSpdy3=parameter.getParameter("isSpdy3");
 			String isSpdy2=parameter.getParameter("isSpdy2");
+			String frameLimit=parameter.getParameter("spdyFrameLimit");
+			String timeout=parameter.getParameter("spdyTimeout");
 			StringBuffer protocol=new StringBuffer();
 			if("true".equalsIgnoreCase(isSpdy3)){
 				protocol.append(SpdyFrame.PROTOCOL_V3);
@@ -418,7 +422,13 @@ public class AdminHandler extends WebServerHandler{
 				protocol.append(",");
 			}
 			protocol.append(SpdyFrame.PROTOCOL_HTTP_11);
-			config.setSpdyProtocols(protocol.toString().split(","));
+			spdyConfig.setSpdyProtocols(protocol.toString());
+			if(frameLimit!=null){
+				spdyConfig.setSpdyFrameLimit(Long.parseLong(frameLimit));
+			}
+			if(timeout!=null){
+				spdyConfig.setSpdyTimeout(Long.parseLong(timeout));
+			}
 			responseJson(true);
 		}else if("setAuth".equals(cmd)){
 			String scheme=parameter.getParameter("scheme");

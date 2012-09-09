@@ -525,7 +525,6 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		sb.append(responseLength);
 		sb.append(" ");
 		sb.append(processTime);
-		
 		if(!debug && !isShortFormat){
 			sb.append("#");
 			sb.append(getRealHost());
@@ -561,15 +560,28 @@ public class AccessLog extends PoolBase implements BufferGetter{
 			case SOURCE_TYPE_SIMULATE:
 				sb.append("simulate");
 				break;
+			case SOURCE_TYPE_SPDY:
+				sb.append("spdy");
+				break;
 			default:
 				sb.append("-");
 			}
 			sb.append(",");
 			sb.append(getDestinationType());
 			sb.append(",");
-			sb.append(getContentEncoding());
+			String contentEncoding=getContentEncoding();
+			if(contentEncoding!=null){
+				sb.append(contentEncoding);
+			}else{
+				sb.append("-");
+			}
 			sb.append(",");
-			sb.append(getTransferEncoding());
+			String transferEncoding=getTransferEncoding();
+			if(transferEncoding!=null){
+				sb.append(transferEncoding);
+			}else{
+				sb.append("-");
+			}
 			sb.append(",");
 			sb.append(getRequestHeaderTime());//requestÉwÉbÉ_ÇèàóùÇµèIÇÌÇ¡ÇΩéûä‘
 			sb.append(",");
@@ -583,7 +595,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 			sb.append(",");
 			String spdyInfo=getSpdyInfo();
 			if(spdyInfo==null){
-				sb.append("*");
+				sb.append("-");
 			}else{
 				sb.append(spdyInfo);
 			}
