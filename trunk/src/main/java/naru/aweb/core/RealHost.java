@@ -95,7 +95,17 @@ public class RealHost {
 
 	//binding‘Î‰ž
 	public static RealHost getRealHostByServer(ServerParser server) {
-		return serverRealHostMap.get(server);
+		RealHost realHost=serverRealHostMap.get(server);
+		if(realHost!=null){
+			return realHost;
+		}
+		//
+		for(RealHost r:serverRealHostMap.values()){
+			if(r.getBindPort()==server.getPort()){
+				return r;
+			}
+		}
+		return null;
 	}
 	
 	public static void addRealHost(RealHost realHost){
