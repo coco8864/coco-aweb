@@ -73,12 +73,14 @@ function setFileCache(){
   });
 }
 
-function setSpdyProtocol(){
+function setSpdy(){
   var isSpdy2=ph.jQuery("#spdy2").attr('checked');
   var isSpdy3=ph.jQuery("#spdy3").attr('checked');
-  ph.admin.doCommand('setSpdyProtocol',{
-   isSpdy2:isSpdy2,
-   isSpdy3:isSpdy3,
+  ph.admin.doCommand('setSpdy',{
+    isSpdy2:isSpdy2,
+    isSpdy3:isSpdy3,
+    spdyFrameLimit:ph.jQuery("#spdyFrameLimist").val(),
+    spdyTimeout:ph.jQuery("#spdyTimeout").val()
   },
   function(x){
 ##Spdy設定完了
@@ -411,6 +413,39 @@ value="${config.getInt('webSocketPingInterval',0)}"
 </div>
 
 <Hr/>
+#set ($spdy2=false)
+#set ($spdy3=false)
+#set ($spdyConfig=$config.getSpsyConfig())
+#set ($protocol=${spdyConfig.getSpdyProtocols()})
+#if($protocol.indexOf('spdy/2')>=0)
+ #set ($spdy2=true)
+#end
+#if($protocol.indexOf('spdy/3')>=0)
+ #set ($spdy3=true)
+#end
+#set ($spdyFrameLimit=$spdyConfig.getSpdyFrameLimit())
+#set ($spdyTimeout=$spdyConfig.getSpdyTimeout())
+<H2 onclick="ph.jQuery('#spdySetting').toggle();">+Spdy設定</H2>
+<div class="settingItem" id="spdySetting">
+#if($spdyConfig.isSpdyAvailable)
+spdy disabled
+#end
+spdy/2:<input type="checkBox" name="spdy2" id="spdy2"
+#if($spdy2==true)
+checked="checked"
+#end
+ />
+spdy/3:<input type="checkBox" name="spdy3" id="spdy3"
+#if($spdy3==true)
+checked="checked"
+#end
+ /><br/>
+spdyTimeout:<input type="text" name="spdyTimeout" id="spdyTimeout" value="${spdyTimeout}"/><br/>
+spdyFrameLimit:<input type="text" name="spdyFrameLimit" id="spdyFrameLimit" value="${spdyFrameLimit}"/><br/>
+<input type="button" value="設定" onclick="setSpdy();" /><br/>
+</div>
+
+<Hr/>
 <H2 onclick="ph.jQuery('#fileCache').toggle();">+FileCache設定</H2>
 <div class="settingItem" id="fileCache">
 file cache:<input type="checkBox" name="isFileCache" id="isFileCache"
@@ -418,41 +453,6 @@ file cache:<input type="checkBox" name="isFileCache" id="isFileCache"
 checked="checked"
 #end
  onclick='setFileCache();' /><br>
-</div>
-
-<Hr/>
-
-
-#set ($spdy2=false)
-#set ($spdy3=false)
-#foreach($prot in ${config.getSpdyProtocols()})
- #if($prot=='spdy/2')
-  #set ($spdy2=true)
- #end
- #if($prot=='spdy/3')
-  #set ($spdy3=true)
- #end
-#end
-<H2 onclick="ph.jQuery('#spdySetting').toggle();">+Spdy設定</H2>
-<div class="settingItem" id="spdySetting">
-current: 
-#set ($spdySession=${handler.getSpdySession()})
-#if ($spdySession)
- spdy/${spdySession.spdyInfo()}
-#else
- http
-#end
-</br>
-spdy/2:<input type="checkBox" name="spdy2" id="spdy2"
-#if($spdy2)
-checked="checked"
-#end
- onclick='setSpdyProtocol();' />
-spdy/3:<input type="checkBox" name="spdy3" id="spdy3"
-#if($spdy3)
-checked="checked"
-#end
- onclick='setSpdyProtocol();' />
 </div>
 
 <Hr/>
