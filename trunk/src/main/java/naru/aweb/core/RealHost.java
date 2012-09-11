@@ -99,10 +99,14 @@ public class RealHost {
 		if(realHost!=null){
 			return realHost;
 		}
-		//
-		for(RealHost r:serverRealHostMap.values()){
-			if(r.getBindPort()==server.getPort()){
-				return r;
+		return null;
+	}
+	
+	//binding‘Î‰ž
+	public static RealHost getRealHostByBindPost(int port) {
+		for(RealHost realHost:realHostsList){
+			if(realHost.isBinding() && "*".equals(realHost.getBindHost()) && realHost.getBindPort()==port){
+				return realHost;
 			}
 		}
 		return null;

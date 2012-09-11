@@ -333,7 +333,7 @@ public class SpdyFrame {
 		int work=((int)flags)<<24|length;
 		frame.putInt(work);
 		frame.flip();
-		System.out.println(Integer.toHexString(work));
+//		System.out.println(Integer.toHexString(work));
 		return BuffersUtil.concatenate(frame,data,null);
 	}
 	
