@@ -919,6 +919,8 @@ public class AccessLog extends PoolBase implements BufferGetter{
 			if(logPersister==null){
 				logger.debug("logPersister is null");
 				log(true);
+				log(false);
+				unref();
 				return;//’â~’†‚Ìê‡
 			}
 			logPersister.insertAccessLog(this);
