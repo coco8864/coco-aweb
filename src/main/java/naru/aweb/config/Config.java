@@ -1101,6 +1101,11 @@ public class Config {
 	public RealHost getRealHost(ServerParser server) {
 		return RealHost.getRealHostByServer(server);
 	}
+	
+	//acceptしたけどgetRealHostで見つからなかった場合使用
+	public RealHost getRealHostByBindPost(int port) {
+		return RealHost.getRealHostByBindPost(port);
+	}
 
 	/* 公開ディレクトリ関連 */
 	public File getAdminDocumentRoot() {

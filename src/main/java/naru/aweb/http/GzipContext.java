@@ -53,6 +53,7 @@ public class GzipContext extends PoolBase{
 		for(int i=0;i<buffers.length;i++){
 			putPlainBuffer(buffers[i]);
 		}
+		PoolManager.poolArrayInstance(buffers);
 	}
 	
 	public void putPlainBuffer(ByteBuffer buffer){
