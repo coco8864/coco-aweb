@@ -49,7 +49,7 @@ window.ph.auth={
   _aplCheckCb:function(res){
     if(res.result=='redirect'){
       /* authUrlにsessionを問い合わせ */
-      ph.auth._authCheck(res.location+'&originUrl='+window.location.href);
+      ph.auth._authCheck(res.location+'&originUrl='+encodeURIComponent(window.location.href));
       return;
     }
     ph.auth._callback(res);

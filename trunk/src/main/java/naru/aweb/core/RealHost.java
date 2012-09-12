@@ -95,6 +95,9 @@ public class RealHost {
 
 	//binding‘Î‰ž
 	public static RealHost getRealHostByServer(ServerParser server) {
+		if(server==null){
+			return null;
+		}
 		RealHost realHost=serverRealHostMap.get(server);
 		if(realHost!=null){
 			return realHost;
