@@ -36,7 +36,6 @@ public class SpdyHandler extends ServerBaseHandler {
 	private long readLength;
 	private long writeLength;
 	
-	
 	public boolean onHandshaked(String protocol) {
 		logger.debug("#handshaked.cid:" + getChannelId() +":"+protocol);
 		frame.init(protocol,spdyConfig.getSpdyFrameLimit());
@@ -158,7 +157,11 @@ public class SpdyHandler extends ServerBaseHandler {
 	@Override
 	public void onReadTimeout(Object userContext) {
 		logger.warn("onReadTimeout.cid:"+getChannelId());
-		sendGoaway(SpdyFrame.GOWST_INTERNAL_ERROR);
+		if(sessions.size()==0){
+			sendGoaway(SpdyFrame.GOWST_OK);
+		}else{
+			sendGoaway(SpdyFrame.GOWST_INTERNAL_ERROR);
+		}
 		super.onReadTimeout(userContext);
 	}
 	
@@ -265,17 +268,21 @@ public class SpdyHandler extends ServerBaseHandler {
 		accessLog.setRawWrite(getTotalWriteLength());
 		StringBuffer sb=new StringBuffer("in[");
 		for(int i=0;i<inFrameCount.length;i++){
+			if(i!=0){
+				sb.append(' ');
+			}
 			sb.append(i);
 			sb.append(':');
 			sb.append(inFrameCount[i]);
-			sb.append(' ');
 		}
 		sb.append("]out[");
 		for(int i=0;i<outFrameCount.length;i++){
+			if(i!=0){
+				sb.append(' ');
+			}
 			sb.append(i);
 			sb.append(':');
 			sb.append(outFrameCount[i]);
-			sb.append(' ');
 		}
 		sb.append("]lastGoodStreamId:");
 		sb.append(lastGoodStreamId);

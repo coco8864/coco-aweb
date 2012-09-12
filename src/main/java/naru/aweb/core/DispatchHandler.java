@@ -434,7 +434,7 @@ public class DispatchHandler extends ServerBaseHandler {
 			ServerParser server, String path) {
 		// webマッピング対象は、realHost,phntomHost,pathで決まる
 		ServerParser sslServer = keepAliveContext.getProxyTargetServer();
-		if (getConfig().getRealHost(sslServer) == null && sslServer != null) {// ssl
+		if (sslServer != null && getConfig().getRealHost(sslServer) == null) {// ssl
 		// proxyでログ/traceを採取するルート
 			MappingResult mappingResult = mapper.resolvePeekSslProxy(realHost,sslServer, path);
 			if (mappingResult != null) {
