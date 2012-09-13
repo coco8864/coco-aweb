@@ -19,6 +19,7 @@ import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.core.DispatchHandler;
 import naru.aweb.core.ServerBaseHandler;
+import naru.aweb.handler.ws.WsProtocol;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.spdy.SpdySession;
 
@@ -606,6 +607,7 @@ public class WebServerHandler extends ServerBaseHandler {
 		AccessLog accessLog = getAccessLog();
 		accessLog.setTimeCheckPint(AccessLog.TimePoint.responseHeader);
 		responseHeaderLength = BuffersUtil.remaining(headerBuffer);
+		boolean isPersist=false;
 		Store responsePeek = null;
 		MappingResult mapping=getRequestMapping();
 		if(mapping!=null){
@@ -622,6 +624,11 @@ public class WebServerHandler extends ServerBaseHandler {
 //				responsePeek = Store.open(true);
 			case REQUEST_TRACE:
 			case ACCESS:
+				isPersist=true;
+			case NONE:
+				if(isPersist==false&&!WsProtocol.isWebSocketLog()){
+					break;
+				}
 				AccessLog wsAccessLog=accessLog.copyForWs();
 				StringBuffer sb=new StringBuffer();
 				switch(mapping.getDestinationType()){
@@ -661,7 +668,7 @@ public class WebServerHandler extends ServerBaseHandler {
 				wsAccessLog.setStatusCode("B=S");
 				wsAccessLog.endProcess();
 				wsAccessLog.setSourceType(AccessLog.SOURCE_TYPE_WS_HANDSHAKE);
-				wsAccessLog.setPersist(true);
+				wsAccessLog.setPersist(isPersist);
 				wsAccessLog.decTrace();
 			}
 		}

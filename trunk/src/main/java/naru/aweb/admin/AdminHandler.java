@@ -396,9 +396,11 @@ public class AdminHandler extends WebServerHandler{
 			String webSocketPingInterval=parameter.getParameter("webSocketPingInterval");
 			String isUseSessionStorage=parameter.getParameter("isUseSessionStorage");
 			String isUseCrossDomain=parameter.getParameter("isUseCrossDomain");
+			String isWebSocketLog=parameter.getParameter("isWebSocketLog");
 			WsProtocol.setWebSocketSpecs(websocketSpecs);
 			WsProtocol.setWebSocketMessageLimit(Integer.parseInt(webSocketMessageLimit));
 			WsProtocol.setWebSocketPingInterval(Integer.parseInt(webSocketPingInterval));
+			WsProtocol.setWebSocketLog(!("false".equalsIgnoreCase(isWebSocketLog)));
 			config.setProperty("useSessionStorage", isUseSessionStorage);
 			config.setProperty("useCrossDomain", isUseCrossDomain);
 			responseJson(true);
