@@ -3,6 +3,7 @@ package naru.aweb.handler.ws;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -56,6 +57,8 @@ public abstract class WsProtocol extends PoolBase{
 //	private static Set<String> webSocketAllowSubprotocols=null;
 	private static Set<String> webSocketSpecs=null;
 	private static boolean isWebSocketResponseMask=config.getBoolean("isWebSocketResponseMask",false);
+	/* アクセスログにwebsocketの個々fremaのreq/resを記録するか否か */
+	private static boolean isWebSocketLog=config.getBoolean("isWebSocketLog",true);
 	
 	private static void setupWebSocketSpecs(String specs){
 		webSocketSpecs=new HashSet<String>();
@@ -102,6 +105,10 @@ public abstract class WsProtocol extends PoolBase{
 		return webSocketSpecs.contains(spec);
 	}
 
+	public static boolean isWebSocketLog(){
+		return isWebSocketLog;
+	}
+	
 	public static void setWebSocketMessageLimit(int webSocketMessageLimit) {
 		WsProtocol.webSocketMessageLimit = webSocketMessageLimit;
 		config.setProperty("webSocketMessageLimit", webSocketMessageLimit);
@@ -110,6 +117,11 @@ public abstract class WsProtocol extends PoolBase{
 	public static void setWebSocketPingInterval(int webSocketPingInterval) {
 		WsProtocol.webSocketPingInterval = webSocketPingInterval;
 		config.setProperty("webSocketPingInterval", webSocketPingInterval);
+	}
+	
+	public static void setWebSocketLog(boolean isWebSocketLog) {
+		WsProtocol.isWebSocketLog = isWebSocketLog;
+		config.setProperty("isWebSocketLog", isWebSocketLog);
 	}
 
 	/*
@@ -279,15 +291,16 @@ public abstract class WsProtocol extends PoolBase{
 	 * @param transferEncoding
 	 * @param message
 	 */
-	private void wsTrace(char sourceType,String contentType,String comment,String statusCode,ByteBuffer[] message){
+	private void wsTrace(char sourceType,String contentType,String comment,String statusCode,ByteBuffer[] message,boolean isPersist){
 		AccessLog accessLog=handler.getAccessLog();
 		AccessLog wsAccessLog=accessLog.copyForWs();
 		wsAccessLog.setContentType(contentType);
-		wsAccessLog.setRequestLine(accessLog.getRequestLine() +comment);
+		wsAccessLog.setRequestLine(comment);
 		wsAccessLog.setSourceType(sourceType);
 		wsAccessLog.setStatusCode(statusCode);
+		wsAccessLog.setStartTime(new Date());
 		wsAccessLog.endProcess();
-		wsAccessLog.setPersist(true);
+		wsAccessLog.setPersist(isPersist);
 		if(message!=null){
 			Store store = Store.open(true);
 			store.putBuffer(message);
@@ -300,7 +313,7 @@ public abstract class WsProtocol extends PoolBase{
 		wsAccessLog.decTrace();//traceを出力する
 	}
 	
-	private void wsPostTrace(boolean isTop,boolean isFin,String contentType,ByteBuffer[] message){
+	private void wsPostTrace(boolean isTop,boolean isFin,String contentType,ByteBuffer[] message,boolean isPersist){
 		//ブラウザにはonMessageが通知されるので
 		StringBuilder sb=new StringBuilder();
 		sb.append('[');
@@ -315,10 +328,10 @@ public abstract class WsProtocol extends PoolBase{
 			sb.append(":fin");
 		}
 		sb.append(']');
-		wsTrace(AccessLog.SOURCE_TYPE_WS_ON_MESSAGE,contentType,sb.toString(),"B<S",message);
+		wsTrace(AccessLog.SOURCE_TYPE_WS_ON_MESSAGE,contentType,sb.toString(),"B<S",message,isPersist);
 	}
 	
-	private void wsCloseTrace(short code,String reason){
+	private void wsCloseTrace(short code,String reason,boolean isPersist){
 		StringBuilder sb=new StringBuilder();
 		sb.append("[ServerClose:");
 		sb.append(handler.getChannelId());
@@ -327,10 +340,10 @@ public abstract class WsProtocol extends PoolBase{
 		sb.append(":reason:");
 		sb.append(reason);
 		sb.append(']');
-		wsTrace(AccessLog.SOURCE_TYPE_WS_ON_MESSAGE,null,sb.toString(),"B<S",null);
+		wsTrace(AccessLog.SOURCE_TYPE_WS_ON_MESSAGE,null,sb.toString(),"B<S",null,isPersist);
 	}
 	
-	private void wsOnTrace(boolean isTop,boolean isFin,String contentType,ByteBuffer[] message){
+	private void wsOnTrace(boolean isTop,boolean isFin,String contentType,ByteBuffer[] message,boolean isPersist){
 		//ブラウザのpostMessageに起因して記録されるので
 		StringBuilder sb=new StringBuilder();
 		sb.append('[');
@@ -345,10 +358,10 @@ public abstract class WsProtocol extends PoolBase{
 			sb.append(":fin");
 		}
 		sb.append(']');
-		wsTrace(AccessLog.SOURCE_TYPE_WS_POST_MESSAGE,contentType,sb.toString(),"B>S",message);
+		wsTrace(AccessLog.SOURCE_TYPE_WS_POST_MESSAGE,contentType,sb.toString(),"B>S",message,isPersist);
 	}
 	
-	private void wsOnCloseTrace(short code,String reason){
+	private void wsOnCloseTrace(short code,String reason,boolean isPersist){
 		StringBuilder sb=new StringBuilder();
 		sb.append("[BrowserClose:");
 		sb.append(handler.getChannelId());
@@ -357,7 +370,7 @@ public abstract class WsProtocol extends PoolBase{
 		sb.append(":reason:");
 		sb.append(reason);
 		sb.append(']');
-		wsTrace(AccessLog.SOURCE_TYPE_WS_POST_MESSAGE,null,sb.toString(),"B>S",null);
+		wsTrace(AccessLog.SOURCE_TYPE_WS_POST_MESSAGE,null,sb.toString(),"B>S",null,isPersist);
 	}
 	
 	private ByteBuffer[] stringToBuffers(String message){
@@ -370,9 +383,14 @@ public abstract class WsProtocol extends PoolBase{
 	}
 	
 	public void tracePostMessage(String message){
+		boolean isPersist=true;
 		ByteBuffer [] messageBuffers=null;
 		switch(logType){
 		case NONE:
+			if(isWebSocketLog){
+				isPersist=false;
+				break;
+			}
 			return;
 		case ACCESS:
 		case RESPONSE_TRACE:
@@ -382,14 +400,19 @@ public abstract class WsProtocol extends PoolBase{
 			messageBuffers=stringToBuffers(message);
 			break;
 		}
-		wsPostTrace(true,true,"text/plain",messageBuffers);
+		wsPostTrace(true,true,"text/plain",messageBuffers,isPersist);
 	}
 	
 	public void tracePostMessage(boolean isTop,boolean isFin,ByteBuffer[] message){
+		boolean isPersist=true;
 		postMessageCount++;
 		ByteBuffer [] messageBuffers=null;
 		switch(logType){
 		case NONE:
+			if(isWebSocketLog){
+				isPersist=false;
+				break;
+			}
 			return;
 		case ACCESS:
 		case RESPONSE_TRACE:
@@ -400,12 +423,17 @@ public abstract class WsProtocol extends PoolBase{
 			messageBuffers=PoolManager.duplicateBuffers(message);
 			break;
 		}
-		wsPostTrace(isTop,isFin,"application/octet-stream",messageBuffers);
+		wsPostTrace(isTop,isFin,"application/octet-stream",messageBuffers,isPersist);
 	}
 	
 	public void traceClose(short code,String reason){
+		boolean isPersist=true;
 		switch(logType){
 		case NONE:
+			if(isWebSocketLog){
+				isPersist=false;
+				break;
+			}
 			return;
 		case ACCESS:
 		case REQUEST_TRACE:
@@ -414,13 +442,18 @@ public abstract class WsProtocol extends PoolBase{
 		case TRACE:
 			break;
 		}
-		wsCloseTrace(code,reason);
+		wsCloseTrace(code,reason,isPersist);
 	}
 	
 	public void traceOnMessage(String message){
+		boolean isPersist=true;
 		ByteBuffer [] messageBuffers=null;
 		switch(logType){
 		case NONE:
+			if(isWebSocketLog){
+				isPersist=false;
+				break;
+			}
 			return;
 		case ACCESS:
 		case REQUEST_TRACE:
@@ -430,13 +463,18 @@ public abstract class WsProtocol extends PoolBase{
 			messageBuffers=stringToBuffers(message);
 			break;
 		}
-		wsOnTrace(true,true,"text/plain",messageBuffers);
+		wsOnTrace(true,true,"text/plain",messageBuffers,isPersist);
 	}
 
 	public void traceOnMessage(boolean isTop,boolean isFin,ByteBuffer[] message){
+		boolean isPersist=true;
 		ByteBuffer [] messageBuffers=null;
 		switch(logType){
 		case NONE:
+			if(isWebSocketLog){
+				isPersist=false;
+				break;
+			}
 			return;
 		case ACCESS:
 		case REQUEST_TRACE:
@@ -446,12 +484,17 @@ public abstract class WsProtocol extends PoolBase{
 			messageBuffers=PoolManager.duplicateBuffers(message);
 			break;
 		}
-		wsOnTrace(isTop,isFin,"octedstream",messageBuffers);
+		wsOnTrace(isTop,isFin,"octedstream",messageBuffers,isPersist);
 	}
 	
 	public void traceOnClose(short code,String reason){
+		boolean isPersist=true;
 		switch(logType){
 		case NONE:
+			if(isWebSocketLog){
+				isPersist=false;
+				break;
+			}
 			return;
 		case ACCESS:
 		case REQUEST_TRACE:
@@ -460,12 +503,17 @@ public abstract class WsProtocol extends PoolBase{
 		case TRACE:
 			break;
 		}
-		wsOnCloseTrace(code,reason);
+		wsOnCloseTrace(code,reason,isPersist);
 	}
 	
 	public void tracePingPong(String pingPong){
+		boolean isPersist=true;
 		if(logType!=LogType.TRACE){
-			return;
+			if(isWebSocketLog){
+				isPersist=false;
+			}else{
+				return;
+			}
 		}
 		StringBuilder sb=new StringBuilder();
 		sb.append("[");
@@ -473,6 +521,6 @@ public abstract class WsProtocol extends PoolBase{
 		sb.append(":");
 		sb.append(handler.getChannelId());
 		sb.append(']');
-		wsTrace(AccessLog.SOURCE_TYPE_WS_POST_MESSAGE,null,sb.toString(),"B>S",null);
+		wsTrace(AccessLog.SOURCE_TYPE_WS_POST_MESSAGE,null,sb.toString(),"B>S",null,isPersist);
 	}
 }
