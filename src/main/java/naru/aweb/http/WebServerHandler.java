@@ -683,6 +683,26 @@ public class WebServerHandler extends ServerBaseHandler {
 		}
 	}
 	
+	private void setupTraceBody(){
+		Store responsePeek = null;
+		MappingResult mapping=getRequestMapping();
+		if(mapping!=null){
+			switch (mapping.getLogType()) {
+			case RESPONSE_TRACE:
+			case TRACE:
+				responsePeek = Store.open(true);
+			}
+		}
+		if (responsePeek != null) {
+			SpdySession spdySession=getSpdySession();
+			if(spdySession==null){
+				pushWritePeekStore(responsePeek);
+			}else{
+				spdySession.pushResponseBodyStore(responsePeek);
+			}
+		}
+	}
+	
 	private void traceHeader(boolean isHeaderOnlyResponse,ByteBuffer[] headerBuffer){
 		Store responsePeek = null;
 		MappingResult mapping=getRequestMapping();
@@ -704,28 +724,20 @@ public class WebServerHandler extends ServerBaseHandler {
 				accessLog.incTrace();
 				responsePeek.close(accessLog,responsePeek);
 				accessLog.setResponseHeaderDigest(responsePeek.getDigest());
-				responsePeek = Store.open(true);
+//				responsePeek = Store.open(true);
 			}
 		}
 		getAccessLog().setTimeCheckPint(AccessLog.TimePoint.responseHeader);
 		if (isHeaderOnlyResponse) {
 			/* headerだけのレスポンス */
 			getAccessLog().setTimeCheckPint(AccessLog.TimePoint.responseBody);
-			if (responsePeek != null) {
-				responsePeek.close();// ないので...
-			}
+//			if (responsePeek != null) {
+//				responsePeek.close();// ないので...
+//			}
 			return;
 		}
 		/* bodyが続くレスポンス */
 		logger.debug("flushFirstResponse cid:" + getChannelId());
-		if (responsePeek != null) {
-			SpdySession spdySession=getSpdySession();
-			if(spdySession==null){
-				pushWritePeekStore(responsePeek);
-			}else{
-				spdySession.pushResponseBodyStore(responsePeek);
-			}
-		}
 	}
 
 	/**
@@ -771,6 +783,7 @@ public class WebServerHandler extends ServerBaseHandler {
 		if(isHeaderOnlyResponse){
 			return;
 		}
+		setupTraceBody();
 		if (secondBody == null) {// 全レスポンスがある場合これで最後
 			internalWriteBody(true, true, bodyBuffers);
 		} else {
@@ -1075,6 +1088,9 @@ public class WebServerHandler extends ServerBaseHandler {
 	private synchronized void spdyFlushResponseHeader(SpdySession spdySession,boolean isFin){
 		setupResponseHeader();
 		traceHeader(isFin,null);
+		if(!isFin){
+			setupTraceBody();
+		}
 		spdySession.responseHeader(isFin,responseHeader);
 		isFlushFirstResponse = true;
 	}
