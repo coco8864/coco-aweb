@@ -52,7 +52,7 @@
     * ~~safariが落ちる件が救えない（!WebSocketを使わなければ問題ないので）~~1.1.0
   * 監視機能の機能強化
     * freeMemoryが少なくなったら（少ない状態を複数回観測したら）自動再起動
-    * hungupを検出したらThreadDumpを採取した後、再起動
+    * hungupを検出したら!ThreadDumpを採取した後、再起動
     * 定期的にthread dumpを採取
   * ~~!WebSocket,draft-ietf-hybi-thewebsocketprotocol-10対応~~RFC 6455対応
     * ~~いつの間にか!Chromeで!WebSocketが使えなくなった~~trace|check
@@ -67,7 +67,7 @@
     * file upload/download
   * 性能基礎データの採取,pahntom proxy|apache|nginx 
     * グラフ表示
-  * SPDYサポートhttp://dev.chromium.org/spdy/spdy-protocol/spdy-protocol-draft3
+  * ~~SPDYサポートhttp://dev.chromium.org/spdy/spdy-protocol/spdy-protocol-draft3~~
 
 
 できそうだけど基本やらない方針
