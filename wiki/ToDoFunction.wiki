@@ -71,6 +71,10 @@
    SPDYにJava7以上が必要、Java6の場合SPDYは使えない理由は2つ
     * java.util.zip.Deflater#deflateメソッドの第4パラメタDeflater.FULL_FLUSH
     * NPNライブラリとしてname.ben.murphy,ssl_npnを利用
+  * 一括してSSL運用にする機能、またその逆
+  * spdyクライアント
+  * chatをカレントにしてロードしたとき未接続となる
+  * 基本認証時に長時間放置すると元に戻れなくなる
 
 できそうだけど基本やらない方針
   * Java5対応
