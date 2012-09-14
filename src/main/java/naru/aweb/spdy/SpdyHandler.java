@@ -113,7 +113,7 @@ public class SpdyHandler extends ServerBaseHandler {
 			ServerParser server=requestHeader.getServer();
 			server.ref();
 			keepAliveContext.setAcceptServer(server);
-			logger.info("url:" + requestHeader.getRequestUri());
+			logger.debug("url:" + requestHeader.getRequestUri());
 			//KeepAliveContext‚©‚çSpdySession‚ğì‚é
 			session=SpdySession.create(this, streamId, keepAliveContext,frame.isFin());
 			sessions.put(streamId, session);
