@@ -14,7 +14,7 @@ import naru.aweb.http.HeaderParser;
 
 public class NameValueBuilder {
 	private short version;
-	private ByteBuffer workBuffer;
+//	private ByteBuffer workBuffer;
 //	private ByteBuffer workBuffer=ByteBuffer.allocate(16);
 	private Deflater compresser=new Deflater();
 
@@ -32,6 +32,7 @@ public class NameValueBuilder {
 		}
 	}
 	
+	/*
 	private void buildStart() {
 		workBuffer=PoolManager.getBufferInstance();
 		workBuffer.order(ByteOrder.BIG_ENDIAN);
@@ -43,8 +44,9 @@ public class NameValueBuilder {
 			workBuffer=null;
 		}
 	}
+	*/
 	
-	private void putLength(int data){
+	private void putLength(ByteBuffer workBuffer,int data){
 //		workBuffer.clear();
 		if(version==SpdyFrame.VERSION_V2){
 			workBuffer.putShort((short)data);
@@ -54,10 +56,10 @@ public class NameValueBuilder {
 //		compresser.setInput(workBuffer.array(),0,workBuffer.position());
 	}
 	
-	private void putString(String data){
+	private void putString(ByteBuffer workBuffer,String data){
 		try {
 			byte[] bytes=data.getBytes(SpdyFrame.ENCODE);
-			putLength(bytes.length);
+			putLength(workBuffer,bytes.length);
 			workBuffer.put(bytes);
 //			compresser.setInput(bytes,0,bytes.length);
 		} catch (UnsupportedEncodingException e) {
@@ -65,7 +67,7 @@ public class NameValueBuilder {
 		}
 	}
 	
-	private void build(HeaderParser header){
+	private void build(ByteBuffer workBuffer,HeaderParser header){
 		String status=header.getStatusCode();
 		String v=header.getResHttpVersion();
 		//”O‚Ì‚½‚ß
@@ -74,19 +76,19 @@ public class NameValueBuilder {
 		header.removeHeader(HeaderParser.KEEP_ALIVE_HEADER);
 		
 		Set<String> headerNames=header.getHeaderNames();
-		putLength(headerNames.size()+2);
+		putLength(workBuffer,headerNames.size()+2);
 		if (version == SpdyFrame.VERSION_V2) {
-			putString("status");
+			putString(workBuffer,"status");
 		} else if (version == SpdyFrame.VERSION_V3) {
-			putString(":status");
+			putString(workBuffer,":status");
 		}
-		putString(status);
+		putString(workBuffer,status);
 		if (version == SpdyFrame.VERSION_V2) {
-			putString("version");
+			putString(workBuffer,"version");
 		} else if (version == SpdyFrame.VERSION_V3) {
-			putString(":version");
+			putString(workBuffer,":version");
 		}
-		putString(v);
+		putString(workBuffer,v);
 		StringBuffer sb=new StringBuffer();
 		for(String headerName:headerNames){
 			List<String>values=header.getHeaders(headerName);
@@ -94,9 +96,9 @@ public class NameValueBuilder {
 			if(size==0){
 				continue;
 			}
-			putString(headerName.toLowerCase());
+			putString(workBuffer,headerName.toLowerCase());
 			if(size==1){
-				putString(values.get(0));
+				putString(workBuffer,values.get(0));
 			}else{
 				sb.setLength(0);
 				sb.append(values.get(0));
@@ -104,15 +106,16 @@ public class NameValueBuilder {
 					sb.append('\0');
 					sb.append(values.get(i));
 				}
-				putString(sb.toString());
+				putString(workBuffer,sb.toString());
 			}
 		}
 	}
 	
 	public ByteBuffer[] encode(HeaderParser header) {
-		buildStart();
+		ByteBuffer workBuffer=PoolManager.getBufferInstance();
+		workBuffer.order(ByteOrder.BIG_ENDIAN);
 		try{
-			build(header);
+			build(workBuffer,header);
 			compresser.setInput(workBuffer.array(),0,workBuffer.position());
 //			compresser.finish();
 			List<ByteBuffer> buffers=new ArrayList<ByteBuffer>();
@@ -132,7 +135,7 @@ public class NameValueBuilder {
 			}
 			return BuffersUtil.toByteBufferArray(buffers);
 		}finally{
-			buildEnd();
+			PoolManager.poolBufferInstance(workBuffer);
 		}
 	}
 }
