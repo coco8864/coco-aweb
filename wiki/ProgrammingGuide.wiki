@@ -5,7 +5,7 @@
 !WebSocketsアプリケーションフレームワーク wsq
 
  # アプリケーションモデル
-   アプリケーションを、１つのurl配下に構築、その中に複数のqueueを配備、ブラウザより、queueに対して、更新(publish),参照(subscribe)することにより動作します。
+   アプリケーションを、１つのurlで構築、複数のqueueを配備する。publishメソッドでブラウザの情報queueに通知し、subscribeメソッドでqueueからの通知情報をブラウザで受け取る。
   特徴
    * シンプルなAPI
    * !WebSocketsの特徴を生かした、リアルタイムな通信
