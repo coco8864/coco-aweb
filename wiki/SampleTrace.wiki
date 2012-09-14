@@ -47,8 +47,9 @@
 ===備考===
  動作確認用のサイトは、Googole App Engine上動作しており、レスポンスが遅い場合があります。
 
-
+<wiki:comment>
  Googole App Engineのドメイン名は、プレフィクスをつけてもアクセスできるようです。
   * 例）http://foo.ph-sample.appspot.com/
 
  ph.phantom-test.appspot.comというドメインも物理的に存在している事になり、"Phantom" の例としてはあまり適切でなかったようです。
+</wiki:comment>
