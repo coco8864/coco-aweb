@@ -667,7 +667,8 @@ public class AdminHandler extends WebServerHandler{
 				completeResponse("403","token error.");
 			}else{
 				mapping.setOption(MappingResult.PARAMETER_VELOCITY_USE,"false");
-				mapping.setDesitinationFile(config.getPublicDocumentRoot());
+				mapping.setDesitinationFile(config.getAdminDocumentRoot());
+//				mapping.setDesitinationFile(config.getPublicDocumentRoot());
 				forwardHandler(Mapping.FILE_SYSTEM_HANDLER);
 			}
 			return;
