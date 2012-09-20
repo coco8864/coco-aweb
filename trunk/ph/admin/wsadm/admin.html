@@ -8,77 +8,28 @@
 	<meta http-equiv="Cache-Control" content="no-cache"> 
 	<meta http-equiv="Expires" content="0"> 
 	<title>Phatom Proxy Console</title>
-
 	<link type="text/css" href="/pub/css/jquery-ui-1.8.2.custom.css" rel="stylesheet" />
-	<script type="text/javascript" src="/pub/js/ph-loader.js?include=ph-queue.js"></script>
+	<script type="text/javascript" src="/pub/js/underscore-min.js"></script>
+	<script type="text/javascript" src="/pub/js/backbone-min.js"></script>
+	<script type="text/javascript" src="/pub/js/ph-loader.js"></script>
 	<script type="text/javascript" src="/pub/js/dateformat.js"></script>
 	<script type="text/javascript" src="/pub/js/jquery-1.5.1.min.js"></script>
 	<script type="text/javascript" src="/pub/js/jquery-ui-1.8.2.custom.min.js"></script>
-	<link type="text/css" href="/pub/css/ph.css" rel="stylesheet" /> 
-<style type="text/css"><!--
-td,th {border:1px solid #000;text-align:left;font-size:x-small}
-.ui-resizable-se {
-	bottom: 17px;
-}
-.mainTitle{ margin: 0.0em 0.5em;padding:0em 0.0em 0.0em;}
-.welcom{ margin: 0.0em 1.0em;font-size: 125.0%;}
--->
-</style>
-
-<script type="text/javascript">
-//hashとインデックスの組み合わせ
-var tabIndexs = {'#statusTab' : 0, '#settingTab' : 1};
-var userTabHashKey='userTabHash.$!esc.html($loginUser.loginId)';
-window.onhashchange = function(){
-	//現在のhashからインデックスの値を取得
-	var hash=window.location.hash;
-	if(!hash){
-		//hash from session strage
-		hash=sessionStorage[userTabHashKey];
-	}
-	sessionStorage[userTabHashKey]=hash;
-	var index = tabIndexs[hash];
-	//hashが無い場合は最初のタブを選択
-	index = index ? index : 0;
-	if(index===8){//#debug
-		jQuery('#debugLi').show();
-	}
-	//現在のインデックスでタブをセレクト
-	jQuery('#tabs').tabs("select", index);
-};
-ph.jQuery(function() {
-	jQuery("#tabs").tabs({
-		cache:true,
-		ajaxOptions: {
-			error: function(xhr, status, index, anchor) {
-ph.log("tabs ajaxOptions error");
-			},
-			success: function(xhr, status, index, anchor) {
-ph.log("tabs ajaxOptions success.index:"+index +":anchor:"+anchor);
-			}
-		},
-		select: function(event, ui) {
-			window.location.hash = ui.tab.hash;
-		}
-	});
-	window.onhashchange();
-});
-	</script> 
-</head> 
-<body> 
-<H1 class="mainTitle" style="float: left;">Phantom Proxy Console</H1>
-<div style="float: right;" class="welcom">$!esc.html($loginUser.loginId)さんようこそ
+	<script type="text/javascript" src="/pub/js/admin.js"></script>
+	<link type="text/css" href="/pub/css/phadmin.css" rel="stylesheet" /> 
+</head>
+<body>
+<H1 class="mainTitle" style="float:left;">Phantom Proxy Console</H1>
+<div class="welcom" style="float: right;">さんようこそ
 <img src="/pub/images/home.gif" title="home" onclick='location=ph.publicWebUrl'/>
 <img src="/pub/images/logout.gif" title="logout" onclick='location=(ph.authUrl+"/logout")'/>
 </div>
-<div class="demo" style="clear: both;">
-<div id="tabs"> 
+<div id="tabs" style="clear: both;"> 
 	<ul>
 		<li><a title="statusTab" href="/admin/wsadm/status.html" hash="#status">status</a></li>
 		<li><a title="settingTab" href="/admin/wsadm/setting.html">setting</a></li>
 	</ul>
 </div><!-- End tab -->
-</div><!-- End demo -->
 
 <div id="phDebug">
 <p>デバッグ情報</p>
