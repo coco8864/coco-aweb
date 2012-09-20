@@ -67,34 +67,7 @@
           </goals>
         </execution>
       </executions>
-
     </plugin>
-
-
-<!--
-    <plugin>
-      <groupId>com.github.iron9light</groupId>
-      <artifactId>coffeescript-maven-plugin</artifactId>
-      <version>1.1.2</version>
-      <configuration>
-        <srcDir>${basedir}/src/main/coffee</srcDir>
-        <outputDir>${basedir}/ph/docroot/pub/js</outputDir>
-        <bare>false</bare>
-        <modifiedOnly>false</modifiedOnly>
-        <allowedDelete>true</allowedDelete>
-        <compilerUrl></compilerUrl>
-      </configuration>
-      <executions>
-        <execution>
-          <id>coffeescript</id>
-          <phase>generate-resources</phase>
-          <goals>
-            <goal>compile</goal>
-          </goals>
-        </execution>
-      </executions>
-    </plugin>
--->
 			<plugin>
 				<groupId>org.datanucleus</groupId>
 				<artifactId>maven-datanucleus-plugin</artifactId>
