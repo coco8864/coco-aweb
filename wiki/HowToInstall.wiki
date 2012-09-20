@@ -4,7 +4,7 @@
 
 事前準備
 
-  Phantom Proxyは、Java SE 6以上のjava環境上で動作します。以下等を参照しjava実行環境を準備してください。
+  Phantom Proxyは、Java SE 6以上のjava環境上で動作します。以下等を参照しjava実行環境を準備してください。(SPDYを有効にするには、Java SE 7以上が必要です)
   http://java.sun.com/javase/ja/6/download.html
 
  # 以下より最新のパッケージをダウンロードしてください。
