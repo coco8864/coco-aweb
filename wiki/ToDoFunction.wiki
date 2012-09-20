@@ -77,6 +77,8 @@
   * 基本認証時に長時間放置すると元に戻れなくなる
   * Storeの参照数がいいかげん
   * Json-libのmybejason問題の修正
+  * accesslogの出力形式を標準にあわせる
+  * SPDY,websocketのaccesslogの出力形式を含めて、ドキュメントに説明する
 
 
 できそうだけど基本やらない方針
