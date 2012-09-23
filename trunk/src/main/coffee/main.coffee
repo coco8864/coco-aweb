@@ -13,9 +13,11 @@ window.onhashchange = ->
   $('#tabs').tabs('select', index)
 
 ph.jQuery ->
-  auth = new Auth({})
-  auth.bind "done",(user) ->
-    alert(ph.JSON.stringify(user))
+  ph.debug=true # for debug
+  authUser = new AuthUser({})
+  authUser.bind "done",(user) ->
+    ph.log(ph.JSON.stringify(user))
+    $('#loginid').text(user.loginId)
   $('#tabs').tabs({
     cache:true
     ajaxOptions: {

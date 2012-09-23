@@ -1,5 +1,5 @@
 # 認証情報を保持する、ログイン時に取得し、SessionStrageに保持
-class Auth extends Backbone.Model
+class AuthUser extends Backbone.Model
   initialize: ->
     if @done==true
       @user=null #TODO get from SessionStrage
