@@ -15,6 +15,8 @@ window.onhashchange = ->
 ph.jQuery ->
   ph.debug=true # for debug
   authUser = new AuthUser({})
+  statusView = new StatusView({})
+  ph.log(statusView.el)
   authUser.bind "done",(user) ->
     ph.log(ph.JSON.stringify(user))
     $('#loginid').text(user.loginId)
