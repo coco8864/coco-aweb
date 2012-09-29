@@ -406,7 +406,6 @@ public class Mapping{
 		} catch (JSONException e) {//jsonï∂éöóÒÇ≈ÇÕÇ»Ç©Ç¡ÇΩèÍçá
 			optionsJson=new JSONObject();
 		}
-		json.put("options", " "+json.get("options"));
 		json.put("sourceUrl",calcSourceUrl());
 		return json;
 	}

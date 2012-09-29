@@ -14,8 +14,7 @@ function doMappingCommand(command){
 		destinationServer:jQuery("#mappingDestinationServer").val(),
 		destinationPath:jQuery("#mappingDestinationPath").val(),
 		roles:jQuery("#mappingRoles").val(),
-##jsonlibが引用譜を除いて'{'で始まる文字列は、jsonと判定してしまう。
-		options:' ' + jQuery("#mappingOptions").val()
+		options:jQuery("#mappingOptions").val()
 	}
 	if(command=="mappingInsert"){
 		delete mapping.id;
