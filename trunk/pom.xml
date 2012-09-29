@@ -63,7 +63,7 @@
           <id>coffee</id>
           <goals>
             <goal>coffee</goal>
-            <goal>minify</goal>
+            <!--goal>minify</goal-->
           </goals>
         </execution>
       </executions>
@@ -316,8 +316,8 @@
 		<dependency>
 			<groupId>net.sf.json-lib</groupId>
 			<artifactId>json-lib</artifactId>
-			<version>2.3</version>
-			<classifier>jdk15</classifier>
+			<version>2.4.1-skipmaybe</version>
+			<!--classifier>jdk15</classifier-->
 		</dependency>
 		<dependency>
 			<groupId>naru.async</groupId>
