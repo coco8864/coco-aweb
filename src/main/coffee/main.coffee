@@ -1,3 +1,4 @@
+wsadm={}
 tabIndexs = {'#statusTab' : 0, '#settingTab' : 1}
 userTabHashKey='userTabHash.xxx'
 window.onhashchange = ->
@@ -14,10 +15,11 @@ window.onhashchange = ->
 
 ph.jQuery ->
   ph.debug=true # for debug
-  authUser = new AuthUser({})
-  statusView = new StatusView({})
-  ph.log(statusView.el)
-  authUser.bind "done",(user) ->
+  wsadm.authUser = new AuthUser()
+  wsadm.stastics = new Stastics()
+  wsadm.statusView = new StatusView()
+  ph.log(wsadm.statusView.el)
+  wsadm.authUser.bind "done",(user) ->
     ph.log(ph.JSON.stringify(user))
     $('#loginid').text(user.loginId)
   $('#tabs').tabs({
