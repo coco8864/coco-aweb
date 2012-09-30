@@ -7,7 +7,7 @@
   <!--meta http-equiv="Pragma" content="no-cache"> 
   <meta http-equiv="Cache-Control" content="no-cache"> 
   <meta http-equiv="Expires" content="0"-->
-  <title>Phatom Proxy Console</title>
+  <title>Phatom Proxy Console wsadm</title>
   <link type="text/css" href="/pub/css/jquery-ui-1.8.2.custom.css" rel="stylesheet" />
   <script type="text/javascript" src="/pub/js/ph-loader.js"></script>
   <script type="text/javascript" src="/pub/js/dateformat.js"></script>
@@ -19,7 +19,7 @@
   <link type="text/css" href="/pub/css/phadmin.css" rel="stylesheet" /> 
 </head>
 <body>
-<H1 class="mainTitle" style="float:left;">Phantom Proxy Console</H1>
+<H1 class="mainTitle" style="float:left;">Phantom Proxy Console wsadm</H1>
 <div class="welcom" style="float: right;"><span id="loginid"></span>さんようこそ
 <img src="/pub/images/home.gif" title="home" onclick='location=ph.publicWebUrl'/>
 <img src="/pub/images/logout.gif" title="logout" onclick='location=(ph.authUrl+"/logout")'/>
