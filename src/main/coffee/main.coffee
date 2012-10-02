@@ -1,11 +1,14 @@
-wsadm={}
-tabIndexs = {'#statusTab' : 0, '#settingTab' : 1}
-userTabHashKey='userTabHash.xxx'
+## PHantom Wsq Admin
+phwa={
+  TAB_INDEXS : {'#statusTab' : 0, '#settingTab' : 1}
+  TAB_HASH_KEY : 'userTabHash.xxx'
+  STASTICS_QN : 'stastics'
+}
 window.onhashchange = ->
 # 現在のhashからインデックスの値を取得
-  hash = window.location.hash ? sessionStorage[userTabHashKey]
-  sessionStorage[userTabHashKey]=hash
-  index = tabIndexs[hash]
+  hash = window.location.hash ? sessionStorage[phwa.TAB_HASH_KEY]
+  sessionStorage[phwa.TAB_HASH_KEY]=hash
+  index = phwa.TAB_INDEXS[hash]
   # hashが無い場合は最初のタブを選択
   index ?= 0
   if index==8 # if debug
@@ -15,11 +18,11 @@ window.onhashchange = ->
 
 ph.jQuery ->
   ph.debug=true # for debug
-  wsadm.authUser = new AuthUser()
-  wsadm.stastics = new Stastics()
-  wsadm.statusView = new StatusView()
-  ph.log(wsadm.statusView.el)
-  wsadm.authUser.bind "done",(user) ->
+  phwa.authUser = new AuthUser()
+  ##phwa.stastics = new Stastics()
+  phwa.statusView = new StatusView(new Stastics())
+  ph.log(phwa.statusView.el)
+  phwa.authUser.bind "done",(user) ->
     ph.log(ph.JSON.stringify(user))
     $('#loginid').text(user.loginId)
   $('#tabs').tabs({
