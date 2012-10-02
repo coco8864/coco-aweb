@@ -23,17 +23,20 @@
     'http(s)://host:port/path'
     'ws(s)://host:port/path'
     * openCb:openリクエストの結果が通知される。
+      evnetCbの内open結果だけが通知される
     * evnetCb:このconnectionに関するイベントが通知される。
      connection.cbType INFO|ERROR|MESSAGE
-     connection.cause  open|subscribe|publish|qnames|close|unsubscribe|server
+     connection.cause  open|close|subscribe|unsubscribe|publish|qnames|server
      connection.message opend|closed|
      connection.qname 対象qname
      connection.subId 対象subid
      connection.qnameList qnameメソッドの復帰情報、このurlに登録されているqueue名群
      openCbでconnectionを受け取る
      openCbは、その後のconnectionイベントの通知も受ける
+   * ph.wsq.bind(evnetName,eventCb)
+     特定のeventだけがcbされる
   * connectionオブジェクト
-    各queueへの操作や接続の解消を行う
+    queueとの接続(open)単位で作成される、各queueへの操作や接続の解消を行う
     * publish(qname,message,subid);
      message:string or object or blob
     * subscribe(qname,subscribeCb,subid);
