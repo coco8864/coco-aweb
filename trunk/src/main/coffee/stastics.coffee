@@ -4,14 +4,17 @@ class Stastics extends Backbone.Model
     ph.wsq.open('/wsq'
       ,(con)=>
         @con=con
-        con.deploy('stastics','naru.aweb.wsadm.StasticsWsqlet')
+        con.deploy(phwa.STASTICS_QN,'naru.aweb.wsadm.StasticsWsqlet')
+        @
       ,(con)=>
         ph.log('open event:'+con.cbType+':'+con.cause)
-    )
+        @
+      )
+    @
   start:->
-   @con.subscribe('stastics',@onSubscribe)
+   @con.subscribe(phwa.STASTICS_QN,@onSubscribe)
   stop:->
-   @con.unsubscribe('stastics')
+   @con.unsubscribe(phwa.STASTICS_QN)
   onSubscribe:(msg)=>
    @msg=msg
    @trigger("update",msg)
