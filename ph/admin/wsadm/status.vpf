@@ -7,8 +7,7 @@
 
 <Hr/>
 <H2>統計情報</H2>
-開始<input type="checkBox" onclick='wsadm.stastics.start()'/>
-停止<input type="checkBox" onclick='wsadm.stastics.stop()'/>
+watch<input type="checkBox" id='stasticsCheck'/>
 interval:$!esc.html($!{config.getString('broardcastInterval')})ms
 <input type="button" onclick="ph.admin.doCommand('checkPool');" value="PoolCheck" title="結果は、ph.logに出力されます"/>
 <table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
