@@ -461,24 +461,23 @@ public class Mapping{
 		case FILE:
 			destinationHandlerClass=FILE_SYSTEM_HANDLER;
 			//fileの場合、pathにベースとなるディレクトリを指定、ブラウザからのpathはベースからの相対とする
+		case HANDLER:
 			try {
-					if(destinationPath.startsWith("/")||destinationPath.indexOf(":")>0){
-						this.destinationFile=new File(destinationPath).getCanonicalFile();
-					}else{
-						this.destinationFile=new File(config.getPhantomHome(),destinationPath).getCanonicalFile();
-					}
+				File destFile=new File(destinationPath);
+				if(destFile.isAbsolute()){
+					this.destinationFile=destFile.getCanonicalFile();
+				}else{
+					this.destinationFile=new File(config.getAppsDocumentRoot(),destinationPath).getCanonicalFile();
+				}
 				} catch (IOException e1) {
 					logger.error("getCanonicalFile error,",e1);
 					return false;
 				}
-//			this.destinationPath="/";
-			break;
-		case HANDLER:
-//ここでロードするとConfigの初期化が再帰で呼ばれてしまう。
-//			try {
-//				this.destinationHandlerClass= Class.forName(destinationServer);
-//			} catch (ClassNotFoundException e) {
-//			}
+				if("naru.aweb.admin.AdminHandler".equals(destinationServer)){
+					config.setAdminDocumentRoot(destinationFile);
+				}else if("naru.aweb.auth.AuthHandler".equals(destinationServer)){
+					config.setAuthDocumentRoot(destinationFile);
+				}
 			break;
 		case WS:
 		case WSS:
@@ -498,23 +497,16 @@ public class Mapping{
 				optionsJson=new JSONObject();
 			}
 			setLogType((String)optionsJson.get("logType"));
-//			String authRoles=optionsJson.optString("auth",null);
-//			rolesList.clear();
-//			if(authRoles!=null){
-//				String[] rolesArray=authRoles.split(",");
-//				for(int i=0;i<rolesArray.length;i++){
-//					rolesList.add(rolesArray[i]);
-//				}
-//			}
 			if(Boolean.FALSE.equals(optionsJson.optBoolean("peek",true))){
 				destinationHandlerClass=SSL_PROXY_HANDLER;
 			}
 			if(Boolean.FALSE.equals(optionsJson.optBoolean("sessionUpdate",true))){
 				isSessionUpdate=false;
 			}
-//			isAuth=optionsJson.optBoolean("auth", false);
-//			isReplay=optionsJson.optBoolean("replay", false);
 			setupAllowOrigins(optionsJson.optString("allowOrigins"));
+			if(optionsJson.optBoolean("publicWeb",false)){
+				config.setPublicDocumentRoot(destinationFile);
+			}
 		}
 		rolesList.clear();
 		if(roles!=null && roles.length()!=0){

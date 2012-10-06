@@ -136,8 +136,8 @@ public class DispatchResponseHandler extends WebServerHandler {
 			completeResponse(statuCode);
 			break;
 		case CROSS_DOMAIN_FRAME:
-			mapping.setResolvePath("/auth/crossDomainFrame.vsp");
-			mapping.setDesitinationFile(config.getAdminDocumentRoot());
+			mapping.setResolvePath("/crossDomainFrame.vsp");
+			mapping.setDesitinationFile(config.getAuthDocumentRoot());
 			setRequestAttribute(RESPONSE, mapping.getAttribute(RESPONSE));
 			forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
 			break;

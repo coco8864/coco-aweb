@@ -110,8 +110,8 @@
 										<exclude name="**/.svn/**/*.*" />
 									</fileset>
 							</copy>
-							<copy todir="pack/phantom/ph/admin/">
-								<fileset dir="ph/admin/">
+							<copy todir="pack/phantom/ph/apps/admin/">
+								<fileset dir="ph/apps/admin/">
 									<include name="admin.vsp" />
 									<include name="adminjs.vpf" />
 									<include name="status.vsf" />
@@ -125,14 +125,17 @@
 									<include name="setting.vpf" />
 									<include name="trace.vpf" />
 									<include name="dialogs.vpf" />
-									<include name="auth/authFrame.vsp" />
-									<include name="auth/crossDomainFrame.vsp" />
-									<include name="auth/basicForm.vsp" />
-									<include name="auth/creanupAuthHeader.vsp" />
-									<include name="auth/digestForm.vsp" />
-									<include name="auth/webAuthenticate.vsp" />
-									<include name="fileSystem/listing.vsp" />
 									<include name="wsq/xhrFrame.html" />
+								</fileset>
+							</copy>
+							<copy todir="pack/phantom/ph/apps/auth/">
+								<fileset dir="ph/apps/auth/">
+									<include name="authFrame.vsp" />
+									<include name="crossDomainFrame.vsp" />
+									<include name="basicForm.vsp" />
+									<include name="creanupAuthHeader.vsp" />
+									<include name="digestForm.vsp" />
+									<include name="webAuthenticate.vsp" />
 								</fileset>
 							</copy>
 							<copy todir="pack/phantom/ph/setting/">
@@ -152,8 +155,8 @@
            </replacetokens>
        </filterchain>
 							</copy>
-							<copy todir="pack/phantom/ph/docroot/">
-								<fileset dir="ph/docroot/">
+							<copy todir="pack/phantom/ph/apps/docroot/">
+								<fileset dir="ph/apps/docroot/">
 									<include name="favicon.ico" />
 									<include name="index.html" />
 									<include name="pub/js/ph-queue.js" />

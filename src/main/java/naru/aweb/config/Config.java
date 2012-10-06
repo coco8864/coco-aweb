@@ -96,7 +96,8 @@ public class Config {
 	private static final String REAL_HOSTS = "realHosts";
 	private static final String REAL_HOST = "realHost";
 
-	private File adminDocumentRoot;// adminで見えるところ(内部的に使うリソースもここ）
+	private File adminDocumentRoot;// adminで見えるところ
+	private File authDocumentRoot;// authで見えるところ
 	private File portalDocumentRoot;// for portal
 	private File publicDocumentRoot;// 誰でも見えるところ
 	private File appsDocumentRoot;//配備先ディレクトリ
@@ -654,13 +655,9 @@ public class Config {
 		}
 		// Mapper作成には、realHostsが必要、realHostsの初期化の後に呼び出す。
 		authorizer=new Authorizer(configuration);
-		mapper = new Mapper(this);
-		
 		try {
 			String dir = configuration.getString(PATH_PUBLIC_DOCROOT);
 			publicDocumentRoot = new File(dir).getCanonicalFile();
-			dir = configuration.getString(PATH_ADMIN_DOCROOT);
-			adminDocumentRoot = new File(dir).getCanonicalFile();
 			dir = configuration.getString(PATH_PORTAL_DOCROOT);
 			portalDocumentRoot = new File(dir).getCanonicalFile();
 			dir = configuration.getString(PATH_INJECTION_DIR);
@@ -668,11 +665,15 @@ public class Config {
 			injectionHelper = new InjectionHelper(this);
 			dir = configuration.getString(PATH_APPS_DOCROOT);
 			appsDocumentRoot = new File(dir).getCanonicalFile();
+			
+			//adminDocumentRoot = new File(appsDocumentRoot,"admin").getCanonicalFile();
+			//authDocumentRoot = new File(appsDocumentRoot,"auth").getCanonicalFile();
+			
 		} catch (IOException e) {
 			logger.error("getCanonicalFile error.",e);
 			return false;
 		}
-		
+		mapper = new Mapper(this);
 		String pacUrl = configuration.getString("pacUrl");
 		if("".equals(pacUrl)){
 			pacUrl=null;
@@ -1038,10 +1039,24 @@ public class Config {
 	}
 
 	/* 公開ディレクトリ関連 */
+	public void setAdminDocumentRoot(File adminDocumentRoot){
+		this.adminDocumentRoot=authDocumentRoot;
+	}
 	public File getAdminDocumentRoot() {
 		return adminDocumentRoot;
 	}
-
+	
+	public void setAuthDocumentRoot(File authDocumentRoot){
+		this.authDocumentRoot=authDocumentRoot;
+	}
+	public File getAuthDocumentRoot() {
+		return authDocumentRoot;
+	}
+	
+	public void setPublicDocumentRoot(File publicDocumentRoot){
+		this.publicDocumentRoot=publicDocumentRoot;
+	}
+	
 	public File getPublicDocumentRoot() {
 		return publicDocumentRoot;
 	}

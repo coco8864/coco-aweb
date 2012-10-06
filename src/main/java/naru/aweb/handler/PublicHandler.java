@@ -19,8 +19,9 @@ public class PublicHandler extends WebServerHandler{
 	
 	//[空白かも]key[空白かも]=[空白かも]value[空白かも](;もしくは文末)　形式の正規表現
 	//'"'で括られる可能性もあるらしいが正規表現では難しい
-	private static String PH_JS="/js/ph.js";
+//	private static String PH_JS="/js/ph.js";
 	private static String PAC_PAGE="/proxy.pac";
+	private static String PAC_TEMPLATE="/template/proxy.pac";
 	private static String COOKIE_KEY="PHANTOM_PAC";
 	private static Pattern COOKIE_PATTERN=Pattern.compile(" *"+ COOKIE_KEY +" *= *(\\S*)(;|\\z)");
 	
@@ -101,6 +102,8 @@ public class PublicHandler extends WebServerHandler{
 		MappingResult mapping=getRequestMapping();
 		mapping.setResolvePath(PAC_PAGE);
 		mapping.setDesitinationFile(config.getAdminDocumentRoot());
+		setRequestAttribute(ATTRIBUTE_VELOCITY_ENGINE,config.getVelocityEngine());
+		setRequestAttribute(ATTRIBUTE_VELOCITY_PAGE,PAC_TEMPLATE);
 		forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
 	}
 /*
