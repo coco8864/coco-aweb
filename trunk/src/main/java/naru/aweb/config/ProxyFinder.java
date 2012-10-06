@@ -2,7 +2,6 @@ package naru.aweb.config;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,7 +9,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.URL;
 import java.util.Enumeration;
@@ -44,11 +42,11 @@ import naru.aweb.util.ServerParser;
  */
 public class ProxyFinder {
 	private static Logger logger = Logger.getLogger(ProxyFinder.class);
-	private static VelocityEngine velocityEngine = null;
 	private static final String NEXT_FIND_PROXY_FOR_URL_FUNC_NAME = "NextFindProxyForURL";
 	private static final ServerParser DIRECT = new ServerParser(null, 0);
 	private static final Pattern FIND_PROXY_PATTERN = Pattern.compile("PROXY (([^:]*):(\\d*))", Pattern.CASE_INSENSITIVE);
 	
+	private Config config;
 	private boolean isUseProxy;
 	// http,httpsÇ≈å≈íËìIÇ…proxyÇ™åàÇ‹Ç¡ÇƒÇ¢ÇÈèÍçáÇ…ê›íË
 	private ServerParser httpProxyServer = null;
@@ -71,26 +69,6 @@ public class ProxyFinder {
 
 	public static String getNextFindProxyForUrlFuncName() {
 		return NEXT_FIND_PROXY_FOR_URL_FUNC_NAME;
-	}
-
-	private static VelocityEngine getVelocityEngine() {
-		if (velocityEngine != null) {
-			return velocityEngine;
-		}
-		velocityEngine = new VelocityEngine();
-		velocityEngine.addProperty("file.resource.loader.class",
-				"org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader");
-		velocityEngine.setProperty("runtime.log.logsystem.class",
-				"org.apache.velocity.runtime.log.SimpleLog4JLogSystem");
-		velocityEngine.setProperty("runtime.log.logsystem.log4j.category",
-				"velocity");
-		velocityEngine.setProperty("resource.manager.logwhenfound", "false");
-		try {
-			velocityEngine.init();
-		} catch (Exception e) {
-			throw new RuntimeException("fail to velocityEngine.ini()", e);
-		}
-		return velocityEngine;
 	}
 
 	public static String contents(URL url) throws IOException {
@@ -119,7 +97,7 @@ public class ProxyFinder {
 		try {
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			out = new OutputStreamWriter(baos, "utf-8");
-			VelocityEngine ve = getVelocityEngine();
+			VelocityEngine ve = config.getVelocityEngine();
 			ve.mergeTemplate(template, "utf-8", veloContext, out);
 			out.close();
 			String result = new String(baos.toByteArray(), "iso8859_1");
@@ -227,7 +205,7 @@ public class ProxyFinder {
 		}
 	}
 	
-	public static ProxyFinder create(String pac,
+	public static ProxyFinder create(Config config,String pac,
 				String httpProxyServer,String secureProxyServer, String exceptDomians,String selfDomain,int proxyPort) throws IOException{
 		Set<String>exceptDomiansSet=new HashSet<String>();
 		if(exceptDomians!=null){
@@ -241,7 +219,7 @@ public class ProxyFinder {
 			pacUrl=new URL(pac);
 		}
 		ProxyFinder finder=new ProxyFinder();
-		if( finder.init(pacUrl,ServerParser.parse(httpProxyServer), ServerParser.parse(secureProxyServer), exceptDomiansSet,selfDomain,proxyPort) ){
+		if( finder.init(config,pacUrl,ServerParser.parse(httpProxyServer), ServerParser.parse(secureProxyServer), exceptDomiansSet,selfDomain,proxyPort) ){
 			return finder;
 		}else{
 			finder.term();
@@ -305,10 +283,11 @@ public class ProxyFinder {
 	 * @return
 	 * @throws IOException
 	 */
-	public boolean init(URL pacUrl, 
+	public boolean init(Config config,URL pacUrl, 
 			ServerParser httpProxyServer,ServerParser secureProxyServer, Set<String> exceptDomians,
 			String selfDomain,int proxyPort)
 			throws IOException {
+		this.config=config;
 		this.pacUrl=pacUrl;
 		this.exceptDomians = exceptDomians;
 		this.httpProxyServer = httpProxyServer;

@@ -142,7 +142,7 @@
 									<include name="velocityTool.xml" />
 								</fileset>
 							</copy>
-							<copy encoding="utf-8" file="ph/setting/ph.init.properties" tofile="pack/phantom/ph/setting/ph.init.properties">
+							<copy encoding="utf-8" file="src/main/resources/phantom.properties" tofile="pack/phantom/ph/classes/phantom.properties">
        <filterchain>
           <striplinecomments>
              <comment value="!"/>
