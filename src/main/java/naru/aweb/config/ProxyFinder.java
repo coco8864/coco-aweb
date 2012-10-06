@@ -318,7 +318,7 @@ public class ProxyFinder {
 		if (httpProxyServer != null) {// 固定のproxyを使う設定
 			assert (secureProxyServer != null);
 			if (exceptDomians != null) {// 除外対象が設定されている
-				if( loadPac(merge("self.pac", null))==false){//内部的にpacを作成する
+				if( loadPac(merge("/template/self.pac", null))==false){//内部的にpacを作成する
 					return false;
 				}
 			}
@@ -335,7 +335,7 @@ public class ProxyFinder {
 	public String getProxyPac(String localHost) {
 		String pac = phantomPacCash.get(localHost);
 		if (pac == null) {
-			pac = merge("proxy.pac", localHost);
+			pac = merge("/template/proxy.pac", localHost);
 			phantomPacCash.put(localHost, pac);
 		}
 		return pac;
