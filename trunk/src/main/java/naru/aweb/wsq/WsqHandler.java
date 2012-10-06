@@ -318,6 +318,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 			setRequestAttribute(ATTRIBUTE_VELOCITY_ENGINE,config.getVelocityEngine());
 			setRequestAttribute(ATTRIBUTE_VELOCITY_PAGE,"/template/xhrFrame.vsp");
 			forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
+			return;
 		}
 		/*
 		if(path.endsWith(".html")||path.endsWith(".vsp")||path.endsWith(".vsf")){
