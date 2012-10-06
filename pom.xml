@@ -174,10 +174,12 @@
 									<include name="*.jar" />
 								</fileset>
 							</copy>
-							<copy todir="pack/phantom/ph/classes/">
-								<fileset dir="${project.build.directory}/classes">
+							<copy todir="pack/phantom/ph/classes/template/">
+								<fileset dir="${project.build.directory}/classes/template/">
 									<include name="proxy.pac" />
 									<include name="self.pac" />
+									<include name="listing.vsp" />
+									<include name="xhrFrame.vsp" />
 								</fileset>
 							</copy>
 							<mkdir dir="pack/phantom/watch"/>
