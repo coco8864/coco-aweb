@@ -1,0 +1,12 @@
+(function(){
+  ph.wsq.open(
+    '/wsq',
+    function(con){
+        if(con.cbType!=='INFO'||con.message!=='opened'){
+          return;
+        }
+      con.publish('test',document.body.innerHTML);
+      con.close();
+    }
+  );
+})();
