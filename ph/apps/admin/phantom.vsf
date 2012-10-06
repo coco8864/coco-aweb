@@ -1,0 +1,136 @@
+<script type="text/javascript"> 
+function setProxy(){
+ ph.admin.doCommand('setProxy',{
+   pacUrl:ph.jQuery("#proxyPacUrl").val(),
+   proxyServer:ph.jQuery("#proxyServer").val(),
+   sslProxyServer:ph.jQuery("#sslProxyServer").val(),
+   exceptProxyDomains:ph.jQuery("#exceptProxyDomains").val()
+  },
+  function(x){
+##setProxy完了
+  });
+}
+function setKeepAlive(){
+ ph.admin.doCommand('setKeepAlive',{
+   isWebKeepAlive:ph.jQuery("#isWebKeepAlive").attr('checked'),
+   isProxyKeepAlive:ph.jQuery("#isProxyKeepAlive").attr('checked'),
+   maxKeepAliveRequests:ph.jQuery("#maxKeepAliveRequests").val(),
+   keepAliveTimeout:ph.jQuery("#keepAliveTimeout").val(),
+   contentEncoding:ph.jQuery("#contentEncoding").val(),
+   allowChunked:ph.jQuery("#allowChunked").attr('checked')
+  },
+  function(x){
+##setKeepAlive完了
+  });
+}
+
+function setAuth(){
+ var scheme=ph.jQuery("#authScheme").val();
+ ph.jQuery("#curSchme").text(scheme);
+ ph.admin.doCommand('setAuth',{
+   scheme:scheme,
+   logoutUrl:ph.jQuery("#authLogoutUrl").val(),
+   sessionTimeout:ph.jQuery("#authSessionTimeout").val()
+  },
+  function(x){
+##setAuth完了
+  });
+}
+
+function accessLogDeleteQuery(query){
+	var deleteAccessLogCb={
+		onComplete:function(msg){searchPage();},
+		onError:function(msg){ph.log('runTrace onError:');ph.dump(msg);}
+	};
+	ph.admin.doPramCommand('accessLog','deleteQuery',{query:query},function(chId){
+			ph.queue.subscribeById(chId,deleteAccessLogCb);
+		});
+}
+
+function accessLogExportQuery(query){
+	var exportAccessLogCb={
+		onComplete:function(msg){
+			ph.jQuery("#exportFileId").val(msg.message);
+			ph.jQuery("#exportDownloadForm").submit();},
+		onError:function(msg){ph.log('runTrace onError:');ph.dump(msg);}
+	};
+	ph.admin.doPramCommand('accessLog','exportQuery',{query:query},function(chId){
+			ph.queue.subscribeById(chId,exportAccessLogCb);
+		});
+}
+</script>
+<H1>Phntom操作</H1>
+<Hr/>
+<H2>認証</H2>
+<p>mappingとuserのrolesで認可します。</p>
+認証方法:<select id="authScheme" size="1">
+<option value="None">None</option>
+<option value="Basic">Basic</option>
+<option value="Digest">Digest</option>
+<option value="BasicForm">BasicForm</option>
+<option value="DigestForm">DigestForm</option>
+</select>現在:<span id="curSchme">$!esc.html($!{config.getString('authenticateScheme')})</span><br/>
+sessionTimeout:<input type="text" id="authSessionTimeout" size="12" value="$!esc.html($!{config.getString('sessionTimeout')})"/><br/>
+logoutUrl:<input type="text" id="authLogoutUrl" size="64" value="$!esc.html($!{config.getString('logoutUrl')})"/><br/>
+<input type="button" value="設定"  onclick="setAuth();"/><br/>
+
+<Hr/>
+<H2>AccessLog</H2>
+<p>ログ、トレースデータを移出、移入することで別環境で採取した資料を取り扱うことができます。</p>
+<form method="post" enctype="multipart/form-data" action="accessLog" target="uploadFrame">
+<input type="hidden" name="command" value="import" />
+<input type="hidden" name="token" value="$esc.html(${session.token})"/>
+移入ファイル指定：<input type="file" name="importsFile" id="importsFile" />
+<input type="submit" value="移入"/><br/>
+</form>
+全AccessLog削除:<input type="button" onclick="accessLogDeleteQuery('');" value="削除" /><br/>
+全AccessLog移出:<input type="button" onclick="accessLogExportQuery('');" value="移出" /><br/>
+
+<Hr/>
+<H2>Replay File登録</H2>
+<p>Replay機能で返却するコンテンツを登録することができます。</p>
+<form method="post" enctype="multipart/form-data" action="replayUpload" target="uploadFrame">
+<input type="hidden" name="token" value="$esc.html(${session.token})"/>
+path：<input type="text" name="replaypath" id="replaypath" size="64"/>
+file：<input type="file" name="replayFile" id="replayFile" />
+<input type="submit" value="登録"/><br/>
+</form>
+全ReplayFile削除:<input type="button" onclick="ph.admin.doCommand('replayDelete');" value="削除" />
+
+<Hr/>
+<H2>Proxy設定</H2>
+pacUrl：<input type="text" name="proxyPacUrl" id="proxyPacUrl" size="64" value="$!esc.html($!{config.getString('pacUrl')})"/><br>
+proxyServer：<input type="text" name="proxyServer" id="proxyServer" size="32" value="$!esc.html($!{config.getString('proxyServer')})"/><br>
+sslProxyServer：<input type="text" name="sslProxyServer" id="sslProxyServer" size="32" value="$!esc.html($!{config.getString('sslProxyServer')})"/><br>
+exceptProxyDomains:<input type="text" name="exceptProxyDomains" id="exceptProxyDomains" size="64" value="$!esc.html($!{config.getString('exceptProxyDomains')})"/><br/>
+<input type="button" value="設定" onclick="setProxy();" /><br/>
+
+<Hr/>
+<H2>KeepAlive設定</H2>
+isWebKeepAlive:<input type="checkBox" name="isWebKeepAlive" id="isWebKeepAlive"
+#if(${config.getBoolean('isWebKeepAlive')})
+checked="checked"
+#end
+/><br/>
+isProxyKeepAlive:<input type="checkBox" name="isProxyKeepAlive" id="isProxyKeepAlive"
+#if(${config.getBoolean('isProxyKeepAlive')})
+checked="checked"
+#end
+/><br/>
+maxKeepAliveRequests:<input type="text" name="maxKeepAliveRequests" id="maxKeepAliveRequests" size="4" value="$!esc.html($!{config.getString('maxKeepAliveRequests')})"/><br/>
+keepAliveTimeout:<input type="text" name="keepAliveTimeout" id="keepAliveTimeout" size="8" value="$!esc.html($!{config.getString('keepAliveTimeout')})"/><br/>
+contentEncoding:<select id="contentEncoding" size="1">
+<option value="non">non</option>
+<option value="gzip"
+#if($config.getString('contentEncoding') && "gzip"==$config.getString('contentEncoding'))
+selected="selected"
+#end
+>gzip</option>
+</select><br/>
+allowChunked:<input type="checkBox" name="allowChunked" id="allowChunked"
+#if(${config.getBoolean('allowChunked')})
+checked="checked"
+#end
+/><br/>
+<input type="button" value="設定"  onclick="setKeepAlive();"/><br/>
+
