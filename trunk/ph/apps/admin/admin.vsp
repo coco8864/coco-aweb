@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head> 
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta charset="UTF-8" /> 
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<meta http-equiv="Pragma" content="no-cache"> 
+	<meta http-equiv="Cache-Control" content="no-cache"> 
+	<meta http-equiv="Expires" content="0"> 
+	<title>Phatom Proxy Console</title>
+
+	<link type="text/css" href="/pub/css/jquery-ui-1.8.2.custom.css" rel="stylesheet" />
+	<script type="text/javascript" src="/pub/js/ph-loader.js?include=ph-queue.js"></script>
+	<script type="text/javascript" src="/pub/js/dateformat.js"></script>
+	<script type="text/javascript" src="/pub/js/jquery-1.5.1.min.js"></script>
+	<script type="text/javascript" src="/pub/js/jquery-ui-1.8.2.custom.min.js"></script>
+	<link type="text/css" href="/pub/css/ph.css" rel="stylesheet" /> 
+<style type="text/css"><!--
+td,th {border:1px solid #000;text-align:left;font-size:x-small}
+.ui-resizable-se {
+	bottom: 17px;
+}
+.mainTitle{ margin: 0.0em 0.5em;padding:0em 0.0em 0.0em;}
+.welcom{ margin: 0.0em 1.0em;font-size: 125.0%;}
+-->
+</style>
+#parse("adminjs.vpf")
+
+<script type="text/javascript">
+//hashとインデックスの組み合わせ
+var tabIndexs = {'#statusTab' : 0, '#settingTab' : 1, '#mappingTab' : 2, '#accessLogTab' : 3, '#traceTab' : 4, '#stressTab' : 5, '#userTab' : 6, '#chatTab' : 7, '#debugTab' : 8};
+var userTabHashKey='userTabHash.$!esc.html($loginUser.loginId)';
+window.onhashchange = function(){
+	//現在のhashからインデックスの値を取得
+	var hash=window.location.hash;
+	if(!hash){
+		//hash from session strage
+		hash=sessionStorage[userTabHashKey];
+	}
+	sessionStorage[userTabHashKey]=hash;
+	var index = tabIndexs[hash];
+	//hashが無い場合は最初のタブを選択
+	index = index ? index : 0;
+	if(index===8){//#debug
+		jQuery('#debugLi').show();
+	}
+	//現在のインデックスでタブをセレクト
+	jQuery('#tabs').tabs("select", index);
+};
+ph.jQuery(function() {
+	ph.setShowDebug(ph.showDebug);
+	ph.queue.start('/queue',function(){
+	ph.log('disconnect ph.queue');
+/*location=ph.publicWebUrl*/});
+	jQuery("#textEditTextArea").resizable({
+		handles: "se"
+	});
+	jQuery("#stress").dialog({title:'stressオプション入力'});
+	jQuery("#stress").dialog('close');
+	jQuery("#textEdit").dialog({width: 800,title:'text'});
+	jQuery("#textEdit").dialog('close');
+	jQuery("#imageBox").dialog({title:'image'});
+	jQuery("#imageBox").dialog('close');
+	jQuery("#mappingDialog").dialog({width: 500,title:'mapping編集'});
+	jQuery("#mappingDialog").dialog('close');
+	jQuery("#realHostDialog").dialog({width: 500,title:'realHost編集'});
+	jQuery("#realHostDialog").dialog('close');
+	jQuery("#userDialog").dialog({title:'user編集'});
+	jQuery("#userDialog").dialog('close');
+	jQuery("#commissionAuthDialog").dialog({title:'代理ログイン情報'});
+	jQuery("#commissionAuthDialog").dialog('close');
+	jQuery("#checkServerDialog").dialog({width: 600,title:'server check'});
+	jQuery("#checkServerDialog").dialog('close');
+	jQuery("#commonOutputDialog").dialog({width: 500,title:'汎用出力'});
+	jQuery("#commonOutputDialog").dialog('close');
+
+	jQuery("#tabs").tabs({
+		cache:true,
+		ajaxOptions: {
+			error: function(xhr, status, index, anchor) {
+ph.log("tabs ajaxOptions error");
+			},
+			success: function(xhr, status, index, anchor) {
+ph.log("tabs ajaxOptions success.index:"+index +":anchor:"+anchor);
+			}
+		},
+		select: function(event, ui) {
+			window.location.hash = ui.tab.hash;
+		}
+	});
+	jQuery('#debugLi').hide();
+	window.onhashchange();
+});
+	</script> 
+</head> 
+<body> 
+<H1 class="mainTitle" style="float: left;">Phantom Proxy Console</H1>
+<div style="float: right;" class="welcom">$!esc.html($loginUser.loginId)さんようこそ
+<img src="/pub/images/home.gif" title="home" onclick='location=ph.publicWebUrl'/>
+<img src="/pub/images/logout.gif" title="logout" onclick='location=(ph.authUrl+"/logout")'/>
+</div>
+<div class="demo" style="clear: both;">
+##roleによってメニューを変えたい場合・ここを調整する
+<div id="tabs"> 
+	<ul>
+		<li><a title="statusTab" href="/admin/status.vsf" hash="#status">status</a></li>
+		<li><a title="settingTab" href="#settingTab">setting</a></li>
+		<li><a title="mappingTab" href="/admin/mapping.vsf">mapping</a></li>
+		<li><a title="accessLogTab" href="/admin/accessLog.vsf">accessLog</a></li>
+		<li><a title="traceTab" href="#traceTab">trace</a></li>
+		<li><a title="stressTab" href="/admin/performance.vsf">stress</a></li>
+		<li><a title="userTab" href="/admin/user.vsf">user</a></li>
+#if($!{parameter.getParameter("filter")})
+		<li><a title="filterTab" href="/admin/filter.vsf">filter</a></li>
+#end
+		<li><a title="chatTab" href="/admin/chat.vsf">chat</a></li>
+##if($!{parameter.getParameter("debug")})
+		<li id="debugLi"><a title="debugTab" href="/admin/debug.vsf">debug</a></li>
+##end
+	</ul>
+##初期表示タブ
+	<div id="settingTab">##settingタブ
+#parse("setting.vpf")
+	</div><!-- end of async tab -->
+	<div id="traceTab">##traceタブ
+#parse("trace.vpf")
+	</div><!-- end of trace tab -->
+
+</div><!-- End tab -->
+</div><!-- End demo -->
+
+<div id="phDebug">
+<p>デバッグ情報</p>
+<Hr/>
+<pre id="phDebugArea"></pre>
+</div>
+
+##ダイアログの宣言
+#parse("dialogs.vpf")
+<form id="exportDownloadForm" action="accessLog" style="display:none" target="uploadFrame" method="post">
+<input type="hidden" name="command" value="downloadExportFile"/>
+<input type="hidden" name="token" value="$esc.html(${session.token})"/>
+<input type="hidden" name="fileId" id="exportFileId"/>
+</form>
+
+##phlogダウンロード用フォーム
+<form id="logDownloadForm" action="admin" style="display:none" target="uploadFrame" method="post">
+<input type="hidden" name="command" value="logdownload"/>
+<input type="hidden" name="logType"  id="logType"/>
+<input type="hidden" name="logNumber" id="logNumber" value="0"/>
+<input type="hidden" name="token" value="$esc.html(${session.token})"/>
+</form>
+
+##stress csvダウンロード用フォーム
+<form id="stressCsvDownloadForm" action="perf" style="display:none" target="uploadFrame" method="post">
+<input type="hidden" name="command" value="csv"/>
+<input type="hidden" name="query" id="stressCsvQuery"/>
+<input type="hidden" name="token" value="$esc.html(${session.token})"/>
+</form>
+
+##uploadリクエストを送信するためのダミーフレーム
+<iframe name="uploadFrame" width="0" height="0" frameborder="no"></iframe>
+</body> 
+</html>
+ 
