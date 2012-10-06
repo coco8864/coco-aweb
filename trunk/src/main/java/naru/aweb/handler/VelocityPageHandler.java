@@ -7,19 +7,15 @@ import java.io.Writer;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import naru.aweb.config.Config;
 import naru.aweb.http.HeaderParser;
-import naru.aweb.http.KeepAliveContext;
-import naru.aweb.http.ParameterParser;
 import naru.aweb.http.RequestContext;
 import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.MappingResult;
 
 import org.apache.log4j.Logger;
-import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.MethodInvocationException;
@@ -27,8 +23,6 @@ import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.tools.ToolContext;
 import org.apache.velocity.tools.ToolManager;
-import org.apache.velocity.tools.config.EasyFactoryConfiguration;
-import org.apache.velocity.tools.generic.EscapeTool;
 
 public class VelocityPageHandler extends WebServerHandler {
 	private static Logger logger = Logger.getLogger(VelocityPageHandler.class);
@@ -80,19 +74,23 @@ public class VelocityPageHandler extends WebServerHandler {
 	
 	public void startResponseReqBody(){
 		MappingResult mapping=getRequestMapping();
-		File veloRep=mapping.getDestinationFile();
-		String veloPage=mapping.getResolvePath();
-		if(veloRep==null || veloPage==null){
-			logger.debug("not found repository");
-			completeResponse("404","file not found");
-			return;
+		VelocityEngine velocityEngine=(VelocityEngine)getRequestAttribute(ATTRIBUTE_VELOCITY_ENGINE);
+		String veloPage=(String)getRequestAttribute(ATTRIBUTE_VELOCITY_PAGE);
+		if(veloPage==null){
+			veloPage=mapping.getResolvePath();
 		}
-//		String veloPage=(String)getRequestAttribute(ATTRIBUTE_VELOCITY_PAGE);
-//		if(veloPage==null){
-//			File file=(File)getRequestAttribute(ATTRIBUTE_RESPONSE_FILE);
-//			veloPage=file.getAbsolutePath().substring(veloRep.getAbsolutePath().length());
-//		}
-		VelocityEngine velocityEngine=getEngine(veloRep);
+		if(velocityEngine==null){
+			File veloRep=(File)getRequestAttribute(ATTRIBUTE_VELOCITY_REPOSITORY);
+			if(veloRep==null){
+				veloRep=mapping.getDestinationFile();
+			}
+			if(veloRep==null || veloPage==null){
+				logger.debug("not found repository");
+				completeResponse("404","file not found");
+				return;
+			}
+			velocityEngine=getEngine(veloRep);
+		}
 		merge(velocityEngine,veloPage);
 	}
 	
@@ -101,7 +99,6 @@ public class VelocityPageHandler extends WebServerHandler {
 		ToolContext veloContext=toolManager.createContext();
 		veloContext.put("handler", this);
 		veloContext.put("parameter", getParameterParser());
-//		KeepAliveContext keepAliveContext=getKeepAliveContext();
 		RequestContext requestContext=getRequestContext();
 		veloContext.put("session", requestContext.getAuthSession());
 		veloContext.put("config", config);

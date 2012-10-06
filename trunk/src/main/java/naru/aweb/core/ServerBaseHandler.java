@@ -37,6 +37,7 @@ public abstract class ServerBaseHandler extends SslHandler {
 	
 	public static final String ATTRIBUTE_VELOCITY_PAGE="velocityPage";
 	public static final String ATTRIBUTE_VELOCITY_REPOSITORY="velocityRepository";
+	public static final String ATTRIBUTE_VELOCITY_ENGINE="velocityEngine";
 	public static final String ATTRIBUTE_KEEPALIVE_CONTEXT="keepAliveContext";
 	public static final String ATTRIBUTE_SPDY_SESSION="spdySession";
 	public static final String ATTRIBUTE_USER="loginUser";

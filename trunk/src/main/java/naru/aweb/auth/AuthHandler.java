@@ -39,7 +39,7 @@ public class AuthHandler extends WebServerHandler {
 	private static String CLEANUP_AUTH_HEADER_PATH="/cleanupAuthHeader";//auth header削除用path
 //	private static String CHECK_SESSION_PATH="/checkSession";//webSocket,ajax api認証を行う場合呼び出す前にこのパスをiframeに表示
 	private static String LOGOUT_PATH="/logout";//logout用
-	private static String AUTH_PAGE_FILEPATH="/auth";
+//	private static String AUTH_PAGE_FILEPATH="/auth";
 	private static String AUTH_ID="authId";//...temporaryIdの別名
 
 	/*
@@ -67,11 +67,11 @@ public class AuthHandler extends WebServerHandler {
 	public void forwardAuthPage(String fileName){
 		MappingResult mapping=getRequestMapping();
 		if(fileName.startsWith("/")){
-			mapping.setResolvePath(AUTH_PAGE_FILEPATH + fileName);
+			mapping.setResolvePath(fileName);
 		}else{
-			mapping.setResolvePath(AUTH_PAGE_FILEPATH + "/" +fileName);
+			mapping.setResolvePath("/" +fileName);
 		}
-		mapping.setDesitinationFile(config.getAdminDocumentRoot());
+//		mapping.setDesitinationFile(config.getAdminDocumentRoot());
 		forwardHandler(Mapping.FILE_SYSTEM_HANDLER);
 	}
 	
@@ -463,6 +463,7 @@ public class AuthHandler extends WebServerHandler {
 		if(authMark!=null){
 			//認可(authorize)処理
 			MappingResult mapping=getRequestMapping();
+			mapping.setDesitinationFile(config.getAuthDocumentRoot());
 			/*
 			String path=mapping.getResolvePath();
 			String url=requestHeader.getAddressBar(isSsl());

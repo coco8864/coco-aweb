@@ -650,7 +650,7 @@ public class AdminHandler extends WebServerHandler{
 		}
 		ParameterParser parameter=getParameterParser();
 		if(path.endsWith(".vsp")||path.endsWith(".vsf")){
-			mapping.setDesitinationFile(config.getAdminDocumentRoot());
+//			mapping.setDesitinationFile(config.getAdminDocumentRoot());
 			forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
 			return;
 		}else if(path.startsWith("/storeDownload")){

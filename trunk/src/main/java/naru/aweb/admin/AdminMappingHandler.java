@@ -111,12 +111,18 @@ public class AdminMappingHandler extends WebServerHandler{
 	
 	private static String SCRIPT_MAPPING_REFRESH="<script>parent.mappingTableRefresh();</script>";
 	
+	/* システムが使うディレクトリには配備させない */
+	private static String RESERVED_APP_NAMES="admin,auth,docroot";
+	
 	/*　website */
 	private String createWebsite(Mapping mapping,String mappingSourcePath,String mappingSecureType,DiskFileItem item){
 		if(mappingSourcePath==null||mappingSourcePath.length()==0){
 			mappingSourcePath="/";
 		}
 		String path=item.getName();
+		if(RESERVED_APP_NAMES.indexOf(path)>=0){
+			return "<script>alert('reserved path name error');</script>";
+		}
 		int pos=path.lastIndexOf(".");
 		if(pos>=0){
 			path=path.substring(0,pos);
