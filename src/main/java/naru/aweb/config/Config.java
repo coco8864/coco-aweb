@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.io.UnsupportedEncodingException;
 import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -38,7 +37,6 @@ import naru.aweb.mapping.Mapper;
 import naru.aweb.queue.QueueManager;
 import naru.aweb.secure.SslContextPool;
 import naru.aweb.spdy.SpdyConfig;
-import naru.aweb.spdy.SpdyFrame;
 import naru.aweb.util.JdoUtil;
 import naru.aweb.util.JsonUtil;
 import naru.aweb.util.ServerParser;
@@ -57,6 +55,7 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.log4j.Logger;
+import org.apache.velocity.app.VelocityEngine;
 
 public class Config {
 	private static final String USE_FILE_CACHE = "useFileCache";
@@ -200,52 +199,6 @@ public class Config {
 			sb.append(itr.next().toString());
 		}
 		configuraion.setProperty(key, sb.toString());
-	}
-
-	public static String encodeBase64(String text) {
-		return encodeBase64(text, "iso8859_1");
-	}
-
-	public static String encodeBase64(byte[] data) {
-		try {
-			byte[] bytes = Base64.encodeBase64(data);
-			return new String(bytes, "iso8859_1");
-		} catch (UnsupportedEncodingException e) {
-			logger.error("unkown enc:iso8859_1", e);
-			throw new RuntimeException("unkown enc:iso8859_1", e);
-		}
-	}
-
-	public static String encodeBase64(String text, String enc) {
-		try {
-			return encodeBase64(text.getBytes(enc));
-		} catch (UnsupportedEncodingException e) {
-			logger.error("unkown enc:" + enc, e);
-			throw new RuntimeException("unkown enc:" + enc, e);
-		}
-	}
-
-	public static String decodeBase64(String text) {
-		return decodeBase64(text, "iso8859_1");
-	}
-
-	public static byte[] decodeBase64Bytes(String text) {
-		try {
-			return Base64.decodeBase64(text.getBytes("iso8859_1"));
-		} catch (UnsupportedEncodingException e) {
-			logger.error("unkown enc:iso8859_1", e);
-			throw new RuntimeException("unkown enc:iso8859_1", e);
-		}
-	}
-
-	public static String decodeBase64(String text, String enc) {
-		try {
-			byte[] bytes = decodeBase64Bytes(text);
-			return new String(bytes, enc);
-		} catch (UnsupportedEncodingException e) {
-			logger.error("unkown enc:" + enc, e);
-			throw new RuntimeException("unkown enc:" + enc, e);
-		}
 	}
 	
 	public SecureRandom getRandom(String key) {
@@ -785,7 +738,7 @@ public class Config {
 	// private String[] exceptProxyDomainsList;
 	public boolean updateProxyFinder(String pacUrl,String proxyServer,String sslProxyServer,String exceptProxyDomains) {
 		try {
-			ProxyFinder workProxyFinder = ProxyFinder.create(pacUrl, proxyServer,sslProxyServer, exceptProxyDomains,getSelfDomain(),getPacProxyPort());
+			ProxyFinder workProxyFinder = ProxyFinder.create(this,pacUrl, proxyServer,sslProxyServer, exceptProxyDomains,getSelfDomain(),getPacProxyPort());
 			if(workProxyFinder==null){
 				return false;
 			}
@@ -828,29 +781,6 @@ public class Config {
 	public String getProxyPac(String localServer) {
 		return proxyFinder.getProxyPac(localServer);
 	}
-
-	// / *.bbb.com は、"\\S*.bbb.com"でマッチ
-	/*
-	 * public boolean isUseProxy(boolean isSsl,String domain) { if (domain ==
-	 * null) { return false;// proxyサーバ設定がなければproxyなし } if(isSsl){
-	 * if(!isNextSecureProxy()){ return false; } }else{ if(!isNextHttpProxy()){
-	 * return false; } } if (exceptProxyDomainsPattern == null) { return true; }
-	 * Matcher matcher = null; synchronized (exceptProxyDomainsPattern) {
-	 * matcher = exceptProxyDomainsPattern.matcher(domain); } //
-	 * マッチしたら、proxyを使わない、マッチしなかったらproxyを使う return !matcher.matches(); }
-	 */
-	/*
-	 * public boolean isSslProxyMappingServer(String realHost, ServerParser
-	 * server) { return mapper.isResolveSslProxyServer(realHost,server); }
-	 * 
-	 * public MappingResult sslProxyMapping(String realHost, ServerParser
-	 * server,String path) { return
-	 * mapper.resolveSslProxy(realHost,server,path); } public MappingResult
-	 * proxyMapping(String realHost, ServerParser server,String path) { return
-	 * mapper.resolveProxy(realHost,server,path); } public MappingResult
-	 * webMapping(String realHost, boolean isSsl,ServerParser hostHeader,String
-	 * path) { return mapper.resolveWeb(realHost,isSsl,hostHeader,path); }
-	 */
 
 	public String toJson() {
 		return toJson(configuration);
@@ -1251,15 +1181,32 @@ public class Config {
 	public SpdyConfig getSpsyConfig(){
 		return spdyConfig;
 	}
-
-	/*
-	public String[] getSpdyProtocols() {
-		return spdyProtocols;
+	
+	private VelocityEngine velocityEngine = null;
+	
+	public VelocityEngine getVelocityEngine() {
+		if (velocityEngine != null) {
+			return velocityEngine;
+		}
+		velocityEngine = new VelocityEngine();
+		InputStream is=getClass().getClassLoader().getResourceAsStream("velocityClasspathResourceLoader.properties");
+		Properties prop=new Properties();
+		try {
+			prop.load(is);
+			is.close();
+			velocityEngine.init(prop);
+		} catch (Exception e) {
+			velocityEngine=null;
+			throw new RuntimeException("fail to velocityEngine.ini()", e);
+		}finally{
+			if(is!=null){
+				try {
+					is.close();
+				} catch (IOException ignore) {
+				}
+			}
+		}
+		return velocityEngine;
 	}
-
-	public void setSpdyProtocols(String[] spdyProtocols) {
-		setStringArray(configuration, SPDY_PROTOCOLS, spdyProtocols);
-		this.spdyProtocols = spdyProtocols;
-	}
-	*/
+	
 }
