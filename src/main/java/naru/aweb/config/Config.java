@@ -1040,7 +1040,7 @@ public class Config {
 
 	/* 公開ディレクトリ関連 */
 	public void setAdminDocumentRoot(File adminDocumentRoot){
-		this.adminDocumentRoot=authDocumentRoot;
+		this.adminDocumentRoot=adminDocumentRoot;
 	}
 	public File getAdminDocumentRoot() {
 		return adminDocumentRoot;

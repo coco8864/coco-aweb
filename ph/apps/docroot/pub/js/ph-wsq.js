@@ -15,7 +15,7 @@
     _INTERVAL:1000,
     _DEFAULT_SUB_ID:'defaultSubId',
     _XHR_FRAME_NAME_PREFIX:'__wsq_',
-    _XHR_FRAME_URL:'/xhrFrame.html',
+    _XHR_FRAME_URL:'/xhrFrame.vsp',
     _RETRY_COUNT:3,
     _APPID_PREFIX:'appid.',
     _isBlobMessage:true,/* Blobメッセージを使うか否か */

@@ -314,6 +314,12 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 		//xhrFrameのコンテンツ処理
 		MappingResult mapping=getRequestMapping();
 		String path=mapping.getResolvePath();
+		if(path.equals("/xhrFrame.vsp")){
+			setRequestAttribute(ATTRIBUTE_VELOCITY_ENGINE,config.getVelocityEngine());
+			setRequestAttribute(ATTRIBUTE_VELOCITY_PAGE,"/template/xhrFrame.vsp");
+			forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
+		}
+		/*
 		if(path.endsWith(".html")||path.endsWith(".vsp")||path.endsWith(".vsf")){
 			if(path.startsWith("/")){
 				mapping.setResolvePath(WSQ_PAGE_FILEPATH + path);
@@ -324,6 +330,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 			forwardHandler(Mapping.FILE_SYSTEM_HANDLER);
 			return;
 		}
+		*/
 		ParameterParser parameter=getParameterParser();
 		
 		//xhrからの開始
