@@ -32,6 +32,7 @@ import org.apache.log4j.Logger;
  *
  */
 public class WsqHandler extends WebSocketHandler implements Timer{
+	private static final String XHR_FRAME_TEMPLATE = "/template/xhrFrame.vsp";
 	private static Config config = Config.getConfig();
 	private static Logger logger=Logger.getLogger(WsqHandler.class);
 	private static final String WSQ_PAGE_FILEPATH="/wsq";
@@ -296,7 +297,6 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 			wsqSession=new WsqSession();
 			authSession.setAttribute("WsqSession", wsqSession);
 		}
-//		wsqSession.setHandler(wsqManager, this);
 		srcPath=getRequestMapping().getSourcePath();
 	}
 
@@ -316,7 +316,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 		String path=mapping.getResolvePath();
 		if(path.equals("/xhrFrame.vsp")){
 			setRequestAttribute(ATTRIBUTE_VELOCITY_ENGINE,config.getVelocityEngine());
-			setRequestAttribute(ATTRIBUTE_VELOCITY_PAGE,"/template/xhrFrame.vsp");
+			setRequestAttribute(ATTRIBUTE_VELOCITY_TEMPLATE,XHR_FRAME_TEMPLATE);
 			forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
 			return;
 		}
