@@ -30,10 +30,10 @@
     <li><a title="settingTab" href="#settingTab">setting</a></li>
   </ul>
   <div id="statusTab">##settingタブ
-#parse("wsadm/status.vpf")
+#parse("status.vpf")
   </div><!-- end of async tab -->
   <div id="settingTab">##traceタブ
-#parse("wsadm/setting.vpf")
+#parse("setting.vpf")
   </div><!-- end of trace tab -->
 </div><!-- End tab -->
 

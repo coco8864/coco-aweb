@@ -184,7 +184,7 @@ StatusView = (function(_super) {
     selectText = "";
     for (i = 0, _ref = selectorStasticses.length - 1; 0 <= _ref ? i <= _ref : i >= _ref; 0 <= _ref ? i++ : i--) {
       s = selectorStasticses[i];
-      selectText += s.loopCount(+"(" + s.selectCount(+"):"));
+      selectText += s.loopCount + "(" + s.selectCount + "):";
     }
     $("#broadcasterSelector").text(selectText);
     storeStack = stcs.storeStack;
@@ -194,10 +194,10 @@ StatusView = (function(_super) {
     $("#broadcasterChannel").text(cur + "(" + channelContext.total + "-" + channelContext.instance + ")");
     requestContext = stcs.requestContext;
     cur = requestContext.total - requestContext.poolBack - requestContext.gc;
-    $("#broadcasterRequest").text(cur + "(" + requestContext.total(+"-" + requestContext.instance + ")"));
+    $("#broadcasterRequest").text(cur + "(" + requestContext.total + "-" + requestContext.instance + ")");
     authSession = stcs.authSession;
     cur = authSession.total - authSession.poolBack - authSession.gc;
-    return $("#broadcasterSession").text(cur + "(" + authSession.total(+"-" + authSession.instance + ")"));
+    return $("#broadcasterSession").text(cur + "(" + authSession.total + "-" + authSession.instance + ")");
   };
 
   return StatusView;
