@@ -25,7 +25,6 @@ import org.apache.log4j.Logger;
 public class FileSystemHandler extends WebServerHandler implements BufferGetter {
 	private static Logger logger = Logger.getLogger(FileSystemHandler.class);
 	private static Config config = null;// Config.getConfig();
-	private static String LISTING_PAGE = "/fileSystem/listing.vsp";
 	private static String LISTING_TEMPLATE = "/template/listing.vsp";
 	private static Configuration contentTypeConfig = null;// config.getConfiguration("ContentType");
 	private static Map<String, String> contentTypeMap = new HashMap<String, String>();
@@ -174,9 +173,8 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		}
 		setRequestAttribute("fileList", dir.listFiles());
 
-		mapping.setResolvePath(LISTING_PAGE);
 		setRequestAttribute(ATTRIBUTE_VELOCITY_ENGINE,config.getVelocityEngine());
-		setRequestAttribute(ATTRIBUTE_VELOCITY_PAGE,LISTING_TEMPLATE);
+		setRequestAttribute(ATTRIBUTE_VELOCITY_TEMPLATE,LISTING_TEMPLATE);
 		forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
 		return false;// àœè˜
 	}

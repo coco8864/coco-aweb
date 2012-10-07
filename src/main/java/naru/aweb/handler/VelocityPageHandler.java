@@ -75,7 +75,7 @@ public class VelocityPageHandler extends WebServerHandler {
 	public void startResponseReqBody(){
 		MappingResult mapping=getRequestMapping();
 		VelocityEngine velocityEngine=(VelocityEngine)getRequestAttribute(ATTRIBUTE_VELOCITY_ENGINE);
-		String veloPage=(String)getRequestAttribute(ATTRIBUTE_VELOCITY_PAGE);
+		String veloPage=(String)getRequestAttribute(ATTRIBUTE_VELOCITY_TEMPLATE);
 		if(veloPage==null){
 			veloPage=mapping.getResolvePath();
 		}

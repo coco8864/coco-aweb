@@ -35,7 +35,7 @@ public abstract class ServerBaseHandler extends SslHandler {
 	//cacheÇégÇÌÇ»Ç¢èÍçáÇ…ê›íË
 	public static final String ATTRIBUTE_RESPONSE_FILE_NOT_USE_CACHE = "responseFileNotUseCache";
 	
-	public static final String ATTRIBUTE_VELOCITY_PAGE="velocityPage";
+	public static final String ATTRIBUTE_VELOCITY_TEMPLATE="velocityTemplate";
 	public static final String ATTRIBUTE_VELOCITY_REPOSITORY="velocityRepository";
 	public static final String ATTRIBUTE_VELOCITY_ENGINE="velocityEngine";
 	public static final String ATTRIBUTE_KEEPALIVE_CONTEXT="keepAliveContext";
