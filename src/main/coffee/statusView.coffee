@@ -32,7 +32,7 @@ class StatusView extends Backbone.View
     selectText=""
     for i in [0..selectorStasticses.length-1]
         s=selectorStasticses[i];
-        selectText+=s.loopCount +"("+ s.selectCount +"):"
+        selectText+=s.loopCount+"("+s.selectCount+"):"
     $("#broadcasterSelector").text(selectText)
     storeStack=stcs.storeStack
     $("#broadcasterStore").text(storeStack.join(":"))
@@ -41,8 +41,8 @@ class StatusView extends Backbone.View
     $("#broadcasterChannel").text(cur+"("+channelContext.total+"-"+channelContext.instance+")")
     requestContext=stcs.requestContext
     cur=(requestContext.total-requestContext.poolBack-requestContext.gc)
-    $("#broadcasterRequest").text(cur+"("+requestContext.total +"-"+requestContext.instance+")")
+    $("#broadcasterRequest").text(cur+"("+requestContext.total+"-"+requestContext.instance+")")
     authSession=stcs.authSession
     cur=(authSession.total-authSession.poolBack-authSession.gc)
-    $("#broadcasterSession").text(cur+"("+authSession.total +"-"+authSession.instance+")")
+    $("#broadcasterSession").text(cur+"("+authSession.total+"-"+authSession.instance+")")
 
