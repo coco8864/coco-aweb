@@ -1,6 +1,6 @@
 (function(){
-var app='$!esc.javascript(${parameter.getParameter("ph")})'!=='ph';//from phantom proxy system
-var bm='$!esc.javascript(${parameter.getParameter("bm")})';//from bookmarklet
+var app='$!esc.javascript(${parameter.getParameter("ph")})'!=='ph';## from phantom proxy system
+var bm='$!esc.javascript(${parameter.getParameter("bm")})';## from bookmarklet
 var include='$!esc.javascript(${parameter.getParameter("include")})'.split(',');
 if(window.ph){
  if(bm){
@@ -9,22 +9,29 @@ if(window.ph){
  }
  return;
 }
+## spdyInfoの取得
+#set( $spdySession=${handler.getSpdySession()} )
+#if( ${spdySession} )
+#set( $spdyInfo="'${spdySession.spdyInfo()}'" )
+#else
+#set( $spdyInfo=false )
+#end
+##
 window.ph={
-##このjavascriptの取得経路を記録,proxy or web...
  version:'$esc.javascript(${config.getString("phantomVersion")})',
-##isProxy:$esc.javascript(${handler.getRequestHeader().isProxy()}),
  isSsl:$esc.javascript(${handler.isSsl()}),
  domain:'$esc.javascript(${handler.getLocalIp()}):$esc.javascript(${handler.getLocalPort()})',
  hostHeader:'$esc.javascript(${handler.getRequestHeader().getServer()})',
  authUrl:'$esc.javascript(${config.authUrl})',
  adminUrl:'$esc.javascript(${config.adminUrl})',
  publicWebUrl:'$esc.javascript(${config.publicWebUrl})',
+ spdyInfo:${spdyInfo},
  scriptBase:'',
  scripts:['jquery-1.5.1.min.js','ph-jqnoconflict.js','ph-json2.js'],
  appScripts:['ph-auth.js','ph-wsq.js'],
- useWebSocket:false,//WebSocketを使うか否か?
- useSessionStorage:false,//SessionStorageを使うか否か?
- useCrossDomain:false,//iframeを使ったクロスドメイン通信を使うか否か?
+ useWebSocket:false,## WebSocketを使うか否か?
+ useSessionStorage:false,## SessionStorageを使うか否か?
+ useCrossDomain:false,## iframeを使ったクロスドメイン通信を使うか否か?
  useHashChange:false,
  useBlobBuilder:false,
  createBlobBuilder:function(){
@@ -111,7 +118,7 @@ window.ph={
   return baseroot + bases.concat(pathes).join("/");
  },
  onload:function(){
-//  alert('ph-loader onload');
+##  alert('ph-loader onload');
  },
  loadScript:function(includeScript){
   var jsl=new ph.JSLoader(/*{finish:ph.onload}*/);
@@ -315,7 +322,7 @@ ph.scriptBase+=ph.hostHeader +'/pub/js/';
 if(bm){
   ph.loadScript(ph.scripts);
 }else{
-  //alert(scriptBase);
+##  //alert(scriptBase);
   for(var i=0;i<ph.scripts.length;i++){
    var script=ph.scripts[i];
    document.write('<script type="text/javascript" src="');
@@ -326,8 +333,8 @@ if(bm){
    document.write('></' + 'script>');
   }
 }
-//document.write('<script type="text/javascript">');
-//document.write('ph.jQuery(ph.onload);');IE8でエラーになる、ph.jQueryが見つからない
-//document.write('</' + 'script>');
+##document.write('<script type="text/javascript">');
+##document.write('ph.jQuery(ph.onload);');IE8でエラーになる、ph.jQueryが見つからない
+##document.write('</' + 'script>');
 })();
 
