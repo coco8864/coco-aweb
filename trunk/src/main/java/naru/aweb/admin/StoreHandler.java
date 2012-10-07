@@ -107,7 +107,7 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		}else{
+		}else if(length>=0){
 			setContentLength(length);
 		}
 		if(getStatusCode()==null){
