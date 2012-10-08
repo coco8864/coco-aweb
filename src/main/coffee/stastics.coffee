@@ -5,9 +5,10 @@ class Stastics extends Backbone.Model
       ,(con)=>
         @con=con
         con.deploy(phwa.STASTICS_QN,'naru.aweb.wsadm.StasticsWsqlet')
+        ph.log('wsq open:'+con.cbType+':'+con.causeType)
         @
       ,(con)=>
-        ph.log('open event:'+con.cbType+':'+con.cause)
+        ph.log('wsq event:'+con.cbType+':'+con.causeType)
         @
       )
     @
