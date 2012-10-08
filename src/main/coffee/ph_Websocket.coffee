@@ -28,8 +28,7 @@ class ph.WebSocket extens EventModule
       trigger('messageBlob',msg.data)
     @
 
-class ph.XhrWebSocket extens EventModule
-  _ws:null
+class ph.WsXhrSimulate extens EventModule
   constructor:->(@url)
     @_ws=new WebSocket(this.url)
     @_ws.onopen=@_onOpen
