@@ -73,7 +73,7 @@
     /* 接続毎に作られるオブジェクト */
     _Connection:function(url,openCb,cb){
       /* callback通知情報 */
-      if(url.lastIndexOf('ws',0)==0 ){
+      if(url.lastIndexOf('ws',0)===0 ){
         this.isWs=true;/* WebSocket */
       }else{
         this.isWs=false;/* Xhr */
@@ -85,7 +85,7 @@
       /* callback通知情報 */
       this.cbType=null;
       this.message='';
-      this.cause='';/* 'open','subscribe','unsubscribe','publish','qnames','deploy','close','server' */
+      this.causeType='';/* 'open','subscribe','unsubscribe','publish','qnames','deploy','close','server','beforeSubscribe' */
       this.isFin=false;/* 最終呼び出しか否か */
       this.qname='';
       this.subId='';
@@ -94,7 +94,7 @@
       this._isAllowBlob=this.isWs;//TODO check File Api too BlobBuilder...
       this._openCb=openCb;
       if(!cb){
-        cb=function(){};//event通知が必要ない場合
+        cb=function(){return true;};//event通知が必要ない場合
       }
       this._cb=cb;
       this._appId=null;//not authrize yet
@@ -196,17 +196,6 @@
           break;
         }
       }
-//      var frameName=event.source.name;
-//      if( !frameName || frameName.lastIndexOf(ph.wsq._XHR_FRAME_NAME_PREFIX, 0) != 0 ){
-//        return;
-//      }
-//      var allData=event.data;
-//      var urlPosition=allData.indexOf('@');
-//      if(urlPosition<0){
-//        return;
-//      }
-//      var url=allData.substring(0,urlPosition);
-//      var con=ph.wsq._connections[url];
       if(!con){
         //他のイベント
         return;
@@ -318,7 +307,7 @@
   }/* end of wsq */
   /* Connection method */
   wsq._Connection.prototype._send=function(msg){
-    if(this.stat==ph.wsq.STAT_IDLE){
+    if(this.stat===ph.wsq.STAT_IDLE){
       this._poolMsgs.push(msg);
       return;
     }else if(this.stat!=ph.wsq.STAT_CONNECT){
@@ -386,13 +375,10 @@
   };
   wsq._Connection.prototype._openXhr=function(){
     ph.log('Queue Xhr start');
-//  this.stat=ph.wsq.STAT_OPEN;/* wsOpen */
     this._xhrFrameName=ph.wsq._XHR_FRAME_NAME_PREFIX + this.url;
     this._xhrFrame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' +
-//    this.xhrFrame=ph.jQuery('<iframe name="' +
       this._xhrFrameName + 
-//    '" onload=\'ph.wsq._xhrLoad(this.url);\' src="' + 
-    '" src="' + 
+      '" src="' + 
       this.url + ph.wsq._XHR_FRAME_URL +
       '"></iframe>');
     var url=this.url;
@@ -402,25 +388,27 @@
   /*message 処理*/
   wsq._Connection.prototype._onMessage=function(msg){
     var isFin=false;
-    if(msg.type==ph.wsq.CB_MESSAGE){
+    if(msg.type===ph.wsq.CB_MESSAGE){
       var callbacks=this._subscribes[msg.qname];
       if(!callbacks){//serverからsubscribeした覚えがないqnameにmessageが来た
 //まだsubscribeされていない可能性あり、msgをqueueする
-        this._unSubscribeMsgs.push(msg);
-//      this._callback(ph.wsq.CB_ERROR,'server',msg.message,false,msg.qname,msg.subId);
+//TODO queueに上限を設ける,上限を超えた場合には古いのを捨て or close
+        if(this._callback(msg.type,'beforeSubscribe',msg.message,isFin,msg.qname,msg.subId)){
+          this._unSubscribeMsgs.push(msg);//callbackがfalseを返せばmsgはqueueしてsubscribeに備える
+        }
         return;
       }
       var cb=callbacks[msg.subId]
       if(!cb){//serverからsubscribeした覚えがないsubIdにmessageが来た
 //まだsubscribeされていない可能性あり、msgをqueueする
-        this._unSubscribeMsgs.push(msg);
-//        this._callback(ph.wsq.CB_ERROR,'server',msg.message,false,msg.qname,msg.subId);
+        if(this._callback(msg.type,'beforeSubscribe',msg.message,isFin,msg.qname,msg.subId)){
+          this._unSubscribeMsgs.push(msg);//callbackがfalseを返せばmsgはqueueしてsubscribeに備える
+        }
         return;
       }
-//      cb({type:'text',data:msg.message},this);
       cb(msg.message,this);
       return;
-    }else if(msg.type==ph.wsq.CB_ERROR && msg.cause=='subscribe'){//subscribe失敗
+    }else if(msg.type===ph.wsq.CB_ERROR && msg.causeType==='subscribe'){//subscribe失敗
       ph.wsq._removeFromSS(this._appId,{type:'subscribe',qname:msg.qname,subId:msg.subId,isAllowBlob:this._isAllowBlob});
       if(!this.isWs){//xhrの場合frameに覚えているsubscribe情報をクリア
         this._send({type:'xhrUnsubscribe',qname:msg.qname,subId:msg.subId});
@@ -429,9 +417,9 @@
       if(callbacks){
         delete callbacks[msg.subId];
       }
-    }else if(msg.type==ph.wsq.CB_INFO && msg.cause=='subscribe'){//subscribe成功
+    }else if(msg.type===ph.wsq.CB_INFO && msg.causeType==='subscribe'){//subscribe成功
       ph.wsq._addToSS(this._appId,{type:'subscribe',qname:msg.qname,subId:msg.subId,isAllowBlob:this._isAllowBlob});
-    }else if(msg.type==ph.wsq.CB_INFO && msg.cause=='unsubscribe'){//正常にunsubscribe
+    }else if(msg.type===ph.wsq.CB_INFO && msg.causeType==='unsubscribe'){//正常にunsubscribe
       ph.wsq._removeFromSS(this._appId,{type:'subscribe',qname:msg.qname,subId:msg.subId,isAllowBlob:this._isAllowBlob});
       if(!this.isWs){//xhrの場合frameに覚えているsubscribe情報をクリア
         this._send({type:'xhrUnsubscribe',qname:msg.qname,subId:msg.subId});
@@ -440,9 +428,9 @@
       if(callbacks){
         delete callbacks[msg.subId];
       }
-    }else if(msg.type==ph.wsq.CB_INFO && msg.cause=='qnames'){//正常にqnames
+    }else if(msg.type===ph.wsq.CB_INFO && msg.causeType==='qnames'){//正常にqnames
       this.qnameList=msg.message;
-    }else if(msg.type==ph.wsq.CB_INFO && msg.cause=='close'){//正常にclose
+    }else if(msg.type===ph.wsq.CB_INFO && msg.causeType==='close'){//正常にclose
       if(this.isWs){
         this._ws.close();
         this._ws=null;
@@ -452,7 +440,7 @@
       }
       isFin=true;
     }
-    this._callback(msg.type,msg.cause,msg.message,isFin,msg.qname,msg.subId);
+    this._callback(msg.type,msg.causeType,msg.message,isFin,msg.qname,msg.subId);
   }
   wsq._Connection.prototype._onMessageText=function(messageText){
     var message=ph.JSON.parse(messageText);
@@ -515,9 +503,9 @@
     var headerLengthBlob=ph.blobSlice(blob,0,offset);
     fr.readAsArrayBuffer(headerLengthBlob);
   };
-  wsq._Connection.prototype._callback=function(cbType,cause,message,isFin,qname,subId){
+  wsq._Connection.prototype._callback=function(cbType,causeType,message,isFin,qname,subId){
     this.cbType=cbType;
-    this.cause=cause;
+    this.causeType=causeType;
     this.message=message;
     this.qname=qname;
     this.subId=subId;
@@ -525,13 +513,13 @@
       this.isFin=true;
       delete ph.wsq._connections[this.url];
     }
-    if(cause==='open'){//open操作に関するcallbackはopenCbに通知
+    if(causeType==='open'){//open操作に関するcallbackはopenCbに通知
       this._openCb(this);
     }
     this._cb(this);
   };
   wsq._Connection.prototype._collectMsgs=function(){
-    if(this._poolMsgs.length==0){
+    if(this._poolMsgs.length===0){
       return null;
     }
     var msgs=this._poolMsgs;
@@ -539,7 +527,7 @@
     return msgs;
   };
   wsq._Connection.prototype._onTimer=function(){
-    if(this.stat==ph.wsq.STAT_CONNECT){
+    if(this.stat===ph.wsq.STAT_CONNECT){
       if(!this._isOpenCallback){
         this._isOpenCallback=true;
         this._callback(ph.wsq.CB_INFO,'open','opened',false);
@@ -553,7 +541,7 @@
       if(msgs){
         this._send(msgs);
       }
-    }else if(this.stat==ph.wsq.STAT_IDLE){
+    }else if(this.stat===ph.wsq.STAT_IDLE){
       if(this._isCloseRequest){
         this.stat=ph.wsq.STAT_CLOSE;
         this._callback(ph.wsq.CB_INFO,'close','closed',true);
@@ -599,19 +587,6 @@
     }
     var sendData={type:'close',subscribes:subscribes};
     this._send(sendData);
-/*
-    if(this.isWs){
-      if(this._ws){
-        this._ws.close();
-      }
-      this._ws=null;
-    }else{
-      if(this._xhrFrame){
-        this._xhrFrame.remove();
-      }
-      this._xhrFrame=null;
-    }
-*/
   };
   wsq._Connection.prototype.subscribe=function(qname,onMessageCb,subId){
     if(this.stat!=ph.wsq.STAT_CONNECT){

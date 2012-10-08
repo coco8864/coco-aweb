@@ -43,12 +43,12 @@ public class WsqManager {
 	 * @param name
 	 * @return
 	 */
-	public static JSON makeMessage(String type,String qname,String subId,String cause,Object message){
+	public static JSON makeMessage(String type,String qname,String subId,String causeType,Object message){
 		JSONObject json=new JSONObject();
 		json.put("type", type);
 		json.put("qname", qname);
 		json.put("subId", subId);
-		json.put("cause", cause);
+		json.put("causeType", causeType);
 		json.put("message", message);
 		return json;
 	}

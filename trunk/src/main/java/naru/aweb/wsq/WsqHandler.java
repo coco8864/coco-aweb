@@ -69,11 +69,11 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 				logger.debug("subscribe aleady in session.");
 				from.unref();
 			}
-			/*
+			/* subscribeの成功を通知 */
 			JSON res=WsqManager.makeMessage(WsqManager.CB_TYPE_INFO,qname,subId,"subscribe","subscribed");
 			ress.add(res);
-			*/
 		}else{
+			/* subscribeの成功を通知 */
 			JSON res=WsqManager.makeMessage(WsqManager.CB_TYPE_ERROR,qname,subId,"subscribe","not found qname:"+qname);
 			ress.add(res);
 			from.unref();
@@ -190,6 +190,8 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 			String qname=msg.getString("qname");
 			String className=msg.getString("className");
 			deploy(qname,className,ress);
+		}else if("undeploy".equals(type)){
+			logger.warn("unsuppoerted tyep:"+type);
 		}else{
 			logger.warn("unsuppoerted tyep:"+type);
 		}
@@ -320,20 +322,7 @@ public class WsqHandler extends WebSocketHandler implements Timer{
 			forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
 			return;
 		}
-		/*
-		if(path.endsWith(".html")||path.endsWith(".vsp")||path.endsWith(".vsf")){
-			if(path.startsWith("/")){
-				mapping.setResolvePath(WSQ_PAGE_FILEPATH + path);
-			}else{
-				mapping.setResolvePath(WSQ_PAGE_FILEPATH + "/" +path);
-			}
-			mapping.setDesitinationFile(config.getAdminDocumentRoot());
-			forwardHandler(Mapping.FILE_SYSTEM_HANDLER);
-			return;
-		}
-		*/
 		ParameterParser parameter=getParameterParser();
-		
 		//xhrからの開始
 		setupSession();
 		JSON json=parameter.getJsonObject();

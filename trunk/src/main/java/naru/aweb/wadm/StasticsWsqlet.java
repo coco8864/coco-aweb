@@ -1,4 +1,4 @@
-package naru.aweb.wsadm;
+package naru.aweb.wadm;
 
 import org.apache.log4j.Logger;
 
