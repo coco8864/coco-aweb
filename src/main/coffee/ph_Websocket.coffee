@@ -1,4 +1,4 @@
-class ph.WebSocket extens EventModule
+class ph.Ws extens EventModule
   _ws:null
   constructor:->(@url)
     @_ws=new WebSocket(this.url)
@@ -28,9 +28,20 @@ class ph.WebSocket extens EventModule
       trigger('messageBlob',msg.data)
     @
 
-class ph.WsXhrSimulate extens EventModule
+class ph.WsXhr extens EventModule
   constructor:->(@url)
-    @_ws=new WebSocket(this.url)
+    ph.log('Queue Xhr start');
+    @_xhrFrameName=ph.wsq._XHR_FRAME_NAME_PREFIX + @url;
+    @_xhrFrame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' +
+      @_xhrFrameName + 
+      '" src="' + 
+      @url + ph.wsq._XHR_FRAME_URL +
+      '"></iframe>');
+    url=@url;
+    this._xhrFrame.load(->
+      ph.wsq._xhrLoad(url)
+    )
+    ph.jQuery("body").append(this._xhrFrame);
     @_ws.onopen=@_onOpen
     @_ws.onmessage=@_onMessage
     @_ws.onclose=@_onClose
