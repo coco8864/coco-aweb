@@ -40,7 +40,7 @@ function objFromParent(msg){
 
 function xhrSuccess(text){
   errorCount=0;
-  if(text){//受け取ったtextはそのままparentFrameに送信
+  if(text){//受け取ったtextはそ・ままparentFrameに送信
     parent.postMessage(text,'*');
   }
   setTimeout(xhrRequest,INTERVAL);
@@ -52,8 +52,8 @@ function xhrError(){
 }
 
 function xhrRequest(isUnload){
-  if(errorCount>3){//errorが3回続いたらclose
-    sendObjToParent({});
+  if(errorCount>3){//errorが３回続いたらclose
+    sendObjToParent({load:false});
     return;
   }
   if(!isUnload){
@@ -64,7 +64,7 @@ function xhrRequest(isUnload){
   }
   if(msgs.length==0){
     setTimeout(xhrRequest,INTERVAL);
-    return;//何もメッセージがなければsubscribeもない,送信の必要なし
+    return;//何もメッセージがなければsubscribeもない、送信の必要なし
   }
   var jsonText=ph.JSON.stringify(msgs);
 //alert('xhrRequest:'+jsonText);
@@ -98,7 +98,7 @@ ph.jQuery(function(){
   if(!xhrUrl){
     return;
   }
-  //unload時,queueされていたmessageを送信,subscribeは行わないTODO
+  //unload後queueされてmessageを送信,subscribeは行わないTODO
   ph.jQuery(window).unload(function(){
     xhrRequest(true);
   });

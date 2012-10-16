@@ -28,13 +28,17 @@
   <ul>
     <li><a title="statusTab" href="#statusTab">status</a></li>
     <li><a title="settingTab" href="#settingTab">setting</a></li>
+    <li><a title="debugTab" href="#debugTab">debug</a></li>
   </ul>
   <div id="statusTab">##settingタブ
 #parse("status.vpf")
-  </div><!-- end of async tab -->
+  </div><!-- end of statusTab -->
   <div id="settingTab">##traceタブ
 #parse("setting.vpf")
-  </div><!-- end of trace tab -->
+  </div><!-- end of settingTab -->
+  <div id="debugTab">##debugタブ
+#parse("debug.vpf")
+  </div><!-- end of debugTab -->
 </div><!-- End tab -->
 
 <div id="phDebug">
