@@ -43,7 +43,8 @@ ph.jQuery ->
     ph.log('open')
     ws.send('{"type":"deploy","qname":"stastics","className":"naru.aweb.wadm.StasticsWsqlet"}');
   )
-  ws.on("close",->ph.log('close'))
+  ws.on("close",->ph.log('close1'))
+  ws.on("close",->ph.log('close2'))
   ws.on("messageText",(msg)->
     ph.log("messageText:#{msg}")
     ws.close()
