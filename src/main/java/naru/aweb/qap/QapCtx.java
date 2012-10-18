@@ -5,8 +5,7 @@ import java.util.Set;
 
 public interface QapCtx {
 	/**
-	 * 指定したpeer以外のpeerに送信
-	 * echobackしないためにdnyPeersを利用
+	 * 指定したpeer以外のpeerに送信,echobackしないためにdnyPeersを利用
 	 * @param message(JSON or String or BlobMessage)
 	 * @param peers 送信するpeer群,nullの場合,subscribe中の全peer
 	 * @param dnyPeers 送信しないpeer群,nullの場合
