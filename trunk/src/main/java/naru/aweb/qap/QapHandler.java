@@ -69,9 +69,9 @@ public class QapHandler extends WebSocketHandler implements Timer{
 				logger.debug("subscribe aleady in session.");
 				from.unref();
 			}
-			/* subscribe‚Ì¬Œ÷‚ğ’Ê’m */
-			JSON res=QapManager.makeMessage(QapManager.CB_TYPE_INFO,qname,subname,"subscribe","subscribed");
-			ress.add(res);
+			/* subscribe‚Ì¬Œ÷‚ğ’Ê’m ...‚µ‚È‚¢*/
+//			JSON res=QapManager.makeMessage(QapManager.CB_TYPE_INFO,qname,subname,"subscribe","subscribed");
+//			ress.add(res);
 		}else{
 			/* subscribe‚Ì¬Œ÷‚ğ’Ê’m */
 			JSON res=QapManager.makeMessage(QapManager.CB_TYPE_ERROR,qname,subname,"subscribe","not found qname:"+qname);
@@ -366,7 +366,6 @@ public class QapHandler extends WebSocketHandler implements Timer{
 			}else{
 				isNegotiated=false;
 			}
-			
 		}
 		isMsgBlock=false;
 		isResponse=false;
