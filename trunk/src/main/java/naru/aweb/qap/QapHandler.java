@@ -177,8 +177,8 @@ public class QapHandler extends WebSocketHandler implements Timer{
 	private void dispatchMessage(JSONObject msg,List ress){
 		String type=msg.getString("type");
 		if(isNegotiated==false && "negotiate".equals(type)){
-			bid=msg.getInt("bid");
-			bid=setupSession(bid,true);
+			int bid=msg.getInt("bid");
+			qapSession=setupSession(bid,true);
 			ress.add(QapManager.makeMessage(QapManager.CB_TYPE_INFO,"","","negotiate",bid));
 			isNegotiated=true;
 			return;
@@ -310,10 +310,10 @@ public class QapHandler extends WebSocketHandler implements Timer{
 	 * subname
 	 * 
 	 */
-	private Integer setupSession(Integer bid,boolean isCreate){
+	private QapSession setupSession(Integer bid,boolean isCreate){
 		authSession=getAuthSession();
 		roles=authSession.getUser().getRolesList();
-		qapSession=(QapSession)authSession.getAttribute("QapSession@"+bid);
+		QapSession qapSession=(QapSession)authSession.getAttribute("QapSession@"+bid);
 		if(qapSession==null){
 			if(isCreate==false){
 				return null;
@@ -331,7 +331,7 @@ public class QapHandler extends WebSocketHandler implements Timer{
 			authSession.setAttribute("QapSession@"+bid, qapSession);
 		}
 		srcPath=getRequestMapping().getSourcePath();
-		return bid;
+		return qapSession;
 	}
 
 	@Override
@@ -360,7 +360,7 @@ public class QapHandler extends WebSocketHandler implements Timer{
 		JSONObject jsonObject=(JSONObject)parameter.getJsonObject();
 		bid=jsonObject.getInt("bid");
 		if(bid!=0){//bid==0‚Ínegosiation—p
-			bid=setupSession(bid, false);
+			qapSession=setupSession(bid, false);
 			if(bid!=null){
 				isNegotiated=true;
 			}else{
