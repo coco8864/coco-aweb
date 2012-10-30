@@ -32,6 +32,7 @@ import org.apache.log4j.Logger;
  *
  */
 public class QapHandler extends WebSocketHandler implements Timer{
+	private static final String REQ_TYPE_NEGOTIATE = "negotiate";
 	private static final String XHR_FRAME_TEMPLATE = "/template/xhrQapFrame.vsp";
 	private static Config config = Config.getConfig();
 	private static Logger logger=Logger.getLogger(QapHandler.class);
@@ -176,10 +177,10 @@ public class QapHandler extends WebSocketHandler implements Timer{
 	
 	private void dispatchMessage(JSONObject msg,List ress){
 		String type=msg.getString("type");
-		if(isNegotiated==false && "negotiate".equals(type)){
+		if(isNegotiated==false && REQ_TYPE_NEGOTIATE.equals(type)){
 			int bid=msg.getInt("bid");
 			qapSession=setupSession(bid,true);
-			ress.add(QapManager.makeMessage(QapManager.CB_TYPE_INFO,"","","negotiate",bid));
+			ress.add(QapManager.makeMessage(QapManager.CB_TYPE_INFO,"","",REQ_TYPE_NEGOTIATE,bid));
 			isNegotiated=true;
 			return;
 		}
