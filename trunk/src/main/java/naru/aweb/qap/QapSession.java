@@ -6,11 +6,23 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import naru.aweb.auth.LogoutEvent;
+
 /*
  * AuthId,bid–ˆ‚Éì¬‚³‚ê‚é
  * ‚±‚Ì‰ñü‚Åsubscribe’†‚ÌPeer‚ª–Ô—…‚³‚ê‚Ä‚¢‚é
  */
-public class QapSession {
+public class QapSession implements LogoutEvent{
+	private static class QapSessions{
+		Map<String,QapSession> sessions;
+		Integer bidSeq;
+	}
+	public static void getQapSession(AuthSession session){
+		
+	}
+	
+	
+	
 	//qname -> subid
 	//key:qname@subname
 	private Map<String,QapPeer> qsubPeerMap=new HashMap<String,QapPeer>();
@@ -98,5 +110,10 @@ public class QapSession {
 			}
 		}
 		return count;
+	}
+
+	@Override
+	public void onLogout() {
+		
 	}
 }

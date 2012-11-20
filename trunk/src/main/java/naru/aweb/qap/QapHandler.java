@@ -5,8 +5,10 @@ package naru.aweb.qap;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import naru.async.Timer;
 import naru.async.cache.CacheBuffer;
@@ -33,10 +35,11 @@ import org.apache.log4j.Logger;
  */
 public class QapHandler extends WebSocketHandler implements Timer{
 	private static final String REQ_TYPE_NEGOTIATE = "negotiate";
+	private static final String XHR_FRAME_PATH = "/xhrQapFrame.vsp";
 	private static final String XHR_FRAME_TEMPLATE = "/template/xhrQapFrame.vsp";
 	private static Config config = Config.getConfig();
 	private static Logger logger=Logger.getLogger(QapHandler.class);
-	private static QapManager qapManager=QapManager.getInstance();
+//	private static QapManager qapManager=QapManager.getInstance();
 	
 	@Override
 	public void recycle() {
@@ -299,41 +302,51 @@ public class QapHandler extends WebSocketHandler implements Timer{
 	private boolean isMsgBlock=false;
 	private boolean isResponse=false;
 	private long timerId;
-	private String srcPath;
+	private String path;
 	private Integer bid;//negosiation時にbidを設定
 	private boolean isNegotiated;
+
 	
-	/*
-	 * 以下で一つのPeerを現す,AuthSessionにbidをキーにQapSessionが保持される
-	 * authId
-	 * bid
-	 * qname
-	 * subname
-	 * 
+	private static class QapSessions{
+		Map<Integer,QapSession> sessions=new HashMap<Integer,QapSession>();
+		Integer bidSeq=0;
+	}
+	
+	/**
+	 * negotiationの時は、新規採番
+	 * @param bid
+	 * @return
 	 */
-	private QapSession setupSession(Integer bid,boolean isCreate){
+	private boolean setupQapSession(JSONArray reqs){
 		authSession=getAuthSession();
 		roles=authSession.getUser().getRolesList();
-		QapSession qapSession=(QapSession)authSession.getAttribute("QapSession@"+bid);
+		path=getRequestMapping().getSourcePath();
+		QapSessions qapSessions=(QapSessions)authSession.getAttribute("QapSessions");
+		if(qapSessions==null){
+			qapSessions=new QapSessions();
+			authSession.setAttribute("QapSessions", qapSessions);
+		}
+		qapSession=qapSessions.sessions.get(bid);
 		if(qapSession==null){
-			if(isCreate==false){
-				return null;
+			if(reqs.size()<1){
+				return false;
 			}
-			synchronized(authSession){
-				Integer id=(Integer)authSession.getAttribute("QapSession@bid");
-				if(id==null){
-					bid=1;//bidは1からはじめる
-				}else{
-					bid=id+1;
-				}
-				authSession.setAttribute("QapSession@bid",bid);
+			//negotiationの時は、新規採番
+			JSONObject obj=reqs.getJSONObject(0);
+			if(!"negotiation".equals(obj.getString("type"))){
+				return false;
 			}
 			qapSession=new QapSession();
-			authSession.setAttribute("QapSession@"+bid, qapSession);
+			synchronized(qapSessions){
+				qapSessions.bidSeq++;
+				bid=qapSessions.bidSeq;
+				qapSessions.sessions.put(bid, qapSession);
+			}
+			authSession.addLogoutEvent(qapSession);//ログアウト時に通知を受ける
 		}
-		srcPath=getRequestMapping().getSourcePath();
-		return qapSession;
+		return true;
 	}
+	
 
 	@Override
 	public void onWsOpen(String subprotocol) {
@@ -349,7 +362,7 @@ public class QapHandler extends WebSocketHandler implements Timer{
 		//xhrFrameのコンテンツ処理
 		MappingResult mapping=getRequestMapping();
 		String path=mapping.getResolvePath();
-		if(path.equals("/xhrQapFrame.vsp")){
+		if(path.equals(XHR_FRAME_PATH)){
 			setRequestAttribute(ATTRIBUTE_VELOCITY_ENGINE,config.getVelocityEngine());
 			setRequestAttribute(ATTRIBUTE_VELOCITY_TEMPLATE,XHR_FRAME_TEMPLATE);
 			forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
@@ -357,9 +370,13 @@ public class QapHandler extends WebSocketHandler implements Timer{
 		}
 		ParameterParser parameter=getParameterParser();
 		//xhrからの開始
-		//{bid:bid,data:[{type:xxx},{type:xxx}...]}
+		//{bid:bid,reqs:[{type:xxx},{type:xxx}...]}
 		JSONObject jsonObject=(JSONObject)parameter.getJsonObject();
 		bid=jsonObject.getInt("bid");
+		JSONArray reqs=jsonObject.getJSONArray("reqs");
+		setupQapSession(reqs);
+		
+		
 		if(bid!=0){//bid==0はnegosiation用
 			qapSession=setupSession(bid, false);
 			if(bid!=null){
