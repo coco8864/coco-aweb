@@ -118,7 +118,7 @@ public class QapManager {
 	
 	
 	private Qap getWsqFromPeer(QapPeer peer){
-		Map<String,Qap> qmap=wsqs.get(peer.getSrcPath());
+		Map<String,Qap> qmap=wsqs.get(peer.getPath());
 		if(qmap==null){
 			return null;
 		}
