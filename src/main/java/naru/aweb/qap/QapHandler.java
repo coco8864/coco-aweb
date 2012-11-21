@@ -235,7 +235,10 @@ public class QapHandler extends WebSocketHandler implements Timer{
 	 */
 	public void onMessage(String msgs){
 		logger.debug("onMessage.message:"+msgs);
-		JSON json=JSONSerializer.toJSON(msgs);
+		JSONArray reqs=JSONArray.fromObject(msgs);
+		if(!isNegotiated){
+			setupQapSession(reqs);
+		}
 		List ress=new ArrayList();
 		processMessages(json,ress);
 		if(ress.size()>0){
@@ -304,7 +307,7 @@ public class QapHandler extends WebSocketHandler implements Timer{
 	private long timerId;
 	private String path;
 	private Integer bid;//negosiation時にbidを設定
-	private boolean isNegotiated;
+	private boolean isNegotiated=false;
 
 	
 	private static class QapSessions{
@@ -318,32 +321,33 @@ public class QapHandler extends WebSocketHandler implements Timer{
 	 * @return
 	 */
 	private boolean setupQapSession(JSONArray reqs){
+		if(isNegotiated){
+			return true;
+		}
 		authSession=getAuthSession();
 		roles=authSession.getUser().getRolesList();
 		path=getRequestMapping().getSourcePath();
+		if(reqs.size()<1){
+			return false;
+		}
+		//negotiationの時は、新規採番
+		JSONObject obj=reqs.getJSONObject(0);
+		if(!"negotiation".equals(obj.getString("type"))){
+			return false;
+		}
+		bid=obj.getInt("bid");
 		QapSessions qapSessions=(QapSessions)authSession.getAttribute("QapSessions");
-		if(qapSessions==null){
-			qapSessions=new QapSessions();
-			authSession.setAttribute("QapSessions", qapSessions);
-		}
 		qapSession=qapSessions.sessions.get(bid);
-		if(qapSession==null){
-			if(reqs.size()<1){
-				return false;
-			}
-			//negotiationの時は、新規採番
-			JSONObject obj=reqs.getJSONObject(0);
-			if(!"negotiation".equals(obj.getString("type"))){
-				return false;
-			}
-			qapSession=new QapSession();
-			synchronized(qapSessions){
-				qapSessions.bidSeq++;
-				bid=qapSessions.bidSeq;
-				qapSessions.sessions.put(bid, qapSession);
-			}
-			authSession.addLogoutEvent(qapSession);//ログアウト時に通知を受ける
+		if(qapSession!=null){
+			return true;
 		}
+		qapSession=new QapSession();
+		synchronized(qapSessions){
+			qapSessions.bidSeq++;
+			bid=qapSessions.bidSeq;
+			qapSessions.sessions.put(bid, qapSession);
+		}
+		authSession.addLogoutEvent(qapSession);//ログアウト時に通知を受ける
 		return true;
 	}
 	
@@ -370,20 +374,10 @@ public class QapHandler extends WebSocketHandler implements Timer{
 		}
 		ParameterParser parameter=getParameterParser();
 		//xhrからの開始
-		//{bid:bid,reqs:[{type:xxx},{type:xxx}...]}
-		JSONObject jsonObject=(JSONObject)parameter.getJsonObject();
-		bid=jsonObject.getInt("bid");
-		JSONArray reqs=jsonObject.getJSONArray("reqs");
-		setupQapSession(reqs);
-		
-		
-		if(bid!=0){//bid==0はnegosiation用
-			qapSession=setupSession(bid, false);
-			if(bid!=null){
-				isNegotiated=true;
-			}else{
-				isNegotiated=false;
-			}
+		//[{type:negotiate,bid:bid},{type:xxx}...]
+		JSONArray reqs=(JSONArray)parameter.getJsonObject();
+		if(!setupQapSession(reqs)){
+			//session作成失敗
 		}
 		isMsgBlock=false;
 		isResponse=false;

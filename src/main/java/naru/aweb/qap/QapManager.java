@@ -32,7 +32,7 @@ public class QapManager {
 		return instance;
 	}
 	
-	/*/path,qname */
+	/* key:path#qname#bid value:<subname,Qap>*/
 	private Map<String,Map<String,Qap>> wsqs=new HashMap<String,Map<String,Qap>>();
 	
 	/**
