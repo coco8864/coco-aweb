@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import naru.async.AsyncBuffer;
 import naru.async.pool.PoolBase;
@@ -15,6 +16,7 @@ import naru.aweb.config.User;
 import net.sf.json.JSON;
 import net.sf.json.JSONObject;
 import org.apache.log4j.Logger;
+import org.json.JSONArray;
 
 public class PaSession extends PoolBase implements LogoutEvent{
 	/* req/resã§í ÇÃkey */
@@ -22,6 +24,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	public static final String KEY_BID="bid";
 	public static final String KEY_QNAME="qname";
 	public static final String KEY_SUBNAME="subname";
+	public static final String KEY_PALET_CLASS_NAME="paletClassName";
 	
 	/* request type */
 	public static final String TYPE_NEGOTIATION="negotiation";
@@ -287,20 +290,29 @@ public class PaSession extends PoolBase implements LogoutEvent{
 			}
 		}
 		paletWrapper.onPublish(peer, blobmessage);
-		
 	}
 	
 	public void qname(JSONObject req){
+		Set<String> qnames=paManager.qnames();
+		sendOK(null, null, TYPE_QNAMES, new JSONArray(qnames));
 	}
 	
 	public void deploy(JSONObject req){
+		String qname=req.getString(KEY_QNAME);
+		String paletClassName=req.getString(KEY_PALET_CLASS_NAME);
+		paManager.deploy(qname, paletClassName);
+		sendOK(qname, null, TYPE_DEPLOY, null);
 	}
 	
 	public void undeploy(JSONObject req){
+		String qname=req.getString(KEY_QNAME);
+		paManager.undeploy(qname);
+		sendOK(qname, null, TYPE_UNDEPLOY, null);
 	}
 	
 	@Override
 	public void onLogout() {//logoffÇµÇΩèÍçáÇÃëŒèà
+		peers.values();
 	}
 
 	public String getAppId() {
