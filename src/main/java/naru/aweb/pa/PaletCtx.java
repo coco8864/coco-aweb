@@ -2,15 +2,13 @@ package naru.aweb.pa;
 
 import java.util.Set;
 
-public class PaletCtx {
+public interface PaletCtx{
 	/**
 	 * 全peerにmessageを送信する
 	 * @param data
 	 * @return
 	 */
-	public int message(Object data){
-		return message(data,getPeers(),null);
-	}
+	public int message(Object data);
 	
 	/**
 	 * subnameで指定されたpeerにmessageを送信する
@@ -18,9 +16,7 @@ public class PaletCtx {
 	 * @param subname
 	 * @return
 	 */
-	public int message(Object data,String subname){
-		return message(data,getPeers(subname),null);
-	}
+	public int message(Object data,String subname);
 	
 	/**
 	 * subnameで指定されたpeer(excptPeersを除く)にmessageを送信する
@@ -29,9 +25,7 @@ public class PaletCtx {
 	 * @param excptPeers
 	 * @return
 	 */
-	public int message(Object data,String subname,Set<PaPeer> excptPeers){
-		return message(data,getPeers(subname),excptPeers);
-	}
+	public int message(Object data,String subname,Set<PaPeer> excptPeers);
 	
 	/**
 	 * 
@@ -40,35 +34,11 @@ public class PaletCtx {
 	 * @param excptPeers
 	 * @return
 	 */
-	public int message(Object data,Set<PaPeer> peers,Set<PaPeer> excptPeers){
-		int count=0;
-		for(PaPeer peer:peers){
-			if(excptPeers!=null && excptPeers.contains(peer)){
-				continue;
-			}
-			peer.message(data);
-			count++;
-		}
-		return count;
-	}
+	public int message(Object data,Set<PaPeer> peers,Set<PaPeer> excptPeers);
 	
-	public String getQname(){
-		return null;
-	}
-	
-	public Set<PaPeer> getPeers(){
-		return null;
-	}
-	
-	public Set<PaPeer> getPeers(String subname){
-		return null;
-	}
-	
-	public boolean setInterval(long interval){
-		return false;
-	}
-	
-	public boolean terminate(){
-		return false;
-	}
+	public String getQname();
+	public Set<PaPeer> getPeers();
+	public Set<PaPeer> getPeers(String subname);
+	public boolean setInterval(long interval);
+	public boolean terminate();
 }
