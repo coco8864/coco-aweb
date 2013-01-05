@@ -45,7 +45,8 @@ public class PaPeer extends PoolBase{
 	
 	/* API */
 	public boolean message(Object data){
-		return false;
+		paSession.message(data);
+		return true;
 	}
 	
 	public String getQname() {
@@ -58,7 +59,7 @@ public class PaPeer extends PoolBase{
 
 	/* API */
 	public boolean unsubscribe(){
-		return false;
+		return paSession.u;
 	}
 	
 	@Override

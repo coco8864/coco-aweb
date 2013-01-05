@@ -6,8 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.datanucleus.store.types.sco.backed.Collection;
-
 import naru.async.AsyncBuffer;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
@@ -194,18 +192,6 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		}
 	}
 	
-	private PaPeer getPeer(PaPeer keyPeer){
-		synchronized(peers){
-			PaPeer peer=peers.get(keyPeer);
-			if(peer!=null){
-				keyPeer.unref(true);
-				return peer;
-			}
-			peers.put(keyPeer, keyPeer);
-		}
-		return keyPeer;
-	}
-	
 	public void subscribe(JSONObject msg){
 		String qname=msg.getString(KEY_QNAME);
 		String subname=msg.optString(KEY_SUBNAME,null);
@@ -241,10 +227,11 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	public void publish(JSONObject msg){
 		String qname=msg.getString(KEY_QNAME);
 		String subname=msg.optString(KEY_SUBNAME,null);
+		Object message=msg.get(KEY_MESSAGE);
 		PaPeer keyPeer=PaPeer.create(this, qname, subname);
 		PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
 		if(subname==null){//送信元がないPublish 便宜的なPeer
-			paletWrapper.onPublish(keyPeer, msg);
+			paletWrapper.onPublish(keyPeer, message);
 			keyPeer.unref();
 			return;
 		}
@@ -257,15 +244,17 @@ public class PaSession extends PoolBase implements LogoutEvent{
 				return;
 			}
 		}
-		paletWrapper.onPublish(peer, msg);
+		paletWrapper.onPublish(peer, message);
 	}
 	
 	public void publishBin(JSONObject msg,BlobMessage blobmessage){
-		if(!isWs){
-			logger.error("publishBin");
-		}
 		String qname=msg.getString(KEY_QNAME);
 		String subname=msg.optString(KEY_SUBNAME,null);
+		if(!isWs){
+			sendError(qname, subname, TYPE_PUBLISH, "not support bin publish");
+			logger.error("not support bin publish");
+			return;
+		}
 		PaPeer keyPeer=PaPeer.create(this, qname, subname);
 		PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
 		if(subname==null){//送信元がないPublish 便宜的なPeer
