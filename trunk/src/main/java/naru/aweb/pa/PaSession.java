@@ -1,29 +1,64 @@
 package naru.aweb.pa;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.datanucleus.store.types.sco.backed.Collection;
+
+import naru.async.AsyncBuffer;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.aweb.auth.AuthSession;
 import naru.aweb.auth.LogoutEvent;
+import naru.aweb.config.User;
 import net.sf.json.JSON;
 import net.sf.json.JSONObject;
+import org.apache.log4j.Logger;
 
 public class PaSession extends PoolBase implements LogoutEvent{
+	/* req/res共通のkey */
+	public static final String KEY_TYPE="type";
+	public static final String KEY_QNAME="qname";
+	public static final String KEY_SUBNAME="subname";
+	
+	/* request type */
 	public static final String TYPE_NEGOTIATION="negotiation";
 	public static final String TYPE_PUBLISH="publish";
 	public static final String TYPE_SUBSCRIBE="subscribe";
 	public static final String TYPE_UNSUBSCRIBE="unsubscribe";
-	public static final String TYPE_CLOSE="close";
+	public static final String TYPE_DEPLOY="deploy";
+	public static final String TYPE_UNDEPLOY="undeploy";
+	public static final String TYPE_QNAMES="qnames";
+	//subscribe状態をそのままに回線の切断通知だがいきなりきってもかわらないので当面利用しない
+	public static final String TYPE_CONNECTION_CLOSE="connectionClose";
 	
-	static PaSession create(String path,String authId,Integer bid,boolean isWs){
+	/* resだけのkey */
+	public static final String KEY_RESULT="result";
+	public static final String KEY_REQUEST_TYPE="requestType";
+	public static final String KEY_MESSAGE="message";
+	
+	/* response type */
+	public static final String TYPE_RESPONSE="response";
+	public static final String TYPE_MESSAGE="message";
+	public static final String RESULT_OK="ok";
+	public static final String RESULT_ERROR="error";
+	
+	private static Logger logger=Logger.getLogger(PaSession.class);
+	private static PaManager paManager=PaManager.getInstance();
+	
+	static PaSession create(String path,Integer bid,boolean isWs,AuthSession authSession){
 		PaSession paSession=(PaSession)PoolManager.getInstance(PaSession.class);
 		paSession.path=path;
-		paSession.authId=authId;
 		paSession.bid=bid;
 		paSession.isWs=isWs;
+		
+		paSession.appId=authSession.getAppId();
+		User user=authSession.getUser();
+		paSession.loginId=user.getLoginId();
+		paSession.roles=Collections.unmodifiableList(user.getRolesList());
 		return paSession;
 	}
 	
@@ -36,49 +71,252 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	private String path;//接続path
 	
 	//authSession由来
-	private String authId;//認証id
-	private String userId;
+	private String appId;//認証id当該セションのid
+	private String loginId;
 	private List<String> roles;
 	
 	private Integer bid;//brawserId
 	private boolean isWs;
-	private Map<String,PaPeer> peers=new HashMap<String,PaPeer>();
+	private Map<PaPeer,PaPeer> peers=new HashMap<PaPeer,PaPeer>();
+	private PaHandler wsHandler;
+	private PaHandler xhrHandler;
+	private List<Object> qdata=new ArrayList<Object>();
+	private List<BlobMessage> qbin=new ArrayList<BlobMessage>();
 	
-	private PaHandler handler;
-	public void message(Object data){
+	private void wsSend(PaHandler handler,Object data){
+		if(data instanceof String){
+			handler.postMessage((String)data);
+		}else if(data instanceof AsyncBuffer){
+			handler.postMessage((AsyncBuffer)data);
+		}else{//JSONの場合
+			handler.postMessage(data.toString());
+		}
+		//TODO impliment
+	}
+	
+	private void xhrSend(PaHandler handler,List<Object> qdata){
+		if(qdata.size()==0){
+			handler.completeResponse("205");
+		}else{
+			handler.responseJson(qdata);
+		}
+		handler.doneXhr();
+	}
+	
+	public synchronized void setupWsHandler(PaHandler handler){
+		if(this.wsHandler!=null && handler==null){
+			this.wsHandler=null;
+			return;
+		}else if(this.wsHandler==null && handler!=null){
+			for(Object data:qdata){
+				wsSend(handler,data);
+			}
+			qdata.clear();
+			this.wsHandler=handler;
+			return;
+		}
+		logger.error("setupWsHandler");
+	}
+	
+	/**
+	 * 
+	 * @param handler
+	 * @return responseした場合true
+	 */
+	public synchronized void setupXhrHandler(PaHandler handler){
+		if(this.xhrHandler!=null && handler==null){
+			this.xhrHandler=null;
+			return;
+		}else if(this.xhrHandler==null && handler!=null){
+			if(qdata.size()<=0){
+				this.xhrHandler=handler;
+				return;
+			}
+			xhrSend(xhrHandler, qdata);
+			qdata.clear();
+			handler.doneXhr();
+			return;
+		}
+		logger.error("setupXhrHandler");
+	}
+	
+	/* レスポンスするオブジェクトがなかったとしても一定時間後にはレスポンスする */
+	public synchronized void xhrTerminal(PaHandler handler){
+		if(handler.doneXhr()){
+			return;
+		}
+		xhrSend(xhrHandler,qdata);
+		qdata.clear();
+		xhrHandler=null;
+	}
+	
+	private JSON makeResponseJson(String result,String qname,String subname,String requestType,Object message){
+		JSONObject json=new JSONObject();
+		json.put(KEY_TYPE, TYPE_RESPONSE);
+		json.put(KEY_RESULT, result);
+		json.put(KEY_QNAME, qname);
+		json.put(KEY_SUBNAME, subname);
+		json.put(KEY_REQUEST_TYPE, requestType);
+		json.put(KEY_MESSAGE, message);
+		return json;
+	}
+	
+	public synchronized void sendError(String qname,String subname,String requestType,Object message){
+		message(makeResponseJson(RESULT_ERROR, qname, subname, requestType, message));
+	}
+	
+	public synchronized void sendOK(String qname,String subname,String requestType,Object message){
+		message(makeResponseJson(RESULT_OK, qname, subname, requestType, message));
+	}
+	
+	public synchronized void message(Object data){
+		if(this.wsHandler!=null){
+			wsSend(this.wsHandler,data);
+		}else if(this.xhrHandler!=null){
+			if(data instanceof BlobMessage){
+				logger.error("xhrHandler can't send BlobMessage.xhrHandler");
+				return;
+			}
+			qdata.add(data);
+			xhrSend(this.xhrHandler,qdata);
+			qdata.clear();
+			this.xhrHandler=null;
+		}else{
+			if(data instanceof BlobMessage){
+				if(!isWs){
+					logger.error("xhrHandler can't send BlobMessage.isWs");
+					return;
+				}
+				qbin.add((BlobMessage)data);
+			}else{
+				qdata.add(data);
+			}
+		}
+	}
+	
+	private PaPeer getPeer(PaPeer keyPeer){
+		synchronized(peers){
+			PaPeer peer=peers.get(keyPeer);
+			if(peer!=null){
+				keyPeer.unref(true);
+				return peer;
+			}
+			peers.put(keyPeer, keyPeer);
+		}
+		return keyPeer;
 	}
 	
 	public void subscribe(JSONObject msg){
-		String qname=msg.getString("qname");
-		String subname=msg.optString("subname",null);
-		boolean isAllowBlob=msg.optBoolean("isAllowBlob", false);
-		QapPeer from=QapPeer.create(authSession,srcPath,bid,qname,subname,isAllowBlob);
-		if( qapManager.subscribe(from, this) ){
-			if(!qapSession.reg(from)){
-				logger.debug("subscribe aleady in session.");
-				from.unref();
+		String qname=msg.getString(KEY_QNAME);
+		String subname=msg.optString(KEY_SUBNAME,null);
+		PaPeer keyPeer=PaPeer.create(this, qname, subname);
+		synchronized(peers){
+			PaPeer peer=peers.get(keyPeer);
+			if(peer!=null){//すでにsubscribe済み処理はない
+				keyPeer.unref(true);
+				return;
 			}
-			/* subscribeの成功を通知 ...しない*/
-//			JSON res=QapManager.makeMessage(QapManager.CB_TYPE_INFO,qname,subname,"subscribe","subscribed");
-//			ress.add(res);
-		}else{
-			/* subscribeの成功を通知 */
-			JSON res=QapManager.makeMessage(QapManager.CB_TYPE_ERROR,qname,subname,"subscribe","not found qname:"+qname);
-			ress.add(res);
-			from.unref();
+			peers.put(keyPeer, keyPeer);
 		}
+		PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
+		paletWrapper.onSubscribe(keyPeer);
+	}
+	
+	public void unsubscribe(JSONObject msg){
+		String qname=msg.getString(KEY_QNAME);
+		String subname=msg.optString(KEY_SUBNAME,null);
+		PaPeer keyPeer=PaPeer.create(this, qname, subname);
+		PaPeer peer=null;
+		synchronized(peers){
+			peer=peers.get(keyPeer);
+			keyPeer.unref(true);
+			if(peer==null){//すでにunsubscribe済み処理はない
+				return;
+			}
+		}
+		PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
+		paletWrapper.onUnubscribe(peer);
+	}
+	
+	public void publish(JSONObject msg){
+		String qname=msg.getString(KEY_QNAME);
+		String subname=msg.optString(KEY_SUBNAME,null);
+		PaPeer keyPeer=PaPeer.create(this, qname, subname);
+		PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
+		if(subname==null){//送信元がないPublish 便宜的なPeer
+			paletWrapper.onPublish(keyPeer, msg);
+			keyPeer.unref();
+			return;
+		}
+		PaPeer peer=null;
+		synchronized(peers){
+			peer=peers.get(keyPeer);
+			keyPeer.unref(true);
+			if(peer==null){//登録のないところからのpublish?
+				sendError(qname, subname, TYPE_PUBLISH, "not found subname");
+				return;
+			}
+		}
+		paletWrapper.onPublish(peer, msg);
+	}
+	
+	public void publishBin(JSONObject msg,BlobMessage blobmessage){
+		if(!isWs){
+			logger.error("publishBin");
+		}
+		String qname=msg.getString(KEY_QNAME);
+		String subname=msg.optString(KEY_SUBNAME,null);
+		PaPeer keyPeer=PaPeer.create(this, qname, subname);
+		PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
+		if(subname==null){//送信元がないPublish 便宜的なPeer
+			paletWrapper.onPublish(keyPeer, blobmessage);
+			keyPeer.unref();
+			return;
+		}
+		PaPeer peer=null;
+		synchronized(peers){
+			peer=peers.get(keyPeer);
+			keyPeer.unref(true);
+			if(peer==null){//登録のないところからのpublish?
+				sendError(qname, subname, TYPE_PUBLISH, "not found subname");
+				return;
+			}
+		}
+		paletWrapper.onPublish(peer, blobmessage);
 		
 	}
 	
-	public void unsubscribe(JSONObject req){
+	public void qname(JSONObject req){
 	}
 	
-	public void publish(JSONObject req){
+	public void deploy(JSONObject req){
 	}
 	
+	public void undeploy(JSONObject req){
+	}
 	
 	@Override
 	public void onLogout() {//logoffした場合の対処
 	}
 
+	public String getAppId() {
+		return appId;
+	}
+
+	public String getLoginId() {
+		return loginId;
+	}
+
+	public List<String> getRoles() {
+		return roles;
+	}
+	
+	public Integer getBid() {
+		return bid;
+	}
+
+	public boolean isWs() {
+		return isWs;
+	}
+	
 }

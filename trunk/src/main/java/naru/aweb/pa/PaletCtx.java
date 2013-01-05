@@ -52,7 +52,7 @@ public class PaletCtx {
 		return count;
 	}
 	
-	public String StringgetQname(){
+	public String getQname(){
 		return null;
 	}
 	

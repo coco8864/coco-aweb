@@ -4,7 +4,6 @@
 package naru.aweb.pa;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -22,7 +21,6 @@ import naru.aweb.mapping.MappingResult;
 import net.sf.json.JSON;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
-import net.sf.json.JSONSerializer;
 
 import org.apache.log4j.Logger;
 
@@ -34,15 +32,13 @@ import org.apache.log4j.Logger;
  *
  */
 public class PaHandler extends WebSocketHandler implements Timer{
-	private static final String REQ_TYPE_NEGOTIATE = "negotiate";
 	private static final String XHR_FRAME_PATH = "/xhrQapFrame.vsp";
 	private static final String XHR_FRAME_TEMPLATE = "/template/xhrQapFrame.vsp";
+	private static int XHR_SLEEP_TIME=1000;
 	private static Config config = Config.getConfig();
 	private static Logger logger=Logger.getLogger(PaHandler.class);
 	
-	private String path;
 	private Integer bid;
-	private List<String> roles;
 	private PaSession paSession;
 	private boolean isNegotiated=false;
 	
@@ -68,36 +64,28 @@ public class PaHandler extends WebSocketHandler implements Timer{
 		}
 	}
 	
-	
-	private void dispatchMessage(JSONObject msg,List ress){
+	/**
+	 * negotiation前提で呼び出される=paSessionが有効
+	 * @param msg
+	 */
+	private void dispatchMessage(JSONObject msg){
 		String type=msg.getString("type");
-		if(isNegotiated==false && REQ_TYPE_NEGOTIATE.equals(type)){
-			int bid=msg.getInt("bid");
-			qapSession=setupSession(bid,true);
-			ress.add(QapManager.makeMessage(QapManager.CB_TYPE_INFO,"","",REQ_TYPE_NEGOTIATE,bid));
-			isNegotiated=true;
-			return;
-		}
-		if(isNegotiated==false){
-			ress.add(QapManager.makeMessage(QapManager.CB_TYPE_ERROR,msg.getString("qname"),msg.getString("subname"),type,"notNegotiated"));
-		}else if("subscribe".equals(type)){
-			subscribe(msg,ress);
-		}else if("unsubscribe".equals(type)){
-			unsubscribe(msg,ress);
-		}else if("publish".equals(type)){
-			publish(msg,ress);
-		}else if("close".equals(type)){
-			close(msg,ress);
-		}else if("qnames".equals(type)){
-			qnames(ress);
-		}else if("deploy".equals(type)){
-			String qname=msg.getString("qname");
-			String className=msg.getString("className");
-			deploy(qname,className,ress);
-		}else if("undeploy".equals(type)){
-			logger.warn("unsuppoerted tyep:"+type);
+		if(PaSession.TYPE_SUBSCRIBE.equals(type)){
+			paSession.subscribe(msg);
+		}else if(PaSession.TYPE_UNSUBSCRIBE.equals(type)){
+			paSession.unsubscribe(msg);
+		}else if(PaSession.TYPE_PUBLISH.equals(type)){
+			paSession.publish(msg);
+//		}else if("close".equals(type)){
+		}else if(PaSession.TYPE_QNAMES.equals(type)){
+			paSession.qname(msg);
+		}else if(PaSession.TYPE_DEPLOY.equals(type)){
+			paSession.deploy(msg);
+		}else if(PaSession.TYPE_UNDEPLOY.equals(type)){
+			paSession.undeploy(msg);
 		}else{
-			logger.warn("unsuppoerted tyep:"+type);
+			paSession.sendError(null, null, type, "unsuppoerted type");
+			logger.warn("unsuppoerted type:"+type);
 		}
 	}
 	
@@ -107,9 +95,9 @@ public class PaHandler extends WebSocketHandler implements Timer{
 	 * @param wsHandler WebSocketプロトコルを処理しているハンドラ
 	 * @return
 	 */
-	private void processMessages(JSON json,List ress){
+	private void processMessages(JSON json){
 		if(!json.isArray()){
-			dispatchMessage((JSONObject)json,ress);
+			dispatchMessage((JSONObject)json);
 			return;
 		}
 		List<JSONObject> messages=new ArrayList<JSONObject>();
@@ -117,7 +105,7 @@ public class PaHandler extends WebSocketHandler implements Timer{
 		Iterator<JSONObject> itr=messages.iterator();
 		while(itr.hasNext()){
 			JSONObject msg=itr.next();
-			dispatchMessage(msg,ress);
+			dispatchMessage(msg);
 		}
 	}
 	
@@ -129,133 +117,85 @@ public class PaHandler extends WebSocketHandler implements Timer{
 		logger.debug("onMessage.message:"+msgs);
 		JSONArray reqs=JSONArray.fromObject(msgs);
 		if(!isNegotiated){
-			setupQapSession(reqs);
+			JSONObject negoreq=(JSONObject)reqs.remove(0);
+			if(!negotiation(negoreq)){
+				//negotiation失敗
+				return;
+			}
+			paSession.setupWsHandler(this);
 		}
-		List ress=new ArrayList();
-		processMessages(json,ress);
-		if(ress.size()>0){
-			message(ress);
-		}
+		processMessages(reqs);
 	}
 	
 	@Override
 	public void onMessage(CacheBuffer message) {
-		//onMessageにバイナリを送ってくるのは、publishしかない
+		//onMessageにバイナリを送ってくるのは、negtiation後,publish
+		if(!isNegotiated){
+			//negotiation失敗
+			return;
+		}
 		BlobEnvelope envelope=BlobEnvelope.parse(message);
 		JSONObject header=envelope.getHeader();
 		String type=header.getString("type");
-		if(!"publish".equals(type)){
+		if(PaSession.TYPE_PUBLISH.equals(type)){
 			logger.error("onMessage CacheBuffer type:"+type);
 			envelope.unref();
 			return;
 		}
-		String qname=header.getString("qname");
-		String subname=header.optString("subname",null);
-		QapPeer from=QapPeer.create(authSession,srcPath,bid,qname,subname,isWs);
-		qapManager.publish(from, envelope.getBlobMessage());
-		from.unref();
+		paSession.publishBin(header,envelope.getBlobMessage());
 		envelope.unref();
 	}
 	
-	void message(BlobEnvelope envelope){
-		postMessage(envelope);
-	}
-	
-	
-	/**
-	 * 端末に送信するメッセージができたところで呼び出される
-	 * @param json
-	 */
-	void message(Object obj){
-		if(isWs){
-			//BlobMessageはここを通過しない
-			postMessage(obj.toString());
-		}else{
-			if(obj instanceof List){
-				responseObjs.addAll((List)obj);
-			}else{
-				responseObjs.add(obj);
-			}
-			if(!isMsgBlock){
-				qapSession.setHandler(qapManager,this,null);
-				isMsgBlock=true;
-				if(timerId!=-1){
-					TimerManager.clearTimeout(timerId);
-				}
-				timerId=TimerManager.setTimeout(10, this,null);
-			}
-		}
-	}
 	
 	@Override
 	public void onWsClose(short code,String reason) {
-		paSession.setHandler(qapManager,this,null);
+		paSession.setupWsHandler(null);
 	}
-	
-
-	private PaSession getPaSession(Integer bid){
-		AuthSession authSession=getAuthSession();
-		Map<Integer,PaSession> paSessions=null;
-		synchronized(authSession){
-			paSessions=(Map<Integer,PaSession>)authSession.getAttribute("PaSessions");
-			if(paSessions==null){
-				paSessions=new HashMap<Integer,PaSession>();
-				authSession.setAttribute("PaSessions", paSessions);
-			}
-		}
-		PaSession paSession=paSessions.get(bid);
-		if(paSession!=null){
-			return paSession;
-		}
-		
-		paSession=PaSession.create(path, authSession.getAppId(), bid, isWs);
-		roles=authSession.getUser().getRolesList();
-		
-		
-	}
-	
 	
 	/**
 	 * negotiationの時は、新規採番
 	 * @param bid
 	 * @return
 	 */
-	private boolean setupQapSession(JSONArray reqs){
-		if(isNegotiated){
-			return true;
-		}
-		authSession=getAuthSession();
-		roles=authSession.getUser().getRolesList();
-		path=getRequestMapping().getSourcePath();
-		if(reqs.size()<1){
+	private boolean negotiation(JSONObject negoreq){
+		String type=negoreq.getString("type");
+		if(PaSession.TYPE_NEGOTIATION.equals(type)){
 			return false;
 		}
-		//negotiationの時は、新規採番
-		JSONObject obj=reqs.getJSONObject(0);
-		if(!"negotiation".equals(obj.getString("type"))){
-			return false;
+		bid=negoreq.getInt("bid");
+		AuthSession authSession=getAuthSession();
+		PaSessions paSessions=null;
+		synchronized(authSession){
+			paSessions=(PaSessions)authSession.getAttribute("PaSessions");
+			if(paSessions==null){
+				paSessions=new PaSessions();
+				authSession.setAttribute("PaSessions", paSessions);
+			}
+			paSession=paSessions.sessions.get(bid);
+			if(paSession!=null){
+				return true;
+			}
 		}
-		bid=obj.getInt("bid");
-		QapSessions qapSessions=(QapSessions)authSession.getAttribute("QapSessions");
-		qapSession=qapSessions.sessions.get(bid);
-		if(qapSession!=null){
-			return true;
+		String path=getRequestMapping().getSourcePath();
+		synchronized(paSessions){
+			paSessions.bidSeq++;
+			bid=paSessions.bidSeq;
+			paSession=PaSession.create(path,bid, isWs, authSession);
+			paSessions.sessions.put(bid, paSession);
 		}
-		qapSession=new QapSession();
-		synchronized(qapSessions){
-			qapSessions.bidSeq++;
-			bid=qapSessions.bidSeq;
-			qapSessions.sessions.put(bid, qapSession);
-		}
-		authSession.addLogoutEvent(qapSession);//ログアウト時に通知を受ける
+		authSession.addLogoutEvent(paSession);//ログアウト時に通知を受ける
 		return true;
 	}
 	
+	/* authSessionに乗せるPaSession管理Class */
+	private static class PaSessions{
+		Map<Integer,PaSession> sessions=new HashMap<Integer,PaSession>();
+		Integer bidSeq=0;
+	}
 
 	@Override
 	public void onWsOpen(String subprotocol) {
-		//webSocketでの開始
-		//setupSession();
+		logger.debug("onWsOpen subprotocol:"+subprotocol);
 	}
 	
 	/**
@@ -276,21 +216,17 @@ public class PaHandler extends WebSocketHandler implements Timer{
 		//xhrからの開始
 		//[{type:negotiate,bid:bid},{type:xxx}...]
 		JSONArray reqs=(JSONArray)parameter.getJsonObject();
-		if(!setupQapSession(reqs)){
-			//session作成失敗
+		JSONObject negoreq=(JSONObject)reqs.remove(0);
+		if(!negotiation(negoreq)){
+			//negotiation失敗
+			return;
 		}
-		isMsgBlock=false;
-		isResponse=false;
-		processMessages(jsonObject.getJSONArray("data"),responseObjs);//HTTPで処理している
-		//wsqSession.collectMessage(wsqManager,responseObjs);
-		if(responseObjs.size()>0){
-			qapSession.setHandler(qapManager,this,null);
-			isMsgBlock=true;
-			//responseObjsの処理は、timerで行う
-			timerId=TimerManager.setTimeout(10, this,null);
-		}else{
-			/* 折り返しにレスポンスするオブジェクトがなければ1秒待つ */
-			timerId=TimerManager.setTimeout(1000, this,null);
+		processMessages(reqs);
+		doneXhr=false;
+		paSession.setupXhrHandler(this);
+		if(!doneXhr){
+			ref();
+			TimerManager.setTimeout(XHR_SLEEP_TIME, this,null);
 		}
 	}
 	
@@ -305,29 +241,19 @@ public class PaHandler extends WebSocketHandler implements Timer{
 	public void onFinished() {
 		super.onFinished();
 	}
-
+	
+	//xhr時、レスポンス済みか否かを保持
+	private boolean doneXhr;
+	public void setDoneXhr(){
+		doneXhr=true;
+	}
+	public boolean doneXhr(){
+		return doneXhr;
+	}
+	
 	/* xhrから利用する場合、メッセージなければしばらく待ってから復帰したいため */
 	public void onTimer(Object userContext) {
-		timerId=-1;
-		if(isMsgBlock){
-			synchronized(this){
-				if(isResponse){
-					return;
-				}
-				isResponse=true;
-			}
-			if(responseObjs.size()>0){
-				JSONArray res=new JSONArray();
-				res.addAll(responseObjs);
-				responseJson(res);
-				responseObjs.clear();
-			}else{
-				completeResponse("205");
-			}
-		}else{
-			qapSession.setHandler(qapManager,this,null);
-			isMsgBlock=true;
-			timerId=TimerManager.setTimeout(10, this,null);
-		}
+		paSession.xhrTerminal(this);
+		unref();
 	}
 }
