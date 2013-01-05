@@ -156,19 +156,19 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		JSONObject json=new JSONObject();
 		json.put(KEY_TYPE, TYPE_RESPONSE);
 		json.put(KEY_RESULT, result);
+		json.put(KEY_REQUEST_TYPE, requestType);
 		json.put(KEY_QNAME, qname);
 		json.put(KEY_SUBNAME, subname);
-		json.put(KEY_REQUEST_TYPE, requestType);
 		json.put(KEY_MESSAGE, message);
 		return json;
 	}
 	
-	public synchronized void sendError(String qname,String subname,String requestType,Object message){
-		message(makeResponseJson(RESULT_ERROR, qname, subname, requestType, message));
+	public synchronized void sendError(String requestType,String qname,String subname,Object message){
+		message(makeResponseJson(RESULT_ERROR,requestType,qname, subname,  message));
 	}
 	
-	public synchronized void sendOK(String qname,String subname,String requestType,Object message){
-		message(makeResponseJson(RESULT_OK, qname, subname, requestType, message));
+	public synchronized void sendOK(String requestType,String qname,String subname,Object message){
+		message(makeResponseJson(RESULT_OK,requestType,qname, subname, message));
 	}
 	
 	public synchronized void message(Object data){
@@ -226,12 +226,13 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		}
 		PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
 		paletWrapper.onUnubscribe(peer);
+		sendOK(TYPE_UNSUBSCRIBE,qname, subname,null);
 	}
 	
 	/* APIåoóRÇ≈unsubscribeÇ≥ÇÍÇÈèÍçá */
 	public void unsubscribeByPeer(PaPeer peer){
 		String qname=peer.getQname();
-		sendError(qname,peer.getSubname(),PaSession.TYPE_SUBSCRIBE,"unsubscribed by api");
+		sendError(TYPE_SUBSCRIBE,qname,peer.getSubname(),"unsubscribed by api");
 		synchronized(peers){
 			peer=peers.remove(peer);
 			if(peer==null){//Ç∑Ç≈Ç…unsubscribeçœÇ›èàóùÇÕÇ»Ç¢
@@ -258,7 +259,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 			peer=peers.get(keyPeer);
 			keyPeer.unref(true);
 			if(peer==null){//ìoò^ÇÃÇ»Ç¢Ç∆Ç±ÇÎÇ©ÇÁÇÃpublish?
-				sendError(qname, subname, TYPE_PUBLISH, "not found subname");
+				sendError(TYPE_PUBLISH, qname, subname, "not found subname");
 				return;
 			}
 		}
@@ -269,7 +270,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		String qname=msg.getString(KEY_QNAME);
 		String subname=msg.optString(KEY_SUBNAME,null);
 		if(!isWs){
-			sendError(qname, subname, TYPE_PUBLISH, "not support bin publish");
+			sendError(TYPE_PUBLISH,qname, subname,"not support bin publish");
 			logger.error("not support bin publish");
 			return;
 		}
@@ -285,7 +286,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 			peer=peers.get(keyPeer);
 			keyPeer.unref(true);
 			if(peer==null){//ìoò^ÇÃÇ»Ç¢Ç∆Ç±ÇÎÇ©ÇÁÇÃpublish?
-				sendError(qname, subname, TYPE_PUBLISH, "not found subname");
+				sendError(TYPE_PUBLISH, qname, subname, "not found subname");
 				return;
 			}
 		}
@@ -294,25 +295,35 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	
 	public void qname(JSONObject req){
 		Set<String> qnames=paManager.qnames();
-		sendOK(null, null, TYPE_QNAMES, new JSONArray(qnames));
+		sendOK(TYPE_QNAMES,null, null,new JSONArray(qnames));
 	}
 	
 	public void deploy(JSONObject req){
 		String qname=req.getString(KEY_QNAME);
 		String paletClassName=req.getString(KEY_PALET_CLASS_NAME);
 		paManager.deploy(qname, paletClassName);
-		sendOK(qname, null, TYPE_DEPLOY, null);
+		sendOK(TYPE_DEPLOY,qname, null, null);
 	}
 	
 	public void undeploy(JSONObject req){
 		String qname=req.getString(KEY_QNAME);
 		paManager.undeploy(qname);
-		sendOK(qname, null, TYPE_UNDEPLOY, null);
+		sendOK(TYPE_UNDEPLOY,qname, null,null);
 	}
 	
 	@Override
-	public void onLogout() {//logoffÇµÇΩèÍçáÇÃëŒèà
-		peers.values();
+	public void onLogout() {
+		//logoffÇµÇΩèÍçáÇÃëŒèà,ìoò^Ç≥ÇÍÇƒÇ¢ÇÈpeerÇëSïîunsubscribeÇ∑ÇÈ
+		while(true){
+			Object[] reqs=peers.values().toArray();
+			if(reqs.length==0){
+				break;
+			}
+			for(Object peer:reqs){
+				((PaPeer)peer).unsubscribe();
+			}
+		}
+		unref();//ÉZÉVÉáÉìÇ™èIÇÌÇ¡ÇΩÇÁPaSessionÇ‡ïKóvÇ»Çµ
 	}
 
 	public String getAppId() {
