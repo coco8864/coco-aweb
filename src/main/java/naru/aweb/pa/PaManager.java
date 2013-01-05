@@ -2,6 +2,7 @@ package naru.aweb.pa;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class PaManager {
 	
@@ -11,7 +12,7 @@ public class PaManager {
 	}
 	
 	private Map<String,PaletWrapper> paletWrappers=new HashMap<String,PaletWrapper>();//qname->palet
-	public PaletWrapper deploy(String qname,String paletName){
+	public synchronized PaletWrapper deploy(String qname,String paletName){
 		try {
 			Class clazz = Class.forName(paletName);
 			Palet palet = (Palet) clazz.newInstance();
@@ -23,8 +24,8 @@ public class PaManager {
 		}
 	}
 	
-	public PaletWrapper undeploy(String qname){
-		PaletWrapper paletWrapper=paletWrappers.get(qname);
+	public synchronized PaletWrapper undeploy(String qname){
+		PaletWrapper paletWrapper=paletWrappers.remove(qname);
 		if(paletWrapper!=null){
 			paletWrapper.terminate();
 		}
@@ -33,5 +34,9 @@ public class PaManager {
 	
 	public PaletWrapper getPaletWrapper(String qname){
 		return paletWrappers.get(qname);
+	}
+	
+	public synchronized Set<String> qnames(){
+		return paletWrappers.keySet();
 	}
 }

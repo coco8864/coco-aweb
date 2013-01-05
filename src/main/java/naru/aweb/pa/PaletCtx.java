@@ -25,7 +25,8 @@ public interface PaletCtx{
 	 * @param excptPeers
 	 * @return
 	 */
-	public int message(Object data,String subname,Set<PaPeer> excptPeers);
+	public int message(Object data,String subname,Set<PaPeer> exceptPeers);
+	public int message(Object data,String subname,PaPeer exceptPeer);
 	
 	/**
 	 * 
@@ -34,7 +35,8 @@ public interface PaletCtx{
 	 * @param excptPeers
 	 * @return
 	 */
-	public int message(Object data,Set<PaPeer> peers,Set<PaPeer> excptPeers);
+	public int message(Object data,Set<PaPeer> peers,Set<PaPeer> exceptPeers);
+	public int message(Object data,Set<PaPeer> peers,PaPeer exceptPeer);
 	
 	public String getQname();
 	public Set<PaPeer> getPeers();

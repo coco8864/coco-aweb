@@ -79,7 +79,7 @@ public class PaletWrapper implements PaletCtx,Timer{
 	 * @return
 	 */
 	public int message(Object data){
-		return message(data,getPeers(),null);
+		return message(data,getPeers(),(PaPeer)null);
 	}
 	
 	/**
@@ -89,7 +89,7 @@ public class PaletWrapper implements PaletCtx,Timer{
 	 * @return
 	 */
 	public int message(Object data,String subname){
-		return message(data,getPeers(subname),null);
+		return message(data,getPeers(subname),(PaPeer)null);
 	}
 	
 	/**
@@ -99,8 +99,8 @@ public class PaletWrapper implements PaletCtx,Timer{
 	 * @param excptPeers
 	 * @return
 	 */
-	public int message(Object data,String subname,Set<PaPeer> excptPeers){
-		return message(data,getPeers(subname),excptPeers);
+	public int message(Object data,String subname,Set<PaPeer> exceptPeers){
+		return message(data,getPeers(subname),exceptPeers);
 	}
 	
 	/**
@@ -110,10 +110,29 @@ public class PaletWrapper implements PaletCtx,Timer{
 	 * @param excptPeers
 	 * @return
 	 */
-	public int message(Object data,Set<PaPeer> peers,Set<PaPeer> excptPeers){
+	public int message(Object data,Set<PaPeer> peers,Set<PaPeer> exceptPeers){
 		int count=0;
 		for(PaPeer peer:peers){
-			if(excptPeers!=null && excptPeers.contains(peer)){
+			if(exceptPeers!=null && exceptPeers.contains(peer)){
+				continue;
+			}
+			if(peer.message(data)){
+				count++;
+			}
+		}
+		return count;
+	}
+	
+	@Override
+	public int message(Object data, String subname, PaPeer exceptPeer) {
+		return message(data,getPeers(subname),exceptPeer);
+	}
+
+	@Override
+	public int message(Object data, Set<PaPeer> peers, PaPeer exceptPeer) {
+		int count=0;
+		for(PaPeer peer:peers){
+			if(exceptPeer!=null && exceptPeer.equals(peer)){
 				continue;
 			}
 			if(peer.message(data)){
@@ -160,4 +179,5 @@ public class PaletWrapper implements PaletCtx,Timer{
 	public void onTimer(Object arg0) {
 		palet.onTimer(this);
 	}
+
 }
