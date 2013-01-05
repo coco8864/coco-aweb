@@ -67,6 +67,8 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	@Override
 	public void recycle() {
 		peers.clear();
+		qdata.clear();
+		qbin.clear();
 		super.recycle();
 	}
 	
