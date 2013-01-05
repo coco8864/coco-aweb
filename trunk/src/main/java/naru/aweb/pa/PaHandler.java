@@ -32,6 +32,7 @@ import org.apache.log4j.Logger;
  *
  */
 public class PaHandler extends WebSocketHandler implements Timer{
+	private static final String PA_SESSIONS_KEY = "PaSessions";
 	private static final String XHR_FRAME_PATH = "/xhrQapFrame.vsp";
 	private static final String XHR_FRAME_TEMPLATE = "/template/xhrQapFrame.vsp";
 	private static int XHR_SLEEP_TIME=1000;
@@ -76,7 +77,8 @@ public class PaHandler extends WebSocketHandler implements Timer{
 			paSession.unsubscribe(msg);
 		}else if(PaSession.TYPE_PUBLISH.equals(type)){
 			paSession.publish(msg);
-//		}else if("close".equals(type)){
+		}else if(PaSession.TYPE_CONNECTION_CLOSE.equals(type)){
+			//âÒê¸Ç™êÿÇÍÇÈó\çêÅAìññ Ç»Ç…Ç‡ÇµÇ»Ç¢
 		}else if(PaSession.TYPE_QNAMES.equals(type)){
 			paSession.qname(msg);
 		}else if(PaSession.TYPE_DEPLOY.equals(type)){
@@ -119,7 +121,7 @@ public class PaHandler extends WebSocketHandler implements Timer{
 		if(!isNegotiated){
 			JSONObject negoreq=(JSONObject)reqs.remove(0);
 			if(!negotiation(negoreq)){
-				//negotiationé∏îs
+				//negotiationé∏îs,ívñΩìIâÒê¸íf
 				return;
 			}
 			paSession.setupWsHandler(this);
@@ -131,12 +133,12 @@ public class PaHandler extends WebSocketHandler implements Timer{
 	public void onMessage(CacheBuffer message) {
 		//onMessageÇ…ÉoÉCÉiÉäÇëóÇ¡ÇƒÇ≠ÇÈÇÃÇÕÅAnegtiationå„,publish
 		if(!isNegotiated){
-			//negotiationé∏îs
+			//negotiationé∏îs,ívñΩìIâÒê¸íf
 			return;
 		}
 		BlobEnvelope envelope=BlobEnvelope.parse(message);
 		JSONObject header=envelope.getHeader();
-		String type=header.getString("type");
+		String type=header.getString(PaSession.KEY_TYPE);
 		if(PaSession.TYPE_PUBLISH.equals(type)){
 			logger.error("onMessage CacheBuffer type:"+type);
 			envelope.unref();
@@ -158,18 +160,18 @@ public class PaHandler extends WebSocketHandler implements Timer{
 	 * @return
 	 */
 	private boolean negotiation(JSONObject negoreq){
-		String type=negoreq.getString("type");
+		String type=negoreq.getString(PaSession.KEY_TYPE);
 		if(PaSession.TYPE_NEGOTIATION.equals(type)){
 			return false;
 		}
-		bid=negoreq.getInt("bid");
+		bid=negoreq.getInt(PaSession.KEY_BID);
 		AuthSession authSession=getAuthSession();
 		PaSessions paSessions=null;
 		synchronized(authSession){
-			paSessions=(PaSessions)authSession.getAttribute("PaSessions");
+			paSessions=(PaSessions)authSession.getAttribute(PA_SESSIONS_KEY);
 			if(paSessions==null){
 				paSessions=new PaSessions();
-				authSession.setAttribute("PaSessions", paSessions);
+				authSession.setAttribute(PA_SESSIONS_KEY, paSessions);
 			}
 			paSession=paSessions.sessions.get(bid);
 			if(paSession!=null){

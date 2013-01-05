@@ -1,5 +1,6 @@
 package naru.aweb.pa;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -72,7 +73,6 @@ public class PaletWrapper implements PaletCtx,Timer{
 		}
 	}
 	
-	
 	/**
 	 * ‘Speer‚Émessage‚ğ‘—M‚·‚é
 	 * @param data
@@ -128,11 +128,11 @@ public class PaletWrapper implements PaletCtx,Timer{
 	}
 	
 	public Set<PaPeer> getPeers(){
-		return peers;
+		return Collections.unmodifiableSet(peers);
 	}
 	
 	public Set<PaPeer> getPeers(String subname){
-		return subnamePeersMap.get(subname);
+		return Collections.unmodifiableSet(subnamePeersMap.get(subname));
 	}
 	
 	
@@ -146,12 +146,12 @@ public class PaletWrapper implements PaletCtx,Timer{
 	
 	public boolean terminate(){
 		synchronized(peers){
+			isTerminate=true;
 			for(PaPeer peer:peers){
 				peer.unsubscribe();
 			}
 			peers.clear();
 			subnamePeersMap.clear();
-			isTerminate=true;
 		}
 		return false;
 	}

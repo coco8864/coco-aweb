@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 public class PaSession extends PoolBase implements LogoutEvent{
 	/* req/res‹¤’Ê‚Ìkey */
 	public static final String KEY_TYPE="type";
+	public static final String KEY_BID="bid";
 	public static final String KEY_QNAME="qname";
 	public static final String KEY_SUBNAME="subname";
 	
@@ -216,6 +217,20 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		synchronized(peers){
 			peer=peers.get(keyPeer);
 			keyPeer.unref(true);
+			if(peer==null){//‚·‚Å‚ÉunsubscribeÏ‚İˆ—‚Í‚È‚¢
+				return;
+			}
+		}
+		PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
+		paletWrapper.onUnubscribe(peer);
+	}
+	
+	/* APIŒo—R‚Åunsubscribe‚³‚ê‚éê‡ */
+	public void unsubscribeByPeer(PaPeer peer){
+		String qname=peer.getQname();
+		sendError(qname,peer.getSubname(),PaSession.TYPE_SUBSCRIBE,"unsubscribed by api");
+		synchronized(peers){
+			peer=peers.remove(peer);
 			if(peer==null){//‚·‚Å‚ÉunsubscribeÏ‚İˆ—‚Í‚È‚¢
 				return;
 			}

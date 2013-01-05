@@ -59,7 +59,8 @@ public class PaPeer extends PoolBase{
 
 	/* API */
 	public boolean unsubscribe(){
-		return paSession.u;
+		paSession.unsubscribeByPeer(this);
+		return true;
 	}
 	
 	@Override
