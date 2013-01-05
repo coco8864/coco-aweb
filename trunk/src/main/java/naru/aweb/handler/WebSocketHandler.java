@@ -33,19 +33,19 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	/* このクラスを継承したapplicationから呼び出される */
 	/* メッセージを送信する場合(text) */
 	/* 同時にpostMessageを受け付ける事はできないのでsynchronized */
-	protected synchronized void postMessage(String message){
+	public synchronized void postMessage(String message){
 //		wsProtocol.tracePostMessage(message);
 		wsProtocol.postMessage(message);
 	}
 	
 	/* メッセージを送信する場合(binary) */
 	/* 同時にpostMessageを受け付ける事はできないのでsynchronized */
-	protected synchronized void postMessage(ByteBuffer[] message){
+	public synchronized void postMessage(ByteBuffer[] message){
 //		wsProtocol.tracePostMessage(message);
 		wsProtocol.postMessage(message);
 	}
 	
-	protected synchronized void postMessage(AsyncBuffer message){
+	public synchronized void postMessage(AsyncBuffer message){
 		wsProtocol.postMessage(message);
 	}
 	
@@ -69,7 +69,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	/**
 	 * statusCode 接続前だった場合、ブラウザに返却するstatusCode
 	 */
-	protected void closeWebSocket(String statusCode,short code,String reason){
+	public void closeWebSocket(String statusCode,short code,String reason){
 		if(isHandshaked){
 			wsProtocol.onClose(code,reason);
 //			wsCloseTrace(code,reason);
@@ -78,7 +78,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		}
 	}
 	
-	protected void closeWebSocket(String statusCode){
+	public void closeWebSocket(String statusCode){
 		closeWebSocket(statusCode,WsHybiFrame.CLOSE_NORMAL,"OK");
 	}
 	
