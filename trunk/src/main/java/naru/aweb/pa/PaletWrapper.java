@@ -45,7 +45,7 @@ public class PaletWrapper implements PaletCtx,Timer{
 		palet.onSubscribe(peer);
 	}
 	
-	void onUnubscribe(PaPeer peer){
+	void onUnubscribe(PaPeer peer,String reason){
 		String subname=peer.getSubname();
 		synchronized(peers){
 			if(isTerminate){
@@ -58,7 +58,7 @@ public class PaletWrapper implements PaletCtx,Timer{
 				subnamePeers.remove(peer);
 			}
 		}
-		palet.onUnsubscribe(peer,null);
+		palet.onUnsubscribe(peer,reason);
 	}
 	
 	void onPublish(PaPeer peer,Object data){
@@ -154,7 +154,6 @@ public class PaletWrapper implements PaletCtx,Timer{
 		return Collections.unmodifiableSet(subnamePeersMap.get(subname));
 	}
 	
-	
 	public boolean setInterval(long interval){
 		if(intervalObj!=null){
 			TimerManager.clearInterval(interval);
@@ -167,7 +166,7 @@ public class PaletWrapper implements PaletCtx,Timer{
 		synchronized(peers){
 			isTerminate=true;
 			for(PaPeer peer:peers){
-				peer.unsubscribe();
+				peer.unsubscribe("terminate");
 			}
 			peers.clear();
 			subnamePeersMap.clear();

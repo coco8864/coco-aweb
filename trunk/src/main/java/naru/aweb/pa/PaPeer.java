@@ -6,6 +6,7 @@ import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 
 public class PaPeer extends PoolBase{
+	private static PaManager paManager=PaManager.getInstance();
 	private PaSession paSession;
 //	private String path;//接続path
 //	private String authId;//認証id
@@ -23,6 +24,10 @@ public class PaPeer extends PoolBase{
 	private String subname;//クライアントid(認証idが同じでもブラウザの違い等により、clientは別のpeerで接続できる)
 //	private boolean isAllowBlob;//blobメッセージの送信を許すか否か
 	
+	public String getPath() {
+		return paSession.getPath();
+	}
+
 	public String getAppId() {
 		return paSession.getAppId();
 	}
@@ -59,9 +64,21 @@ public class PaPeer extends PoolBase{
 
 	/* API */
 	public boolean unsubscribe(){
-		paSession.unsubscribeByPeer(this);
-		return true;
+		return unsubscribe("api");
 	}
+	
+	boolean unsubscribe(String reason){
+		/* clientにunsubscribe(subscribe失敗)を通知する */
+		if( paSession.unsubscribeByPeer(this) ){
+			/* paletにonUnsubscribeを通知する */
+			PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
+			paletWrapper.onUnubscribe(this,reason);
+			return true;
+		}else{
+			return false;
+		}
+	}
+	
 	
 	@Override
 	public int hashCode() {
