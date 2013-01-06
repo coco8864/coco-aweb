@@ -227,22 +227,25 @@ public class PaSession extends PoolBase implements LogoutEvent{
 			}
 		}
 		PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
-		paletWrapper.onUnubscribe(peer);
+		paletWrapper.onUnubscribe(peer,"client");
 		sendOK(TYPE_UNSUBSCRIBE,qname, subname,null);
 	}
 	
-	/* API経由でunsubscribeされる場合 */
-	public void unsubscribeByPeer(PaPeer peer){
+	/* API経由でunsubscribeされる場合, */
+	/* clientにunsubscribe(subscribe失敗)を通知する */
+	public boolean unsubscribeByPeer(PaPeer peer){
 		String qname=peer.getQname();
-		sendError(TYPE_SUBSCRIBE,qname,peer.getSubname(),"unsubscribed by api");
 		synchronized(peers){
 			peer=peers.remove(peer);
 			if(peer==null){//すでにunsubscribe済み処理はない
-				return;
+				return false;
 			}
 		}
-		PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
-		paletWrapper.onUnubscribe(peer);
+		//unsubscribeは過去に発行されたsubscribeの失敗として通知する
+		sendError(TYPE_SUBSCRIBE,qname,peer.getSubname(),"unsubscribed by api");
+		return true;
+//		PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
+//		paletWrapper.onUnubscribe(peer);
 	}
 	
 	public void publish(JSONObject msg){
@@ -326,6 +329,10 @@ public class PaSession extends PoolBase implements LogoutEvent{
 			}
 		}
 		unref();//セションが終わったらPaSessionも必要なし
+	}
+	
+	public String getPath() {
+		return path;
 	}
 
 	public String getAppId() {
