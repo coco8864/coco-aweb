@@ -163,9 +163,9 @@ public class RealHost {
 					NetworkInterface ni = (NetworkInterface) enuIfs.nextElement();
 					java.util.Enumeration enuAddrs = ni.getInetAddresses();
 					while (enuAddrs.hasMoreElements()) {
-						InetAddress in4 = (InetAddress) enuAddrs.nextElement();
-						servers.add(new ServerParser(in4.getHostAddress(), bindPort));
-						logger.info(name + " bind ip:"+in4.getHostAddress());
+						InetAddress inAdder = (InetAddress) enuAddrs.nextElement();
+						servers.add(new ServerParser(inAdder.getHostAddress(), bindPort));
+						logger.info(name + " bind ip:"+inAdder.getHostAddress());
 					}
 				}
 			}else{
