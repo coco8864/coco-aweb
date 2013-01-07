@@ -7,6 +7,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.Inet4Address;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -46,7 +49,6 @@ import net.sf.json.JSON;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONSerializer;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.ConversionException;
@@ -120,6 +122,8 @@ public class Config {
 	private File tmpDir;
 	private DiskFileItemFactory uploadItemFactory;
 	private File settingDir;
+	
+	private String selfDomain;
 	
 	private WsqManager wsqManager;
 	
@@ -301,8 +305,7 @@ public class Config {
 
 	private BasicDataSource confDataSource = new BasicDataSource();
 
-	private Configuration crateConfiguration(QueueletContext context,
-			boolean isCleanup) {
+	private Configuration crateConfiguration(QueueletContext context,boolean isCleanup) {
 		InputStream is = Config.class.getClassLoader().getResourceAsStream(CONF_FILENAME);
 		if (is == null) {
 			throw new RuntimeException("not found in class path.CONF_FILENAME:"	+ CONF_FILENAME);
@@ -558,6 +561,36 @@ public class Config {
 		}
 	}
 	
+	/* 一番最初のloopbackでないipv4の文字列を返却する,見つからない場合は、127.0.0.1 */
+	private String getSelfIpv4(){
+		java.util.Enumeration enuIfs=null;
+		String selfAddress="127.0.0.1";
+		try {
+			enuIfs = NetworkInterface.getNetworkInterfaces();
+		} catch (SocketException e) {
+		}
+		if (null == enuIfs) {
+			return selfAddress;
+		}
+		while (enuIfs.hasMoreElements()) {
+			NetworkInterface ni = (NetworkInterface) enuIfs.nextElement();
+			java.util.Enumeration enuAddrs = ni.getInetAddresses();
+			while (enuAddrs.hasMoreElements()) {
+				Object inadder=enuAddrs.nextElement();
+				if(!(inadder instanceof Inet4Address)){
+					continue;
+				}
+				Inet4Address in4=(Inet4Address)inadder;
+				if(in4.isLoopbackAddress()){
+					continue;
+				}
+				return in4.getHostAddress();
+			}
+		}
+		return selfAddress;
+	}
+	
+	
 	public boolean init(QueueletContext queueletContext, boolean isCleanup) {
 //		this.queueletContext = queueletContext;
 		configuration = crateConfiguration(queueletContext, isCleanup);
@@ -618,6 +651,15 @@ public class Config {
 			JSON mappingJson=readInitFile(new File(settingPath, "mapping.init"));
 			Mapping.cleanup((JSONArray)mappingJson);
 		}
+		
+		//self domainの計算
+		this.selfDomain=getString(SELF_DOMAIN, null);
+		if(this.selfDomain==null){
+			this.selfDomain=getSelfIpv4();
+		}
+		logger.info("selfDomain:"+this.selfDomain);
+		
+		
 		/* ファイルアップロード機能 */
 		String tmpPath = configuration.getString("path.tmp");
 		if (tmpPath != null) {
@@ -1101,7 +1143,7 @@ public class Config {
 	}
 	
 	public String getSelfDomain() {
-		return getString(SELF_DOMAIN, "127.0.0.1");
+		return selfDomain;
 	}
 
 	public LogPersister getLogPersister() {

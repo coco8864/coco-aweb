@@ -7,12 +7,7 @@ import naru.async.pool.PoolManager;
 
 public class PaPeer extends PoolBase{
 	private static PaManager paManager=PaManager.getInstance();
-	private PaSession paSession;
-//	private String path;//接続path
-//	private String authId;//認証id
-//	private Integer bid;//brawserId
-//	private String userId;//userId
-//	private List<String> roles;//所属ロール群
+	
 	public static PaPeer create(PaSession paSession,String qname,String subname){
 		PaPeer peer=(PaPeer)PoolManager.getInstance(PaPeer.class);
 		peer.paSession=paSession;
@@ -20,6 +15,8 @@ public class PaPeer extends PoolBase{
 		peer.subname=subname;
 		return peer;
 	}
+	
+	private PaSession paSession;
 	private String qname;//queue名
 	private String subname;//クライアントid(認証idが同じでもブラウザの違い等により、clientは別のpeerで接続できる)
 //	private boolean isAllowBlob;//blobメッセージの送信を許すか否か

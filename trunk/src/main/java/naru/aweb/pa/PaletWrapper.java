@@ -48,10 +48,6 @@ public class PaletWrapper implements PaletCtx,Timer{
 	void onUnubscribe(PaPeer peer,String reason){
 		String subname=peer.getSubname();
 		synchronized(peers){
-			if(isTerminate){
-				logger.warn("onUnubscribe aleady stop");
-				return;
-			}
 			peers.remove(peer);
 			Set<PaPeer> subnamePeers=subnamePeersMap.get(subname);
 			if(subnamePeers!=null){
