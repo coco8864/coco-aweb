@@ -584,7 +584,9 @@ public class Config {
 				if(in4.isLoopbackAddress()){
 					continue;
 				}
-				return in4.getHostAddress();
+				//自ipアドレスを列挙、最後のipを使う
+				selfAddress=in4.getHostAddress();
+				logger.info("selfAddress list:"+selfAddress);
 			}
 		}
 		return selfAddress;
