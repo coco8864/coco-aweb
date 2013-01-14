@@ -228,6 +228,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		}
 		PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
 		paletWrapper.onUnubscribe(peer,"client");
+		//sendOK(TYPE_SUBSCRIBE,qname, subname,null);両方出してもいいが冗長なので省略
 		sendOK(TYPE_UNSUBSCRIBE,qname, subname,null);
 	}
 	
@@ -241,11 +242,9 @@ public class PaSession extends PoolBase implements LogoutEvent{
 				return false;
 			}
 		}
-		//unsubscribeは過去に発行されたsubscribeの失敗として通知する
-		sendError(TYPE_SUBSCRIBE,qname,peer.getSubname(),"unsubscribed by api");
+		//unsubscribeは過去に発行されたsubscribeが成功したとして通知する
+		sendOK(TYPE_SUBSCRIBE,qname,peer.getSubname(),"unsubscribed by api");
 		return true;
-//		PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
-//		paletWrapper.onUnubscribe(peer);
 	}
 	
 	public void publish(JSONObject msg){
