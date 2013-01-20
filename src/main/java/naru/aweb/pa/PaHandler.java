@@ -33,8 +33,8 @@ import org.apache.log4j.Logger;
  */
 public class PaHandler extends WebSocketHandler implements Timer{
 	private static final String PA_SESSIONS_KEY = "PaSessions";
-	private static final String XHR_FRAME_PATH = "/xhrQapFrame.vsp";
-	private static final String XHR_FRAME_TEMPLATE = "/template/xhrQapFrame.vsp";
+	private static final String XHR_FRAME_PATH = "/xhrPaFrame.vsp";
+	private static final String XHR_FRAME_TEMPLATE = "/template/xhrPaFrame.vsp";
 	private static int XHR_SLEEP_TIME=1000;
 	private static Config config = Config.getConfig();
 	private static Logger logger=Logger.getLogger(PaHandler.class);
