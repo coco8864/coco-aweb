@@ -3,18 +3,32 @@ window.ph.pa={
   STAT_AUTH:'AUTH'
   STAT_IDLE:'IDLE'
   STAT_OPEN:'OPEN',
+  STAT_LOADING:'LOADING'
   STAT_CONNECT:'CONNECT'
   STAT_CLOSE:'CLOSE'
   CB_INFO:'INFO'
   CB_ERROR:'ERROR'
   CB_MESSAGE:'MESSAGE'
+  TYPE_NEGOTIATE:'negotiate'
+  TYPE_PUBLISH:'publish'
+  TYPE_SUBSCRIBE:'subscribe'
+  TYPE_UNSUBSCRIBE:'unsubscribe'
+  TYPE_DEPLOY:'deploy'
+  TYPE_UNDEPLOY:'undeploy'
+  TYPE_QNAMES:'qnames'
+  TYPE_CONNECTION_CLOSE:'connectionClose'
   _INTERVAL:1000
   _DEFAULT_SUB_ID:'@'
   _XHR_FRAME_NAME_PREFIX:'__pa_'
   _XHR_FRAME_URL:'/xhrPaFrame.vsp'
   _RETRY_COUNT:3
-  _APPID_PREFIX:'appid.'
+  _BROWSERID:'bid.'
   _connections:{} #key:url value:{deferred:dfd,promise:prm}
+  _getBid:(appid)->
+    str=sessionStorage[this._BROWSERID + appid] ? '0'
+    parseInt(str,10)
+  _setBid:(appid,bid)->
+    sessionStorage[this._BROWSERID + appid]=String(bid)
   connect:(url)->
     if url.lastIndexOf('ws://',0)==0||url.lastIndexOf('wss://',0)==0
       if !ph.useWebSocket
@@ -40,7 +54,30 @@ window.ph.pa={
     prm=dfd.promise(new CD(url))
     this._connections[url]={deferred:dfd,promise:prm}
     prm
+  _xhrOnMessage:(event)->
+    for url,con of ph.pa._connections
+      tmpCd=con.promise
+      if !tmpCd._xhrFrame
+        continue
+      if event.source=tmpCd._xhrFrame[0].contentWindow
+          cd=tmpCd
+          break
+    if !cd
+      #他のイベント
+      return
+    res=ph.JSON.parse(event.data)
+    if !(cd.stat==ph.pa.STAT_LOADING)
+      cd._onXhrOpen(res)
+    else
+      cd._onXhrMessage(res)
+  _onTimer:->
 }
+#xhr通信用のイベント登録
+if window.addEventListener
+  window.addEventListener('message',ph.pa._xhrOnMessage, false)
+else if window.attachEvent
+  window.attachEvent('onmessage',ph.pa._xhrOnMessage)
+setTimeout(ph.wsq._onTimer,ph.pa._INTERVAL)
 
 class EventModule
   on: (name, callback) ->
@@ -68,7 +105,6 @@ class CD extends EventModule
 #  _callback:{}
 #  _subscribes:{} #key:qname@subname value:{deferred:dfd,promise:prm}
 #  stat:ph.pa.STAT_INIT
-  bid:''
   _doneAuth:(auth)=>
     if !auth.result
       ph.pa._connections[@url]=null
@@ -76,11 +112,6 @@ class CD extends EventModule
       return
     @trigger("auth",@)#success to auth
     @_appId=auth.appId
-    bid=sessionStorage[ph.pa._APPID_PREFIX+@_appId]
-    if bid
-      @bid=bid
-    else
-      @bid=''
     @stat=ph.pa.STAT_IDLE
     if @isWs
       @_openWebSocket()
@@ -104,12 +135,13 @@ class CD extends EventModule
     @_flushMsg()
   _onWsOpen:=>
     ph.log('Pa _onWsOpen')
-    @stat=ph.pa.STAT_CONNECT
-    @_send({type:'negotiate',bid:@bid})
+    this._onOpen()
   _onWsClose:=>
     ph.log('Pa _onWsClose')
   _onWsMessage:(msg)=>
-    ph.log('Pa _onWsMessage')
+    ph.log('Pa _onWsMessage:'+msg.data)
+    obj=ph.JSON.parse(msg.data)
+    this._onMessage(obj)
   _openWebSocket:=>
     ph.log('Pa WebSocket start')
     @stat=ph.pa.STAT_OPEN
@@ -132,12 +164,26 @@ class CD extends EventModule
     con=@
     @_xhrFrame.load(->con._onXhrLoad())
     ph.jQuery("body").append(@_xhrFrame)
-  _onXhrLoad:->
+  _onXhrLoad:=>
     ph.log('Pa _onXhrLoad')
-    @stat=ph.pa.STAT_CONNECT
-  _onXhrMessage:(data)->
+    this.stat=ph.pa.LOADING
+  _onXhrOpen:(res)->
+    ph.log('Pa _onXhrOpened')
+    if res.load
+      this._onOpen()
+    else
+      ph.log('_onXhrOpened error.'+ph.JSON.stringify(res));
+  _onXhrMessage:(obj)->
     ph.log('Pa _onXhrMessage')
-#  _onMessage:(msg)->
+    this._onMessage(obj)
+  _onOpen:->
+    @stat=ph.pa.STAT_CONNECT
+    @_send({type:ph.pa.TYPE_NEGOTIATE,bid:ph.pa._getBid(@_appId)})
+  _onMessage:(msg)->
+    if msg.type==ph.pa.TYPE_NEGOTIATE
+      if msg.bid!=ph.pa._getBid(@_appId)
+        ph.pa._setBid(@_appId,msg.bid)
+        @_send({type:ph.pa.TYPE_NEGOTIATE,bid:msg.bid})
 #  _onMessageText:(textMsg)->
 #  _onMessageBlob:(blobMsg)->
 #  _callback:()->

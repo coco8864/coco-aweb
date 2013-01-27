@@ -18,7 +18,7 @@ function sendObjToParent(msg){
 function onMessageFunc(event){
   var msg=ph.JSON.parse(event.data);
   if(ph.jQuery.isArray(msg)){
-    for(var i;i<msg.length;i++){
+    for(var i=0;i<msg.length;i++){
       objFromParent(msg[i]);
     }
   }else{
