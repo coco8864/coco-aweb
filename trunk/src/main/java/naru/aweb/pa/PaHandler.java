@@ -161,7 +161,7 @@ public class PaHandler extends WebSocketHandler implements Timer{
 	 */
 	private boolean negotiation(JSONObject negoreq){
 		String type=negoreq.getString(PaSession.KEY_TYPE);
-		if(PaSession.TYPE_NEGOTIATION.equals(type)){
+		if(!PaSession.TYPE_NEGOTIATE.equals(type)){
 			return false;
 		}
 		bid=negoreq.getInt(PaSession.KEY_BID);
@@ -184,6 +184,8 @@ public class PaHandler extends WebSocketHandler implements Timer{
 			bid=paSessions.bidSeq;
 			paSession=PaSession.create(path,bid, isWs, authSession);
 			paSessions.sessions.put(bid, paSession);
+			negoreq.put(PaSession.KEY_BID,bid);
+			paSession.message(negoreq);
 		}
 		authSession.addLogoutEvent(paSession);//ログアウト時に通知を受ける
 		return true;
@@ -217,6 +219,7 @@ public class PaHandler extends WebSocketHandler implements Timer{
 		ParameterParser parameter=getParameterParser();
 		//xhrからの開始
 		//[{type:negotiate,bid:bid},{type:xxx}...]
+		
 		JSONArray reqs=(JSONArray)parameter.getJsonObject();
 		JSONObject negoreq=(JSONObject)reqs.remove(0);
 		if(!negotiation(negoreq)){

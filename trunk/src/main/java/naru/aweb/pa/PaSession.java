@@ -27,7 +27,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	public static final String KEY_PALET_CLASS_NAME="paletClassName";
 	
 	/* request type */
-	public static final String TYPE_NEGOTIATION="negotiation";
+	public static final String TYPE_NEGOTIATE="negotiate";
 	public static final String TYPE_PUBLISH="publish";
 	public static final String TYPE_SUBSCRIBE="subscribe";
 	public static final String TYPE_UNSUBSCRIBE="unsubscribe";
