@@ -10,7 +10,6 @@
 <script  type="text/javascript"><!--
 
 var bid=0;
-var subscribes={};
 function sendObjToParent(msg){
   var jsonText=ph.JSON.stringify(msg);
   parent.postMessage(jsonText,'*');
@@ -27,18 +26,10 @@ function onMessageFunc(event){
 }
 
 function objFromParent(msg){
-  if(msg.type==='xhrUnsubscribe'){
-    if(subscribes[msg.qname + '@'+msg.subname]){
-      delete subscribes[msg.qname + '@'+msg.subname];
-    }
-  }else if(msg.type==='xhrSetBid'){
-    bid=msg.message;
-  }else{
-    if(msg.type==='subscribe'){
-      subscribes[msg.qname + '@'+msg.subname]=msg;
-    }
-    msgs.push(msg);
+  if(msg.type==='negotiate'){
+    bid=msg.bid;
   }
+  msgs.push(msg);
 }
 
 function xhrSuccess(text){
@@ -59,17 +50,14 @@ function xhrRequest(isUnload){
     sendObjToParent({load:false});
     return;
   }
-  if(!isUnload){
-##unsubscribeをsubscribeの後にする必要があるため、subscribeを先頭に足す
-    for(var key in subscribes){
-      msgs.unshift(subscribes[key]);
-    }
+//  if(msgs.length===0){
+//    setTimeout(xhrRequest,INTERVAL);
+//    return;//何もメッセージがなければsubscribeもない、送信の必要なし
+//  }
+  if(msgs.length===0||msgs[0].type!=='negotiate'){
+    msgs.unshift({type:'negotiate',bid:bid});
   }
-  if(msgs.length==0){
-    setTimeout(xhrRequest,INTERVAL);
-    return;//何もメッセージがなければsubscribeもない、送信の必要なし
-  }
-  var jsonText=ph.JSON.stringify({bid:bid,data:msgs});
+  var jsonText=ph.JSON.stringify(msgs);
 ##alert('xhrRequest:'+jsonText);
   msgs=[];
   ph.jQuery.ajax({

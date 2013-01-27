@@ -136,7 +136,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 				this.xhrHandler=handler;
 				return;
 			}
-			xhrSend(xhrHandler, qdata);
+			xhrSend( handler, qdata);
 			qdata.clear();
 			handler.doneXhr();
 			return;
