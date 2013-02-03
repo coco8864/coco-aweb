@@ -164,6 +164,7 @@ public class PaHandler extends WebSocketHandler implements Timer{
 		if(!PaSession.TYPE_NEGOTIATE.equals(type)){
 			return false;
 		}
+		isNegotiated=true;
 		bid=negoreq.getInt(PaSession.KEY_BID);
 		AuthSession authSession=getAuthSession();
 		PaSessions paSessions=null;

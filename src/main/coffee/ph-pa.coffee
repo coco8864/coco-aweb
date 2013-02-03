@@ -9,6 +9,7 @@ window.ph.pa={
   CB_INFO:'INFO'
   CB_ERROR:'ERROR'
   CB_MESSAGE:'MESSAGE'
+#request type
   TYPE_NEGOTIATE:'negotiate'
   TYPE_PUBLISH:'publish'
   TYPE_SUBSCRIBE:'subscribe'
@@ -17,6 +18,11 @@ window.ph.pa={
   TYPE_UNDEPLOY:'undeploy'
   TYPE_QNAMES:'qnames'
   TYPE_CONNECTION_CLOSE:'connectionClose'
+#response type
+  TYPE_RESPONSE:'response'
+  TYPE_MESSAGE:'message'
+  RESULT_ERROR:'error'
+  RESULT_OK:'ok'
   _INTERVAL:1000
   _DEFAULT_SUB_ID:'@'
   _XHR_FRAME_NAME_PREFIX:'__pa_'
@@ -131,7 +137,7 @@ class CD extends EventModule
     else
       @_xhrFrame[0].contentWindow.postMessage(jsonText,"*")#TODO origin
   _send:(msg)->
-    @_sendMsgs.push(msg)
+    @_sendMsgs.unshift(msg)
     @_flushMsg()
   _onWsOpen:=>
     ph.log('Pa _onWsOpen')
@@ -179,11 +185,32 @@ class CD extends EventModule
   _onOpen:->
     @stat=ph.pa.STAT_CONNECT
     @_send({type:ph.pa.TYPE_NEGOTIATE,bid:ph.pa._getBid(@_appId)})
+  __onMsgNego:(msg)->
+    if msg.bid!=ph.pa._getBid(@_appId)
+      ph.pa._setBid(@_appId,msg.bid)
+      @_send({type:ph.pa.TYPE_NEGOTIATE,bid:msg.bid})
+  __onMsgMessage:(msg)->
+  __onMsgResOk:(msg)->
+    ph.log('__onMsgResOk requestType:'+msg.requestType)
+    if msg.requestType==ph.pa.TYPE_SUBSCRIBE
+      key=msg.qname + '@' +msg.subname
+      @_subscribes[key].deferred.resolve(msg,@_subscribes[key].promise)
+      @_subscribes[key]=null
+  __onMsgResError:(msg)->
+    ph.log('__onMsgResError requestType:'+msg.requestType)
+    if msg.requestType==ph.pa.TYPE_SUBSCRIBE
+      key=msg.qname + '@' +msg.subname
+      @_subscribes[key].deferred.resolve(msg,@_subscribes[key].promise)
+      @_subscribes[key]=null
   _onMessage:(msg)->
     if msg.type==ph.pa.TYPE_NEGOTIATE
-      if msg.bid!=ph.pa._getBid(@_appId)
-        ph.pa._setBid(@_appId,msg.bid)
-        @_send({type:ph.pa.TYPE_NEGOTIATE,bid:msg.bid})
+      @__onMsgNego(msg)
+    else if msg.type==ph.pa.TYPE_MESSAGE
+      @__onMsgMessage(msg)
+    else if msg.type==ph.pa.TYPE_RESPONSE && msg.result==ph.pa.RESULT_OK
+      @__onMsgResOk(msg)
+    else if msg.type==ph.pa.TYPE_RESPONSE && msg.result==ph.pa.RESULT_ERROR
+      @__onMsgResError(msg)
 #  _onMessageText:(textMsg)->
 #  _onMessageBlob:(blobMsg)->
 #  _callback:()->
@@ -213,6 +240,7 @@ class CD extends EventModule
 class SD extends EventModule
   constructor: (@_cd,@qname,@subname)->
     @_callback={}
+    @_cd._send({type:'subscribe',qname:@qname,subname:@subname})
 #  _callback:{}
   unsubscribe:->
     @_cd._send({type:'unsubscribe',qname:qname,subname:subname})
