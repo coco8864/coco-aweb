@@ -38,9 +38,9 @@ var sd;
 <input type="button" value="subscribe dump" onclick="sd=cd.subscribe('test');"/>
 <input type="button" value="unsubscribe" onclick="sd.unsubscribe('test');"/>
 
-<input type="button" value="publish string" onclick="sd.publish('test','testAAA');"/>
-<input type="button" value="publish object" onclick="sd.publish('test',{aaa:'testBBB'});"/>
-<input type="button" value="publish bin" onclick="sd.publish('test',{aaa:'testCCC',blobData:[{data:'aaaa'},{data:'bbbbb'}]});"/>
+<input type="button" value="publish string" onclick="sd.publish('testAAA');"/>
+<input type="button" value="publish object" onclick="sd.publish({aaa:'testBBB'});"/>
+<input type="button" value="publish bin" onclick="sd.publish({aaa:'testCCC',blobData:[{data:'aaaa'},{data:'bbbbb'}]});"/>
 </ul>
 <div id='target'><p>dorag and dromp file upload</p></div>
 <div>
