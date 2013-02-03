@@ -85,8 +85,13 @@ public class PaHandler extends WebSocketHandler implements Timer{
 			paSession.deploy(msg);
 		}else if(PaSession.TYPE_UNDEPLOY.equals(type)){
 			paSession.undeploy(msg);
+		}else if(PaSession.TYPE_NEGOTIATE.equals(type)){
+			if(!negotiation(msg)){
+				paSession.sendError(type,null, null,"fail to negotiation");
+				return;
+			}
 		}else{
-			paSession.sendError(null, null, type, "unsuppoerted type");
+			paSession.sendError(type,null, null,"unsuppoerted type");
 			logger.warn("unsuppoerted type:"+type);
 		}
 	}

@@ -206,6 +206,10 @@ public class PaSession extends PoolBase implements LogoutEvent{
 			sendError(TYPE_SUBSCRIBE,qname, subname,null);
 		}
 		PaPeer keyPeer=PaPeer.create(this, qname, subname);
+		//TODO xxx
+		System.out.println("this."+this +":"+hashCode());
+		System.out.println("subscribe keyPeer."+keyPeer.hashCode());
+		
 		synchronized(peers){
 			PaPeer peer=peers.get(keyPeer);
 			if(peer!=null){//‚·‚Å‚ÉsubscribeÏ‚İˆ—‚Í‚È‚¢
@@ -256,6 +260,11 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		String subname=msg.optString(KEY_SUBNAME,null);
 		Object message=msg.get(KEY_MESSAGE);
 		PaPeer keyPeer=PaPeer.create(this, qname, subname);
+		
+		//TODO xxx
+		System.out.println("this."+this +":"+hashCode());
+		System.out.println("publish keyPeer."+keyPeer.hashCode());
+		
 		PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
 		if(subname==null){//‘—MŒ³‚ª‚È‚¢Publish •Ö‹X“I‚ÈPeer
 			paletWrapper.onPublish(keyPeer, message);

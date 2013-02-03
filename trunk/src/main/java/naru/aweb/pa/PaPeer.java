@@ -80,7 +80,7 @@ public class PaPeer extends PoolBase{
 	@Override
 	public int hashCode() {
 		final int prime = 31;
-		int result = super.hashCode();
+		int result = 0;//super.hashCode();
 		result = prime * result
 				+ ((paSession == null) ? 0 : paSession.hashCode());
 		result = prime * result + ((qname == null) ? 0 : qname.hashCode());
@@ -92,8 +92,8 @@ public class PaPeer extends PoolBase{
 	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
-		if (!super.equals(obj))
-			return false;
+//		if (!super.equals(obj))
+//			return false;
 		if (getClass() != obj.getClass())
 			return false;
 		PaPeer other = (PaPeer) obj;
