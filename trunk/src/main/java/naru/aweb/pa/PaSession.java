@@ -154,7 +154,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		xhrHandler=null;
 	}
 	
-	private JSON makeResponseJson(String result,String qname,String subname,String requestType,Object message){
+	private JSON makeResponseJson(String result,String requestType,String qname,String subname,Object message){
 		JSONObject json=new JSONObject();
 		json.put(KEY_TYPE, TYPE_RESPONSE);
 		json.put(KEY_RESULT, result);
@@ -201,6 +201,10 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	public void subscribe(JSONObject msg){
 		String qname=msg.getString(KEY_QNAME);
 		String subname=msg.optString(KEY_SUBNAME,null);
+		PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
+		if(paletWrapper==null){
+			sendError(TYPE_SUBSCRIBE,qname, subname,null);
+		}
 		PaPeer keyPeer=PaPeer.create(this, qname, subname);
 		synchronized(peers){
 			PaPeer peer=peers.get(keyPeer);
@@ -210,7 +214,6 @@ public class PaSession extends PoolBase implements LogoutEvent{
 			}
 			peers.put(keyPeer, keyPeer);
 		}
-		PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
 		paletWrapper.onSubscribe(keyPeer);
 	}
 	
@@ -223,13 +226,14 @@ public class PaSession extends PoolBase implements LogoutEvent{
 			peer=peers.get(keyPeer);
 			keyPeer.unref(true);
 			if(peer==null){//すでにunsubscribe済み処理はない
+				sendError(TYPE_UNSUBSCRIBE,qname, subname,"not found");
 				return;
 			}
 		}
 		PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
 		paletWrapper.onUnubscribe(peer,"client");
-		//sendOK(TYPE_SUBSCRIBE,qname, subname,null);両方出してもいいが冗長なので省略
-		sendOK(TYPE_UNSUBSCRIBE,qname, subname,null);
+		//正常にsubscribeを完了したという意味でsubscribe完了を復帰
+		sendOK(TYPE_SUBSCRIBE,qname, subname,"client");
 	}
 	
 	/* API経由でunsubscribeされる場合, */
