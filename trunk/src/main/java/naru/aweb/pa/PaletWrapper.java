@@ -24,6 +24,7 @@ public class PaletWrapper implements PaletCtx,Timer{
 	public PaletWrapper(String qname,Palet palet){
 		this.qname=qname;
 		this.palet=palet;
+		palet.init(this);
 		isTerminate=false;
 	}
 	
@@ -167,6 +168,7 @@ public class PaletWrapper implements PaletCtx,Timer{
 			peers.clear();
 			subnamePeersMap.clear();
 		}
+		palet.term(this,null);
 		return false;
 	}
 
