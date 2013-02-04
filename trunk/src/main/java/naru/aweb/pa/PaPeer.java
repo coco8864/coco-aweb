@@ -47,7 +47,7 @@ public class PaPeer extends PoolBase{
 	
 	/* API */
 	public boolean message(Object data){
-		paSession.message(data);
+		paSession.message(data,qname,subname);
 		return true;
 	}
 	

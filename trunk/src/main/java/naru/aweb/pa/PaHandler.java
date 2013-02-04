@@ -191,7 +191,7 @@ public class PaHandler extends WebSocketHandler implements Timer{
 			paSession=PaSession.create(path,bid, isWs, authSession);
 			paSessions.sessions.put(bid, paSession);
 			negoreq.put(PaSession.KEY_BID,bid);
-			paSession.message(negoreq);
+			paSession.send(negoreq);
 		}
 		authSession.addLogoutEvent(paSession);//ログアウト時に通知を受ける
 		return true;
