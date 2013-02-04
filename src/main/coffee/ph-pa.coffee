@@ -190,6 +190,7 @@ class CD extends EventModule
       ph.pa._setBid(@_appId,msg.bid)
       @_send({type:ph.pa.TYPE_NEGOTIATE,bid:msg.bid})
   __onMsgMessage:(msg)->
+    @trigger('message',msg)
   __onMsgResOk:(msg)->
     ph.log('__onMsgResOk requestType:'+msg.requestType)
     if msg.requestType==ph.pa.TYPE_SUBSCRIBE
