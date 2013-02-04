@@ -165,15 +165,24 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		return json;
 	}
 	
-	public synchronized void sendError(String requestType,String qname,String subname,Object message){
-		message(makeResponseJson(RESULT_ERROR,requestType,qname, subname,  message));
+	public void sendError(String requestType,String qname,String subname,Object message){
+		send(makeResponseJson(RESULT_ERROR,requestType,qname, subname,  message));
 	}
 	
-	public synchronized void sendOK(String requestType,String qname,String subname,Object message){
-		message(makeResponseJson(RESULT_OK,requestType,qname, subname, message));
+	public void sendOK(String requestType,String qname,String subname,Object message){
+		send(makeResponseJson(RESULT_OK,requestType,qname, subname, message));
 	}
 	
-	public synchronized void message(Object data){
+	public  void message(Object data,String qname,String subname){
+		JSONObject json=new JSONObject();
+		json.put(KEY_TYPE, TYPE_MESSAGE);
+		json.put(KEY_QNAME, qname);
+		json.put(KEY_SUBNAME, subname);
+		json.put(KEY_MESSAGE, data);
+		send(json);
+	}
+	
+	public synchronized void send(Object data){
 		if(this.wsHandler!=null){
 			wsSend(this.wsHandler,data);
 		}else if(this.xhrHandler!=null){
@@ -206,9 +215,6 @@ public class PaSession extends PoolBase implements LogoutEvent{
 			sendError(TYPE_SUBSCRIBE,qname, subname,null);
 		}
 		PaPeer keyPeer=PaPeer.create(this, qname, subname);
-		//TODO xxx
-		System.out.println("this."+this +":"+hashCode());
-		System.out.println("subscribe keyPeer."+keyPeer.hashCode());
 		
 		synchronized(peers){
 			PaPeer peer=peers.get(keyPeer);
@@ -260,10 +266,6 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		String subname=msg.optString(KEY_SUBNAME,null);
 		Object message=msg.get(KEY_MESSAGE);
 		PaPeer keyPeer=PaPeer.create(this, qname, subname);
-		
-		//TODO xxx
-		System.out.println("this."+this +":"+hashCode());
-		System.out.println("publish keyPeer."+keyPeer.hashCode());
 		
 		PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
 		if(subname==null){//ëóêMå≥Ç™Ç»Ç¢Publish ï÷ãXìIÇ»Peer

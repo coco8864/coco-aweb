@@ -194,14 +194,16 @@ class CD extends EventModule
     ph.log('__onMsgResOk requestType:'+msg.requestType)
     if msg.requestType==ph.pa.TYPE_SUBSCRIBE
       key=msg.qname + '@' +msg.subname
-      @_subscribes[key].deferred.resolve(msg,@_subscribes[key].promise)
-      @_subscribes[key]=null
+      if @_subscribes[key]
+        @_subscribes[key].deferred.resolve(msg,@_subscribes[key].promise)
+        @_subscribes[key]=null
   __onMsgResError:(msg)->
     ph.log('__onMsgResError requestType:'+msg.requestType)
     if msg.requestType==ph.pa.TYPE_SUBSCRIBE
       key=msg.qname + '@' +msg.subname
-      @_subscribes[key].deferred.resolve(msg,@_subscribes[key].promise)
-      @_subscribes[key]=null
+      if @_subscribes[key]
+        @_subscribes[key].deferred.resolve(msg,@_subscribes[key].promise)
+        @_subscribes[key]=null
   _onMessage:(msg)->
     if msg.type==ph.pa.TYPE_NEGOTIATE
       @__onMsgNego(msg)
