@@ -2,6 +2,7 @@ package naru.aweb.pa;
 
 import java.io.File;
 import java.nio.ByteBuffer;
+import java.util.Date;
 
 import naru.async.AsyncBuffer;
 import naru.async.BufferGetter;
@@ -17,7 +18,7 @@ import net.sf.json.JSONObject;
  * http://www.w3.org/TR/FileAPI/
  * binaryMessageのインタフェースに利用
  * 送信時には、データの持ち方を判断する
- * 1)connectしていないsubId毎にbufferで持つとメモリがパンクする
+ * 1)connectしていないsubname毎にbufferで持つとメモリがパンクする
  * 2)subId毎にFileをreadするのは非効率
  * 
  * データの持ち方は以下の3つ
@@ -32,7 +33,10 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 	private CacheBuffer buffer;
 	private long offset;
 	private long size;
-	private JSONObject meta;/*その他の属性情報 */
+	private String name;
+	private Date lastModifiedDate;
+	private String type;
+	private String jsType;
 	
 	public static Blob create(File file,JSONObject meta){
 		CacheBuffer buffer=CacheBuffer.open(file);
@@ -55,16 +59,15 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 		blob.buffer=buffer;
 		blob.offset=offset;
 		blob.size=size;
-		blob.meta=new JSONObject();
+//		blob.meta=new JSONObject();
 		FileInfo fileInfo=buffer.getFileInfo();
 		if(fileInfo!=null){
-			blob.meta.element("name",fileInfo.getFile().getName());
-			blob.meta.element("lastModifiedDate",fileInfo.getLastModified());
+			blob.name=fileInfo.getFile().getName();
+//			blob.lastModifiedDate=fileInfo.getLastModified();
 		}
 		//TODO metaの値をoffset,size,name,lastModifiedDataに反映?
 		//meta情報のsizeは信用しない..パラメタの値で上書き
-		meta.element("size", size);
-		blob.meta=meta;
+		blob.size=size;
 		return blob;
 	}
 	
@@ -73,26 +76,37 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 	}
 	
 	public String getType() {
-		return meta.optString("type");
+		return type;
 	}
 
 	public String getName() {
-		return meta.optString("name");
+		return name;
 	}
 	public long getLastModifiedDate() {
-		return meta.optLong("lastModifiedDate",0);
+		if(lastModifiedDate==null){
+			return 0;
+		}
+		return lastModifiedDate.getTime();
+	}
+
+	public String getJsType() {
+		return jsType;
 	}
 
 	public void setType(String type) {
-		meta.element("type", type);
+		this.type=type;
 	}
 
 	public void setName(String name) {
-		meta.element("name", name);
+		this.name=name;
 	}
 
 	public void setLastModifiedDate(long lastModifiedDate) {
-		meta.element("lastModifiedDate", lastModifiedDate);
+		this.lastModifiedDate=new Date(lastModifiedDate);
+	}
+	
+	public void setJsType(String jsType) {
+		this.jsType = jsType;
 	}
 	
 	@Override
@@ -143,26 +157,5 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 		BufferGetter bufferGetter=(BufferGetter)ctx[0];
 		Object orgUserContext=ctx[1];
 		bufferGetter.onBufferFailure(orgUserContext,failure);
-	}
-
-	public JSONObject getMeta() {
-		return meta;
-	}
-
-	public void setMeta(JSONObject meta) {
-		this.meta = meta;
-	}
-	
-	public void appendMeta(JSONObject appendMeta){
-		if(meta==null){
-			setMeta(appendMeta);
-			return;
-		}
-		for(Object key:appendMeta.keySet()){
-			if("size".equals(key)){
-				continue;//sizeは設定させない
-			}
-			meta.accumulate((String)key, appendMeta.get(key));
-		}
 	}
 }
