@@ -48,6 +48,34 @@ window.ph={
   }
   return blob.slice(startingByte, endindByte);
  },
+ //https://github.com/ukyo/jsziptools/blob/master/src/utils.js
+ stringToArrayBuffer:function(str){
+  var n = str.length,
+  idx = -1,
+  utf8 = [],
+  i, j, c;
+  //http://user1.matsumoto.ne.jp/~goma/js/utf.js
+  for(i = 0; i < n; ++i){
+   c = str.charCodeAt(i);
+   if(c <= 0x7F){
+    utf8[++idx] = c;
+   } else if(c <= 0x7FF){
+    utf8[++idx] = 0xC0 | (c >>> 6);
+    utf8[++idx] = 0x80 | (c & 0x3F);
+   } else if(c <= 0xFFFF){
+    utf8[++idx] = 0xE0 | (c >>> 12);
+    utf8[++idx] = 0x80 | ((c >>> 6) & 0x3F);
+    utf8[++idx] = 0x80 | (c & 0x3F);
+   } else {
+    j = 4;
+    while(c >> (6 * j)) ++j;
+    utf8[++idx] = ((0xFF00 >>> j) & 0xFF) | (c >>> (6 * --j));
+    while(j--)
+     utf8[++idx] = 0x80 | ((c >>> (6 * j)) & 0x3F);
+   }
+  }
+  return new Uint8Array(utf8).buffer;
+ },
  debug:false,##debugメッセージを出力するか否か
  setDebug:function(flag){
   this.debug=flag;
