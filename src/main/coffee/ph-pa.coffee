@@ -256,7 +256,8 @@ class window.Envelope
   DATE_VALUE_NAME_PREFIX:'_paDateValue'
   mainObj:null
   blobs:[]
-  blobDfds:[]
+  blobDfd:null
+  asyncBlobCount:0
   dates:[]
   constructor:->
   serialize:(obj)->
@@ -280,11 +281,14 @@ class window.Envelope
       idx=@blobs.length;
       key = @BLOB_VALUE_NAME_PREFIX+idx
       fileReader=new FileReader()
-      blobDfd=ph.jQuery.Deferred()
-      @blobDfds.push(blobDfd)
+      ##blobDfd=ph.jQuery.Deferred()
+      ##@blobDfds.push(blobDfd)
+      @asyncBlobCount++
       fileReader.onload=(e)=>
         @blobs[idx]=e.target.result
-        blobDfd.resolve()
+        @asyncBlobCount--
+        if asyncBlobCount==0
+          @blobDfd.resolve()
       fileReader.readAsArrayBuffer(obj)
       @blobs[idx]=null
       return key
@@ -296,7 +300,8 @@ class window.Envelope
     else
       return obj
   deserialize:(obj)->
-    if ph.jQuery.isArray(obj)
+    if 
+ph.jQuery.isArray(obj)
       result=[]
       size=obj.length
       for i in [0..size]
@@ -317,10 +322,11 @@ class window.Envelope
     return obj
   pack:(obj,onPacked)->
     @mainObj=@serialize(obj)
-    dfd=ph.jQuery.Deferred()
-    for i in [0..@blobDfds.length]
-      blobDfd=@blobDfds[i]
-      =dfd.then()
+    if asyncBlobCount==0
+      onPacked(@)
+    else
+      @blobDfd=ph.jQuery.Deferred()
+      @blobDfd.done(->onPacked(@))
   unpack:(obj)->
     @deserialize(obj)
 
