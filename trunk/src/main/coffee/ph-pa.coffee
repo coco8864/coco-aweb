@@ -250,3 +250,77 @@ class SD extends EventModule
   publish:(msg)->
     @_cd._send({type:'publish',qname:@qname,subname:@subname,message:msg})
 
+#Subscribe Deferred
+class window.Envelope
+  BLOB_VALUE_NAME_PREFIX:'_paBlobValue'
+  DATE_VALUE_NAME_PREFIX:'_paDateValue'
+  mainObj:null
+  blobs:[]
+  blobDfds:[]
+  dates:[]
+  constructor:->
+  serialize:(obj)->
+    if ph.jQuery.isArray(obj)
+      result=[]
+      size=obj.length
+      for i in [0..size]
+        result[i]=@serialize(obj[i])
+      return result
+    else if ph.jQuery.isPlainObject(obj)
+      result={}
+      for key,value of obj
+        result[key]=@serialize(obj[key])
+      return result
+    else if obj instanceof ArrayBuffer
+      idx=@blobs.length;
+      key = @BLOB_VALUE_NAME_PREFIX+idx
+      @blobs[idx]=obj
+      return key
+    else if obj instanceof Blob
+      idx=@blobs.length;
+      key = @BLOB_VALUE_NAME_PREFIX+idx
+      fileReader=new FileReader()
+      blobDfd=ph.jQuery.Deferred()
+      @blobDfds.push(blobDfd)
+      fileReader.onload=(e)=>
+        @blobs[idx]=e.target.result
+        blobDfd.resolve()
+      fileReader.readAsArrayBuffer(obj)
+      @blobs[idx]=null
+      return key
+    else if obj instanceof Date
+      idx=@dates.length;
+      key = @DATE_VALUE_NAME_PREFIX+idx
+      @dates[idx]=obj.getTime()
+      return key
+    else
+      return obj
+  deserialize:(obj)->
+    if ph.jQuery.isArray(obj)
+      result=[]
+      size=obj.length
+      for i in [0..size]
+        result[i]=@deserialize(obj[i])
+      return result
+    else if ph.jQuery.isPlainObject(obj)
+      result={}
+      for key,value of obj
+        result[key]=@deserialize(obj[key])
+      return result
+    else if typeof obj =='string'
+     if obj.lastIndexOf(@BLOB_VALUE_NAME_PREFIX,0)==0
+       idx=parseInt(obj.substring(@BLOB_VALUE_NAME_PREFIX.length),10)
+       return @blobs[idx]
+     else if obj.lastIndexOf(@DATE_VALUE_NAME_PREFIX,0)==0
+       idx=parseInt(obj.substring(@DATE_VALUE_NAME_PREFIX.length),10)
+       return new Date(@dates[idx])
+    return obj
+  pack:(obj,onPacked)->
+    @mainObj=@serialize(obj)
+    dfd=ph.jQuery.Deferred()
+    for i in [0..@blobDfds.length]
+      blobDfd=@blobDfds[i]
+      =dfd.then()
+  unpack:(obj)->
+    @deserialize(obj)
+
