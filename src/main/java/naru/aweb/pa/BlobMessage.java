@@ -88,7 +88,7 @@ public class BlobMessage extends PoolBase implements AsyncBuffer,BufferGetter{
 		JSONArray metas=new JSONArray();
 		for(Blob blob:blobData){
 			totalLength+=blob.size();
-			metas.element(i,blob.getMeta());
+//			metas.element(i,blob.getMeta());
 			i++;
 		}
 		int count=blobData.size();
