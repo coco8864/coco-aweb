@@ -20,9 +20,9 @@ public class Envelope extends PoolBase{
 	private static final String DATE_VALUE_NAME_PREFIX="_paDateValue";
 	/* Blobを含む　JSONを siriarize */
 	/* siriarizeされたJSONをBlobを含むJSONに変換 */
-	private JSON mainJson;/* Blobを含まないjson */
+	private JSON mainObj;/* Blobを含まないjson */
 	private Map<String,Blob> blobs=new HashMap<String,Blob>();
-	private Map<String,Date> dates=new HashMap<String,Date>();
+	private Map<String,Long> dates=new HashMap<String,Long>();
 	
 	@Override
 	public void recycle(){
@@ -37,8 +37,8 @@ public class Envelope extends PoolBase{
 		JSONObject meta=new JSONObject();
 		int size=dates.size();
 		for(int i=0;i<size;i++){
-			Date date=dates.get(DATE_VALUE_NAME_PREFIX+i);
-			meta.accumulate("date",date.getTime());
+			Long date=dates.get(DATE_VALUE_NAME_PREFIX+i);
+			meta.accumulate("date",date);
 		}
 		size=blobs.size();
 		for(int i=0;i<size;i++){
@@ -55,7 +55,7 @@ public class Envelope extends PoolBase{
 			return 	key;
 		}else if(obj instanceof Date){
 			String key=DATE_VALUE_NAME_PREFIX + dates.size();
-			dates.put(key,(Date)obj);
+			dates.put(key,((Date)obj).getTime());
 			return 	key;
 		}else if(obj instanceof JSONObject){
 			JSONObject clone=new JSONObject();
@@ -103,7 +103,7 @@ public class Envelope extends PoolBase{
 	/* Blobオブジェクトを含むjsonをjsonBlobに変換 */
 	public static Envelope pack(JSON json){
 		Envelope envelope=(Envelope)PoolManager.getInstance(Envelope.class);
-		envelope.mainJson=(JSON)envelope.serialize(json);
+		envelope.mainObj=(JSON)envelope.serialize(json);
 		return envelope;
 	}
 	
