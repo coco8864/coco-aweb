@@ -34,9 +34,15 @@ window.ph={
  useCrossDomain:false,## iframeを使ったクロスドメイン通信を使うか否か?
  useHashChange:false,
  useBlobBuilder:false,
- createBlobBuilder:function(){
-  if(BlobBuilder){
-   return new BlobBuilder();
+ createBlob:function(data){
+  if(Blob){
+   return new Blob(data);
+  }else if(BlobBuilder){
+   var bb=new BlobBuilder();
+   for(var i=0;i<data.length;i++){
+     bb.append(data[i]);
+   }
+   return bb.getBlob();
   }
   return null;
  },
@@ -280,8 +286,8 @@ if(spec){
 }else{
  ph.useWebSocket=false;
 }
-if(typeof WebSocket == 'undefined'){
- if(typeof MozWebSocket =='undefined'){
+if(typeof WebSocket === 'undefined'){
+ if(typeof MozWebSocket ==='undefined'){
   ph.useWebSocket=false;
  }else{
   window.WebSocket=MozWebSocket;
@@ -289,14 +295,14 @@ if(typeof WebSocket == 'undefined'){
 }
 
 ph.useHashChange=true;
-if(typeof window.onhashchange=='undefined'){
+if(typeof window.onhashchange==='undefined'){
  ph.useHashChange=false;
 }
 
 ph.useBlobBuilder=true;
-if(typeof window.BlobBuilder=='undefined'){
+if(typeof window.BlobBuilder==='undefined'){
  window.BlobBuilder = window.MozBlobBuilder || window.WebKitBlobBuilder;
- if(typeof window.BlobBuilder=='undefined'){
+ if(typeof window.BlobBuilder==='undefined'&&typeof window.Blob==='undefined'){
   ph.useBlobBuilder=false;
  }
 }
