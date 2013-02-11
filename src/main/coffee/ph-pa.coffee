@@ -271,6 +271,8 @@ class window.Envelope
   asyncBlobCount:0
   dates:[]
   constructor:->
+  meta:->
+    {datas:[],blobs:[]}
   serialize:(obj)->
     if ph.jQuery.isArray(obj)
       result=[]
@@ -330,29 +332,33 @@ class window.Envelope
         idx=parseInt(obj.substring(@DATE_VALUE_NAME_PREFIX.length),10)
         return new Date(@dates[idx])
     obj
-  #binPacket“Ç‚Ýž‚ÝŠ®—¹Žž
-  onDoneBinPacket:(onPacked)=>
+  #bin protocol data“Ç‚Ýž‚ÝŠ®—¹Žž
+  onDoneBinPtc:(onPacked)=>
     headerText=ph.JSON.stringify(@mainObj)
     headerTextBuf=ph.stringToArrayBuffer(headerText)
-    bb=ph.createBlobBuilder()
+    #bb=ph.createBlobBuilder()
     headerLenBuf=new ArrayBuffer(4)
     #header’· bigEndian‚É‚µ‚Ä‘ã“ü
     headerLenArray=new Uint8Array(headerLenBuf)
-    wkLen=headerTextBuf.byteLength;
+    wkLen=headerTextBuf.byteLength
     for i in[0..3]
       headerLenArray[3-i]=wkLen&0xff##headerTextƒTƒCƒY
       wkLen>>=8
-    bb.append(headerLenBuf)
-    bb.append(headerTextBuf)
-    onPacked(bb.getBlob())
+    blobData=[]
+    blobData.push(headerLenArray)
+    blobData.push(headerTextBuf)
+    onPacked(ph.createBlob(blobData))
   pack:(obj,onPacked)->
     @mainObj=@serialize(obj)
-    @mainObj.meta=@meta()
-    if @asyncBlobCount==0
+    if onPacked!=null
+      @mainObj.meta=@meta()
+    if @blobs.length==0
       onPacked(ph.JSON.stringify(@mainObj))
+    else if @asyncBlobCount==0
+      @onDoneBinPtc(onPacked)
     else
       @blobDfd=ph.jQuery.Deferred()
-      @blobDfd.done(=>@onDoneBinPacket(onPacked))
+      @blobDfd.done(=>@onDoneBinPtc(onPacked))
   unpack:(obj)->
     @deserialize(obj)
 
