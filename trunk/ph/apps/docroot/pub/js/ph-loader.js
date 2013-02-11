@@ -80,7 +80,8 @@ window.ph={
      utf8[++idx] = 0x80 | ((c >>> (6 * j)) & 0x3F);
    }
   }
-  return new Uint8Array(utf8).buffer;
+//  return new Uint8Array(utf8).buffer;
+  return new Uint8Array(utf8);
  },
  debug:false,##debugメッセージを出力するか否か
  setDebug:function(flag){
