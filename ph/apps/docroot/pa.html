@@ -40,7 +40,7 @@ var sd;
 
 <input type="button" value="publish string" onclick="sd.publish('testAAA');"/>
 <input type="button" value="publish object" onclick="sd.publish({aaa:'testBBB'});"/>
-<input type="button" value="publish bin" onclick="sd.publish({aaa:'testCCC',blobData:[{data:'aaaa'},{data:'bbbbb'}]});"/>
+<input type="button" value="publish bin" onclick="sd.publish({aaa:'testCCC',blobData:[{data:'aaaa'},{data:ph.stringToArrayBuffer('bbbbb')}]});"/>
 </ul>
 <div id='target'><p>dorag and dromp file upload</p></div>
 <div>
