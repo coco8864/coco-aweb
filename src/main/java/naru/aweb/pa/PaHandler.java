@@ -117,23 +117,27 @@ public class PaHandler extends WebSocketHandler implements Timer{
 	}
 	
 	/**
-	 * WebSocketから受けた直接のメッセージ
+	 * WebSocketから受けたTextメッセージ
+	 * WebSocketの場合は、msgは１つづつ届く
 	 */
 	@Override
-	public void onMessage(String msgs){
-		logger.debug("onMessage.message:"+msgs);
-		JSONArray reqs=JSONArray.fromObject(msgs);
+	public void onMessage(String msg){
+		logger.debug("onMessage.message:"+msg);
+		JSONObject req=JSONObject.fromObject(msg);
 		if(!isNegotiated){
-			JSONObject negoreq=(JSONObject)reqs.remove(0);
-			if(!negotiation(negoreq)){
+			if(!negotiation(req)){
 				//negotiation失敗,致命的回線断
 				return;
 			}
 			paSession.setupWsHandler(this);
 		}
-		processMessages(reqs);
+		dispatchMessage(req);
 	}
 	
+	/**
+	 * WebSocketから受けたBinaryメッセージ
+	 * WebSocketの場合は、msgは１つづつ届く
+	 */
 	@Override
 	public void onMessage(CacheBuffer message) {
 		//onMessageにバイナリを送ってくるのは、negtiation後,publish

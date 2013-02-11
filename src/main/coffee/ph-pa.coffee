@@ -39,7 +39,7 @@ window.ph.pa={
     if url.lastIndexOf('ws://',0)==0||url.lastIndexOf('wss://',0)==0
       if !ph.useWebSocket
         #webSocketが使えなくてurlがws://だったらhttp://に変更
-        url='http' + url.substring(2);
+        url='http' + url.substring(2)
     else if url.lastIndexOf('http://',0)==0||url.lastIndexOf('https://',0)==0
     else
       if ph.useWebSocket
@@ -128,13 +128,24 @@ class CD extends EventModule
       return
     if @_sendMsgs.length==0
       return
-    msg=@_sendMsgs
+    msgs=@_sendMsgs
     @_sendMsgs=[]
-    jsonText=ph.JSON.stringify(msg)
-    ph.log('send:'+jsonText)
     if @isWs
-      @_ws.send(jsonText)
+#WebSocketの場合は、1メッセージづつ送る
+      for msg in msgs
+        env=new Envelope()
+        env.pack(msg,(ptcMsg)=>
+          @_ws.send(ptcMsg)
+          ph.log('ws send:'+ptcMsg)
+        )
     else
+#xhrの場合は、配列で一度に送る
+      ptcMsgs=[]
+      for msg in msgs
+        env=new Envelope()
+        ptcMsgs.push(env.pack(msg,null))
+      jsonText=ph.JSON.stringify(ptcMsgs)
+      ph.log('xhr send:'+jsonText)
       @_xhrFrame[0].contentWindow.postMessage(jsonText,"*")#TODO origin
   _send:(msg)->
     @_sendMsgs.unshift(msg)
@@ -178,7 +189,7 @@ class CD extends EventModule
     if res.load
       this._onOpen()
     else
-      ph.log('_onXhrOpened error.'+ph.JSON.stringify(res));
+      ph.log('_onXhrOpened error.'+ph.JSON.stringify(res))
   _onXhrMessage:(obj)->
     ph.log('Pa _onXhrMessage')
     this._onMessage(obj)
@@ -273,12 +284,12 @@ class window.Envelope
         result[key]=@serialize(obj[key])
       return result
     else if obj instanceof ArrayBuffer
-      idx=@blobs.length;
+      idx=@blobs.length
       key = @BLOB_VALUE_NAME_PREFIX+idx
       @blobs[idx]=obj
       return key
     else if obj instanceof Blob
-      idx=@blobs.length;
+      idx=@blobs.length
       key = @BLOB_VALUE_NAME_PREFIX+idx
       fileReader=new FileReader()
       ##blobDfd=ph.jQuery.Deferred()
@@ -287,24 +298,23 @@ class window.Envelope
       fileReader.onload=(e)=>
         @blobs[idx]=e.target.result
         @asyncBlobCount--
-        if asyncBlobCount==0
+        if @asyncBlobCount==0
           @blobDfd.resolve()
       fileReader.readAsArrayBuffer(obj)
       @blobs[idx]=null
       return key
     else if obj instanceof Date
-      idx=@dates.length;
+      idx=@dates.length
       key = @DATE_VALUE_NAME_PREFIX+idx
       @dates[idx]=obj.getTime()
       return key
     else
       return obj
   deserialize:(obj)->
-    if 
-ph.jQuery.isArray(obj)
+    if ph.jQuery.isArray(obj)
       result=[]
       size=obj.length
-      for i in [0..size]
+      for i in [0..(size-1)]
         result[i]=@deserialize(obj[i])
       return result
     else if ph.jQuery.isPlainObject(obj)
@@ -313,20 +323,36 @@ ph.jQuery.isArray(obj)
         result[key]=@deserialize(obj[key])
       return result
     else if typeof obj =='string'
-     if obj.lastIndexOf(@BLOB_VALUE_NAME_PREFIX,0)==0
-       idx=parseInt(obj.substring(@BLOB_VALUE_NAME_PREFIX.length),10)
-       return @blobs[idx]
-     else if obj.lastIndexOf(@DATE_VALUE_NAME_PREFIX,0)==0
-       idx=parseInt(obj.substring(@DATE_VALUE_NAME_PREFIX.length),10)
-       return new Date(@dates[idx])
-    return obj
+      if obj.lastIndexOf(@BLOB_VALUE_NAME_PREFIX,0)==0
+        idx=parseInt(obj.substring(@BLOB_VALUE_NAME_PREFIX.length),10)
+        return @blobs[idx]
+      else if obj.lastIndexOf(@DATE_VALUE_NAME_PREFIX,0)==0
+        idx=parseInt(obj.substring(@DATE_VALUE_NAME_PREFIX.length),10)
+        return new Date(@dates[idx])
+    obj
+  #binPacket読み込み完了時
+  onDoneBinPacket:(onPacked)=>
+    headerText=ph.JSON.stringify(@mainObj)
+    headerTextBuf=ph.stringToArrayBuffer(headerText)
+    bb=ph.createBlobBuilder()
+    headerLenBuf=new ArrayBuffer(4)
+    #header長 bigEndianにして代入
+    headerLenArray=new Uint8Array(headerLenBuf)
+    wkLen=headerTextBuf.byteLength;
+    for i in[0..3]
+      headerLenArray[3-i]=wkLen&0xff##headerTextサイズ
+      wkLen>>=8
+    bb.append(headerLenBuf)
+    bb.append(headerTextBuf)
+    onPacked(bb.getBlob())
   pack:(obj,onPacked)->
     @mainObj=@serialize(obj)
-    if asyncBlobCount==0
-      onPacked(@)
+    @mainObj.meta=@meta()
+    if @asyncBlobCount==0
+      onPacked(ph.JSON.stringify(@mainObj))
     else
       @blobDfd=ph.jQuery.Deferred()
-      @blobDfd.done(->onPacked(@))
+      @blobDfd.done(=>@onDoneBinPacket(onPacked))
   unpack:(obj)->
     @deserialize(obj)
 

@@ -100,14 +100,17 @@ public class Envelope extends PoolBase{
 		return obj;
 	}
 	
-	/* Blobオブジェクトを含むjsonをjsonBlobに変換 */
+	/* user obj -> protocol data
+	 * Blobオブジェクトを含むjsonをjsonBlobに変換
+	 */
 	public static Envelope pack(JSON json){
 		Envelope envelope=(Envelope)PoolManager.getInstance(Envelope.class);
 		envelope.mainObj=(JSON)envelope.serialize(json);
 		return envelope;
 	}
 	
-	/* 文字列で受信した場合 */
+	/* protocol data -> user obj
+	 */
 	public static Object unpack(JSONObject meta,JSONObject main){
 		Envelope jsonBlob=(Envelope)PoolManager.getInstance(Envelope.class);
 		
