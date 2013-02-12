@@ -11,5 +11,4 @@ public interface Palet {
 	void onUnsubscribe(PaPeer peer,String reason);
 	void onPublishText(PaPeer peer,String data);
 	void onPublishObj(PaPeer peer,JSON data);
-	void onPublishBlob(PaPeer peer,BlobMessage data);
 }

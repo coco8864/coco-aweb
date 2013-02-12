@@ -283,7 +283,7 @@ class Envelope
     if ph.jQuery.isArray(obj)
       result=[]
       size=obj.length
-      for i in [0..size]
+      for i in [0..size-1]
         result[i]=@serialize(obj[i])
       return result
     else if ph.jQuery.isPlainObject(obj)
@@ -318,7 +318,12 @@ class Envelope
           @blobDfd.resolve()
       fileReader.readAsArrayBuffer(obj)
       @blobs[idx]=null
-      @blobMetas[idx]={size:obj.size,type:blob.type,jsType:'Blob'}
+      meta={size:obj.size,type:blob.type,jsType:'Blob'}
+      if blob.name
+        meta.name=blob.name
+      if blob.lastModifiedDate
+        meta.lastModifiedDate=blob.lastModifiedDate.getTime()
+      @blobMetas[idx]=meta
       return key
     else if obj instanceof Date
       idx=@dates.length

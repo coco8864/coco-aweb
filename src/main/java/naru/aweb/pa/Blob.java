@@ -38,22 +38,22 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 	private String type;
 	private String jsType;
 	
-	public static Blob create(File file,JSONObject meta){
+	public static Blob create(File file){
 		CacheBuffer buffer=CacheBuffer.open(file);
-		return create(buffer,meta);
+		return create(buffer);
 	}
 	
-	public static Blob create(ByteBuffer[] byteBuffer,JSONObject meta){
+	public static Blob create(ByteBuffer[] byteBuffer){
 		CacheBuffer buffer=CacheBuffer.open(byteBuffer);
-		return create(buffer,meta);
+		return create(buffer);
 	}
 	
-	public static Blob create(CacheBuffer buffer,JSONObject meta){
-		return create(buffer,0,buffer.bufferLength(),meta);
+	public static Blob create(CacheBuffer buffer){
+		return create(buffer,0,buffer.bufferLength());
 	}
 	
 	/* bufferÇÕÅABlobèIóπéûÇ…äJï˙Ç≥ÇÍÇÈ */
-	public static Blob create(CacheBuffer buffer,long offset,long size,JSONObject meta){
+	public static Blob create(CacheBuffer buffer,long offset,long size){
 		Blob blob=(Blob)PoolManager.getInstance(Blob.class);
 		buffer.ref();
 		blob.buffer=buffer;

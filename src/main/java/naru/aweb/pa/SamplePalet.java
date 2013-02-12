@@ -45,10 +45,4 @@ public class SamplePalet implements Palet{
 		ctx.message(data);
 	}
 
-	@Override
-	public void onPublishBlob(PaPeer peer, BlobMessage data) {
-		logger.info("onPublishBlob.peer:"+peer+":"+data);
-		ctx.message(data);
-	}
-
 }
