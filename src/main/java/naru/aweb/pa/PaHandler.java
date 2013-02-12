@@ -3,6 +3,9 @@
  */
 package naru.aweb.pa;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -11,6 +14,7 @@ import java.util.Map;
 
 import naru.async.Timer;
 import naru.async.cache.CacheBuffer;
+import naru.async.pool.PoolManager;
 import naru.async.timer.TimerManager;
 import naru.aweb.auth.AuthSession;
 import naru.aweb.config.Config;
@@ -134,6 +138,21 @@ public class PaHandler extends WebSocketHandler implements Timer{
 		dispatchMessage(req);
 	}
 	
+	private static String getString(ByteBuffer buf,int length){
+		int pos=buf.position();
+		if((pos+length)>buf.limit()){
+			throw new UnsupportedOperationException("getString");
+		}
+		String result;
+		try {
+			result = new String(buf.array(),pos,length,"UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			throw new UnsupportedOperationException("getString enc");
+		}
+		buf.position(pos+length);
+		return result;
+	}
+	
 	/**
 	 * WebSocketから受けたBinaryメッセージ
 	 * WebSocketの場合は、msgは１つづつ届く
@@ -145,16 +164,23 @@ public class PaHandler extends WebSocketHandler implements Timer{
 			//negotiation失敗,致命的回線断
 			return;
 		}
-		BlobEnvelope envelope=BlobEnvelope.parse(message);
-		JSONObject header=envelope.getHeader();
-		String type=header.getString(PaSession.KEY_TYPE);
-		if(PaSession.TYPE_PUBLISH.equals(type)){
-			logger.error("onMessage CacheBuffer type:"+type);
-			envelope.unref();
-			return;
+		if(!message.isInTopBuffer()){
+			message.unref();
+			throw new UnsupportedOperationException("Envelope parse");
 		}
-		paSession.publishBin(header,envelope.getBlobMessage());
-		envelope.unref();
+		//TODO 先頭の1バッファにheader類が保持されている事に依存
+		ByteBuffer[] topBufs=message.popTopBuffer();
+		ByteBuffer topBuf=topBufs[0];
+		topBuf.order(ByteOrder.BIG_ENDIAN);
+		int headerLength=topBuf.getInt();
+		int pos=topBuf.position();
+		if((pos+headerLength)>topBuf.limit()){
+			PoolManager.poolBufferInstance(topBufs);
+			throw new UnsupportedOperationException("Envelope parse");
+		}
+		String headerString=getString(topBuf,headerLength);
+		JSONObject header=JSONObject.fromObject(headerString);
+		paSession.publish(header);
 	}
 	
 	
