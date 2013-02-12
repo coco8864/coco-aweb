@@ -33,6 +33,23 @@ public class Envelope extends PoolBase{
 		dates.clear();
 	}
 	
+	public JSONObject meta(){
+		JSONObject meta=new JSONObject();
+		for(int i=0;;i++){
+			Long date=dates.get(DATE_VALUE_NAME_PREFIX+i);
+			if(date==null){
+				break;
+			}
+		}
+		for(int i=0;;i++){
+			Blob blob=blobs.get(BLOB_VALUE_NAME_PREFIX+i);
+			if(blob==null){
+				break;
+			}
+		}
+		return meta;
+	}
+	
 	public boolean isBin(){
 		return blobs.size()>0;
 	}
@@ -110,6 +127,8 @@ public class Envelope extends PoolBase{
 	public static Envelope pack(JSON json){
 		Envelope envelope=(Envelope)PoolManager.getInstance(Envelope.class);
 		envelope.mainObj=(JSON)envelope.serialize(json);
+		
+		
 		return envelope;
 	}
 	

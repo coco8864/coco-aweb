@@ -109,7 +109,10 @@ public class PaletWrapper implements PaletCtx,Timer{
 	public int message(Object data,Set<PaPeer> peers,Set<PaPeer> exceptPeers){
 		int count=0;
 		JSONObject json=new JSONObject();
-		json.put("message", data);
+		json.put(PaSession.KEY_TYPE, PaSession.TYPE_MESSAGE);
+		json.put(PaSession.KEY_MESSAGE, data);
+		json.put(PaSession.KEY_QNAME, qname);
+		//subname‚¾‚¯‚Í‚±‚±‚Å‚ÍŒˆ‚ß‚ç‚ê‚È‚¢
 		Envelope envelope=Envelope.pack(json);
 		for(PaPeer peer:peers){
 			if(exceptPeers!=null && exceptPeers.contains(peer)){
