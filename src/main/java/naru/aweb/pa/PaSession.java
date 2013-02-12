@@ -285,33 +285,6 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		paletWrapper.onPublish(peer, message);
 	}
 	
-	public void publishBin(JSONObject msg,BlobMessage blobmessage){
-		String qname=msg.getString(KEY_QNAME);
-		String subname=msg.optString(KEY_SUBNAME,null);
-		if(!isWs){
-			sendError(TYPE_PUBLISH,qname, subname,"not support bin publish");
-			logger.error("not support bin publish");
-			return;
-		}
-		PaPeer keyPeer=PaPeer.create(this, qname, subname);
-		PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
-		if(subname==null){//ëóêMå≥Ç™Ç»Ç¢Publish ï÷ãXìIÇ»Peer
-			paletWrapper.onPublish(keyPeer, blobmessage);
-			keyPeer.unref();
-			return;
-		}
-		PaPeer peer=null;
-		synchronized(peers){
-			peer=peers.get(keyPeer);
-			keyPeer.unref(true);
-			if(peer==null){//ìoò^ÇÃÇ»Ç¢Ç∆Ç±ÇÎÇ©ÇÁÇÃpublish?
-				sendError(TYPE_PUBLISH, qname, subname, "not found subname");
-				return;
-			}
-		}
-		paletWrapper.onPublish(peer, blobmessage);
-	}
-	
 	public void qname(JSONObject req){
 		Set<String> qnames=paManager.qnames();
 		sendOK(TYPE_QNAMES,null, null,new JSONArray(qnames));
