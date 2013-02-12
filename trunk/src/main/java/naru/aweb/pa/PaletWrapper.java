@@ -64,8 +64,6 @@ public class PaletWrapper implements PaletCtx,Timer{
 			palet.onPublishText(peer,(String)data);
 		}else if(data instanceof JSON){
 			palet.onPublishObj(peer,(JSON)data);
-		}else if(data instanceof BlobMessage){
-			palet.onPublishBlob(peer, (BlobMessage)data);
 		}else{
 			logger.error("onPublish data type" + data.getClass().getName());
 		}
@@ -128,16 +126,9 @@ public class PaletWrapper implements PaletCtx,Timer{
 
 	@Override
 	public int message(Object data, Set<PaPeer> peers, PaPeer exceptPeer) {
-		int count=0;
-		for(PaPeer peer:peers){
-			if(exceptPeer!=null && exceptPeer.equals(peer)){
-				continue;
-			}
-			if(peer.message(data)){
-				count++;
-			}
-		}
-		return count;
+		Set<PaPeer> exceptPeers=new HashSet<PaPeer>();
+		exceptPeers.add(exceptPeer);
+		return message(data,peers,exceptPeers);
 	}
 	
 	public String getQname(){
