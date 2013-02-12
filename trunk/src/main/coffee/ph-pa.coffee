@@ -262,17 +262,23 @@ class SD extends EventModule
     @_cd._send({type:'publish',qname:@qname,subname:@subname,message:msg})
 
 #Subscribe Deferred
-class window.Envelope
+class Envelope
   BLOB_VALUE_NAME_PREFIX:'_paBlobValue'
   DATE_VALUE_NAME_PREFIX:'_paDateValue'
   mainObj:null
-  blobs:[]
-  blobDfd:null
-  asyncBlobCount:0
-  dates:[]
+#  blobs:[]
+#  blobMetas:[]
+#  blobDfd:null
+#  asyncBlobCount:0
+#  dates:[]
   constructor:->
+    @blobs=[]
+    @blobMetas=[]
+    @dates=[]
+    @blobDfd=null
+    @asyncBlobCount=0
   meta:->
-    {datas:[],blobs:[]}
+    {dates:@dates,blobs:@blobMetas}
   serialize:(obj)->
     if ph.jQuery.isArray(obj)
       result=[]
@@ -285,10 +291,18 @@ class window.Envelope
       for key,value of obj
         result[key]=@serialize(obj[key])
       return result
+    else if obj instanceof Uint8Array
+      idx=@blobs.length
+      key = @BLOB_VALUE_NAME_PREFIX+idx
+      @blobs[idx]=obj
+      size=obj.length*obj.BYTES_PER_ELEMENT
+      @blobMetas[idx]={size:size,jsType:'ArrayBufferView'}
+      return key
     else if obj instanceof ArrayBuffer
       idx=@blobs.length
       key = @BLOB_VALUE_NAME_PREFIX+idx
       @blobs[idx]=obj
+      @blobMetas[idx]={size:obj.byteLength,jsType:'ArrayBuffer'}
       return key
     else if obj instanceof Blob
       idx=@blobs.length
@@ -304,6 +318,7 @@ class window.Envelope
           @blobDfd.resolve()
       fileReader.readAsArrayBuffer(obj)
       @blobs[idx]=null
+      @blobMetas[idx]={size:obj.size,type:blob.type,jsType:'Blob'}
       return key
     else if obj instanceof Date
       idx=@dates.length
@@ -339,14 +354,17 @@ class window.Envelope
     #bb=ph.createBlobBuilder()
     headerLenBuf=new ArrayBuffer(4)
     #header長 bigEndianにして代入
-    headerLenArray=new Uint8Array(headerLenBuf)
+    headerLenArray=new DataView(headerLenBuf)
     wkLen=headerTextBuf.byteLength
-    for i in[0..3]
-      headerLenArray[3-i]=wkLen&0xff##headerTextサイズ
-      wkLen>>=8
+    headerLenArray.setUint32(0,wkLen,false)
+    #for i in[0..3]
+    #  headerLenArray[3-i]=wkLen&0xff##headerTextサイズ
+    #  wkLen>>=8
     blobData=[]
     blobData.push(headerLenArray)
     blobData.push(headerTextBuf)
+    for blob in @blobs
+      blobData.push(blob)
     onPacked(ph.createBlob(blobData))
   pack:(obj,onPacked)->
     @mainObj=@serialize(obj)
