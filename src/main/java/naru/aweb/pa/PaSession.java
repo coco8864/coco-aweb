@@ -68,7 +68,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	public void recycle() {
 		peers.clear();
 		qdata.clear();
-		qbin.clear();
+//		qbin.clear();
 		super.recycle();
 	}
 	
@@ -85,7 +85,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	private PaHandler wsHandler;
 	private PaHandler xhrHandler;
 	private List<Object> qdata=new ArrayList<Object>();
-	private List<BlobMessage> qbin=new ArrayList<BlobMessage>();
+//	private List<BlobMessage> qbin=new ArrayList<BlobMessage>();
 	
 	private void wsSend(PaHandler handler,Object data){
 		if(data instanceof String){
@@ -173,12 +173,12 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		send(makeResponseJson(RESULT_OK,requestType,qname, subname, message));
 	}
 	
-	public  void message(Object data,String qname,String subname){
+	public  void message(Envelope envelope,String qname,String subname){
 		JSONObject json=new JSONObject();
 		json.put(KEY_TYPE, TYPE_MESSAGE);
 		json.put(KEY_QNAME, qname);
 		json.put(KEY_SUBNAME, subname);
-		json.put(KEY_MESSAGE, data);
+//		json.put(KEY_MESSAGE, data);
 		send(json);
 	}
 	
@@ -186,24 +186,24 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		if(this.wsHandler!=null){
 			wsSend(this.wsHandler,data);
 		}else if(this.xhrHandler!=null){
-			if(data instanceof BlobMessage){
-				logger.error("xhrHandler can't send BlobMessage.xhrHandler");
-				return;
-			}
+//			if(data instanceof BlobMessage){
+//				logger.error("xhrHandler can't send BlobMessage.xhrHandler");
+//				return;
+//			}
 			qdata.add(data);
 			xhrSend(this.xhrHandler,qdata);
 			qdata.clear();
 			this.xhrHandler=null;
 		}else{
-			if(data instanceof BlobMessage){
-				if(!isWs){
-					logger.error("xhrHandler can't send BlobMessage.isWs");
-					return;
-				}
-				qbin.add((BlobMessage)data);
-			}else{
-				qdata.add(data);
-			}
+//			if(data instanceof BlobMessage){
+//				if(!isWs){
+//					logger.error("xhrHandler can't send BlobMessage.isWs");
+//					return;
+//				}
+//				qbin.add((BlobMessage)data);
+//			}else{
+//				qdata.add(data);
+//			}
 		}
 	}
 	

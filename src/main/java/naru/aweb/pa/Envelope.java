@@ -161,6 +161,7 @@ public class Envelope extends PoolBase{
 		size=blobs.size();
 		for(int i=0;i<size;i++){
 			JSONObject blobMeta=blobs.getJSONObject(i);
+			//TODO prot‚Ìæ“ªbuffer‚ÉŽc‚è‚ª‚ ‚é‚Æ¢‚é
 			long length=blobMeta.getLong("size");
 			Blob blob=Blob.create(prot,offset,length);
 			offset+=length;

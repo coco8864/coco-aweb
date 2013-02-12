@@ -46,8 +46,8 @@ public class PaPeer extends PoolBase{
 	}
 	
 	/* API */
-	public boolean message(Object data){
-		paSession.message(data,qname,subname);
+	public boolean message(Envelope envelope){
+		paSession.message(envelope,qname,subname);
 		return true;
 	}
 	
