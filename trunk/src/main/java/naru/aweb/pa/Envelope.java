@@ -1,5 +1,8 @@
 package naru.aweb.pa;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -90,6 +93,7 @@ public class Envelope extends PoolBase{
 			for(int i=0;i<size;i++){
 				clone.add(deserialize(array.get(i)));
 			}
+			return clone;
 		}else if(obj instanceof String){
 			if(((String)obj).startsWith(BLOB_VALUE_NAME_PREFIX)){
 				return blobs.get(obj);
@@ -109,20 +113,68 @@ public class Envelope extends PoolBase{
 		return envelope;
 	}
 	
-	/* protocol data -> user obj
-	 */
-	public static Object unpack(JSONObject meta,JSONObject main){
-		Envelope jsonBlob=(Envelope)PoolManager.getInstance(Envelope.class);
-		
-		Object o=jsonBlob.deserialize(main);
-		jsonBlob.unref();
-		return o;
+	private static String getString(ByteBuffer buf,int length){
+		int pos=buf.position();
+		if((pos+length)>buf.limit()){
+			throw new UnsupportedOperationException("getString");
+		}
+		String result;
+		try {
+			result = new String(buf.array(),pos,length,"UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			throw new UnsupportedOperationException("getString enc");
+		}
+		buf.position(pos+length);
+		return result;
 	}
 	
-	/* バイナリで受信した場合 */
-	/* 通信データからユーザオブジェクトを生成する */
-	public static Object unpack(CacheBuffer buffer){
-		Envelope ev=null;
-		return ev.unpack(null,null);
+	/* protocol data -> user obj
+	 */
+	public static JSONObject unpack(CacheBuffer prot){
+		if(!prot.isInTopBuffer()){
+			prot.unref();
+			throw new UnsupportedOperationException("Envelope parse");
+		}
+		//TODO 先頭の1バッファにheader類が保持されている事に依存
+		ByteBuffer[] topBufs=prot.popTopBuffer();
+		ByteBuffer topBuf=topBufs[0];
+		topBuf.order(ByteOrder.BIG_ENDIAN);
+		long offset=0;
+		int headerLength=topBuf.getInt();
+		offset+=4;
+		int pos=topBuf.position();
+		if((pos+headerLength)>topBuf.limit()){
+			PoolManager.poolBufferInstance(topBufs);
+			throw new UnsupportedOperationException("Envelope parse");
+		}
+		String headerString=getString(topBuf,headerLength);
+		offset+=headerLength;
+		JSONObject header=JSONObject.fromObject(headerString);
+		Envelope envelop=(Envelope)PoolManager.getInstance(Envelope.class);
+		JSONObject meta=header.getJSONObject("meta");
+		JSONArray dates=meta.getJSONArray("dates");
+		int size=dates.size();
+		for(int i=0;i<size;i++){
+			envelop.dates.put(DATE_VALUE_NAME_PREFIX+i, dates.getLong(i));
+		}
+		JSONArray blobs=meta.getJSONArray("blobs");
+		size=blobs.size();
+		for(int i=0;i<size;i++){
+			JSONObject blobMeta=blobs.getJSONObject(i);
+			long length=blobMeta.getLong("size");
+			Blob blob=Blob.create(prot,offset,length);
+			offset+=length;
+			blob.setJsType(blobMeta.getString("jsType"));
+			blob.setType(blobMeta.optString("type",null));
+			blob.setName(blobMeta.optString("name",null));
+			long lastModifiedDate=blobMeta.optLong("lastModifiedDate", -1L);
+			if(lastModifiedDate>0){
+				blob.setLastModifiedDate(lastModifiedDate);
+			}
+			envelop.blobs.put(BLOB_VALUE_NAME_PREFIX+i,blob);
+		}
+		JSONObject result=(JSONObject)envelop.deserialize(header);
+		envelop.unref();
+		return result;
 	}
 }

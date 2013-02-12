@@ -138,49 +138,18 @@ public class PaHandler extends WebSocketHandler implements Timer{
 		dispatchMessage(req);
 	}
 	
-	private static String getString(ByteBuffer buf,int length){
-		int pos=buf.position();
-		if((pos+length)>buf.limit()){
-			throw new UnsupportedOperationException("getString");
-		}
-		String result;
-		try {
-			result = new String(buf.array(),pos,length,"UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new UnsupportedOperationException("getString enc");
-		}
-		buf.position(pos+length);
-		return result;
-	}
-	
 	/**
 	 * WebSocketから受けたBinaryメッセージ
 	 * WebSocketの場合は、msgは１つづつ届く
 	 */
 	@Override
-	public void onMessage(CacheBuffer message) {
+	public void onMessage(CacheBuffer prot) {
 		//onMessageにバイナリを送ってくるのは、negtiation後,publish
 		if(!isNegotiated){
 			//negotiation失敗,致命的回線断
 			return;
 		}
-		if(!message.isInTopBuffer()){
-			message.unref();
-			throw new UnsupportedOperationException("Envelope parse");
-		}
-		//TODO 先頭の1バッファにheader類が保持されている事に依存
-		ByteBuffer[] topBufs=message.popTopBuffer();
-		ByteBuffer topBuf=topBufs[0];
-		topBuf.order(ByteOrder.BIG_ENDIAN);
-		int headerLength=topBuf.getInt();
-		int pos=topBuf.position();
-		if((pos+headerLength)>topBuf.limit()){
-			PoolManager.poolBufferInstance(topBufs);
-			throw new UnsupportedOperationException("Envelope parse");
-		}
-		String headerString=getString(topBuf,headerLength);
-		JSONObject header=JSONObject.fromObject(headerString);
-		paSession.publish(header);
+		paSession.publish(Envelope.unpack(prot));
 	}
 	
 	
