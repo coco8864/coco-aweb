@@ -84,7 +84,7 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 	}
 	public long getLastModifiedDate() {
 		if(lastModifiedDate==null){
-			return 0;
+			return -1;
 		}
 		return lastModifiedDate.getTime();
 	}
@@ -107,6 +107,16 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 	
 	public void setJsType(String jsType) {
 		this.jsType = jsType;
+	}
+	
+	public JSONObject meta(){
+		JSONObject meta=new JSONObject();
+		meta.element("size", size);
+		meta.element("type", type);
+		meta.element("name", name);
+		meta.element("jsType", jsType);
+		meta.element("lastModifiedDate", getLastModifiedDate());
+		return meta;
 	}
 	
 	@Override
