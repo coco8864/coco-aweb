@@ -4,6 +4,7 @@ import java.util.List;
 
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
+import net.sf.json.JSONObject;
 
 public class PaPeer extends PoolBase{
 	private static PaManager paManager=PaManager.getInstance();
@@ -46,10 +47,30 @@ public class PaPeer extends PoolBase{
 	}
 	
 	/* API */
+	public boolean message(Object message){
+		JSONObject json=new JSONObject();
+		json.put(PaSession.KEY_TYPE, PaSession.TYPE_MESSAGE);
+		json.put(PaSession.KEY_MESSAGE, message);
+		json.put(PaSession.KEY_QNAME, qname);
+		json.put(PaSession.KEY_SUBNAME, subname);
+		//subname‚¾‚¯‚Í‚±‚±‚Å‚ÍŒˆ‚ß‚ç‚ê‚È‚¢
+		Envelope envelope=Envelope.pack(json);
+		if(envelope.isBinary()){
+			
+		}else{
+			paSession.sendJson(envelope.getMainObj());
+		}
+		envelope.unref(true);
+		return true;
+	}
+	
+	/*
 	public boolean message(Envelope envelope){
 		paSession.message(envelope,qname,subname);
 		return true;
 	}
+	*/
+	
 	
 	public String getQname() {
 		return qname;

@@ -68,7 +68,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	public void recycle() {
 		peers.clear();
 		qdata.clear();
-//		qbin.clear();
+		qbin.clear();
 		super.recycle();
 	}
 	
@@ -85,7 +85,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	private PaHandler wsHandler;
 	private PaHandler xhrHandler;
 	private List<Object> qdata=new ArrayList<Object>();
-//	private List<BlobMessage> qbin=new ArrayList<BlobMessage>();
+	private List<AsyncBuffer> qbin=new ArrayList<AsyncBuffer>();
 	
 	private void wsSend(PaHandler handler,Object data){
 		if(data instanceof String){
@@ -154,7 +154,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		xhrHandler=null;
 	}
 	
-	private JSON makeResponseJson(String result,String requestType,String qname,String subname,Object message){
+	private JSONObject makeResponseJson(String result,String requestType,String qname,String subname,Object message){
 		JSONObject json=new JSONObject();
 		json.put(KEY_TYPE, TYPE_RESPONSE);
 		json.put(KEY_RESULT, result);
@@ -166,44 +166,32 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	}
 	
 	public void sendError(String requestType,String qname,String subname,Object message){
-		send(makeResponseJson(RESULT_ERROR,requestType,qname, subname,  message));
+		sendJson(makeResponseJson(RESULT_ERROR,requestType,qname, subname,  message));
 	}
 	
 	public void sendOK(String requestType,String qname,String subname,Object message){
-		send(makeResponseJson(RESULT_OK,requestType,qname, subname, message));
+		sendJson(makeResponseJson(RESULT_OK,requestType,qname, subname, message));
 	}
 	
-	public  void message(Envelope envelope,String qname,String subname){
-		JSONObject json=new JSONObject();
-		json.put(KEY_TYPE, TYPE_MESSAGE);
-		json.put(KEY_QNAME, qname);
-		json.put(KEY_SUBNAME, subname);
-//		json.put(KEY_MESSAGE, data);
-		send(json);
-	}
-	
-	public synchronized void send(Object data){
+	public synchronized void sendJson(JSONObject data){
 		if(this.wsHandler!=null){
+			this.wsHandler.postMessage(data.toString());
 			wsSend(this.wsHandler,data);
 		}else if(this.xhrHandler!=null){
-//			if(data instanceof BlobMessage){
-//				logger.error("xhrHandler can't send BlobMessage.xhrHandler");
-//				return;
-//			}
 			qdata.add(data);
 			xhrSend(this.xhrHandler,qdata);
 			qdata.clear();
 			this.xhrHandler=null;
 		}else{
-//			if(data instanceof BlobMessage){
-//				if(!isWs){
-//					logger.error("xhrHandler can't send BlobMessage.isWs");
-//					return;
-//				}
-//				qbin.add((BlobMessage)data);
-//			}else{
-//				qdata.add(data);
-//			}
+			qdata.add(data);
+		}
+	}
+	
+	public synchronized void sendBinary(AsyncBuffer data){
+		if(this.wsHandler!=null){
+			this.wsHandler.postMessage(data);
+		}else{
+			qbin.add(data);
 		}
 	}
 	

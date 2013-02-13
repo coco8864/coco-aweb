@@ -114,10 +114,15 @@ public class PaletWrapper implements PaletCtx,Timer{
 		json.put(PaSession.KEY_QNAME, qname);
 		//subname‚¾‚¯‚Í‚±‚±‚Å‚ÍŒˆ‚ß‚ç‚ê‚È‚¢
 		Envelope envelope=Envelope.pack(json);
+		if(envelope.isBinary()){
+		}else{
+		}
 		for(PaPeer peer:peers){
 			if(exceptPeers!=null && exceptPeers.contains(peer)){
 				continue;
 			}
+			String subname=peer.getSubname();
+			
 			if(peer.message(envelope)){
 				count++;
 			}

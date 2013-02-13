@@ -5,9 +5,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import naru.async.cache.CacheBuffer;
 import naru.async.pool.PoolBase;
@@ -28,7 +26,7 @@ public class Envelope extends PoolBase{
 
 	/* Blobを含む　JSONを siriarize */
 	/* siriarizeされたJSONをBlobを含むJSONに変換 */
-	private JSON mainObj;/* Blobを含まないjson */
+	private JSONObject mainObj;/* Blobを含まないjson */
 	private List<Blob> blobs=new ArrayList<Blob>();
 	private List<Long> dates=new ArrayList<Long>();
 	
@@ -51,7 +49,11 @@ public class Envelope extends PoolBase{
 		return meta;
 	}
 	
-	public boolean isBin(){
+	public JSONObject getMainObj(){
+		return mainObj;
+	}
+	
+	public boolean isBinary(){
 		return blobs.size()>0;
 	}
 	
@@ -115,11 +117,10 @@ public class Envelope extends PoolBase{
 	/* user obj -> protocol data
 	 * Blobオブジェクトを含むjsonをjsonBlobに変換
 	 */
-	public static Envelope pack(JSON json){
+	public static Envelope pack(JSON message){
 		Envelope envelope=(Envelope)PoolManager.getInstance(Envelope.class);
-		envelope.mainObj=(JSON)envelope.serialize(json);
-		
-		
+		envelope.mainObj=(JSONObject)envelope.serialize(message);
+		envelope.mainObj.accumulate("meta", envelope.meta());
 		return envelope;
 	}
 	
