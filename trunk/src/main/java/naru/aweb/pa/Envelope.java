@@ -3,8 +3,10 @@ package naru.aweb.pa;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import naru.async.cache.CacheBuffer;
@@ -20,12 +22,15 @@ import net.sf.json.JSONObject;
  */
 public class Envelope extends PoolBase{
 	private static final String BLOB_VALUE_NAME_PREFIX="_paBlobValue";
+	private static final int BLOB_VALUE_NAME_PREFIX_LEN=BLOB_VALUE_NAME_PREFIX.length();
 	private static final String DATE_VALUE_NAME_PREFIX="_paDateValue";
+	private static final int DATE_VALUE_NAME_PREFIX_LEN=DATE_VALUE_NAME_PREFIX.length();
+
 	/* BlobÇä‹ÇﬁÅ@JSONÇ siriarize */
 	/* siriarizeÇ≥ÇÍÇΩJSONÇBlobÇä‹ÇﬁJSONÇ…ïœä∑ */
 	private JSON mainObj;/* BlobÇä‹Ç‹Ç»Ç¢json */
-	private Map<String,Blob> blobs=new HashMap<String,Blob>();
-	private Map<String,Long> dates=new HashMap<String,Long>();
+	private List<Blob> blobs=new ArrayList<Blob>();
+	private List<Long> dates=new ArrayList<Long>();
 	
 	@Override
 	public void recycle(){
@@ -35,47 +40,31 @@ public class Envelope extends PoolBase{
 	
 	public JSONObject meta(){
 		JSONObject meta=new JSONObject();
-		for(int i=0;;i++){
-			Long date=dates.get(DATE_VALUE_NAME_PREFIX+i);
-			if(date==null){
-				break;
-			}
+		meta.element("dates", dates);
+		int size=blobs.size();
+		JSONArray blobsJson=new JSONArray();
+		for(int i=0;i<size;i++){
+			Blob blob=blobs.get(i);
+			blobsJson.add(blob.meta());
 		}
-		for(int i=0;;i++){
-			Blob blob=blobs.get(BLOB_VALUE_NAME_PREFIX+i);
-			if(blob==null){
-				break;
-			}
-		}
+		meta.element("blobs", blobsJson);
 		return meta;
 	}
 	
 	public boolean isBin(){
 		return blobs.size()>0;
 	}
-	public JSONObject getMeta(){
-		JSONObject meta=new JSONObject();
-		int size=dates.size();
-		for(int i=0;i<size;i++){
-			Long date=dates.get(DATE_VALUE_NAME_PREFIX+i);
-			meta.accumulate("date",date);
-		}
-		size=blobs.size();
-		for(int i=0;i<size;i++){
-			Blob blob=blobs.get(BLOB_VALUE_NAME_PREFIX+i);
-			meta.accumulate("blobLength",blob.size());
-		}
-		return meta;
-	}
 	
 	public Object serialize(Object obj){
 		if(obj instanceof Blob){
-			String key=BLOB_VALUE_NAME_PREFIX + blobs.size();
-			blobs.put(key,(Blob)obj);
+			int idx=blobs.size();
+			String key=BLOB_VALUE_NAME_PREFIX + idx;
+			blobs.add((Blob)obj);
 			return 	key;
 		}else if(obj instanceof Date){
-			String key=DATE_VALUE_NAME_PREFIX + dates.size();
-			dates.put(key,((Date)obj).getTime());
+			int idx=dates.size();
+			String key=DATE_VALUE_NAME_PREFIX + idx;
+			dates.add(((Date)obj).getTime());
 			return 	key;
 		}else if(obj instanceof JSONObject){
 			JSONObject clone=new JSONObject();
@@ -113,9 +102,11 @@ public class Envelope extends PoolBase{
 			return clone;
 		}else if(obj instanceof String){
 			if(((String)obj).startsWith(BLOB_VALUE_NAME_PREFIX)){
-				return blobs.get(obj);
+				int idx=Integer.parseInt(((String)obj).substring(BLOB_VALUE_NAME_PREFIX_LEN));
+				return blobs.get(idx);
 			}else if(((String)obj).startsWith(DATE_VALUE_NAME_PREFIX)){
-				return dates.get(obj);
+				int idx=Integer.parseInt(((String)obj).substring(DATE_VALUE_NAME_PREFIX_LEN));
+				return dates.get(idx);
 			}
 		}
 		return obj;
@@ -174,7 +165,7 @@ public class Envelope extends PoolBase{
 		JSONArray dates=meta.getJSONArray("dates");
 		int size=dates.size();
 		for(int i=0;i<size;i++){
-			envelop.dates.put(DATE_VALUE_NAME_PREFIX+i, dates.getLong(i));
+			envelop.dates.add(dates.getLong(i));
 		}
 		JSONArray blobs=meta.getJSONArray("blobs");
 		size=blobs.size();
@@ -191,7 +182,7 @@ public class Envelope extends PoolBase{
 			if(lastModifiedDate>0){
 				blob.setLastModifiedDate(lastModifiedDate);
 			}
-			envelop.blobs.put(BLOB_VALUE_NAME_PREFIX+i,blob);
+			envelop.blobs.add(blob);
 		}
 		JSONObject result=(JSONObject)envelop.deserialize(header);
 		envelop.unref();
