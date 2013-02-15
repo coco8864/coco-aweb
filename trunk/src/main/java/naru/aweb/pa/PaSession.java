@@ -176,7 +176,6 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	public synchronized void sendJson(JSONObject data){
 		if(this.wsHandler!=null){
 			this.wsHandler.postMessage(data.toString());
-			wsSend(this.wsHandler,data);
 		}else if(this.xhrHandler!=null){
 			qdata.add(data);
 			xhrSend(this.xhrHandler,qdata);

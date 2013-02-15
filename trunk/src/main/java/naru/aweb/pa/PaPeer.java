@@ -2,6 +2,7 @@ package naru.aweb.pa;
 
 import java.util.List;
 
+import naru.async.AsyncBuffer;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import net.sf.json.JSONObject;
@@ -56,21 +57,21 @@ public class PaPeer extends PoolBase{
 		//subname‚¾‚¯‚Í‚±‚±‚Å‚ÍŒˆ‚ß‚ç‚ê‚È‚¢
 		Envelope envelope=Envelope.pack(json);
 		if(envelope.isBinary()){
-			
+			paSession.sendBinary(envelope.createSendAsyncBuffer(null));
 		}else{
-			paSession.sendJson(envelope.getMainObj());
+			paSession.sendJson(envelope.getSendJson(null));
 		}
 		envelope.unref(true);
 		return true;
 	}
 	
-	/*
-	public boolean message(Envelope envelope){
-		paSession.message(envelope,qname,subname);
-		return true;
+	public void sendBinary(AsyncBuffer data){
+		paSession.sendBinary(data);
 	}
-	*/
 	
+	public void sendJson(JSONObject data){
+		paSession.sendJson(data);
+	}
 	
 	public String getQname() {
 		return qname;
