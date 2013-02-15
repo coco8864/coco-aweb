@@ -1,6 +1,6 @@
 package naru.aweb.pa;
 
-import net.sf.json.JSON;
+import java.util.Map;
 
 public interface Palet {
 	void init(PaletCtx ctx);
@@ -10,5 +10,5 @@ public interface Palet {
 	void onSubscribe(PaPeer peer);
 	void onUnsubscribe(PaPeer peer,String reason);
 	void onPublishText(PaPeer peer,String data);
-	void onPublishObj(PaPeer peer,JSON data);
+	void onPublishObj(PaPeer peer,Map<String,?> data);
 }

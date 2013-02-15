@@ -99,6 +99,35 @@ public class PaletWrapper implements PaletCtx,Timer{
 		return message(data,getPeers(subname),exceptPeers);
 	}
 	
+	
+	private int messageJson(Envelope envelope,Set<PaPeer> peers,Set<PaPeer> exceptPeers){
+		int count=0;
+		for(PaPeer peer:peers){
+			if(exceptPeers!=null && exceptPeers.contains(peer)){
+				continue;
+			}
+			String subname=peer.getSubname();
+			peer.sendJson(envelope.getSendJson(subname));
+			count++;
+		}
+		return count;
+	}
+	
+	private int messageBin(Envelope envelope,Set<PaPeer> peers,Set<PaPeer> exceptPeers){
+		int count=0;
+		for(PaPeer peer:peers){
+			if(exceptPeers!=null && exceptPeers.contains(peer)){
+				continue;
+			}
+			String subname=peer.getSubname();
+			peer.sendBinary(envelope.createSendAsyncBuffer(subname));
+			count++;
+		}
+		return count;
+	}
+	
+	
+	
 	/**
 	 * 
 	 * @param data
@@ -107,7 +136,6 @@ public class PaletWrapper implements PaletCtx,Timer{
 	 * @return
 	 */
 	public int message(Object data,Set<PaPeer> peers,Set<PaPeer> exceptPeers){
-		int count=0;
 		JSONObject json=new JSONObject();
 		json.put(PaSession.KEY_TYPE, PaSession.TYPE_MESSAGE);
 		json.put(PaSession.KEY_MESSAGE, data);
@@ -115,19 +143,10 @@ public class PaletWrapper implements PaletCtx,Timer{
 		//subname‚¾‚¯‚Í‚±‚±‚Å‚ÍŒˆ‚ß‚ç‚ê‚È‚¢
 		Envelope envelope=Envelope.pack(json);
 		if(envelope.isBinary()){
+			return messageBin(envelope, peers, exceptPeers);
 		}else{
+			return messageJson(envelope, peers, exceptPeers);
 		}
-		for(PaPeer peer:peers){
-			if(exceptPeers!=null && exceptPeers.contains(peer)){
-				continue;
-			}
-			String subname=peer.getSubname();
-			
-			if(peer.message(envelope)){
-				count++;
-			}
-		}
-		return count;
 	}
 	
 	@Override

@@ -5,8 +5,11 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import naru.async.AsyncBuffer;
 import naru.async.cache.CacheBuffer;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
@@ -30,10 +33,29 @@ public class Envelope extends PoolBase{
 	private List<Blob> blobs=new ArrayList<Blob>();
 	private List<Long> dates=new ArrayList<Long>();
 	
+	/* レスポンオブジェクト作成用のメンバ変数 
+	 * subname毎にキャッシュして無駄なオブジェクトを作らない*/
+	private Map<String,JSONObject> sendJsonCache=new HashMap<String,JSONObject>();
+	private Map<String,ByteBuffer> headerBufferCache=new HashMap<String,ByteBuffer>();
+	private ByteBuffer mainObjBuffer=null;
+	
 	@Override
 	public void recycle(){
+		for(Blob blob:blobs){
+			blob.unref();
+		}
 		blobs.clear();
 		dates.clear();
+		mainObj=null;
+		if(mainObjBuffer!=null){
+			PoolManager.poolBufferInstance(mainObjBuffer);
+			mainObjBuffer=null;
+		}
+		sendJsonCache.clear();
+		for(ByteBuffer headerBuffer:headerBufferCache.values()){
+			PoolManager.poolBufferInstance(headerBuffer);
+		}
+		headerBufferCache.clear();
 	}
 	
 	public JSONObject meta(){
@@ -55,6 +77,56 @@ public class Envelope extends PoolBase{
 	
 	public boolean isBinary(){
 		return blobs.size()>0;
+	}
+	
+	public JSONObject getSendJson(String subname){
+		if(subname==null){
+			return mainObj;
+		}
+		JSONObject sendJson=sendJsonCache.get(subname);
+		if(sendJson!=null){
+			return sendJson;
+		}
+		sendJson=new JSONObject();
+		sendJson.putAll(mainObj);
+		sendJson.put(PaSession.KEY_SUBNAME, subname);
+		sendJsonCache.put(subname, sendJson);
+		return sendJson;
+	}
+	
+	private ByteBuffer getHeaderBuffer(JSONObject data){
+		ByteBuffer headerBuffer=null;
+		String sendJsonText=data.toString();
+		headerBuffer=PoolManager.getBufferInstance();
+		try {
+			byte[] headerBytes=sendJsonText.getBytes("utf-8");
+			headerBuffer.order(ByteOrder.BIG_ENDIAN);
+			headerBuffer.putInt(headerBytes.length);
+			headerBuffer.put(headerBytes);
+		} catch (UnsupportedEncodingException e) {
+			throw new UnsupportedOperationException("getBytes utf-8");
+		}
+		headerBuffer.flip();
+		return headerBuffer;
+	}
+	
+	/*
+	 * bynaryデータは、streamを含むので1送信に1つづつAsyncBufferが必要
+	 */
+	public AsyncBuffer createSendAsyncBuffer(String subname){
+		if(subname==null){
+			if(mainObjBuffer==null){
+				mainObjBuffer=getHeaderBuffer(mainObj);
+			}
+			return EnvelopeAsyncBuffer.create(mainObjBuffer, blobs);
+		}
+		ByteBuffer headerBuffer=headerBufferCache.get(subname);
+		if(headerBuffer==null){
+			mainObj.put(PaSession.KEY_SUBNAME, subname);
+			headerBuffer=getHeaderBuffer(mainObj);
+			headerBufferCache.put(subname, headerBuffer);
+		}
+		return EnvelopeAsyncBuffer.create(headerBuffer, blobs);
 	}
 	
 	public Object serialize(Object obj){
@@ -124,7 +196,7 @@ public class Envelope extends PoolBase{
 		return envelope;
 	}
 	
-	private static String getString(ByteBuffer buf,int length){
+	private static String getStringFromBuffer(ByteBuffer buf,int length){
 		int pos=buf.position();
 		if((pos+length)>buf.limit()){
 			throw new UnsupportedOperationException("getString");
@@ -158,7 +230,7 @@ public class Envelope extends PoolBase{
 			PoolManager.poolBufferInstance(topBufs);
 			throw new UnsupportedOperationException("Envelope parse");
 		}
-		String headerString=getString(topBuf,headerLength);
+		String headerString=getStringFromBuffer(topBuf,headerLength);
 		offset+=headerLength;
 		JSONObject header=JSONObject.fromObject(headerString);
 		Envelope envelop=(Envelope)PoolManager.getInstance(Envelope.class);
