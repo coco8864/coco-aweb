@@ -248,9 +248,9 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		return true;
 	}
 	
-	public void publish(JSONObject msg){
-		String qname=msg.getString(KEY_QNAME);
-		String subname=msg.optString(KEY_SUBNAME,null);
+	public void publish(Map msg){
+		String qname=(String)msg.get(KEY_QNAME);
+		String subname=(String)msg.get(KEY_SUBNAME);
 		Object message=msg.get(KEY_MESSAGE);
 		PaPeer keyPeer=PaPeer.create(this, qname, subname);
 		
