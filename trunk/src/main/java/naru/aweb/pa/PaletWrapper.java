@@ -62,8 +62,8 @@ public class PaletWrapper implements PaletCtx,Timer{
 	void onPublish(PaPeer peer,Object data){
 		if(data instanceof String){
 			palet.onPublishText(peer,(String)data);
-		}else if(data instanceof JSON){
-			palet.onPublishObj(peer,(JSON)data);
+		}else if(data instanceof Map){
+			palet.onPublishObj(peer,(Map)data);
 		}else{
 			logger.error("onPublish data type" + data.getClass().getName());
 		}
@@ -136,12 +136,12 @@ public class PaletWrapper implements PaletCtx,Timer{
 	 * @return
 	 */
 	public int message(Object data,Set<PaPeer> peers,Set<PaPeer> exceptPeers){
-		JSONObject json=new JSONObject();
-		json.put(PaSession.KEY_TYPE, PaSession.TYPE_MESSAGE);
-		json.put(PaSession.KEY_MESSAGE, data);
-		json.put(PaSession.KEY_QNAME, qname);
+		Map message=new HashMap();
+		message.put(PaSession.KEY_TYPE, PaSession.TYPE_MESSAGE);
+		message.put(PaSession.KEY_MESSAGE, data);
+		message.put(PaSession.KEY_QNAME, qname);
 		//subname‚¾‚¯‚Í‚±‚±‚Å‚ÍŒˆ‚ß‚ç‚ê‚È‚¢
-		Envelope envelope=Envelope.pack(json);
+		Envelope envelope=Envelope.pack(message);
 		if(envelope.isBinary()){
 			return messageBin(envelope, peers, exceptPeers);
 		}else{

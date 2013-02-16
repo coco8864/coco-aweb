@@ -140,34 +140,35 @@ public class Envelope extends PoolBase{
 			String key=DATE_VALUE_NAME_PREFIX + idx;
 			dates.add(((Date)obj).getTime());
 			return 	key;
-		}else if(obj instanceof JSONObject){
+		}else if(obj instanceof Map){
 			JSONObject clone=new JSONObject();
-			JSONObject json=(JSONObject)obj;
+			Map json=(Map)obj;
 			for(Object key:json.keySet()){
 				clone.put((String)key, serialize(json.get(key)));
 			}
 			return clone;
-		}else if(obj instanceof JSONArray){
+		}else if(obj instanceof List){
 			JSONArray clone=new JSONArray();
-			JSONArray array=(JSONArray)obj;
+			List array=(List)obj;
 			int size=array.size();
 			for(int i=0;i<size;i++){
 				clone.add(serialize(array.get(i)));
 			}
+			return clone;
 		}
 		return obj;
 	}
 	
 	public Object deserialize(Object obj){
 		if(obj instanceof JSONObject){
-			JSONObject clone=new JSONObject();
+			Map clone=new HashMap();
 			JSONObject json=(JSONObject)obj;
 			for(Object key:json.keySet()){
 				clone.put((String)key, deserialize(json.get(key)));
 			}
 			return clone;
 		}else if(obj instanceof JSONArray){
-			JSONArray clone=new JSONArray();
+			List clone=new ArrayList();
 			JSONArray array=(JSONArray)obj;
 			int size=array.size();
 			for(int i=0;i<size;i++){
@@ -177,7 +178,9 @@ public class Envelope extends PoolBase{
 		}else if(obj instanceof String){
 			if(((String)obj).startsWith(BLOB_VALUE_NAME_PREFIX)){
 				int idx=Integer.parseInt(((String)obj).substring(BLOB_VALUE_NAME_PREFIX_LEN));
-				return blobs.get(idx);
+				Blob blob=blobs.get(idx);
+				blob.ref();
+				return blob;
 			}else if(((String)obj).startsWith(DATE_VALUE_NAME_PREFIX)){
 				int idx=Integer.parseInt(((String)obj).substring(DATE_VALUE_NAME_PREFIX_LEN));
 				return dates.get(idx);
@@ -189,7 +192,7 @@ public class Envelope extends PoolBase{
 	/* user obj -> protocol data
 	 * Blobオブジェクトを含むjsonをjsonBlobに変換
 	 */
-	public static Envelope pack(JSON message){
+	public static Envelope pack(Map message){
 		Envelope envelope=(Envelope)PoolManager.getInstance(Envelope.class);
 		envelope.mainObj=(JSONObject)envelope.serialize(message);
 		envelope.mainObj.accumulate("meta", envelope.meta());
@@ -213,7 +216,7 @@ public class Envelope extends PoolBase{
 	
 	/* protocol data -> user obj
 	 */
-	public static JSONObject unpack(CacheBuffer prot){
+	public static Map unpack(CacheBuffer prot){
 		if(!prot.isInTopBuffer()){
 			prot.unref();
 			throw new UnsupportedOperationException("Envelope parse");
@@ -257,7 +260,7 @@ public class Envelope extends PoolBase{
 			}
 			envelop.blobs.add(blob);
 		}
-		JSONObject result=(JSONObject)envelop.deserialize(header);
+		Map result=(Map)envelop.deserialize(header);
 		envelop.unref();
 		return result;
 	}

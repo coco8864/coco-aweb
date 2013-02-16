@@ -134,9 +134,9 @@ class CD extends EventModule
 #WebSocketの場合は、1メッセージづつ送る
       for msg in msgs
         env=new Envelope()
-        env.pack(msg,(ptcMsg)=>
-          @_ws.send(ptcMsg)
-          ph.log('ws send:'+ptcMsg)
+        env.pack(msg,(protocolData)=>
+          @_ws.send(protocolData)
+          ph.log('ws send:'+protocolData)
         )
     else
 #xhrの場合は、配列で一度に送る
@@ -155,10 +155,46 @@ class CD extends EventModule
     this._onOpen()
   _onWsClose:=>
     ph.log('Pa _onWsClose')
+  __parseBlob:(blob)->
+    fr=new FileReader()
+    mode=1
+    fr.onload=(e)=>
+      switch mode
+        when 1 #read header length
+          headerLenView=new DataView(e.target.result)
+          headerLength=headerLenView.getUint32(0,false)
+          ph.log('headerLength:'+headerLength)
+          headerBlob=ph.blobSlice(blob,offset,offset+headerLength)
+          offset+=headerLength
+          mode=2
+          fr.readAsText(headerBlob)
+        when 2 #read header
+          ph.log('header:'+e.target.result)
+          header=ph.JSON.parse(e.target.result)
+          meta=header.meta
+          env=new Envelope()
+          for date in meta.dates
+            env.dates.push(date)
+          for blobMeta in meta.blobs
+            size=blobMeta.size
+            blob=ph.blobSlice(blob,offset,offset+size)
+            offset+=size
+            env.blobs.push(blob)
+          obj=env.unpack(header)
+          @_onMessage(obj)
+    offset=4
+    headerLengthBlob=ph.blobSlice(blob,0,offset)
+    fr.readAsArrayBuffer(headerLengthBlob)
   _onWsMessage:(msg)=>
-    ph.log('Pa _onWsMessage:'+msg.data)
-    obj=ph.JSON.parse(msg.data)
-    this._onMessage(obj)
+    if typeof msg.data=='string'
+      ph.log('Pa _onWsMessage text:'+msg.data)
+      obj=ph.JSON.parse(msg.data)
+      @_onMessage(obj)
+    else if msg.data instanceof Blob
+      ph.log('Pa _onWsMessage blob:'+msg.data)
+      obj=@__parseBlob(msg.data)
+    else
+      ph.log('_onWsMessage type error')
   _openWebSocket:=>
     ph.log('Pa WebSocket start')
     @stat=ph.pa.STAT_OPEN
@@ -200,8 +236,6 @@ class CD extends EventModule
     if msg.bid!=ph.pa._getBid(@_appId)
       ph.pa._setBid(@_appId,msg.bid)
       @_send({type:ph.pa.TYPE_NEGOTIATE,bid:msg.bid})
-  __onMsgMessage:(msg)->
-    @trigger('message',msg)
   __onMsgResOk:(msg)->
     ph.log('__onMsgResOk requestType:'+msg.requestType)
     if msg.requestType==ph.pa.TYPE_SUBSCRIBE
@@ -220,7 +254,7 @@ class CD extends EventModule
     if msg.type==ph.pa.TYPE_NEGOTIATE
       @__onMsgNego(msg)
     else if msg.type==ph.pa.TYPE_MESSAGE
-      @__onMsgMessage(msg)
+      @trigger('message',msg)
     else if msg.type==ph.pa.TYPE_RESPONSE && msg.result==ph.pa.RESULT_OK
       @__onMsgResOk(msg)
     else if msg.type==ph.pa.TYPE_RESPONSE && msg.result==ph.pa.RESULT_ERROR
@@ -308,8 +342,6 @@ class Envelope
       idx=@blobs.length
       key = @BLOB_VALUE_NAME_PREFIX+idx
       fileReader=new FileReader()
-      ##blobDfd=ph.jQuery.Deferred()
-      ##@blobDfds.push(blobDfd)
       @asyncBlobCount++
       fileReader.onload=(e)=>
         @blobs[idx]=e.target.result

@@ -1,8 +1,8 @@
 package naru.aweb.pa;
 
-import org.apache.log4j.Logger;
+import java.util.Map;
 
-import net.sf.json.JSON;
+import org.apache.log4j.Logger;
 
 public class SamplePalet implements Palet{
 	private static Logger logger=Logger.getLogger(SamplePalet.class);
@@ -40,7 +40,7 @@ public class SamplePalet implements Palet{
 	}
 
 	@Override
-	public void onPublishObj(PaPeer peer, JSON data) {
+	public void onPublishObj(PaPeer peer, Map data) {
 		logger.info("onPublishObj.peer:"+peer+":"+data);
 		ctx.message(data);
 	}
