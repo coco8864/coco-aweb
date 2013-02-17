@@ -35,7 +35,7 @@ var sd;
 <input type="button" value="pa.connect" onclick="cd=ph.pa.connect('/pa');"/>
 <input type="button" value="close" onclick="wsq.close();"/>
 <input type="button" value="pa.deploy" onclick="cd.deploy('test','naru.aweb.pa.SamplePalet');"/>
-<input type="button" value="subscribe dump" onclick="sd=cd.subscribe('test');"/>
+<input type="button" value="subscribe dump" onclick="sd=cd.subscribe('test',null,function(msg){ph.log('----');ph.dump(msg);});"/>
 <input type="button" value="unsubscribe" onclick="sd.unsubscribe('test');"/>
 
 <input type="button" value="publish string" onclick="sd.publish('testAAA');"/>
@@ -68,7 +68,13 @@ ph.jQuery(function(){
     for (var i = 0; i < files.length; i++) {
       blobData.push({data:files[i],memo:'memo'+i});
     }
-    wsq.publish('test',{requestType:'fileUploadTest',blobData:blobData});
+    try{
+    sd.publish({blobData:blobData});
+    }catch(e){
+    ph.log(e);
+    alert(e);
+    }
+    return false;
 // アップロード処理
   })
   .bind("dragenter", function () {
