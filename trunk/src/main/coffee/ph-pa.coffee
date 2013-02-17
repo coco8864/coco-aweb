@@ -393,7 +393,8 @@ class Envelope
     #  headerLenArray[3-i]=wkLen&0xff##headerTextƒTƒCƒY
     #  wkLen>>=8
     blobData=[]
-    blobData.push(headerLenArray)
+#    blobData.push(headerLenArray)
+    blobData.push(new Uint8Array(headerLenBuf))
     blobData.push(headerTextBuf)
     for blob in @blobs
       blobData.push(blob)
