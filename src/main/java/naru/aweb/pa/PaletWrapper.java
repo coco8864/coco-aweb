@@ -10,8 +10,6 @@ import org.apache.log4j.Logger;
 
 import naru.async.Timer;
 import naru.async.timer.TimerManager;
-import net.sf.json.JSON;
-import net.sf.json.JSONObject;
 
 public class PaletWrapper implements PaletCtx,Timer{
 	private static Logger logger=Logger.getLogger(PaSession.class);
