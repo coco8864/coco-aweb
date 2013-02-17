@@ -32,7 +32,7 @@ var sd;
 <h3>使用例</h3>
 <ul>
 <input type="button" value="auth.info" onclick="ph.auth.info(null,function(x){ph.log('++auth.info cb++');ph.dump(x);ph.log('--auth.info cb--');window.wsq=x;});"/>
-<input type="button" value="pa.connect" onclick="cd=ph.pa.connect('/pa');"/>
+<input type="button" value="connect" onclick="connect();"/>
 <input type="button" value="close" onclick="wsq.close();"/>
 <input type="button" value="pa.deploy" onclick="cd.deploy('test','naru.aweb.pa.SamplePalet');"/>
 <input type="button" value="subscribe dump" onclick="sd=cd.subscribe('test',null,function(msg){ph.log('----');ph.dump(msg);});"/>
@@ -41,6 +41,8 @@ var sd;
 <input type="button" value="publish string" onclick="sd.publish('testAAA');"/>
 <input type="button" value="publish object" onclick="sd.publish({aaa:'testBBB'});"/>
 <input type="button" value="publish bin" onclick="sd.publish({aaa:'testCCC',blobData:[{data:'aaaa'},{data:ph.stringToArrayBuffer('bbbbb')}]});"/>
+<input type="button" value="use xhr" onclick="ph.useWebSocket=false;"/>
+
 </ul>
 <div id='target'><p>dorag and dromp file upload</p></div>
 <div>
@@ -50,9 +52,7 @@ var sd;
 </div>
 
 <script type="text/javascript"><!--
-ph.jQuery(function(){
-  var href="javascript:(function(){var%20url='" + ph.scriptBase + "ph-loader.js?bm=bm&include=bm.js?c=' + (new Date()).valueOf();var%20d=document;var%20e=d.createElement('script');e.src=url;d.getElementsByTagName('head')[0].appendChild(e);})();"
-  $("#bookmarklet").attr('href',href);
+function connect(){
   cd=ph.pa.connect('/pa');
   cd.done(
     function(con){
@@ -60,6 +60,10 @@ ph.jQuery(function(){
       ph.dump1(con);
       ph.log('--open cb--');
     });
+}
+ph.jQuery(function(){
+  var href="javascript:(function(){var%20url='" + ph.scriptBase + "ph-loader.js?bm=bm&include=bm.js?c=' + (new Date()).valueOf();var%20d=document;var%20e=d.createElement('script');e.src=url;d.getElementsByTagName('head')[0].appendChild(e);})();"
+  $("#bookmarklet").attr('href',href);
 // ドラッグドロップからの入力
   $("body").bind("drop", function (e) {
   // ドラッグされたファイル情報を取得
