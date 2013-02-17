@@ -13,7 +13,6 @@ import naru.async.AsyncBuffer;
 import naru.async.cache.CacheBuffer;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
-import net.sf.json.JSON;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 

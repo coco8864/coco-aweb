@@ -179,6 +179,11 @@ class CD extends EventModule
             size=blobMeta.size
             blob=ph.blobSlice(blob,offset,offset+size)
             offset+=size
+            blob.type=blobMeta.type
+            if blobMeta.name
+              blob.name=blobMeta.name
+            if blobMeta.lastModifiedDate
+              blob.lastModifiedDate=blobMeta.lastModifiedDate
             env.blobs.push(blob)
           obj=env.unpack(header)
           @_onMessage(obj)
@@ -236,36 +241,29 @@ class CD extends EventModule
     if msg.bid!=ph.pa._getBid(@_appId)
       ph.pa._setBid(@_appId,msg.bid)
       @_send({type:ph.pa.TYPE_NEGOTIATE,bid:msg.bid})
-  __onMsgResOk:(msg)->
-    ph.log('__onMsgResOk requestType:'+msg.requestType)
-    if msg.requestType==ph.pa.TYPE_SUBSCRIBE
-      key=msg.qname + '@' +msg.subname
-      if @_subscribes[key]
-        @_subscribes[key].deferred.resolve(msg,@_subscribes[key].promise)
-        @_subscribes[key]=null
-  __onMsgResError:(msg)->
-    ph.log('__onMsgResError requestType:'+msg.requestType)
-    if msg.requestType==ph.pa.TYPE_SUBSCRIBE
-      key=msg.qname + '@' +msg.subname
-      if @_subscribes[key]
-        @_subscribes[key].deferred.resolve(msg,@_subscribes[key].promise)
-        @_subscribes[key]=null
   _onMessage:(msg)->
+    key="#{msg.qname}@#{msg.subname}"
+    sd=@_subscribes[key]
     if msg.type==ph.pa.TYPE_NEGOTIATE
       @__onMsgNego(msg)
     else if msg.type==ph.pa.TYPE_MESSAGE
-      @trigger('message',msg)
+      if sd
+        sd.promise.trigger('message',msg.message)
     else if msg.type==ph.pa.TYPE_RESPONSE && msg.result==ph.pa.RESULT_OK
-      @__onMsgResOk(msg)
-    else if msg.type==ph.pa.TYPE_RESPONSE && msg.result==ph.pa.RESULT_ERROR
-      @__onMsgResError(msg)
+      if sd && msg.requestType==ph.pa.TYPE_SUBSCRIBE && @_subscribes[key]
+        sd.deferred.resolve(msg,@_subscribes[key].promise)
+        @_subscribes[key]=null
+    else sd && if msg.type==ph.pa.TYPE_RESPONSE && msg.result==ph.pa.RESULT_ERROR
+      if msg.requestType==ph.pa.TYPE_SUBSCRIBE && @_subscribes[key]
+        sd.deferred.resolve(msg,@_subscribes[key].promise)
+        @_subscribes[key]=null
 #  _onMessageText:(textMsg)->
 #  _onMessageBlob:(blobMsg)->
 #  _callback:()->
 #  _onTimer:->
 #  _getOnlySubId:(qname)->
   close:->
-  subscribe:(qname,subname)->
+  subscribe:(qname,subname,onSubscribe)->
     if !subname
       subname='@'
     key=qname + '@' +subname
@@ -274,6 +272,8 @@ class CD extends EventModule
     dfd=ph.jQuery.Deferred()
     prm=dfd.promise(new SD(this,qname,subname))
     @_subscribes[key]={deferred:dfd,promise:prm}
+    if onSubscribe
+      prm.on('message',onSubscribe)
     prm
   publish:(qname,msg)->
     @_send({type:'publish',qname:qname,message:msg})
@@ -295,16 +295,11 @@ class SD extends EventModule
   publish:(msg)->
     @_cd._send({type:'publish',qname:@qname,subname:@subname,message:msg})
 
-#Subscribe Deferred
+#Envelope
 class Envelope
   BLOB_VALUE_NAME_PREFIX:'_paBlobValue'
   DATE_VALUE_NAME_PREFIX:'_paDateValue'
   mainObj:null
-#  blobs:[]
-#  blobMetas:[]
-#  blobDfd:null
-#  asyncBlobCount:0
-#  dates:[]
   constructor:->
     @blobs=[]
     @blobMetas=[]
@@ -319,11 +314,6 @@ class Envelope
       size=obj.length
       for i in [0..size-1]
         result[i]=@serialize(obj[i])
-      return result
-    else if ph.jQuery.isPlainObject(obj)
-      result={}
-      for key,value of obj
-        result[key]=@serialize(obj[key])
       return result
     else if obj instanceof Uint8Array
       idx=@blobs.length
@@ -341,20 +331,20 @@ class Envelope
     else if obj instanceof Blob
       idx=@blobs.length
       key = @BLOB_VALUE_NAME_PREFIX+idx
-      fileReader=new FileReader()
-      @asyncBlobCount++
-      fileReader.onload=(e)=>
-        @blobs[idx]=e.target.result
-        @asyncBlobCount--
-        if @asyncBlobCount==0
-          @blobDfd.resolve()
-      fileReader.readAsArrayBuffer(obj)
-      @blobs[idx]=null
-      meta={size:obj.size,type:blob.type,jsType:'Blob'}
-      if blob.name
-        meta.name=blob.name
-      if blob.lastModifiedDate
-        meta.lastModifiedDate=blob.lastModifiedDate.getTime()
+#      fileReader=new FileReader()
+#      @asyncBlobCount++
+#      fileReader.onload=(e)=>
+#        @blobs[idx]=e.target.result
+#        @asyncBlobCount--
+#        if @asyncBlobCount==0 && @blobDfd
+#          @blobDfd.resolve()
+#      fileReader.readAsArrayBuffer(obj)
+      @blobs[idx]=obj
+      meta={size:obj.size,type:obj.type,jsType:'Blob'}
+      if obj.name
+        meta.name=obj.name
+      if obj.lastModifiedDate
+        meta.lastModifiedDate=obj.lastModifiedDate.getTime()
       @blobMetas[idx]=meta
       return key
     else if obj instanceof Date
@@ -362,6 +352,11 @@ class Envelope
       key = @DATE_VALUE_NAME_PREFIX+idx
       @dates[idx]=obj.getTime()
       return key
+    else if ph.jQuery.isPlainObject(obj)
+      result={}
+      for key,value of obj
+        result[key]=@serialize(obj[key])
+      return result
     else
       return obj
   deserialize:(obj)->
