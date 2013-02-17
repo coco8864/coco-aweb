@@ -65,17 +65,20 @@ window.ph.pa={
       tmpCd=con.promise
       if !tmpCd._xhrFrame
         continue
-      if event.source=tmpCd._xhrFrame[0].contentWindow
+      if event.source==tmpCd._xhrFrame[0].contentWindow
           cd=tmpCd
           break
     if !cd
       #他のイベント
       return
-    res=ph.JSON.parse(event.data)
-    if !(cd.stat==ph.pa.STAT_LOADING)
-      cd._onXhrOpen(res)
-    else
+    ress=ph.JSON.parse(event.data)
+    if !ph.jQuery.isArray(ress)
+      if ress.load
+        cd._onXhrOpen(ress)
+      return
+    for res in ress
       cd._onXhrMessage(res)
+    return
   _onTimer:->
 }
 #xhr通信用のイベント登録
@@ -228,12 +231,12 @@ class CD extends EventModule
   _onXhrOpen:(res)->
     ph.log('Pa _onXhrOpened')
     if res.load
-      this._onOpen()
+      @_onOpen()
     else
       ph.log('_onXhrOpened error.'+ph.JSON.stringify(res))
   _onXhrMessage:(obj)->
     ph.log('Pa _onXhrMessage')
-    this._onMessage(obj)
+    @_onMessage(obj)
   _onOpen:->
     @stat=ph.pa.STAT_CONNECT
     @_send({type:ph.pa.TYPE_NEGOTIATE,bid:ph.pa._getBid(@_appId)})
@@ -401,8 +404,9 @@ class Envelope
     onPacked(ph.createBlob(blobData))
   pack:(obj,onPacked)->
     @mainObj=@serialize(obj)
-    if onPacked!=null
-      @mainObj.meta=@meta()
+    @mainObj.meta=@meta()
+    if !onPacked
+      return @mainObj
     if @blobs.length==0
       onPacked(ph.JSON.stringify(@mainObj))
     else if @asyncBlobCount==0
