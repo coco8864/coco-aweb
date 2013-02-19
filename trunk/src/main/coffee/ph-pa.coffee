@@ -263,14 +263,12 @@ class CD extends EventModule
       if msg.requestType==ph.pa.TYPE_SUBSCRIBE && @_subscribes[key]
         sd.deferred.resolve(msg,@_subscribes[key].promise)
         @_subscribes[key]=null
-#  _onMessageText:(textMsg)->
-#  _onMessageBlob:(blobMsg)->
-#  _callback:()->
-#  _onTimer:->
-#  _getOnlySubId:(qname)->
   close:->
   subscribe:(qname,subname,onSubscribe)->
-    if !subname
+    if subname && ph.jQuery.isFunction(subname)
+     onSubscribe=subname
+     subname='@'
+    else if !subname
       subname='@'
     key=qname + '@' +subname
     if @_subscribes[key]
@@ -296,7 +294,7 @@ class SD extends EventModule
     @_callback={}
     @_cd._send({type:'subscribe',qname:@qname,subname:@subname})
   unsubscribe:->
-    @_cd._send({type:'unsubscribe',qname:qname,subname:subname})
+    @_cd._send({type:'unsubscribe',qname:@qname,subname:@subname})
   publish:(msg)->
     @_cd._send({type:'publish',qname:@qname,subname:@subname,message:msg})
 
@@ -362,8 +360,7 @@ class Envelope
       for key,value of obj
         result[key]=@serialize(obj[key])
       return result
-    else
-      return obj
+    return obj
   deserialize:(obj)->
     if ph.jQuery.isArray(obj)
       result=[]
@@ -394,9 +391,6 @@ class Envelope
     headerLenArray=new DataView(headerLenBuf)
     wkLen=headerTextBuf.byteLength
     headerLenArray.setUint32(0,wkLen,false)
-    #for i in[0..3]
-    #  headerLenArray[3-i]=wkLen&0xff##headerTextƒTƒCƒY
-    #  wkLen>>=8
     blobData=[]
 #    blobData.push(headerLenArray)
     blobData.push(new Uint8Array(headerLenBuf))

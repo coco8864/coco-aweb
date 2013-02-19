@@ -46,15 +46,20 @@ public class PaletWrapper implements PaletCtx,Timer{
 	}
 	
 	void onUnubscribe(PaPeer peer,String reason){
+		boolean exist=false;
 		String subname=peer.getSubname();
 		synchronized(peers){
-			peers.remove(peer);
+			exist=peers.remove(peer);
 			Set<PaPeer> subnamePeers=subnamePeersMap.get(subname);
 			if(subnamePeers!=null){
 				subnamePeers.remove(peer);
 			}
 		}
-		palet.onUnsubscribe(peer,reason);
+		if(exist){
+			palet.onUnsubscribe(peer,reason);
+		}else{
+			
+		}
 	}
 	
 	void onPublish(PaPeer peer,Object data){
