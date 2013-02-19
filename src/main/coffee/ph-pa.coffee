@@ -227,7 +227,7 @@ class CD extends EventModule
     ph.jQuery("body").append(@_xhrFrame)
   _onXhrLoad:=>
     ph.log('Pa _onXhrLoad')
-    this.stat=ph.pa.LOADING
+#    this.stat=ph.pa.STAT_LOADING
   _onXhrOpen:(res)->
     ph.log('Pa _onXhrOpened')
     if res.load
@@ -318,20 +318,20 @@ class Envelope
       for i in [0..size-1]
         result[i]=@serialize(obj[i])
       return result
-    else if obj instanceof Uint8Array
+    else if ph.useBlob && obj instanceof Uint8Array
       idx=@blobs.length
       key = @BLOB_VALUE_NAME_PREFIX+idx
       @blobs[idx]=obj
       size=obj.length*obj.BYTES_PER_ELEMENT
       @blobMetas[idx]={size:size,jsType:'ArrayBufferView'}
       return key
-    else if obj instanceof ArrayBuffer
+    else if ph.useBlob && obj instanceof ArrayBuffer
       idx=@blobs.length
       key = @BLOB_VALUE_NAME_PREFIX+idx
-      @blobs[idx]=obj
+      @blobs[idx]=new Uint8Array(obj)
       @blobMetas[idx]={size:obj.byteLength,jsType:'ArrayBuffer'}
       return key
-    else if obj instanceof Blob
+    else if ph.useBlob && obj instanceof Blob
       idx=@blobs.length
       key = @BLOB_VALUE_NAME_PREFIX+idx
 #      fileReader=new FileReader()
