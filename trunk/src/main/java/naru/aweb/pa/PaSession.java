@@ -200,6 +200,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
 		if(paletWrapper==null){
 			sendError(TYPE_SUBSCRIBE,qname, subname,null);
+			return;
 		}
 		PaPeer keyPeer=PaPeer.create(this, qname, subname);
 		
