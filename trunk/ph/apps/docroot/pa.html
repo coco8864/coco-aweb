@@ -34,9 +34,10 @@ var sd;
 <input type="button" value="auth.info" onclick="ph.auth.info(null,function(x){ph.log('++auth.info cb++');ph.dump(x);ph.log('--auth.info cb--');window.wsq=x;});"/>
 <input type="button" value="connect" onclick="connect();"/>
 <input type="button" value="close" onclick="wsq.close();"/>
-<input type="button" value="pa.deploy" onclick="cd.deploy('test','naru.aweb.pa.SamplePalet');"/>
-<input type="button" value="subscribe dump" onclick="sd=cd.subscribe('test',null,function(msg){ph.log('----');ph.dump(msg);});"/>
-<input type="button" value="unsubscribe" onclick="sd.unsubscribe('test');"/>
+<input type="button" value="deploy" onclick="cd.deploy('test','naru.aweb.pa.SamplePalet');"/>
+<input type="button" value="undeploy" onclick="cd.undeploy('test');"/>
+<input type="button" value="subscribe" onclick="sd=cd.subscribe('test',function(msg){ph.log('----');ph.dump(msg);});"/>
+<input type="button" value="unsubscribe" onclick="sd.unsubscribe();"/>
 
 <input type="button" value="publish string" onclick="sd.publish('testAAA');"/>
 <input type="button" value="publish object" onclick="sd.publish({aaa:'testBBB'});"/>
@@ -44,6 +45,12 @@ var sd;
 <input type="button" value="use xhr" onclick="ph.useWebSocket=false;"/>
 
 </ul>
+<div><pre>sd.on('message',function(x){
+var fr=new FileReader();
+fr.onload=function(e){ ph.log(e.target.result);}
+fr.readAsText(x[0].data,'utf-8');
+});
+</pre></div>
 <div id='target'><p>dorag and dromp file upload</p></div>
 <div>
 <ul>
@@ -70,10 +77,10 @@ ph.jQuery(function(){
     var files = e.originalEvent.dataTransfer.files;
 	var blobData=[];
     for (var i = 0; i < files.length; i++) {
-      blobData.push({data:files[i],memo:'memo'+i});
+      blobData.push({data:files[i],test:'test'+i});
     }
     try{
-    sd.publish({blobData:blobData});
+    sd.publish(blobData);
     }catch(e){
     ph.log(e);
     alert(e);
