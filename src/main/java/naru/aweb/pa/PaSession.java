@@ -13,7 +13,6 @@ import naru.async.pool.PoolManager;
 import naru.aweb.auth.AuthSession;
 import naru.aweb.auth.LogoutEvent;
 import naru.aweb.config.User;
-import net.sf.json.JSON;
 import net.sf.json.JSONObject;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
@@ -221,7 +220,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		PaPeer keyPeer=PaPeer.create(this, qname, subname);
 		PaPeer peer=null;
 		synchronized(peers){
-			peer=peers.get(keyPeer);
+			peer=peers.remove(keyPeer);
 			keyPeer.unref(true);
 			if(peer==null){//Ç∑Ç≈Ç…unsubscribeçœÇ›èàóùÇÕÇ»Ç¢
 				sendError(TYPE_UNSUBSCRIBE,qname, subname,"not found");
@@ -287,8 +286,11 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	
 	public void undeploy(JSONObject req){
 		String qname=req.getString(KEY_QNAME);
-		paManager.undeploy(qname);
-		sendOK(TYPE_UNDEPLOY,qname, null,null);
+		if( paManager.undeploy(qname)!=null){
+			sendOK(TYPE_UNDEPLOY,qname, null,null);
+		}else{
+			sendError(TYPE_UNDEPLOY,qname, null,"not found");
+		}
 	}
 	
 	@Override
