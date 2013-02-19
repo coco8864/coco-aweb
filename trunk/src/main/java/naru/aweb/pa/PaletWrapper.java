@@ -3,6 +3,7 @@ package naru.aweb.pa;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -45,7 +46,7 @@ public class PaletWrapper implements PaletCtx,Timer{
 		palet.onSubscribe(peer);
 	}
 	
-	void onUnubscribe(PaPeer peer,String reason){
+	boolean onUnubscribe(PaPeer peer,String reason){
 		boolean exist=false;
 		String subname=peer.getSubname();
 		synchronized(peers){
@@ -57,8 +58,9 @@ public class PaletWrapper implements PaletCtx,Timer{
 		}
 		if(exist){
 			palet.onUnsubscribe(peer,reason);
+			return true;
 		}else{
-			
+			return false;
 		}
 	}
 	
@@ -67,6 +69,8 @@ public class PaletWrapper implements PaletCtx,Timer{
 			palet.onPublishText(peer,(String)data);
 		}else if(data instanceof Map){
 			palet.onPublishObj(peer,(Map)data);
+		}else if(data instanceof List){
+			palet.onPublishArray(peer,(List)data);
 		}else{
 			logger.error("onPublish data type" + data.getClass().getName());
 		}
