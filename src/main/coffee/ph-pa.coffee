@@ -151,7 +151,10 @@ class CD extends EventModule
       ph.log('xhr send:'+jsonText)
       @_xhrFrame[0].contentWindow.postMessage(jsonText,"*")#TODO origin
   _send:(msg)->
-    @_sendMsgs.unshift(msg)
+    if msg.type==ph.pa.TYPE_NEGOTIATE
+      @_sendMsgs.unshift(msg)
+    else
+      @_sendMsgs.push(msg)
     @_flushMsg()
   _onWsOpen:=>
     ph.log('Pa _onWsOpen')
@@ -292,7 +295,6 @@ class SD extends EventModule
   constructor: (@_cd,@qname,@subname)->
     @_callback={}
     @_cd._send({type:'subscribe',qname:@qname,subname:@subname})
-#  _callback:{}
   unsubscribe:->
     @_cd._send({type:'unsubscribe',qname:qname,subname:subname})
   publish:(msg)->
