@@ -56,6 +56,9 @@ window.ph={
  },
  //https://github.com/ukyo/jsziptools/blob/master/src/utils.js
  stringToArrayBuffer:function(str){
+  if(!ph.useBlob){
+    return str;
+  }
   var n = str.length,
   idx = -1,
   utf8 = [],
@@ -293,6 +296,11 @@ if(typeof WebSocket === 'undefined'){
  }else{
   window.WebSocket=MozWebSocket;
  }
+}
+
+ph.useBlob=false;
+if(typeof Uint8Array !== 'undefined' && typeof ArrayBuffer !== 'undefined' && typeof Blob !== 'undefined'){
+ ph.useBlob=true;
 }
 
 ph.useHashChange=true;
