@@ -149,10 +149,14 @@ public class PaletWrapper implements PaletCtx,Timer{
 		message.put(PaSession.KEY_QNAME, qname);
 		//subname‚¾‚¯‚Í‚±‚±‚Å‚ÍŒˆ‚ß‚ç‚ê‚È‚¢
 		Envelope envelope=Envelope.pack(message);
-		if(envelope.isBinary()){
-			return messageBin(envelope, peers, exceptPeers);
-		}else{
-			return messageJson(envelope, peers, exceptPeers);
+		try{
+			if(envelope.isBinary()){
+				return messageBin(envelope, peers, exceptPeers);
+			}else{
+				return messageJson(envelope, peers, exceptPeers);
+			}
+		}finally{
+			envelope.unref();
 		}
 	}
 	

@@ -254,7 +254,11 @@ class CD extends EventModule
       @__onMsgNego(msg)
     else if msg.type==ph.pa.TYPE_MESSAGE
       if sd
-        sd.promise.trigger('message',msg.message)
+        sd.promise.trigger('message',msg.message,sd)
+        cd=sd._cd
+        cd.promise.trigger(sd.qname,msg.message,sd)
+        cd.promise.trigger(sd.subname,msg.message,sd)
+        cd.promise.trigger((sd.qname+'@'+sd.subname),msg.message,sd)
     else if msg.type==ph.pa.TYPE_RESPONSE && msg.result==ph.pa.RESULT_OK
       if sd && msg.requestType==ph.pa.TYPE_SUBSCRIBE && @_subscribes[key]
         sd.deferred.resolve(msg,@_subscribes[key].promise)
@@ -264,9 +268,9 @@ class CD extends EventModule
         sd.deferred.resolve(msg,@_subscribes[key].promise)
         @_subscribes[key]=null
   close:->
-  subscribe:(qname,subname,onSubscribe)->
+  subscribe:(qname,subname,onMessage)->
     if subname && ph.jQuery.isFunction(subname)
-     onSubscribe=subname
+     onMessage=subname
      subname='@'
     else if !subname
       subname='@'
@@ -276,8 +280,8 @@ class CD extends EventModule
     dfd=ph.jQuery.Deferred()
     prm=dfd.promise(new SD(this,qname,subname))
     @_subscribes[key]={deferred:dfd,promise:prm}
-    if onSubscribe
-      prm.on('message',onSubscribe)
+    if onMessage
+      prm.onMessage(onMessage)
     prm
   publish:(qname,msg)->
     @_send({type:'publish',qname:qname,message:msg})
@@ -297,6 +301,8 @@ class SD extends EventModule
     @_cd._send({type:'unsubscribe',qname:@qname,subname:@subname})
   publish:(msg)->
     @_cd._send({type:'publish',qname:@qname,subname:@subname,message:msg})
+  onMessage:(cb)->
+    @on('message',cb)
 
 #Envelope
 class Envelope
