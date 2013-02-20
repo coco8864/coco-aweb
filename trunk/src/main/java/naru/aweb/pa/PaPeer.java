@@ -21,7 +21,6 @@ public class PaPeer extends PoolBase{
 	private PaSession paSession;
 	private String qname;//queue名
 	private String subname;//クライアントid(認証idが同じでもブラウザの違い等により、clientは別のpeerで接続できる)
-//	private boolean isAllowBlob;//blobメッセージの送信を許すか否か
 	
 	public String getPath() {
 		return paSession.getPath();

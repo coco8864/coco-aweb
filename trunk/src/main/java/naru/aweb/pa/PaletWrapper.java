@@ -188,6 +188,9 @@ public class PaletWrapper implements PaletCtx,Timer{
 		if(intervalObj!=null){
 			TimerManager.clearInterval(interval);
 		}
+		if(interval<0){
+			return false;
+		}
 		intervalObj=TimerManager.setInterval(interval, this, null);
 		return true;
 	}

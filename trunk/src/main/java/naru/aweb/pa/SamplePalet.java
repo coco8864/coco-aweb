@@ -41,7 +41,7 @@ public class SamplePalet implements Palet{
 	}
 
 	@Override
-	public void onPublishObj(PaPeer peer, Map data) {
+	public void onPublishObj(PaPeer peer, Map<String,?> data) {
 		logger.info("onPublishObj.peer:"+peer+":"+data);
 		ctx.message(data);
 	}
