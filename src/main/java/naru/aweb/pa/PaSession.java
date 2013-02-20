@@ -287,6 +287,10 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	}
 	
 	public void deploy(JSONObject req){
+		if(!roles.contains("admin")){
+			sendOK(TYPE_DEPLOY,null, null, "forbidden role");
+			return;
+		}
 		String qname=req.getString(KEY_QNAME);
 		String paletClassName=req.getString(KEY_PALET_CLASS_NAME);
 		paManager.deploy(qname, paletClassName);
@@ -294,6 +298,10 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	}
 	
 	public void undeploy(JSONObject req){
+		if(!roles.contains("admin")){
+			sendOK(TYPE_DEPLOY,null, null, "forbidden role");
+			return;
+		}
 		String qname=req.getString(KEY_QNAME);
 		if( paManager.undeploy(qname)!=null){
 			sendOK(TYPE_UNDEPLOY,qname, null,null);
