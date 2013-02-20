@@ -154,6 +154,9 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		if(handler.doneXhr()){
 			return;
 		}
+		if(handler!=xhrHandler){
+			return;
+		}
 		xhrSend(xhrHandler,qdata);
 		qdata.clear();
 		xhrHandler=null;

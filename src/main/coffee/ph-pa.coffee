@@ -255,10 +255,10 @@ class CD extends EventModule
     else if msg.type==ph.pa.TYPE_MESSAGE
       if sd
         sd.promise.trigger('message',msg.message,sd)
-        cd=sd._cd
-        cd.promise.trigger(sd.qname,msg.message,sd)
-        cd.promise.trigger(sd.subname,msg.message,sd)
-        cd.promise.trigger((sd.qname+'@'+sd.subname),msg.message,sd)
+        cd=sd.promise._cd
+        cd.trigger(sd.qname,msg.message,sd)
+        cd.trigger(sd.subname,msg.message,sd)
+        cd.trigger("#{sd.qname}@#{sd.subname}",msg.message,sd)
     else if msg.type==ph.pa.TYPE_RESPONSE && msg.result==ph.pa.RESULT_OK
       if sd && msg.requestType==ph.pa.TYPE_SUBSCRIBE && @_subscribes[key]
         sd.deferred.resolve(msg,@_subscribes[key].promise)

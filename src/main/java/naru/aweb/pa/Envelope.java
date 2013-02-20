@@ -246,7 +246,6 @@ public class Envelope extends PoolBase{
 		size=blobs.size();
 		for(int i=0;i<size;i++){
 			JSONObject blobMeta=blobs.getJSONObject(i);
-			//TODO protの先頭bufferに残りがあると困る
 			long length=blobMeta.getLong("size");
 			Blob blob=Blob.create(prot,offset,length);
 			offset+=length;
@@ -260,6 +259,7 @@ public class Envelope extends PoolBase{
 			envelop.blobs.add(blob);
 		}
 		Map result=(Map)envelop.deserialize(header);
+		prot.unref();//Blobに必要な参照は、Blob.create時に加算されている
 		envelop.unref();
 		return result;
 	}
