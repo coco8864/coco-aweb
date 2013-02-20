@@ -227,8 +227,8 @@ public class PaHandler extends WebSocketHandler implements Timer{
 			//negotiation失敗
 			return;
 		}
-		processMessages(reqs);
 		doneXhr=false;
+		processMessages(reqs);
 		paSession.setupXhrHandler(this);
 		if(!doneXhr){
 			ref();
@@ -250,11 +250,11 @@ public class PaHandler extends WebSocketHandler implements Timer{
 	
 	//xhr時、レスポンス済みか否かを保持
 	private boolean doneXhr;
-	public void setDoneXhr(){
-		doneXhr=true;
-	}
 	public boolean doneXhr(){
 		return doneXhr;
+	}
+	public void setDoneXhr(){
+		doneXhr=true;
 	}
 	
 	/* xhrから利用する場合、メッセージなければしばらく待ってから復帰したいため */
