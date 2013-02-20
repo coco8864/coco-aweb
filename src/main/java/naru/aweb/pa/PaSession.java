@@ -68,6 +68,12 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		peers.clear();
 		qdata.clear();
 		qbin.clear();
+		wsHandler=null;
+		xhrHandler=null;
+		appId=loginId=null;
+		roles=null;
+		bid=null;
+		isWs=false;
 		super.recycle();
 	}
 	
@@ -103,7 +109,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		}else{
 			handler.responseJson(qdata);
 		}
-		handler.doneXhr();
+		handler.setDoneXhr();
 	}
 	
 	public synchronized void setupWsHandler(PaHandler handler){
@@ -137,7 +143,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 			}
 			xhrSend( handler, qdata);
 			qdata.clear();
-			handler.doneXhr();
+			handler.setDoneXhr();
 			return;
 		}
 		logger.error("setupXhrHandler");

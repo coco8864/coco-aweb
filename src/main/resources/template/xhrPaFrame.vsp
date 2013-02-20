@@ -23,6 +23,11 @@ function onMessageFunc(event){
   }else{
     objFromParent(msg);
   }
+  if(!timer){
+    clearTimeout(timer);
+    timer=null;
+    xhrRequest();
+  }
 }
 
 function objFromParent(msg){
@@ -35,24 +40,29 @@ function objFromParent(msg){
 
 function xhrSuccess(text){
   errorCount=0;
-  if(text){##受け取ったtextはそ�?ままparentFrameに送信
+  if(text){##受け取ったtextはそのままparentFrameに送信
     parent.postMessage(text,'*');
   }
-  setTimeout(xhrRequest,INTERVAL);
+  if(msgs.length===0){
+    timer=setTimeout(xhrRequest,INTERVAL);
+  }else{
+    xhrRequest();
+  }
 }
 
 function xhrError(){
   errorCount++;
-  setTimeout(xhrRequest,INTERVAL);
+  timer=setTimeout(xhrRequest,INTERVAL);
 }
 
-function xhrRequest(isUnload){
+function xhrRequest(){
+  timer=null;
   if(errorCount>3){##errorが３回続いたらclose
     sendObjToParent({load:false});
     return;
   }
   if(bid===null){
-    setTimeout(xhrRequest,INTERVAL);
+    timer=setTimeout(xhrRequest,INTERVAL);
     return;
   }
   if(msgs.length===0||msgs[0].type!=='negotiate'){
@@ -82,6 +92,7 @@ function frameNameToUrl(frameName){
 
 var XHR_FRAME_NAME_PREFIX='__pa_';
 var INTERVAL=1000;
+var timer=null;
 var msgs=[];
 var errorCount=0;
 var xhrUrl;
@@ -90,7 +101,7 @@ ph.jQuery(function(){
   if(!xhrUrl){
     return;
   }
-  //unload後queueされてmessageを�?信,subscribeは行わないTODO
+  //unload後queueされてmessageを・信,subscribeは行わないTODO
   ph.jQuery(window).unload(function(){
     xhrRequest(true);
   });
