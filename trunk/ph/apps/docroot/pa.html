@@ -33,7 +33,7 @@ var sd;
 <ul>
 <input type="button" value="auth.info" onclick="ph.auth.info(null,function(x){ph.log('++auth.info cb++');ph.dump(x);ph.log('--auth.info cb--');window.wsq=x;});"/>
 <input type="button" value="connect" onclick="connect();"/>
-<input type="button" value="close" onclick="wsq.close();"/>
+<input type="button" value="close" onclick="cd.close();"/>
 <input type="button" value="deploy" onclick="cd.deploy('test','naru.aweb.pa.SamplePalet');"/>
 <input type="button" value="undeploy" onclick="cd.undeploy('test');"/>
 <input type="button" value="subscribe" onclick="sd=cd.subscribe('test',function(msg){ph.log('----');ph.dump(msg);});"/>
@@ -45,7 +45,7 @@ var sd;
 <input type="button" value="use xhr" onclick="ph.useWebSocket=false;"/>
 
 </ul>
-<div><pre>sd.on('message',function(x){
+<div><pre>sd.onMessage(function(x){
 var fr=new FileReader();
 fr.onload=function(e){ ph.log(e.target.result);}
 fr.readAsText(x[0].data,'utf-8');
