@@ -17,7 +17,7 @@ window.ph.pa={
   TYPE_DEPLOY:'deploy'
   TYPE_UNDEPLOY:'undeploy'
   TYPE_QNAMES:'qnames'
-  TYPE_CONNECTION_CLOSE:'connectionClose'
+  TYPE_CLOSE:'close'
 #response type
   TYPE_RESPONSE:'response'
   TYPE_MESSAGE:'message'
@@ -31,17 +31,16 @@ window.ph.pa={
   _BROWSERID:'bid.'
   _connections:{} #key:url value:{deferred:dfd,promise:prm}
   _getBid:(appid)->
-    str=sessionStorage[this._BROWSERID + appid] ? '0'
+    str=sessionStorage[@_BROWSERID + appid] ? '0'
     parseInt(str,10)
   _setBid:(appid,bid)->
-    sessionStorage[this._BROWSERID + appid]=String(bid)
+    sessionStorage[@_BROWSERID + appid]=String(bid)
   connect:(url)->
     if url.lastIndexOf('ws://',0)==0||url.lastIndexOf('wss://',0)==0
       if !ph.useWebSocket
         #webSocket‚ªŽg‚¦‚È‚­‚Äurl‚ªws://‚¾‚Á‚½‚çhttp://‚É•ÏX
         url='http' + url.substring(2)
-    else if url.lastIndexOf('http://',0)==0||url.lastIndexOf('https://',0)==0
-    else
+    else if url.lastIndexOf('http://',0)!=0&&url.lastIndexOf('https://',0)!=0
       if ph.useWebSocket
         if ph.isSsl
           scm='wss://'
@@ -54,11 +53,11 @@ window.ph.pa={
           scm='http://'
       url=scm+ph.domain+url
     ph.log('url:' + url)
-    if this._connections[url]
-      return this._connections[url].promise
+    if @_connections[url]
+      return @_connections[url].promise
     dfd=ph.jQuery.Deferred()
     prm=dfd.promise(new CD(url))
-    this._connections[url]={deferred:dfd,promise:prm}
+    @_connections[url]={deferred:dfd,promise:prm}
     prm
   _xhrOnMessage:(event)->
     for url,con of ph.pa._connections
@@ -93,13 +92,13 @@ class EventModule
     @_callback ={} unless @_callback?
     if !@_callback[name]? then @_callback[name]=[]
     @_callback[name].push(callback)
-    this
+    @
   trigger: (name,args...) ->
     list = @_callback[name]
     return @ unless list
     for callback in list
       callback.apply(@,args)
-    this
+    @
 
 #Connection Deferred
 class CD extends EventModule
@@ -158,7 +157,7 @@ class CD extends EventModule
     @_flushMsg()
   _onWsOpen:=>
     ph.log('Pa _onWsOpen')
-    this._onOpen()
+    @_onOpen()
   _onWsClose:=>
     ph.log('Pa _onWsClose')
   __parseBlob:(blob)->
@@ -219,18 +218,18 @@ class CD extends EventModule
   _openXhr:->
     ph.log('Pa _openXhr')
     @stat=ph.pa.STAT_OPEN
-    @_xhrFrameName=ph.pa._XHR_FRAME_NAME_PREFIX + this.url
+    @_xhrFrameName=ph.pa._XHR_FRAME_NAME_PREFIX + @url
     @_xhrFrame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' +
-      this._xhrFrameName + 
+      @_xhrFrameName + 
       '" src="' + 
       @url + ph.pa._XHR_FRAME_URL +
       '"></iframe>')
     con=@
     @_xhrFrame.load(->con._onXhrLoad())
-    ph.jQuery("body").append(@_xhrFrame)
+    ph.jQuery('body').append(@_xhrFrame)
   _onXhrLoad:=>
     ph.log('Pa _onXhrLoad')
-#    this.stat=ph.pa.STAT_LOADING
+#    @stat=ph.pa.STAT_LOADING
   _onXhrOpen:(res)->
     ph.log('Pa _onXhrOpened')
     if res.load
@@ -263,22 +262,26 @@ class CD extends EventModule
       if sd && msg.requestType==ph.pa.TYPE_SUBSCRIBE && @_subscribes[key]
         sd.deferred.resolve(msg,@_subscribes[key].promise)
         @_subscribes[key]=null
+      else if msg.requestType==ph.pa.TYPE_CLOSE
+        @resolve(msg,@)
+        delete ph.pa._connections[@url]
     else sd && if msg.type==ph.pa.TYPE_RESPONSE && msg.result==ph.pa.RESULT_ERROR
       if msg.requestType==ph.pa.TYPE_SUBSCRIBE && @_subscribes[key]
         sd.deferred.resolve(msg,@_subscribes[key].promise)
         @_subscribes[key]=null
   close:->
+    @_send({type:'close'})
   subscribe:(qname,subname,onMessage)->
     if subname && ph.jQuery.isFunction(subname)
      onMessage=subname
      subname='@'
     else if !subname
       subname='@'
-    key=qname + '@' +subname
+    key="#{qname}@#{subname}"
     if @_subscribes[key]
       return @_subscribes[key].promise
     dfd=ph.jQuery.Deferred()
-    prm=dfd.promise(new SD(this,qname,subname))
+    prm=dfd.promise(new SD(@,qname,subname))
     @_subscribes[key]={deferred:dfd,promise:prm}
     if onMessage
       prm.onMessage(onMessage)

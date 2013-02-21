@@ -33,8 +33,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	public static final String TYPE_DEPLOY="deploy";
 	public static final String TYPE_UNDEPLOY="undeploy";
 	public static final String TYPE_QNAMES="qnames";
-	//subscribe状態をそのままに回線の切断通知だがいきなりきってもかわらないので当面利用しない
-	public static final String TYPE_CONNECTION_CLOSE="connectionClose";
+	public static final String TYPE_CLOSE="close";
 	
 	/* resだけのkey */
 	public static final String KEY_RESULT="result";
@@ -236,10 +235,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 				return;
 			}
 		}
-		PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
-		paletWrapper.onUnubscribe(peer,"client");
-		//正常にsubscribeを完了したという意味でsubscribe完了を復帰
-		sendOK(TYPE_SUBSCRIBE,qname, subname,"client");
+		unsubscribeByPeer(peer);
 	}
 	
 	/* API経由でunsubscribeされる場合, */
@@ -279,6 +275,41 @@ public class PaSession extends PoolBase implements LogoutEvent{
 			}
 		}
 		paletWrapper.onPublish(peer, message);
+	}
+	
+	private boolean unsubscribePeer(PaPeer peer){
+		PaletWrapper paletWrapper=paManager.getPaletWrapper(peer.getQname());
+		if(paletWrapper==null){
+			return false;
+		}
+		paletWrapper.onUnubscribe(peer,"client");
+		//正常にsubscribeを完了したという意味でsubscribe完了を復帰
+		sendOK(TYPE_SUBSCRIBE,peer.getQname(), peer.getSubname(),"client");
+		return true;
+	}
+	
+	private PaPeer getPeer(){
+		synchronized(peers){
+			for(PaPeer peer:peers.keySet()){
+				peers.remove(peer);
+				return peer;
+			}
+		}
+		return null;
+	}
+	
+	public void close(){
+		int count=0;
+		while(true){
+			PaPeer peer=getPeer();
+			if(peer==null){
+				break;
+			}
+			if(unsubscribePeer(peer)){
+				count++;
+			}
+		}
+		sendOK(TYPE_CLOSE,null,null,"client:"+count);
 	}
 	
 	public void qname(JSONObject req){
