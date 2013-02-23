@@ -31,25 +31,22 @@ var sd;
 <input type="button" value="出力クリア" onclick="ph.jQuery('#phDebugArea').text('');"/>
 <h3>使用例</h3>
 <ul>
-<input type="button" value="auth.info" onclick="ph.auth.info(null,function(x){ph.log('++auth.info cb++');ph.dump(x);ph.log('--auth.info cb--');window.wsq=x;});"/>
 <input type="button" value="connect" onclick="connect();"/>
 <input type="button" value="close" onclick="cd.close();"/>
 <input type="button" value="deploy" onclick="cd.deploy('test','naru.aweb.pa.SamplePalet');"/>
 <input type="button" value="undeploy" onclick="cd.undeploy('test');"/>
 <input type="button" value="subscribe" onclick="sd=cd.subscribe('test',function(msg){ph.log('----');ph.dump(msg);});"/>
 <input type="button" value="unsubscribe" onclick="sd.unsubscribe();"/>
+<input type="button" value="qnames" onclick="cd.qnames(function(qnames){ph.log('qnames cb');ph.dump(qnames);});"/>
 
 <input type="button" value="publish string" onclick="sd.publish('testAAA');"/>
 <input type="button" value="publish object" onclick="sd.publish({aaa:'testBBB'});"/>
 <input type="button" value="publish bin" onclick="sd.publish({aaa:'testCCC',blobData:[{data:'aaaa'},{data:ph.stringToArrayBuffer('bbbbb')}]});"/>
 <input type="button" value="use xhr" onclick="ph.useWebSocket=false;"/>
+<input type="button" value="onMessage dorp files" onclick="onDropFiles();"/>
 
 </ul>
-<div><pre>sd.onMessage(function(x){
-var fr=new FileReader();
-fr.onload=function(e){ ph.log(e.target.result);}
-fr.readAsText(x[0].data,'utf-8');
-});
+<div><pre>
 </pre></div>
 <div id='target'><p>dorag and dromp file upload</p></div>
 <div>
@@ -59,13 +56,50 @@ fr.readAsText(x[0].data,'utf-8');
 </div>
 
 <script type="text/javascript"><!--
+function onDropFiles(){
+  sd.onMessage(function(x){
+  var fr=new FileReader();
+  fr.onload=function(e){ ph.log(e.target.result);}
+    fr.readAsText(x[0].data,'utf-8');
+  });
+}
 function connect(){
   cd=ph.pa.connect('/pa');
   cd.done(
     function(con){
-      ph.log('++cd cone cb++ message:'+con);
-      ph.dump1(con);
-      ph.log('--open cb--');
+      ph.log('++cd done cb++ message:'+con);
+      ph.dump(con);
+      ph.log('--cd done cb--');
+    });
+  cd.on('qnames',
+    function(qnames){
+      ph.log('++cd qnames cb++ message:'+qnames);
+      ph.dump(qnames);
+      ph.log('--cd qnames cb--');
+    });
+  cd.on('error',
+    function(data){
+      ph.log('++cd error cb++ message:'+data);
+      ph.dump(data);
+      ph.log('--cd error cb--');
+    });
+  cd.on('ok',
+    function(data){
+      ph.log('++cd ok cb++ message:'+data);
+      ph.dump(data);
+      ph.log('--cd ok cb--');
+    });
+  cd.on('test',
+    function(data){
+      ph.log('++cd test cb++ message:'+data);
+      ph.dump(data);
+      ph.log('--cd test cb--');
+    });
+  cd.on('@',
+    function(data){
+      ph.log('++cd @ cb++ message:'+data);
+      ph.dump(data);
+      ph.log('--cd @ cb--');
     });
 }
 ph.jQuery(function(){

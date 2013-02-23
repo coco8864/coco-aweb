@@ -27,7 +27,7 @@ window.ph={
  publicWebUrl:'$esc.javascript(${config.publicWebUrl})',
  spdyInfo:${spdyInfo},
  scriptBase:'',
- scripts:['jquery-1.5.1.min.js','ph-jqnoconflict.js','ph-json2.js'],
+ scripts:['jquery-1.9.1.min.js','ph-jqnoconflict.js','ph-json2.js'],
  appScripts:['ph-auth.js','ph-wsq.js'],
  useWebSocket:false,## WebSocketを使うか否か?
  useSessionStorage:false,## SessionStorageを使うか否か?
