@@ -137,7 +137,7 @@ public class PaHandler extends WebSocketHandler implements Timer{
 				//negotiation¸”s,’v–½“I‰ñü’f
 				return;
 			}
-			paSession.setupWsHandler(this);
+			paSession.setupWsHandler(null,this);
 		}
 		dispatchMessage(req);
 	}
@@ -159,7 +159,7 @@ public class PaHandler extends WebSocketHandler implements Timer{
 	
 	@Override
 	public void onWsClose(short code,String reason) {
-		paSession.setupWsHandler(null);
+		paSession.setupWsHandler(this,null);
 	}
 	
 	/**

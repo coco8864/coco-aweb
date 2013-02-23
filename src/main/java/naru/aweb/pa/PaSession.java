@@ -112,11 +112,14 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		handler.setDoneXhr();
 	}
 	
-	public synchronized void setupWsHandler(PaHandler handler){
-		if(this.wsHandler!=null && handler==null){
+	public synchronized void setupWsHandler(PaHandler orgHandler,PaHandler handler){
+		if(orgHandler!=null && this.wsHandler!=orgHandler){
+			return;
+		}
+		if(handler==null){
 			this.wsHandler=null;
 			return;
-		}else if(this.wsHandler==null && handler!=null){
+		}else{
 			for(Object data:qdata){
 				wsSend(handler,data);
 			}
@@ -124,7 +127,6 @@ public class PaSession extends PoolBase implements LogoutEvent{
 			this.wsHandler=handler;
 			return;
 		}
-		logger.error("setupWsHandler");
 	}
 	
 	/**
