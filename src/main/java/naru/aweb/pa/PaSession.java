@@ -14,8 +14,9 @@ import naru.aweb.auth.AuthSession;
 import naru.aweb.auth.LogoutEvent;
 import naru.aweb.config.User;
 import net.sf.json.JSONObject;
+import net.sf.json.JSONSerializer;
+
 import org.apache.log4j.Logger;
-import org.json.JSONArray;
 
 public class PaSession extends PoolBase implements LogoutEvent{
 	/* req/resã§í ÇÃkey */
@@ -226,6 +227,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		String qname=msg.getString(KEY_QNAME);
 		String subname=msg.optString(KEY_SUBNAME,null);
 		PaPeer keyPeer=PaPeer.create(this, qname, subname);
+		/*
 		PaPeer peer=null;
 		synchronized(peers){
 			peer=peers.remove(keyPeer);
@@ -235,7 +237,11 @@ public class PaSession extends PoolBase implements LogoutEvent{
 				return;
 			}
 		}
-		unsubscribeByPeer(peer);
+		*/
+		if( !unsubscribeByPeer(keyPeer) ){
+			sendError(TYPE_UNSUBSCRIBE,qname, subname,"not found");
+		}
+		keyPeer.unref(true);
 	}
 	
 	/* APIåoóRÇ≈unsubscribeÇ≥ÇÍÇÈèÍçá, */
@@ -314,7 +320,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	
 	public void qname(JSONObject req){
 		Set<String> qnames=paManager.qnames();
-		sendOK(TYPE_QNAMES,null, null,new JSONArray(qnames));
+		sendOK(TYPE_QNAMES,null, null,JSONSerializer.toJSON(qnames));
 	}
 	
 	public void deploy(JSONObject req){
@@ -324,8 +330,11 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		}
 		String qname=req.getString(KEY_QNAME);
 		String paletClassName=req.getString(KEY_PALET_CLASS_NAME);
-		paManager.deploy(qname, paletClassName);
-		sendOK(TYPE_DEPLOY,qname, null, null);
+		if(paManager.deploy(qname, paletClassName)!=null){
+			sendOK(TYPE_DEPLOY,qname, null, null);
+		}else{
+			sendError(TYPE_DEPLOY,qname, null,"aleady deployed");
+		}
 	}
 	
 	public void undeploy(JSONObject req){

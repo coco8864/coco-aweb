@@ -14,6 +14,9 @@ public class PaManager {
 	private Map<String,PaletWrapper> paletWrappers=new HashMap<String,PaletWrapper>();//qname->palet
 	public synchronized PaletWrapper deploy(String qname,String paletName){
 		try {
+			if(paletWrappers.get(qname)!=null){
+				return null;
+			}
 			Class clazz = Class.forName(paletName);
 			Palet palet = (Palet) clazz.newInstance();
 			PaletWrapper paletWrapper = new PaletWrapper(qname, palet);

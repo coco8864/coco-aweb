@@ -23,18 +23,11 @@ window.ph.pa={
   TYPE_MESSAGE:'message'
   RESULT_ERROR:'error'
   RESULT_OK:'ok'
-  _INTERVAL:1000
+#  _INTERVAL:1000
   _DEFAULT_SUB_ID:'@'
   _XHR_FRAME_NAME_PREFIX:'__pa_'
   _XHR_FRAME_URL:'/xhrPaFrame.vsp'
-  _RETRY_COUNT:3
-  _BROWSERID:'bid.'
   _connections:{} #key:url value:{deferred:dfd,promise:prm}
-  _getBid:(appid)->
-    str=sessionStorage[@_BROWSERID + appid] ? '0'
-    parseInt(str,10)
-  _setBid:(appid,bid)->
-    sessionStorage[@_BROWSERID + appid]=String(bid)
   connect:(url)->
     if url.lastIndexOf('ws://',0)==0||url.lastIndexOf('wss://',0)==0
       if !ph.useWebSocket
@@ -56,7 +49,7 @@ window.ph.pa={
     if @_connections[url]
       return @_connections[url].promise
     dfd=ph.jQuery.Deferred()
-    prm=dfd.promise(new CD(url))
+    prm=dfd.promise(new CD(url,dfd))
     @_connections[url]={deferred:dfd,promise:prm}
     prm
   _xhrOnMessage:(event)->
@@ -78,18 +71,20 @@ window.ph.pa={
     for res in ress
       cd._onXhrMessage(res)
     return
-  _onTimer:->
+#  _onTimer:->
 }
 #xhr通信用のイベント登録
 if window.addEventListener
   window.addEventListener('message',ph.pa._xhrOnMessage, false)
 else if window.attachEvent
   window.attachEvent('onmessage',ph.pa._xhrOnMessage)
-setTimeout(ph.wsq._onTimer,ph.pa._INTERVAL)
+#setTimeout(ph.pa._onTimer,ph.pa._INTERVAL)
 
+#-------------------EventModule-------------------
 class EventModule
+  constructor:->
+    @_callback ={}
   on: (name, callback) ->
-    @_callback ={} unless @_callback?
     if !@_callback[name]? then @_callback[name]=[]
     @_callback[name].push(callback)
     @
@@ -99,26 +94,27 @@ class EventModule
     for callback in list
       callback.apply(@,args)
     @
+  checkState:->
+    if @deferred.state()!='pending'
+      throw 'state error:'+@deferred.state()
 
-#Connection Deferred
+#-------------------Connection Deferred-------------------
 class CD extends EventModule
-  constructor: (@url) ->
-    @_callback={}
+  _BROWSERID_PREFIX:'bid.'
+  constructor: (@url,@deferred) ->
+    super
     @_subscribes={}
     @isWs=(url.lastIndexOf('ws',0)==0)
     @stat=ph.pa.STAT_AUTH
     @_sendMsgs=[]
     con=@
     ph.auth.auth(url,con._doneAuth)
-#  _callback:{}
-#  _subscribes:{} #key:qname@subname value:{deferred:dfd,promise:prm}
-#  stat:ph.pa.STAT_INIT
   _doneAuth:(auth)=>
     if !auth.result
       ph.pa._connections[@url]=null
-      @trigger("error",@)#fail to auth
+      @trigger(ph.pa.RESULT_ERROR,'auth',@)#fail to auth
       return
-    @trigger("auth",@)#success to auth
+    @trigger(ph.pa.RESULT_OK,'auth',@)#success to auth
     @_appId=auth.appId
     @stat=ph.pa.STAT_IDLE
     if @isWs
@@ -160,41 +156,6 @@ class CD extends EventModule
     @_onOpen()
   _onWsClose:=>
     ph.log('Pa _onWsClose')
-  __parseBlob:(blob)->
-    fr=new FileReader()
-    mode=1
-    fr.onload=(e)=>
-      switch mode
-        when 1 #read header length
-          headerLenView=new DataView(e.target.result)
-          headerLength=headerLenView.getUint32(0,false)
-          ph.log('headerLength:'+headerLength)
-          headerBlob=ph.blobSlice(blob,offset,offset+headerLength)
-          offset+=headerLength
-          mode=2
-          fr.readAsText(headerBlob)
-        when 2 #read header
-          ph.log('header:'+e.target.result)
-          header=ph.JSON.parse(e.target.result)
-          meta=header.meta
-          env=new Envelope()
-          for date in meta.dates
-            env.dates.push(date)
-          for blobMeta in meta.blobs
-            size=blobMeta.size
-            blob=ph.blobSlice(blob,offset,offset+size)
-            offset+=size
-            blob.type=blobMeta.type
-            if blobMeta.name
-              blob.name=blobMeta.name
-            if blobMeta.lastModifiedDate
-              blob.lastModifiedDate=blobMeta.lastModifiedDate
-            env.blobs.push(blob)
-          obj=env.unpack(header)
-          @_onMessage(obj)
-    offset=4
-    headerLengthBlob=ph.blobSlice(blob,0,offset)
-    fr.readAsArrayBuffer(headerLengthBlob)
   _onWsMessage:(msg)=>
     if typeof msg.data=='string'
       ph.log('Pa _onWsMessage text:'+msg.data)
@@ -202,7 +163,8 @@ class CD extends EventModule
       @_onMessage(obj)
     else if msg.data instanceof Blob
       ph.log('Pa _onWsMessage blob:'+msg.data)
-      obj=@__parseBlob(msg.data)
+      Envelope envelope=new Envelope()
+      envelope.unpack(msg.data,@_onMessage)
     else
       ph.log('_onWsMessage type error')
   _openWebSocket:=>
@@ -239,75 +201,139 @@ class CD extends EventModule
   _onXhrMessage:(obj)->
     ph.log('Pa _onXhrMessage')
     @_onMessage(obj)
+  _getBid:->
+    str=sessionStorage[@_BROWSERID_PREFIX + @_appId] ? '{}'
+    bids=ph.JSON.parse(str)
+    bids[@url] ? 0
+  _setBid:(bid)->
+    str=sessionStorage[@_BROWSERID_PREFIX + @_appId] ? '{}'
+    bids=ph.JSON.parse(str)
+    if bid
+      bids[@url]=bid
+    else
+      delete bids[@url]
+    sessionStorage[@_BROWSERID_PREFIX + @_appId]=ph.JSON.stringify(bids)
   _onOpen:->
     @stat=ph.pa.STAT_CONNECT
-    @_send({type:ph.pa.TYPE_NEGOTIATE,bid:ph.pa._getBid(@_appId)})
+    @_send({type:ph.pa.TYPE_NEGOTIATE,bid:@_getBid()})
   __onMsgNego:(msg)->
-    if msg.bid!=ph.pa._getBid(@_appId)
-      ph.pa._setBid(@_appId,msg.bid)
+    if msg.bid!=@_getBid()
+      @_setBid(msg.bid)
       @_send({type:ph.pa.TYPE_NEGOTIATE,bid:msg.bid})
-  _onMessage:(msg)->
+  __onClose:(msg)->
+    if @deferred.state()!='pending'
+      ph.log('aleady closed')
+      return
+    @deferred.resolve(msg,@)
+    if @isWs
+      @_ws.close(1000)
+    else
+      @_xhrFrame.remove()
+    @_setBid(null)
+    delete ph.pa._connections[@url]
+#----------for response event----------
+  __getSd:(msg)->
+    key="#{msg.qname}@#{msg.subname}"
+    return @_subscribes[key]
+  __endOfSubscribe:(msg)->
     key="#{msg.qname}@#{msg.subname}"
     sd=@_subscribes[key]
+    if !sd
+      return false
+    sd.deferred.resolve(msg,sd.promise)
+    delete @_subscribes[key]
+    true
+  __onOk:(msg)->
+    if msg.requestType==ph.pa.TYPE_SUBSCRIBE
+      @__endOfSubscribe(msg)
+    else if msg.requestType==ph.pa.TYPE_CLOSE
+      @__onClose(msg)
+    else if msg.requestType==ph.pa.TYPE_QNAMES
+      @trigger(ph.pa.TYPE_QNAMES,msg.message)
+    else
+      sd=@__getSd(msg)
+      if sd
+        sd.promise.trigger(ph.pa.RESULT_OK,msg.requestType,msg)
+      else
+        @trigger(ph.pa.RESULT_OK,msg.requestType,msg)
+  __onError:(msg)->
+    if msg.requestType==ph.pa.TYPE_SUBSCRIBE
+      @__endOfSubscribe(msg)
+    else
+      sd=@__getSd(msg)
+      if sd
+        sd.promise.trigger(ph.pa.RESULT_ERROR,msg.requestType,msg)
+      else
+        @trigger(ph.pa.RESULT_ERROR,msg.requestType,msg)
+  _onMessage:(msg)=>
     if msg.type==ph.pa.TYPE_NEGOTIATE
       @__onMsgNego(msg)
+    else if msg.type==ph.pa.TYPE_CLOSE
+      @__onClose(msg)
     else if msg.type==ph.pa.TYPE_MESSAGE
-      if sd
-        sd.promise.trigger('message',msg.message,sd)
-        cd=sd.promise._cd
-        cd.trigger(sd.qname,msg.message,sd)
-        cd.trigger(sd.subname,msg.message,sd)
-        cd.trigger("#{sd.qname}@#{sd.subname}",msg.message,sd)
+      sd=@__getSd(msg)
+      if !sd
+        ph.log('error not subscribe message')
+        return
+      promise=sd.promise
+      sd.promise.trigger(ph.pa.TYPE_MESSAGE,msg.message,promise)
+      @trigger(promise.qname,msg.message,promise)
+      @trigger(promise.subname,msg.message,promise)
+      @trigger("#{promise.qname}@#{promise.subname}",msg.message,promise)
     else if msg.type==ph.pa.TYPE_RESPONSE && msg.result==ph.pa.RESULT_OK
-      if sd && msg.requestType==ph.pa.TYPE_SUBSCRIBE && @_subscribes[key]
-        sd.deferred.resolve(msg,@_subscribes[key].promise)
-        @_subscribes[key]=null
-      else if msg.requestType==ph.pa.TYPE_CLOSE
-        @resolve(msg,@)
-        delete ph.pa._connections[@url]
-    else sd && if msg.type==ph.pa.TYPE_RESPONSE && msg.result==ph.pa.RESULT_ERROR
-      if msg.requestType==ph.pa.TYPE_SUBSCRIBE && @_subscribes[key]
-        sd.deferred.resolve(msg,@_subscribes[key].promise)
-        @_subscribes[key]=null
+      @__onOk(msg)
+    else if msg.type==ph.pa.TYPE_RESPONSE && msg.result==ph.pa.RESULT_ERROR
+      @__onError(msg)
+#----------CD outer api----------
   close:->
-    @_send({type:'close'})
+    @checkState()
+    @_send({type:ph.pa.TYPE_CLOSE})
   subscribe:(qname,subname,onMessage)->
+    @checkState()
     if subname && ph.jQuery.isFunction(subname)
      onMessage=subname
-     subname='@'
+     subname=ph.pa._DEFAULT_SUB_ID
     else if !subname
-      subname='@'
+      subname=ph.pa._DEFAULT_SUB_ID
     key="#{qname}@#{subname}"
     if @_subscribes[key]
       return @_subscribes[key].promise
     dfd=ph.jQuery.Deferred()
-    prm=dfd.promise(new SD(@,qname,subname))
+    prm=dfd.promise(new SD(@,dfd,qname,subname))
     @_subscribes[key]={deferred:dfd,promise:prm}
     if onMessage
       prm.onMessage(onMessage)
     prm
   publish:(qname,msg)->
-    @_send({type:'publish',qname:qname,message:msg})
-  qnames:->
-    @_send({type:'qnames'})
+    @checkState()
+    @_send({type:ph.pa.TYPE_PUBLISH,qname:qname,message:msg})
+  qnames:(cb)->
+    @checkState()
+    if cb
+      @on(ph.pa.TYPE_QNAMES,cb)
+    @_send({type:ph.pa.TYPE_QNAMES})
   deploy:(qname,className)->
-    @_send({type:'deploy',qname:qname,paletClassName:className})
+    @checkState()
+    @_send({type:ph.pa.TYPE_DEPLOY,qname:qname,paletClassName:className})
   undeploy:(qname)->
-    @_send({type:'undeploy',qname:qname})
+    @checkState()
+    @_send({type:ph.pa.TYPE_UNDEPLOY,qname:qname})
 
-#Subscribe Deferred
+#-------------------Subscribe Deferred-------------------
 class SD extends EventModule
-  constructor: (@_cd,@qname,@subname)->
-    @_callback={}
-    @_cd._send({type:'subscribe',qname:@qname,subname:@subname})
+  constructor: (@_cd,@deferred,@qname,@subname)->
+    super
+    @_cd._send({type:ph.pa.TYPE_SUBSCRIBE,qname:@qname,subname:@subname})
   unsubscribe:->
-    @_cd._send({type:'unsubscribe',qname:@qname,subname:@subname})
+    @checkState()
+    @_cd._send({type:ph.pa.TYPE_UNSUBSCRIBE,qname:@qname,subname:@subname})
   publish:(msg)->
-    @_cd._send({type:'publish',qname:@qname,subname:@subname,message:msg})
+    @checkState()
+    @_cd._send({type:ph.pa.TYPE_PUBLISH,qname:@qname,subname:@subname,message:msg})
   onMessage:(cb)->
-    @on('message',cb)
+    @on(ph.pa.TYPE_MESSAGE,cb)
 
-#Envelope
+#-------------------Envelope-------------------
 class Envelope
   BLOB_VALUE_NAME_PREFIX:'_paBlobValue'
   DATE_VALUE_NAME_PREFIX:'_paDateValue'
@@ -316,7 +342,6 @@ class Envelope
     @blobs=[]
     @blobMetas=[]
     @dates=[]
-    @blobDfd=null
     @asyncBlobCount=0
   meta:->
     {dates:@dates,blobs:@blobMetas}
@@ -396,7 +421,7 @@ class Envelope
     headerTextBuf=ph.stringToArrayBuffer(headerText)
     #bb=ph.createBlobBuilder()
     headerLenBuf=new ArrayBuffer(4)
-    #header長 bigEndianにして代入
+    #header長をbigEndianにして代入
     headerLenArray=new DataView(headerLenBuf)
     wkLen=headerTextBuf.byteLength
     headerLenArray.setUint32(0,wkLen,false)
@@ -419,6 +444,37 @@ class Envelope
     else
       @blobDfd=ph.jQuery.Deferred()
       @blobDfd.done(=>@onDoneBinPtc(onPacked))
-  unpack:(obj)->
-    @deserialize(obj)
+  unpack:(blob,cb)->
+    fr=new FileReader()
+    mode='headerLen'
+    fr.onload=(e)=>
+      if mode=='headerLen'
+        headerLenView=new DataView(e.target.result)
+        headerLength=headerLenView.getUint32(0,false)
+        ph.log('headerLength:'+headerLength)
+        headerBlob=ph.blobSlice(blob,offset,offset+headerLength)
+        offset+=headerLength
+        mode='header'
+        fr.readAsText(headerBlob)
+      else if mode=='header'
+        ph.log('header:'+e.target.result)
+        header=ph.JSON.parse(e.target.result)
+        meta=header.meta
+        for date in meta.dates
+          @dates.push(date)
+        for blobMeta in meta.blobs
+          size=blobMeta.size
+          blob=ph.blobSlice(blob,offset,offset+size)
+          offset+=size
+          blob.type=blobMeta.type
+          if blobMeta.name
+            blob.name=blobMeta.name
+          if blobMeta.lastModifiedDate
+            blob.lastModifiedDate=blobMeta.lastModifiedDate
+          @blobs.push(blob)
+        obj=@deserialize(header)
+        cb(obj)
+    offset=4
+    headerLengthBlob=ph.blobSlice(blob,0,offset)
+    fr.readAsArrayBuffer(headerLengthBlob)
 

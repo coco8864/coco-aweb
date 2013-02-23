@@ -84,6 +84,8 @@ public class PaHandler extends WebSocketHandler implements Timer{
 			synchronized(authSession){
 				paSessions=(PaSessions)authSession.getAttribute(PA_SESSIONS_KEY);
 				paSessions.sessions.remove(bid);
+				isNegotiated=false;
+				bid=0;
 			}
 		}else if(PaSession.TYPE_QNAMES.equals(type)){
 			paSession.qname(msg);
