@@ -24,6 +24,7 @@ window.ph.pa={
   RESULT_ERROR:'error'
   RESULT_OK:'ok'
 #  _INTERVAL:1000
+  _WS_RETRY_MAX:3
   _DEFAULT_SUB_ID:'@'
   _XHR_FRAME_NAME_PREFIX:'__pa_'
   _XHR_FRAME_URL:'/xhrPaFrame.vsp'
@@ -105,6 +106,7 @@ class CD extends EventModule
     super
     @_subscribes={}
     @isWs=(url.lastIndexOf('ws',0)==0)
+    @_errorCount=0
     @stat=ph.pa.STAT_AUTH
     @_sendMsgs=[]
     con=@
@@ -156,6 +158,12 @@ class CD extends EventModule
     @_onOpen()
   _onWsClose:=>
     ph.log('Pa _onWsClose')
+    @_errorCount++
+    @stat=ph.pa.STAT_IDLE
+    if @_errorCount>=ph.pa._WS_RETRY_MAX
+      ph.log('too many error')
+    else
+      @_openWebSocket()
   _onWsMessage:(msg)=>
     if typeof msg.data=='string'
       ph.log('Pa _onWsMessage text:'+msg.data)
