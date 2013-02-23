@@ -28,10 +28,11 @@ public class PaManager {
 	}
 	
 	public synchronized PaletWrapper undeploy(String qname){
-		PaletWrapper paletWrapper=paletWrappers.remove(qname);
+		PaletWrapper paletWrapper=paletWrappers.get(qname);
 		if(paletWrapper!=null){
 			paletWrapper.terminate();
 		}
+		paletWrappers.remove(qname);
 		return paletWrapper;
 	}
 	
