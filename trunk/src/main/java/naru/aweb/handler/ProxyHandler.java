@@ -95,12 +95,15 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 	private void editRequestHeader(HeaderParser requestHeader) {
 		MappingResult mapping=getRequestMapping();
 		Mapping.LogType logType=mapping.getLogType();
+		/*
+		 * 将来検討機能 2013/2/24
 		if (logType==Mapping.LogType.RESPONSE_TRACE||logType==Mapping.LogType.TRACE){
 			//TODO confから削除すべきヘッダ名をもらう
 			// レスポンスのトレースを採取する場合は、ブラウザキャッシュを使わせない
 			requestHeader.removeHeader(HeaderParser.IF_MODIFIED_SINCE_HEADER);
 			requestHeader.removeHeader(HeaderParser.IF_NONE_MATCH);
 		}
+		*/
 		//reverse proxyの場合refererを書き換える
 		//if(mapping.getMapping().getSourceType()!=Mapping.SourceType.WEB){
 		//	return;
