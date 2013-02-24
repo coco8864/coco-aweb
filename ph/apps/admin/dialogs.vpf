@@ -78,7 +78,7 @@ function doStress(){
 	window.location.hash = "#stressTab";
 //	jQuery("#tabs").tabs("select",5);
 //	if(typeof perfProgress!='undefined'){perfProgress();}
-	if(ph.jQuery('#isStressFile').attr('checked')){
+	if(ph.jQuery('#isStressFile').is(':checked')){
 		ph.jQuery('#fileStressAccessLogList').val( ph.jQuery('#stressAccessLogList').text() );
 		ph.jQuery('#stressFileForm').submit();
 	}else{
@@ -89,10 +89,10 @@ function doStress(){
 			loopCount:ph.jQuery('#loopCount').val(),
 			thinkingTime:ph.jQuery('#thinkingTime').val(),
 			time:ph.jQuery('#stressTime').val(),//未使用
-			keepAlive:ph.jQuery('#stressKeepAlive').attr('checked'),
-			accessLog:ph.jQuery('#stressAccessLog').attr('checked'),
-			tesponseHeaderTrace:ph.jQuery('#stressTesponseHeaderTrace').attr('checked'),
-			tesponseBodyTrace:ph.jQuery('#stressTesponseBodyTrace').attr('checked')
+			keepAlive:ph.jQuery('#stressKeepAlive').is(':checked'),
+			accessLog:ph.jQuery('#stressAccessLog').is(':checked'),
+			tesponseHeaderTrace:ph.jQuery('#stressTesponseHeaderTrace').is(':checked'),
+			tesponseBodyTrace:ph.jQuery('#stressTesponseBodyTrace').is(':checked')
 			},
 			streeCommandCb,
 			function(x){alert('faild to stress test.'+x.responseText)}//errorCB
@@ -102,13 +102,13 @@ function doStress(){
 	jQuery('#stress').dialog('close');
 }
 function updateStressDialog(){
-	if(ph.jQuery('#isStressFile').attr('checked')){
+	if(ph.jQuery('#isStressFile').is(':checked')){
 		ph.jQuery('.stressFile').show();
 		ph.jQuery('.stressItem').hide();
 	}else{
 		ph.jQuery('.stressFile').hide();
 		ph.jQuery('.stressItem').show();
-		if(ph.jQuery('#stressAccessLog').attr('checked')){
+		if(ph.jQuery('#stressAccessLog').is(':checked')){
 			ph.jQuery('.stressTrace').attr('disabled','')
 		}else{
 			ph.jQuery('.stressTrace').attr('disabled','disabled')
@@ -123,8 +123,8 @@ function checkServer(){
 //		return;
 //	}
 	var url=ph.jQuery("#checkReqUrl").val();
-	var isKeepAlive=ph.jQuery("#checkKeepAlive").attr('checked');
-	var isTrace=ph.jQuery("#checkTrace").attr('checked');
+	var isKeepAlive=ph.jQuery("#checkKeepAlive").is(':checked');
+	var isTrace=ph.jQuery("#checkTrace").is(':checked');
 	var requestCount=ph.jQuery("#checkRequestCount").val();
 	var checkServerCb={
 		_serverInfo:function(msg){
@@ -183,10 +183,10 @@ function reloadEditDialog(){
 //		url+="&encode=utf-8";
 		url+="&Content-Type=text/plain;%20charset=utf-8";
 	}
-	if(ph.jQuery("#textEditGzip").attr("checked")){
+	if(ph.jQuery("#textEditGzip").is(":checked")){
 		url+="&zgip=true"
 	}
-	if(ph.jQuery("#textEditChunk").attr("checked")){
+	if(ph.jQuery("#textEditChunk").is(":checked")){
 		url+="&chunk=true"
 	}
 	ph.jQuery.get(url,null, function(text){
