@@ -35,7 +35,7 @@ var sd;
 <input type="button" value="close" onclick="cd.close();"/>
 <input type="button" value="deploy" onclick="cd.deploy('test','naru.aweb.pa.SamplePalet');"/>
 <input type="button" value="undeploy" onclick="cd.undeploy('test');"/>
-<input type="button" value="subscribe" onclick="sd=cd.subscribe('test',function(msg){ph.log('----');ph.dump(msg);});"/>
+<input type="button" value="subscribe" onclick="subscribe();"/>
 <input type="button" value="unsubscribe" onclick="sd.unsubscribe();"/>
 <input type="button" value="qnames" onclick="cd.qnames(function(qnames){ph.log('qnames cb');ph.dump(qnames);});"/>
 
@@ -101,6 +101,35 @@ function connect(){
       ph.dump(data);
       ph.log('--cd @ cb--');
     });
+}
+
+function subscribe(){
+  sd=cd.subscribe('test');
+  sd.done(
+    function(con){
+      ph.log('++sd done sd++ message:'+con);
+      ph.dump(con);
+      ph.log('--sd done sd--');
+    });
+  sd.onMessage(
+    function(data){
+      ph.log('++sd message sd++ message:'+data);
+      ph.dump(data);
+      ph.log('--sd message sd--');
+    });
+  sd.on('ok',
+    function(data){
+      ph.log('++sd ok sd++ message:'+data);
+      ph.dump(data);
+      ph.log('--sd ok sd--');
+    });
+  sd.on('error',
+    function(data){
+      ph.log('++sd error sd++ message:'+data);
+      ph.dump(data);
+      ph.log('--sd error sd--');
+    });
+
 }
 ph.jQuery(function(){
   var href="javascript:(function(){var%20url='" + ph.scriptBase + "ph-loader.js?bm=bm&include=bm.js?c=' + (new Date()).valueOf();var%20d=document;var%20e=d.createElement('script');e.src=url;d.getElementsByTagName('head')[0].appendChild(e);})();"
