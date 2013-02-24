@@ -45,7 +45,6 @@ window.onhashchange = function(){
 		jQuery('#debugLi').show();
 	}
 	//現在のインデックスでタブをセレクト
-//	jQuery('#tabs').tabs("select", index);
 	jQuery('#tabs').tabs("option", "active", index);
 };
 ph.jQuery(function() {

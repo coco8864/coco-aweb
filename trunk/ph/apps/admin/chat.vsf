@@ -23,7 +23,7 @@ jQuery("#chatOutputTextArea").resizable({
 function onChatSend(){
 	ph.queue.publish('phChat',//queue名
 			jQuery('#chatInputTextArea').val(),//message
-			jQuery('#chatEchoback').attr('checked'));//echoback可否
+			jQuery('#chatEchoback').is(':checked'));//echoback可否
 	jQuery('#chatInputTextArea').val('');
 }
 ph.queue.subscribeByName("phChat","$esc.javascript($loginUser.loginId)",{

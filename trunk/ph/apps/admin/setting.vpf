@@ -21,12 +21,12 @@ function setProxy(){
 }
 function setKeepAlive(){
  ph.admin.doCommand('setKeepAlive',{
-   isWebKeepAlive:ph.jQuery("#isWebKeepAlive").attr('checked'),
-   isProxyKeepAlive:ph.jQuery("#isProxyKeepAlive").attr('checked'),
+   isWebKeepAlive:ph.jQuery("#isWebKeepAlive").is(':checked'),
+   isProxyKeepAlive:ph.jQuery("#isProxyKeepAlive").is(':checked'),
    maxKeepAliveRequests:ph.jQuery("#maxKeepAliveRequests").val(),
    keepAliveTimeout:ph.jQuery("#keepAliveTimeout").val(),
    contentEncoding:ph.jQuery("#contentEncoding").val(),
-   allowChunked:ph.jQuery("#allowChunked").attr('checked')
+   allowChunked:ph.jQuery("#allowChunked").is(':checked')
   },
   function(x){
 ##setKeepAlive完了
@@ -36,13 +36,13 @@ function setKeepAlive(){
 
 function setHtml5(){
  var specs="";
- if(ph.jQuery("#isUseHixie75").attr('checked')){
+ if(ph.jQuery("#isUseHixie75").is(':checked')){
   specs+='hixie75,';
  }
- if(ph.jQuery("#isUseHixie76").attr('checked')){
+ if(ph.jQuery("#isUseHixie76").is(':checked')){
   specs+='hixie76,';
  }
- if(ph.jQuery("#isUseHybi10").attr('checked')){
+ if(ph.jQuery("#isUseHybi10").is(':checked')){
   specs+='hybi10';
  }
 
@@ -51,9 +51,9 @@ function setHtml5(){
    webSocketMessageLimit:ph.jQuery("#webSocketMessageLimit").val(),
    webSocketPingInterval:ph.jQuery("#webSocketPingInterval").val(),
    isUseSessionStorage:true,
-##ph.jQuery("#isUseSessionStorage").attr('checked'),
+##ph.jQuery("#isUseSessionStorage").is(':checked'),
    isUseCrossDomain:true
-##ph.jQuery("#isUseCrossDomain").attr('checked')
+##ph.jQuery("#isUseCrossDomain").is(':checked')
   },
   function(x){
 ##setHtml5完了
@@ -62,7 +62,7 @@ function setHtml5(){
 }
 
 function setFileCache(){
-  var isFileCache=ph.jQuery("#isFileCache").attr('checked');
+  var isFileCache=ph.jQuery("#isFileCache").is(':checked');
   ph.admin.doCommand('setFileCache',{
     isChache:isFileCache,
     isFlush:!isFileCache
@@ -74,8 +74,8 @@ function setFileCache(){
 }
 
 function setSpdy(){
-  var isSpdy2=ph.jQuery("#spdy2").attr('checked');
-  var isSpdy3=ph.jQuery("#spdy3").attr('checked');
+  var isSpdy2=ph.jQuery("#spdy2").is(':checked');
+  var isSpdy3=ph.jQuery("#spdy3").is(':checked');
   ph.admin.doCommand('setSpdy',{
     isSpdy2:isSpdy2,
     isSpdy3:isSpdy3,
@@ -211,7 +211,7 @@ function realHostList(realHostsStr){
 function realHostCreate(){
  var realHost={
   name:ph.jQuery("#realHostName").val(),
-  initBind:ph.jQuery("#realHostInitBind").attr("checked"),
+  initBind:ph.jQuery("#realHostInitBind").is(":checked"),
   bindHost:ph.jQuery("#realHostBindHost").val(),
   bindPort:ph.jQuery("#realHostBindPort").val(),
   backlog:ph.jQuery("#realHostBacklog").val(),

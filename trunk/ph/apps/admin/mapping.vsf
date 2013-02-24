@@ -3,7 +3,7 @@
 function doMappingCommand(command){
 	var mapping={
 		id:jQuery("#mappingId").text(),
-		enabled:jQuery("#mappingEnabled").attr("checked"),
+		enabled:jQuery("#mappingEnabled").is(":checked"),
 		notes:jQuery("#mappingNotes").val(),
 		realHostName:jQuery("#mappingRealHost").val(),
 		sourceType:jQuery("#mappingSourceType").val(),
@@ -131,7 +131,7 @@ function mappingInsert2(){
 	form.mappingSourcePath.value=jQuery("#mappingSourcePath").val();
 	form.mappingDestinationType.value=jQuery("#mappingDestinationType").val();
 	form.destinationUrl.value=jQuery("#mappingDestinationUrl").val();
-	form.trace.value=ph.jQuery("#mappingTrace").attr('checked');
+	form.trace.value=ph.jQuery("#mappingTrace").is(':checked');
 
 	form.submit();
 	form.command.value='importsMappings';
@@ -163,7 +163,7 @@ function mappingOpen2(){
 	jQuery("#mappingSourcePath").val('');
 	jQuery("#mappingDestinationServer").val('');
 	jQuery("#mappingDestinationPath").val('');
-	ph.jQuery("#mappingTrace").attr('checked','checked');
+	ph.jQuery("#mappingTrace").attr('checked',true);
 
     var height=0
 	if(document.forms['mappingForm'].importsFile.value){
