@@ -28,7 +28,7 @@ window.ph={
  spdyInfo:${spdyInfo},
  scriptBase:'',
  scripts:['jquery-1.9.1.min.js','ph-jqnoconflict.js','ph-json2.js'],
- appScripts:['ph-auth.js','ph-wsq.js'],
+ appScripts:['ph-auth.js'],
  useWebSocket:false,## WebSocketを使うか否か?
  useSessionStorage:false,## SessionStorageを使うか否か?
  useCrossDomain:false,## iframeを使ったクロスドメイン通信を使うか否か?
