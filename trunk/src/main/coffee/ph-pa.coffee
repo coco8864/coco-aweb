@@ -24,6 +24,7 @@ window.ph.pa={
   RESULT_ERROR:'error'
   RESULT_OK:'ok'
 #  _INTERVAL:1000
+  _SEND_DATA_MAX:(1024*1024*2)
   _WS_RETRY_MAX:3
   _DEFAULT_SUB_ID:'@'
   _XHR_FRAME_NAME_PREFIX:'__pa_'
@@ -135,6 +136,10 @@ class CD extends EventModule
       for msg in msgs
         env=new Envelope()
         env.pack(msg,(protocolData)=>
+          if ph.useBlob && protocolData instanceof Blob && protocolData.size>=ph.pa._SEND_DATA_MAX
+            ph.log('blob size:'+protocolData.size)
+            @__onError({requestType:msg.type,qname:msg.qname,subname:msg.subname,message:'too long size:'+protocolData.size})
+            return
           @_ws.send(protocolData)
           ph.log('ws send:'+protocolData)
         )
