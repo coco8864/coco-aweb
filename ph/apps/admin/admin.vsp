@@ -84,8 +84,9 @@ ph.log("tabs ajaxOptions error");
 ph.log("tabs ajaxOptions success.index:"+index +":anchor:"+anchor);
 			}
 		},
-		select: function(event, ui) {
-			window.location.hash = ui.tab.hash;
+		activate: function(event, ui) {
+//ph.log(ui.newPanel.selector+':'+ ui.newTab.context.title);
+			window.location.hash = '#'+ui.newTab.context.title;
 		}
 	});
 	jQuery('#debugLi').hide();
