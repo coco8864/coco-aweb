@@ -132,7 +132,7 @@ function subscribe(){
 
 }
 ph.jQuery(function(){
-  var href="javascript:(function(){var%20url='" + ph.scriptBase + "ph-loader.js?bm=bm&include=bm.js?c=' + (new Date()).valueOf();var%20d=document;var%20e=d.createElement('script');e.src=url;d.getElementsByTagName('head')[0].appendChild(e);})();"
+  var href="javascript:(function(){var%20url='" + ph.scriptBase + "ph-loader.js?bm=bm&include=ph-pa.js,bm.js?c=' + (new Date()).valueOf();var%20d=document;var%20e=d.createElement('script');e.src=url;d.getElementsByTagName('head')[0].appendChild(e);})();"
   $("#bookmarklet").attr('href',href);
 // ドラッグドロップからの入力
   $("body").bind("drop", function (e) {
