@@ -163,6 +163,9 @@ class CD extends EventModule
     @_onOpen()
   _onWsClose:=>
     ph.log('Pa _onWsClose')
+    if @stat!=ph.pa.STAT_CONNECT
+      @stat=ph.pa.INIT
+      return
     @_errorCount++
     @stat=ph.pa.STAT_IDLE
     if @_errorCount>=ph.pa._WS_RETRY_MAX
@@ -239,8 +242,10 @@ class CD extends EventModule
       return
     @deferred.resolve(msg,@)
     if @isWs
+      @stat=ph.pa.STAT_CLOSE
       @_ws.close(1000)
     else
+      @stat=ph.pa.STAT_INIT
       @_xhrFrame.remove()
     @_setBid(null)
     delete ph.pa._connections[@url]
