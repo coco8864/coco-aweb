@@ -1,3 +1,5 @@
+if window.ph.pa
+  return
 window.ph.pa={
   STAT_INIT:'INIT'
   STAT_AUTH:'AUTH'
