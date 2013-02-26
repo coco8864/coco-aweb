@@ -49,10 +49,12 @@ window.ph.pa={
       url=scm+ph.domain+url
     ph.log('url:' + url)
     if @_connections[url]
-      return @_connections[url].promise
-    dfd=ph.jQuery.Deferred()
-    prm=dfd.promise(new CD(url,dfd))
-    @_connections[url]={deferred:dfd,promise:prm}
+      prm=@_connections[url].promise
+    else
+      dfd=ph.jQuery.Deferred()
+      prm=dfd.promise(new CD(url,dfd))
+      @_connections[url]={deferred:dfd,promise:prm}
+    prm._openCount++
     prm
   _xhrOnMessage:(event)->
     for url,con of ph.pa._connections
@@ -107,6 +109,7 @@ class CD extends EventModule
     super
     @_subscribes={}
     @isWs=(url.lastIndexOf('ws',0)==0)
+    @_openCount=0
     @_errorCount=0
     @stat=ph.pa.STAT_AUTH
     @_sendMsgs=[]
@@ -305,7 +308,10 @@ class CD extends EventModule
 #----------CD outer api----------
   close:->
     @checkState()
-    @_send({type:ph.pa.TYPE_CLOSE})
+    @_openCount--
+    if @_openCount==0
+      @_send({type:ph.pa.TYPE_CLOSE})
+    @
   subscribe:(qname,subname,onMessage)->
     @checkState()
     if subname && ph.jQuery.isFunction(subname)
