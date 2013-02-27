@@ -1,0 +1,174 @@
+<script type="text/javascript">
+##使用しない
+function setBroadcaster(){
+ ph.admin.doCommand('setBroadcaster',{
+  interval:ph.jQuery("#broardcastInterval").val()
+  },
+  function(x){
+##setTimeouts完了
+  });
+}
+
+function updateStastics(msg){
+	var stcs=msg.message;
+	ph.jQuery("#broadcasterTime").text(ph.admin.formatYmdhms(stcs.time)+"("+ stcs.counter +")");
+	var memory=stcs.memory;
+	var useRate=(memory.max-memory.free)*100.0/memory.max;
+	ph.jQuery("#broadcasterMemory").text(memory.free +"/" +memory.max+"("+ useRate.toFixed(2) +"%)");
+	
+	var channelStastics=stcs.channelStastics;
+	ph.jQuery("#broadcasterIo").text(
+				channelStastics.asyncAcceptCount +":" +
+				channelStastics.onAcceptedCount +":" +
+				channelStastics.onConnectedCount +":" +
+				channelStastics.asyncReadCount +"(" +
+				channelStastics.onReadLength +"):" +
+				channelStastics.asyncWriteCount +"(" +
+				channelStastics.asyncWriteLength +")" );
+	var selectorStasticses=stcs.selectorStasticses;
+	var selectText="";
+	for(var i=0;i<selectorStasticses.length;i++){
+		var s=selectorStasticses[i];
+		selectText+=s.loopCount +"(" + s.selectCount +"):";
+	}
+	ph.jQuery("#broadcasterSelector").text(
+				selectText
+				);
+//ph.dump(selectorStasticses[0]);
+	var storeStack=stcs.storeStack;
+	ph.jQuery("#broadcasterStore").text(storeStack.join(":"));
+
+	var channelContext=stcs.channelContext;
+	var cur=(channelContext.total-channelContext.poolBack-channelContext.gc);
+	ph.jQuery("#broadcasterChannel").text(cur+"("+channelContext.total+"-"+channelContext.instance+")");
+	var requestContext=stcs.requestContext;
+	cur=(requestContext.total-requestContext.poolBack-requestContext.gc);
+	ph.jQuery("#broadcasterRequest").text(cur+"("+requestContext.total +"-"+requestContext.instance+")");
+	var authSession=stcs.authSession;
+	cur=(authSession.total-authSession.poolBack-authSession.gc);
+	ph.jQuery("#broadcasterSession").text(cur+"("+authSession.total +"-"+authSession.instance+")");
+
+	if(!isWatchCheck()){
+		unwatchStastics();
+	}
+}
+
+function watchStastics(){
+	ph.queue.subscribeByName("PhStastics","$esc.javascript($loginUser.loginId)",{
+		onMessage:updateStastics,
+		onError:function(msg){ph.log("subscribeByName error.PhStastics")}
+	},false,null);
+}
+
+function unwatchStastics(){
+	ph.queue.unsubscribe("PhStastics");
+}
+
+
+function isWatchCheck(){
+	return ph.jQuery('#broardcastWatchCheck').attr('checked');
+}
+function setWatchCheck(checked){
+}
+
+function onWatchCheck(){
+	if(isWatchCheck()){
+		watchStastics();
+		if(ph.useSessionStorage){
+			sessionStorage['broardcastWatch']='true';
+		}
+	}else{
+		if(ph.useSessionStorage){
+			sessionStorage['broardcastWatch']='false';
+		}
+	}
+}
+
+ph.jQuery(function() {
+//	watchStastics();//起動後一回は必ず取得する
+	updateStastics({message:${config.config.stasticsObject}});
+	if(ph.useSessionStorage && sessionStorage['broardcastWatch']=='true'){
+		ph.jQuery('#broardcastWatchCheck').attr('checked','checked');
+	}else{
+		ph.jQuery('#broardcastWatchCheck').attr('checked','');
+	}
+});
+
+function terminate(){
+ if(!confirm('Phantom Proxyを停止します.よろしいですか?'))return;
+ ph.admin.doCommand('terminate',{
+   isRestart:false
+  },
+  function(x){
+   location="$!esc.html(${config.config.authUrl})/logout";
+  });
+}
+
+function restart(){
+ var isCleanup=ph.jQuery("#restartCleanup").attr('checked');
+ if(isCleanup){
+   if(!confirm('再起動時にデータを初期化します.よろしいですか?'))return;
+ }
+ ph.admin.doCommand('terminate',{
+   isRestart:true,
+   isCleanup:isCleanup,
+   javaHeapSize:ph.jQuery("#restartHeapSize").val()
+  },
+  function(x){
+   location="$!esc.html(${config.config.authUrl})/logout";
+  });
+}
+
+function logdownload(type){
+	ph.jQuery('#logType').val(type);
+	ph.jQuery('#logNumber').val(ph.jQuery('#logNumberSelect').val());
+	ph.jQuery('#logDownloadForm').submit();
+}
+</script> 
+<H1>動作状況</H1>
+
+<Hr/>
+<H2>状態:<span id='terminateH2'>起動</span></H2>
+#if( ${config.javaHeapSize}<0)
+ <input id='terminateBt' type="button" value="Phantom Proxy 停止" onclick="terminate();" />
+#else
+restartCount:${config.restartCount} heapSize:${config.javaHeapSize}m<br>
+初期化:<input type="checkBox" id="restartCleanup"/> heapSize:<input type="text" size="4" id="restartHeapSize" value="${config.javaHeapSize}"/>m<input type="button" value="再起動"  onclick="restart();"/>
+<input type="button" value="停止" onclick="terminate();"/>
+#end
+
+<Hr/>
+<H2>統計情報</H2>
+監視<input type="checkBox" id="broardcastWatchCheck" onclick='onWatchCheck();'/>
+interval:$!esc.html($!{config.getString('broardcastInterval')})ms
+<input type="button" onclick="ph.admin.doCommand('checkPool');" value="PoolCheck" title="結果は、ph.logに出力されます"/>
+##interval:<input type="text" id="broardcastInterval" size="8" value="$!esc.html($!{config.getString('broardcastInterval')})"/>ms<input type="button" value="設定" onclick="setBroadcaster();" />
+<table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
+<thead>
+<tr><th>name</th><th>value</th></tr>
+</thead>
+<tr><td>time(count)</td><td id="broadcasterTime">processing</td></tr>
+<tr><td>freeMemory/maxMemory(useRate)</td><td id="broadcasterMemory">processing</td></tr>
+<tr><td>select,accept,connect,read(length),write(length)</td><td id="broadcasterIo">processing</td></tr>
+<tr><td>selector</td><td id="broadcasterSelector">processing</td></tr>
+<tr><td>store</td><td id="broadcasterStore">processing</td></tr>
+<tr><td>channel(total-instance)</td><td id="broadcasterChannel">processing</td></tr>
+<tr><td>request(total-instance)</td><td id="broadcasterRequest">processing</td></tr>
+<tr><td>session(total-instance)</td><td id="broadcasterSession">processing</td></tr>
+</table>
+
+<Hr/>
+<H2>ログダウンロード</H2>
+履歴:<select id="logNumberSelect" size="1">
+<option value="0"></option>
+<option value="1">1</option>
+<option value="2">2</option>
+<option value="3">3</option>
+<option value="4">4</option>
+<option value="5">5</option>
+<option value="6">6</option>
+<option value="7">7</option>
+<option value="8">8</option>
+</select>
+<input type="button" value="accesslog" onclick="logdownload('accesslog');" />
+<input type="button" value="phlog" onclick="logdownload('phlog');" />
