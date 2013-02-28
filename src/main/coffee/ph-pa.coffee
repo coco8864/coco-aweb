@@ -24,7 +24,7 @@ window.ph.pa={
   TYPE_RESPONSE:'response'
   TYPE_MESSAGE:'message'
   RESULT_ERROR:'error'
-  RESULT_OK:'ok'
+  RESULT_SUCCESS:'success'
 #  _INTERVAL:1000
   _SEND_DATA_MAX:(1024*1024*2)
   _WS_RETRY_MAX:3
@@ -122,7 +122,7 @@ class CD extends EventModule
       ph.pa._connections[@url]=null
       @trigger(ph.pa.RESULT_ERROR,'auth',@)#fail to auth
       return
-    @trigger(ph.pa.RESULT_OK,'auth',@)#success to auth
+    @trigger(ph.pa.RESULT_SUCCESS,'auth',@)#success to auth
     @_appId=auth.appId
     @stat=ph.pa.STAT_IDLE
     if @isWs
@@ -266,7 +266,7 @@ class CD extends EventModule
     sd.deferred.resolve(msg,sd.promise)
     delete @_subscribes[key]
     true
-  __onOk:(msg)->
+  __onSuccess:(msg)->
     if msg.requestType==ph.pa.TYPE_SUBSCRIBE
       @__endOfSubscribe(msg)
     else if msg.requestType==ph.pa.TYPE_CLOSE
@@ -276,9 +276,9 @@ class CD extends EventModule
     else
       sd=@__getSd(msg)
       if sd
-        sd.promise.trigger(ph.pa.RESULT_OK,msg.requestType,msg)
+        sd.promise.trigger(ph.pa.RESULT_SUCCESS,msg.requestType,msg)
       else
-        @trigger(ph.pa.RESULT_OK,msg.requestType,msg)
+        @trigger(ph.pa.RESULT_SUCCESS,msg.requestType,msg)
   __onError:(msg)->
     if msg.requestType==ph.pa.TYPE_SUBSCRIBE
       @__endOfSubscribe(msg)
@@ -303,8 +303,8 @@ class CD extends EventModule
       @trigger(promise.qname,msg.message,promise)
       @trigger(promise.subname,msg.message,promise)
       @trigger("#{promise.qname}@#{promise.subname}",msg.message,promise)
-    else if msg.type==ph.pa.TYPE_RESPONSE && msg.result==ph.pa.RESULT_OK
-      @__onOk(msg)
+    else if msg.type==ph.pa.TYPE_RESPONSE && msg.result==ph.pa.RESULT_SUCCESS
+      @__onSuccess(msg)
     else if msg.type==ph.pa.TYPE_RESPONSE && msg.result==ph.pa.RESULT_ERROR
       @__onError(msg)
 #----------CD outer api----------
