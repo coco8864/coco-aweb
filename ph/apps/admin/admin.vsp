@@ -10,7 +10,7 @@
 	<title>Phatom Proxy Console</title>
 
 	<link type="text/css" href="/pub/css/jquery-ui-1.10.1.custom.css" rel="stylesheet" />
-	<script type="text/javascript" src="/pub/js/ph-loader.js?include=ph-queue.js"></script>
+	<script type="text/javascript" src="/pub/js/ph-loader.js?include=ph-pa.js,ph-queue.js"></script>
 	<script type="text/javascript" src="/pub/js/dateformat.js"></script>
 	<script type="text/javascript" src="/pub/js/jquery-1.9.1.min.js"></script>
 	<script type="text/javascript" src="/pub/js/jquery-ui-1.10.1.custom.min.js"></script>

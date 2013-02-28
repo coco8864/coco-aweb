@@ -46,7 +46,7 @@ var sd;
 <input type="button" value="onMessage dorp files" onclick="onDropFiles();"/>
 
 </ul>
-<div><pre>
+<div>cd.deploy('admin','naru.aweb.admin.PaAdmin');<pre>
 </pre></div>
 <div id='target'><p>dorag and dromp file upload</p></div>
 <div>
@@ -83,11 +83,11 @@ function connect(){
       ph.dump(data);
       ph.log('--cd error cb--');
     });
-  cd.on('ok',
+  cd.on('success',
     function(data){
-      ph.log('++cd ok cb++ message:'+data);
+      ph.log('++cd success cb++ message:'+data);
       ph.dump(data);
-      ph.log('--cd ok cb--');
+      ph.log('--cd success cb--');
     });
   cd.on('test',
     function(data){
@@ -117,11 +117,11 @@ function subscribe(){
       ph.dump(data);
       ph.log('--sd message sd--');
     });
-  sd.on('ok',
+  sd.on('success',
     function(data){
-      ph.log('++sd ok sd++ message:'+data);
+      ph.log('++sd success sd++ message:'+data);
       ph.dump(data);
-      ph.log('--sd ok sd--');
+      ph.log('--sd success sd--');
     });
   sd.on('error',
     function(data){

@@ -20,28 +20,30 @@ jQuery("#chatOutputTextArea").resizable({
 	handles: "se"
 });
 
+ph.admin.cd=ph.pa.connect('/pa');
+ph.admin.sd=ph.admin.cd.subscribe('admin','chat');
 function onChatSend(){
-	ph.queue.publish('phChat',//queue名
-			jQuery('#chatInputTextArea').val(),//message
-			jQuery('#chatEchoback').is(':checked'));//echoback可否
-	jQuery('#chatInputTextArea').val('');
+ ph.admin.sd.publish({
+  message:jQuery('#chatInputTextArea').val(),
+  date:new Date(),
+  userName:'$esc.javascript($loginUser.loginId)',
+  echoback:jQuery('#chatEchoback').is(':checked')});//echoback可否
+ jQuery('#chatInputTextArea').val('');
 }
-ph.queue.subscribeByName("phChat","$esc.javascript($loginUser.loginId)",{
-	onMessage:function(msg){
-##chat画面を表示していない可能性がある
-			var outputArea=jQuery('#chatOutputTextArea');
-			if(outputArea.length==0){
-				return;
-			}
-			var addText=ph.admin.formatYmdhms(msg)+':'+msg.from +'>\n' +
-					msg.message+'\n';
-			var text=addText+outputArea.val();
-			outputArea.val(text);
-		},
-	onError:function(msg){ph.log("subscribeByName error.phChat")}
-	},true,"phChat");
+ph.admin.sd.onMessage(
+ function(msg){
+ ##chat画面を表示していない可能性がある
+  var outputArea=jQuery('#chatOutputTextArea');
+  if(outputArea.length==0){
+    return;
+  }
+  var addText=ph.admin.df_ymdhms.format(msg.date)+':'+msg.userName +'>\n' +
+  msg.message+'\n';
+  var text=addText+outputArea.val();
+  outputArea.val(text);
+});
 
-
+/*
 function queueInfo(){
 	var queueInfo;
 	if(!ph.queue.isAuth){
@@ -59,5 +61,6 @@ function queueInfo(){
 	}
 	return queueInfo;
 }
-jQuery('#queueInfo').text(queueInfo());
+*/
+jQuery('#queueInfo').text(/*queueInfo()*/'');
 </script>
