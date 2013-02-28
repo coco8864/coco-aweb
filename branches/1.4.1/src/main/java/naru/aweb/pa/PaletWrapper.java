@@ -203,13 +203,13 @@ public class PaletWrapper implements PaletCtx,Timer{
 			peers.clear();
 			subnamePeersMap.clear();
 		}
-		palet.term(this,null);
+		palet.term(null);
 		return false;
 	}
 
 	@Override
 	public void onTimer(Object arg0) {
-		palet.onTimer(this);
+		palet.onTimer();
 	}
 
 }

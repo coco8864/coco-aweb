@@ -266,7 +266,6 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		String subname=(String)msg.get(KEY_SUBNAME);
 		Object message=msg.get(KEY_MESSAGE);
 		PaPeer keyPeer=PaPeer.create(this, qname, subname);
-		
 		PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
 		if(subname==null){//‘—MŒ³‚ª‚È‚¢Publish •Ö‹X“I‚ÈPeer
 			paletWrapper.onPublish(keyPeer, message);

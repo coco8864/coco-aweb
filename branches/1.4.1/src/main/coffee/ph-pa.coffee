@@ -28,6 +28,8 @@ window.ph.pa={
 #  _INTERVAL:1000
   _SEND_DATA_MAX:(1024*1024*2)
   _WS_RETRY_MAX:3
+  _KEEP_MSG_BEFORE_SUBSCRIBE:true
+  _KEEP_MSG_MAX:64
   _DEFAULT_SUB_ID:'@'
   _XHR_FRAME_NAME_PREFIX:'__pa_'
   _XHR_FRAME_URL:'/xhrPaFrame.vsp'
@@ -115,6 +117,7 @@ class CD extends EventModule
     @_errorCount=0
     @stat=ph.pa.STAT_AUTH
     @_sendMsgs=[]
+    @_reciveMsgs=[] #–¢subcrive‚Å”zM‚Å‚«‚È‚Á‚½message todo:—­‚Ü‚è‚·‚¬
     con=@
     ph.auth.auth(url,con._doneAuth)
   _doneAuth:(auth)=>
@@ -178,16 +181,9 @@ class CD extends EventModule
     else
       @_openWebSocket()
   _onWsMessage:(msg)=>
-    if typeof msg.data=='string'
-      ph.log('Pa _onWsMessage text:'+msg.data)
-      obj=ph.JSON.parse(msg.data)
-      @_onMessage(obj)
-    else if msg.data instanceof Blob
-      ph.log('Pa _onWsMessage blob:'+msg.data)
-      Envelope envelope=new Envelope()
-      envelope.unpack(msg.data,@_onMessage)
-    else
-      ph.log('_onWsMessage type error')
+    ph.log('Pa _onWsMessage:'+msg.data)
+    Envelope envelope=new Envelope()
+    envelope.unpack(msg.data,@_onMessage)
   _openWebSocket:=>
     ph.log('Pa WebSocket start')
     @stat=ph.pa.STAT_OPEN
@@ -294,19 +290,30 @@ class CD extends EventModule
     else if msg.type==ph.pa.TYPE_CLOSE
       @__onClose(msg)
     else if msg.type==ph.pa.TYPE_MESSAGE
-      sd=@__getSd(msg)
+      key="#{msg.qname}@#{msg.subname}"
+      sd=@_subscribes[key]
       if !sd
-        ph.log('error not subscribe message')
+        ph.log('before subscribe message')
+        if !ph.pa._KEEP_MSG_BEFORE_SUBSCRIBE
+          return
+        reciveMsgs=@_reciveMsgs[key]
+        if !reciveMsgs
+          reciveMsgs=@_reciveMsgs[key]=[]
+        if reciveMsgs.length>=ph.pa._KEEP_MSG_MAX
+          x=reciveMsgs.shift()
+          ph.log('drop msg:'+x)
+        reciveMsgs.push(msg)
         return
       promise=sd.promise
       sd.promise.trigger(ph.pa.TYPE_MESSAGE,msg.message,promise)
       @trigger(promise.qname,msg.message,promise)
       @trigger(promise.subname,msg.message,promise)
       @trigger("#{promise.qname}@#{promise.subname}",msg.message,promise)
-    else if msg.type==ph.pa.TYPE_RESPONSE && msg.result==ph.pa.RESULT_SUCCESS
-      @__onSuccess(msg)
-    else if msg.type==ph.pa.TYPE_RESPONSE && msg.result==ph.pa.RESULT_ERROR
-      @__onError(msg)
+    else if msg.type==ph.pa.TYPE_RESPONSE
+      if msg.result==ph.pa.RESULT_SUCCESS
+        @__onSuccess(msg)
+      else
+        @__onError(msg)
 #----------CD outer api----------
   close:->
     @checkState()
@@ -329,6 +336,13 @@ class CD extends EventModule
     @_subscribes[key]={deferred:dfd,promise:prm}
     if onMessage
       prm.onMessage(onMessage)
+    #aleady recive message check
+    reciveMsgs=@_reciveMsgs[key]
+    if reciveMsgs && reciveMsgs.length>0
+      setTimeout(=>
+        for msg in reciveMsgs
+          @_onMessage(msg)
+      ,0)
     prm
   publish:(qname,msg)->
     @checkState()
@@ -470,7 +484,14 @@ class Envelope
     else
       @blobDfd=ph.jQuery.Deferred()
       @blobDfd.done(=>@onDoneBinPtc(onPacked))
-  unpack:(blob,cb)->
+  unpack:(data,cb)->
+    if typeof data=='string'
+      obj=ph.JSON.parse(data)
+      @dates=obj.meta.dates
+      obj=@deserialize(obj)
+      cb(obj)
+      return
+    blob=data
     fr=new FileReader()
     mode='headerLen'
     fr.onload=(e)=>
@@ -486,8 +507,7 @@ class Envelope
         ph.log('header:'+e.target.result)
         header=ph.JSON.parse(e.target.result)
         meta=header.meta
-        for date in meta.dates
-          @dates.push(date)
+        @dates=meta.dates
         for blobMeta in meta.blobs
           size=blobMeta.size
           blob=ph.blobSlice(blob,offset,offset+size)
