@@ -15,12 +15,12 @@ public class SamplePalet implements Palet{
 	}
 
 	@Override
-	public void term(PaletCtx ctx, String reason) {
+	public void term(String reason) {
 		// TODO Auto-generated method stub
 	}
 
 	@Override
-	public void onTimer(PaletCtx ctx) {
+	public void onTimer() {
 		// TODO Auto-generated method stub
 	}
 

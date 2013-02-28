@@ -5,8 +5,8 @@ import java.util.Map;
 
 public interface Palet {
 	void init(PaletCtx ctx);
-	void term(PaletCtx ctx,String reason);
-	void onTimer(PaletCtx ctx);
+	void term(String reason);
+	void onTimer();
 	
 	void onSubscribe(PaPeer peer);
 	void onUnsubscribe(PaPeer peer,String reason);

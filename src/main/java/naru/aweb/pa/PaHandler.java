@@ -76,7 +76,8 @@ public class PaHandler extends WebSocketHandler implements Timer{
 		}else if(PaSession.TYPE_UNSUBSCRIBE.equals(type)){
 			paSession.unsubscribe(msg);
 		}else if(PaSession.TYPE_PUBLISH.equals(type)){
-			paSession.publish(msg);
+			Map realMessage=Envelope.unpack(msg, null);
+			paSession.publish(realMessage);
 		}else if(PaSession.TYPE_CLOSE.equals(type)){
 			paSession.close();
 			AuthSession authSession=getAuthSession();
