@@ -44,7 +44,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	/* response type */
 	public static final String TYPE_RESPONSE="response";
 	public static final String TYPE_MESSAGE="message";
-	public static final String RESULT_OK="ok";
+	public static final String RESULT_SUCCESS="success";
 	public static final String RESULT_ERROR="error";
 	
 	private static Logger logger=Logger.getLogger(PaSession.class);
@@ -179,8 +179,8 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		sendJson(makeResponseJson(RESULT_ERROR,requestType,qname, subname,  message));
 	}
 	
-	public void sendOK(String requestType,String qname,String subname,Object message){
-		sendJson(makeResponseJson(RESULT_OK,requestType,qname, subname, message));
+	public void sendSuccess(String requestType,String qname,String subname,Object message){
+		sendJson(makeResponseJson(RESULT_SUCCESS,requestType,qname, subname, message));
 	}
 	
 	public synchronized void sendJson(JSONObject data){
@@ -257,7 +257,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 			}
 		}
 		//unsubscribeÇÕâﬂãéÇ…î≠çsÇ≥ÇÍÇΩsubscribeÇ™ê¨å˜ÇµÇΩÇ∆ÇµÇƒí ímÇ∑ÇÈ
-		sendOK(TYPE_SUBSCRIBE,qname,peer.getSubname(),"unsubscribed by api");
+		sendSuccess(TYPE_SUBSCRIBE,qname,peer.getSubname(),"unsubscribed by api");
 		return true;
 	}
 	
@@ -292,7 +292,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		}
 		paletWrapper.onUnubscribe(peer,"client");
 		//ê≥èÌÇ…subscribeÇäÆóπÇµÇΩÇ∆Ç¢Ç§à”ñ°Ç≈subscribeäÆóπÇïúãA
-		sendOK(TYPE_SUBSCRIBE,peer.getQname(), peer.getSubname(),"client");
+		sendSuccess(TYPE_SUBSCRIBE,peer.getQname(), peer.getSubname(),"client");
 		return true;
 	}
 	
@@ -317,23 +317,23 @@ public class PaSession extends PoolBase implements LogoutEvent{
 				count++;
 			}
 		}
-		sendOK(TYPE_CLOSE,null,null,"client:"+count);
+		sendSuccess(TYPE_CLOSE,null,null,"client:"+count);
 	}
 	
 	public void qname(JSONObject req){
 		Set<String> qnames=paManager.qnames();
-		sendOK(TYPE_QNAMES,null, null,JSONSerializer.toJSON(qnames));
+		sendSuccess(TYPE_QNAMES,null, null,JSONSerializer.toJSON(qnames));
 	}
 	
 	public void deploy(JSONObject req){
 		if(!roles.contains("admin")){
-			sendOK(TYPE_DEPLOY,null, null, "forbidden role");
+			sendSuccess(TYPE_DEPLOY,null, null, "forbidden role");
 			return;
 		}
 		String qname=req.getString(KEY_QNAME);
 		String paletClassName=req.getString(KEY_PALET_CLASS_NAME);
 		if(paManager.deploy(qname, paletClassName)!=null){
-			sendOK(TYPE_DEPLOY,qname, null, null);
+			sendSuccess(TYPE_DEPLOY,qname, null, null);
 		}else{
 			sendError(TYPE_DEPLOY,qname, null,"aleady deployed");
 		}
@@ -341,12 +341,12 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	
 	public void undeploy(JSONObject req){
 		if(!roles.contains("admin")){
-			sendOK(TYPE_DEPLOY,null, null, "forbidden role");
+			sendSuccess(TYPE_DEPLOY,null, null, "forbidden role");
 			return;
 		}
 		String qname=req.getString(KEY_QNAME);
 		if( paManager.undeploy(qname)!=null){
-			sendOK(TYPE_UNDEPLOY,qname, null,null);
+			sendSuccess(TYPE_UNDEPLOY,qname, null,null);
 		}else{
 			sendError(TYPE_UNDEPLOY,qname, null,"not found");
 		}
