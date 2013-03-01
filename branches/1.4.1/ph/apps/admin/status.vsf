@@ -9,8 +9,9 @@ function setBroadcaster(){
   });
 }
 
-function updateStastics(msg){
-	var stcs=msg.message;
+function updateStastics(stcs){
+	ph.dump(stcs);
+//	var stcs=msg.message;
 	ph.jQuery("#broadcasterTime").text(ph.admin.formatYmdhms(stcs.time)+"("+ stcs.counter +")");
 	var memory=stcs.memory;
 	var useRate=(memory.max-memory.free)*100.0/memory.max;
@@ -34,7 +35,6 @@ function updateStastics(msg){
 	ph.jQuery("#broadcasterSelector").text(
 				selectText
 				);
-//ph.dump(selectorStasticses[0]);
 	var storeStack=stcs.storeStack;
 	ph.jQuery("#broadcasterStore").text(storeStack.join(":"));
 
@@ -54,21 +54,19 @@ function updateStastics(msg){
 }
 
 function watchStastics(){
-	ph.queue.subscribeByName("PhStastics","$esc.javascript($loginUser.loginId)",{
-		onMessage:updateStastics,
-		onError:function(msg){ph.log("subscribeByName error.PhStastics")}
-	},false,null);
+ var stticsSd=ph.admin.cd.subscribe('admin','sttics');
+ stticsSd.onMessage(updateStastics);
+ ph.admin.stticsSd=stticsSd;
 }
 
 function unwatchStastics(){
-	ph.queue.unsubscribe("PhStastics");
+ if(ph.admin.stticsSd){
+  ph.admin.stticsSd.unsubscribe();
+ }
 }
-
 
 function isWatchCheck(){
 	return ph.jQuery('#broardcastWatchCheck').attr('checked');
-}
-function setWatchCheck(checked){
 }
 
 function onWatchCheck(){
@@ -85,12 +83,12 @@ function onWatchCheck(){
 }
 
 ph.jQuery(function() {
-//	watchStastics();//起動後一回は必ず取得する
 	updateStastics({message:${config.config.stasticsObject}});
-	if(ph.useSessionStorage && sessionStorage['broardcastWatch']=='true'){
-		ph.jQuery('#broardcastWatchCheck').attr('checked','checked');
+	if(ph.useSessionStorage && sessionStorage['broardcastWatch']==='true'){
+		ph.jQuery('#broardcastWatchCheck').attr('checked',true);
+		watchStastics();
 	}else{
-		ph.jQuery('#broardcastWatchCheck').attr('checked','');
+		ph.jQuery('#broardcastWatchCheck').attr('checked',false);
 	}
 });
 

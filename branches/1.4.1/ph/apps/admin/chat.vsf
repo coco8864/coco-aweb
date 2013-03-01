@@ -20,17 +20,16 @@ jQuery("#chatOutputTextArea").resizable({
 	handles: "se"
 });
 
-ph.admin.cd=ph.pa.connect('/pa');
-ph.admin.sd=ph.admin.cd.subscribe('admin','chat');
+var chatSd=ph.admin.cd.subscribe('admin','chat');
 function onChatSend(){
- ph.admin.sd.publish({
+ chatSd.publish({
   message:jQuery('#chatInputTextArea').val(),
   date:new Date(),
   userName:'$esc.javascript($loginUser.loginId)',
   echoback:jQuery('#chatEchoback').is(':checked')});//echoback可否
  jQuery('#chatInputTextArea').val('');
 }
-ph.admin.sd.onMessage(
+chatSd.onMessage(
  function(msg){
  ##chat画面を表示していない可能性がある
   var outputArea=jQuery('#chatOutputTextArea');
@@ -42,6 +41,7 @@ ph.admin.sd.onMessage(
   var text=addText+outputArea.val();
   outputArea.val(text);
 });
+ph.admin.chatSd=chatSd;
 
 /*
 function queueInfo(){
