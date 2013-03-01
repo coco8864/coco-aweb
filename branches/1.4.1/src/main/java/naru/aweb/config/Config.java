@@ -37,7 +37,8 @@ import naru.aweb.handler.FilterHelper;
 import naru.aweb.handler.InjectionHelper;
 import naru.aweb.handler.ReplayHelper;
 import naru.aweb.mapping.Mapper;
-import naru.aweb.queue.QueueManager;
+import naru.aweb.pa.PaManager;
+//import naru.aweb.queue.QueueManager;
 import naru.aweb.secure.SslContextPool;
 import naru.aweb.spdy.SpdyConfig;
 import naru.aweb.util.JdoUtil;
@@ -89,7 +90,6 @@ public class Config {
 	private static final String PATH_SETTING = "path.setting";
 	private static final String PATH_INJECTION_DIR = "path.injectionDir";
 	private static Config config = new Config();
-	private static QueueManager queueManager = QueueManager.getInstance();
 	public static String CONF_FILENAME = "phantom.properties";
 	private static final String DEBUG_TRACE="debugTrace";
 	public static final String SELF_DOMAIN = "selfDomain";
@@ -483,6 +483,9 @@ public class Config {
 	private boolean isAleadyTerm = false;
 
 	public void term() {
+		PaManager paManager = PaManager.getInstance();
+		paManager.undeploy("admin");
+		
 		if (isAleadyTerm) {
 			return;
 		}
@@ -494,10 +497,6 @@ public class Config {
 		if(broadcaster!=null){//initÇÃìríÜÇ≈ó·äOÇµÇΩèÍçábroadcasterÇÃâ¬î\ê´Ç™Ç†ÇÈÅB
 			broadcaster.term();
 			broadcaster=null;
-		}
-		if(queueManager!=null){
-			queueManager.term();
-			queueManager=null;
 		}
 		if(logPersister!=null ){
 			logPersister.term();
@@ -712,6 +711,8 @@ public class Config {
 			
 			//adminDocumentRoot = new File(appsDocumentRoot,"admin").getCanonicalFile();
 			//authDocumentRoot = new File(appsDocumentRoot,"auth").getCanonicalFile();
+			PaManager paManager = PaManager.getInstance();
+			paManager.deploy("admin", "naru.aweb.admin.PaAdmin");
 			
 		} catch (IOException e) {
 			logger.error("getCanonicalFile error.",e);

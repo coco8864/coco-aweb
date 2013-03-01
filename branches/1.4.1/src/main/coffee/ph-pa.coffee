@@ -487,7 +487,7 @@ class Envelope
   unpack:(data,cb)->
     if typeof data=='string'
       obj=ph.JSON.parse(data)
-      @dates=obj.meta.dates
+      @dates=obj.meta?.dates ? []
       obj=@deserialize(obj)
       cb(obj)
       return
@@ -507,7 +507,7 @@ class Envelope
         ph.log('header:'+e.target.result)
         header=ph.JSON.parse(e.target.result)
         meta=header.meta
-        @dates=meta.dates
+        @dates=meta?.dates ? []
         for blobMeta in meta.blobs
           size=blobMeta.size
           blob=ph.blobSlice(blob,offset,offset+size)

@@ -15,21 +15,19 @@ import naru.async.store.StoreStastics;
 import naru.async.timer.TimerManager;
 import naru.aweb.auth.AuthSession;
 import naru.aweb.http.RequestContext;
-import naru.aweb.queue.QueueManager;
+import naru.aweb.pa.PaManager;
 import net.sf.json.JSONObject;
 
 public class Broadcaster implements Timer {
 	private static Logger logger=Logger.getLogger(Broadcaster.class);	
 	private static final long BROADCAST_INTERVAL=1000;
 	private static final long LOG_WATCH_INTERVAL=300000;
-	private QueueManager queueManager=QueueManager.getInstance();
-	private String chId;
+	private PaManager paManager=PaManager.getInstance();
 	private long timerId=TimerManager.INVALID_ID;
 	private Config config;
 	
 	Broadcaster(Config config){
 		this.config=config;
-		chId=queueManager.createQueueByName("PhStastics", "admin", true, "phantom proxy stastics broadcast");
 		long interval=config.getLong("broardcastInterval", BROADCAST_INTERVAL);
 		Stastics stastics=new Stastics();
 		config.setStasticsObject(stastics);
@@ -38,7 +36,6 @@ public class Broadcaster implements Timer {
 	
 	public void term(){
 		TimerManager.clearTimeout(timerId);
-		queueManager.unsubscribe(chId);
 	}
 	
 	private Pool getPool(Class clazz){
@@ -78,7 +75,6 @@ public class Broadcaster implements Timer {
 			int stCount=storeStastics.getBufferFileCount();
 			storeStack=new long[stCount];
 		}
-		
 		
 		private void updatePool(JSONObject jsonobj,Pool pool){
 			jsonobj.element("total", pool.getSequence());
@@ -164,10 +160,7 @@ public class Broadcaster implements Timer {
 		Stastics stastics=(Stastics)userContext;
 		stastics.update();
 		logWatch(stastics);
-		if(queueManager.publish(chId, stastics, false,false)==false){
-			queueManager.unsubscribe(chId);
-			chId=queueManager.createQueueByName("PhStastics", "admin", true, "phantom proxy stastics broadcast");
-		}
+		paManager.publish("admin", "sttics", JSONObject.fromObject(stastics));
 		long interval=config.getLong("broardcastInterval", BROADCAST_INTERVAL);
 		timerId=TimerManager.setTimeout(interval, this, stastics);
 	}

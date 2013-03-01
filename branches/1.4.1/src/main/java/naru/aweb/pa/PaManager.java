@@ -43,4 +43,13 @@ public class PaManager {
 	public synchronized Set<String> qnames(){
 		return paletWrappers.keySet();
 	}
+	
+	public void publish(String qname,String subname,Object data){
+		PaletWrapper palet=getPaletWrapper(qname);
+		if(palet==null){
+			return;
+		}
+		PaPeer peer=PaPeer.create(null, qname, subname);
+		palet.onPublish(peer, data);
+	}
 }

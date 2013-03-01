@@ -49,6 +49,8 @@ public class PaAdmin implements Palet {
 		String subname=peer.getSubname();
 		if("chat".equals(subname)){
 			chat(peer,data);
+		}else if("sttics".equals(subname)){
+			ctx.message(data, "sttics");
 		}
 	}
 

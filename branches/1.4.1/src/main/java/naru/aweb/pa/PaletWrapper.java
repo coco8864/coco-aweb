@@ -40,8 +40,8 @@ public class PaletWrapper implements PaletCtx,Timer{
 			if(subnamePeers==null){
 				subnamePeers=new HashSet<PaPeer>();
 				subnamePeersMap.put(subname,subnamePeers);
-				subnamePeers.add(peer);
 			}
+			subnamePeers.add(peer);
 		}
 		palet.onSubscribe(peer);
 	}
@@ -143,6 +143,9 @@ public class PaletWrapper implements PaletCtx,Timer{
 	 * @return
 	 */
 	public int message(Object data,Set<PaPeer> peers,Set<PaPeer> exceptPeers){
+		if(peers==null){
+			return 0;
+		}
 		Map message=new HashMap();
 		message.put(PaSession.KEY_TYPE, PaSession.TYPE_MESSAGE);
 		message.put(PaSession.KEY_MESSAGE, data);
@@ -180,7 +183,11 @@ public class PaletWrapper implements PaletCtx,Timer{
 	}
 	
 	public Set<PaPeer> getPeers(String subname){
-		return Collections.unmodifiableSet(subnamePeersMap.get(subname));
+		Set<PaPeer> subnamePeers=subnamePeersMap.get(subname);
+		if(subnamePeers==null){
+			return null;
+		}
+		return Collections.unmodifiableSet(subnamePeers);
 	}
 	
 	public boolean setInterval(long interval){
