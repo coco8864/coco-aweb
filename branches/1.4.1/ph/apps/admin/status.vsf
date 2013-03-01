@@ -83,7 +83,7 @@ function onWatchCheck(){
 }
 
 ph.jQuery(function() {
-	updateStastics({message:${config.config.stasticsObject}});
+	updateStastics(${config.config.stasticsObject});
 	if(ph.useSessionStorage && sessionStorage['broardcastWatch']==='true'){
 		ph.jQuery('#broardcastWatchCheck').attr('checked',true);
 		watchStastics();
