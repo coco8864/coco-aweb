@@ -82,6 +82,11 @@ public class SslContextPool {
 		Process p;
 		try {
 			String args[]={
+/*
+ * D:\prj\aweb\ph\security>keytool -genkey -alias ssltest -keystore keystore -store
+pass changeit -keypass changeit -dname "CN=localhost, OU=test Project, O=test\,
+Inc., L=Chuo-ku, ST=Tokyo, C=JP" -validity 730
+ */
 //					"C:\\jdk1.5.0_18\\bin\\keytool.exe",
 					keytool,
 //					"keytool",
