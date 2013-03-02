@@ -229,25 +229,16 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		String qname=msg.getString(KEY_QNAME);
 		String subname=msg.optString(KEY_SUBNAME,null);
 		PaPeer keyPeer=PaPeer.create(this, qname, subname);
-		/*
-		PaPeer peer=null;
-		synchronized(peers){
-			peer=peers.remove(keyPeer);
+		if( !unsubscribeFromWrapper(keyPeer) ){
+			sendError(TYPE_UNSUBSCRIBE,qname, subname,"not found peer");
 			keyPeer.unref(true);
-			if(peer==null){//すでにunsubscribe済み処理はない
-				sendError(TYPE_UNSUBSCRIBE,qname, subname,"not found");
-				return;
-			}
+			return;
 		}
-		*/
-		if( !unsubscribeByPeer(keyPeer) ){
-			sendError(TYPE_UNSUBSCRIBE,qname, subname,"not found");
-		}
+		unsubscribeByPeer(keyPeer);
 		keyPeer.unref(true);
 	}
 	
-	/* API経由でunsubscribeされる場合, */
-	/* clientにunsubscribe(subscribe失敗)を通知する */
+	/* API経由でのunsubscribe, clientにunsubscribe(subscribe失敗)を通知する */
 	public boolean unsubscribeByPeer(PaPeer peer){
 		String qname=peer.getQname();
 		synchronized(peers){
@@ -284,7 +275,8 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		paletWrapper.onPublish(peer, message);
 	}
 	
-	private boolean unsubscribePeer(PaPeer peer){
+	/* PaletWrapperからのunsubcribe */
+	private boolean unsubscribeFromWrapper(PaPeer peer){
 		PaletWrapper paletWrapper=paManager.getPaletWrapper(peer.getQname());
 		if(paletWrapper==null){
 			return false;
@@ -312,7 +304,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 			if(peer==null){
 				break;
 			}
-			if(unsubscribePeer(peer)){
+			if(unsubscribeFromWrapper(peer)){
 				count++;
 			}
 		}
