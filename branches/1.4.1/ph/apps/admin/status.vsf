@@ -11,7 +11,6 @@ function setBroadcaster(){
 
 function updateStastics(stcs){
 	ph.dump(stcs);
-//	var stcs=msg.message;
 	ph.jQuery("#broadcasterTime").text(ph.admin.formatYmdhms(stcs.time)+"("+ stcs.counter +")");
 	var memory=stcs.memory;
 	var useRate=(memory.max-memory.free)*100.0/memory.max;
@@ -47,10 +46,6 @@ function updateStastics(stcs){
 	var authSession=stcs.authSession;
 	cur=(authSession.total-authSession.poolBack-authSession.gc);
 	ph.jQuery("#broadcasterSession").text(cur+"("+authSession.total +"-"+authSession.instance+")");
-
-	if(!isWatchCheck()){
-		unwatchStastics();
-	}
 }
 
 function watchStastics(){
@@ -76,6 +71,7 @@ function onWatchCheck(){
 			sessionStorage['broardcastWatch']='true';
 		}
 	}else{
+		unwatchStastics();
 		if(ph.useSessionStorage){
 			sessionStorage['broardcastWatch']='false';
 		}
