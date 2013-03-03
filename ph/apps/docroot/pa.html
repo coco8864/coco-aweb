@@ -60,12 +60,21 @@ function onDropFiles(){
   sd.onMessage(function(data){
   var fr=new FileReader();
   fr.onload=function(e){
-   ph.jQuery("#test").attr("href",e.target.result);
-ph.log(e.target.result);
+
+  var evt = document.createEvent("HTMLEvents");
+  evt.initEvent("click",false,false);
+  ph.jQuery("<a>", {
+    download: "test.txt",
+    href: e.target.result
+  }).get(0).dispatchEvent(evt);
+
+//   ph.jQuery("#test").attr("href",e.target.result);
+//ph.log(e.target.result);
    }
 //    data[0].type=
 ph.log('type'+data[0].file.type);
-   var file=ph.blobSlice(data[0].file,0,data[0].file.size,'application/octet-stream');
+//   var file=ph.blobSlice(data[0].file,0,data[0].file.size,'application/octet-stream;content-disposition=attachment;filename=test.txt');
+   file=data[0].file;
     fr.readAsDataURL(file,'utf-8');
   });
 }
