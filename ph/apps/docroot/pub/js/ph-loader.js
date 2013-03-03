@@ -46,13 +46,13 @@ window.ph={
   }
   return null;
  },
- blobSlice:function(blob,startingByte,endindByte){
+ blobSlice:function(blob,startingByte,endindByte,type){
   if(blob.webkitSlice) {
-   return blob.webkitSlice(startingByte, endindByte);
+   return blob.webkitSlice(startingByte, endindByte,type);
   }else if (blob.mozSlice) {
-   return blob.mozSlice(startingByte, endindByte);
+   return blob.mozSlice(startingByte, endindByte,type);
   }
-  return blob.slice(startingByte, endindByte);
+  return blob.slice(startingByte, endindByte,type);
  },
  //https://github.com/ukyo/jsziptools/blob/master/src/utils.js
  stringToArrayBuffer:function(str){
