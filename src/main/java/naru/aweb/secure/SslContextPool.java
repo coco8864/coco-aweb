@@ -21,9 +21,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 
 import org.apache.log4j.Logger;
-
 import naru.aweb.config.Config;
-
 
 public class SslContextPool {
 	private static Logger logger = Logger.getLogger(SslContextPool.class);
