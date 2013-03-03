@@ -43,6 +43,39 @@ public class PaAdmin implements Palet {
 			ctx.message(data, "chat", peer);
 		}
 	}
+	
+	private void setting(PaPeer peer,Map<String, ?> data){
+		
+		/*
+		 * %proxy
+		 * proxyPacUrl
+		 * proxyServer
+		 * sslProxyServer
+		 * exceptProxyDomains
+		 * 
+		 * %keepALive
+		 * isWebKeepAlive check
+		 * isProxyKeepAlive check
+		 * maxKeepAliveRequests num
+		 * keepAliveTimeout num
+		 * allowChunked check
+		 * 
+		 * %html5
+		 * isUseHixie75 check
+		 * isUseHixie76 check
+		 * isUseHybi10 check
+		 * webSocketMessageLimit
+		 * webSocketPingInterval
+		 * 
+		 * 
+		 * 
+		 */
+		
+		
+		peer.message("done");
+		
+	}
+	
 
 	@Override
 	public void onPublishObj(PaPeer peer, Map<String, ?> data) {
@@ -51,6 +84,8 @@ public class PaAdmin implements Palet {
 			chat(peer,data);
 		}else if("sttics".equals(subname)){
 			ctx.message(data, "sttics");
+		}else if("setting".equals(subname)){
+			setting(peer,data);
 		}
 	}
 
