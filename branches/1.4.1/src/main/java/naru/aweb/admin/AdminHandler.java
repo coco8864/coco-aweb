@@ -434,15 +434,11 @@ public class AdminHandler extends WebServerHandler{
 			responseJson(true);
 		}else if("setAuth".equals(cmd)){
 			String scheme=parameter.getParameter("scheme");
-			//String logoutUrl=parameter.getParameter("logoutUrl");
 			Authenticator authenticator=config.getAuthenticator();
 			authenticator.setScheme(scheme);
-			//authenticator.setLogoutUrl(logoutUrl);
 			String sessionTimeout=parameter.getParameter("sessionTimeout");
 			Authorizer authorizer=config.getAuthorizer();
 			authorizer.setSessionTimeout(Long.parseLong(sessionTimeout));
-//			JSONObject res=new JSONObject();
-//			res.accumulate("scheme", authenticator.getScheme());
 			responseJson(true);
 		}else if("setBroadcaster".equals(cmd)){
 			String interval=parameter.getParameter("interval");
@@ -514,15 +510,6 @@ public class AdminHandler extends WebServerHandler{
 			String isRestartValue=parameter.getParameter("isRestart");
 			String isCleanupValue=parameter.getParameter("isCleanup");
 			String javaHeapSizeValue=parameter.getParameter("javaHeapSize");
-			/*
-			if(!"true".equals(isRestartValue)){
-				Main.terminate();
-			}else{
-				boolean isCleanup="true".equals(isCleanupValue);
-				int javaHeapSize=Integer.parseInt(javaHeapSizeValue);
-				Main.terminate(true,isCleanup,javaHeapSize);
-			}
-			*/
 			/* logout‚Érestart‚·‚é‚æ‚¤‚Éİ’è‚·‚é.‚·‚®‚Éterminate‚·‚é‚Æ‰æ–Ê‚ª•ö‚ê‚éê‡‚ª‚ ‚é */
 			boolean isRestart="true".equals(isRestartValue);
 			boolean isCleanup="true".equals(isCleanupValue);
