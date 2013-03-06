@@ -33,6 +33,7 @@ public class AuthHandler extends WebServerHandler {
 	private static Authenticator authenticator = config.getAuthenticator();
 	private static Authorizer authorizer=config.getAuthorizer();
 	public static String APP_ID="appId";//javascript側でセションを識別するID,setAuthメソッド復帰情報、jsonのキーとして使用
+	public static String TOKEN="token";
 	public static String AUTHORIZE_MARK="ahthorizeMark";//authorize目的で呼び出された場合に付加される。
 	public static String AUTHENTICATE_PATH="/authenticate";//必要があれば認証処理も行うパス
 	public static String INFO_PATH="/info";//ユーザ情報,利用可能サービスの問い合わせAPI
@@ -264,7 +265,8 @@ public class AuthHandler extends WebServerHandler {
 			return;
 		}
 		response.element("result", true);
-		response.element("appId", secondaryId.getAuthSession().getAppId());
+		response.element(AUTH_ID, secondaryId.getAuthSession().getAppId());
+		response.element(TOKEN, secondaryId.getAuthSession().getToken());
 		crossDomainResponse(response,secondaryId.getSetCookieString());
 	}
 	
