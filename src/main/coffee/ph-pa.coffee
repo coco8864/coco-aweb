@@ -127,6 +127,7 @@ class CD extends EventModule
       return
     @trigger(ph.pa.RESULT_SUCCESS,'auth',@)#success to auth
     @_appId=auth.appId
+    @_token=auth.token
     @stat=ph.pa.STAT_IDLE
     if @isWs
       @_openWebSocket()
@@ -232,11 +233,11 @@ class CD extends EventModule
     sessionStorage[@_BROWSERID_PREFIX + @_appId]=ph.JSON.stringify(bids)
   _onOpen:->
     @stat=ph.pa.STAT_CONNECT
-    @_send({type:ph.pa.TYPE_NEGOTIATE,bid:@_getBid()})
+    @_send({type:ph.pa.TYPE_NEGOTIATE,bid:@_getBid(),token:@_token})
   __onMsgNego:(msg)->
     if msg.bid!=@_getBid()
       @_setBid(msg.bid)
-      @_send({type:ph.pa.TYPE_NEGOTIATE,bid:msg.bid})
+      @_send({type:ph.pa.TYPE_NEGOTIATE,bid:msg.bid,token:@_token})
   __onClose:(msg)->
     if @deferred.state()!='pending'
       ph.log('aleady closed')

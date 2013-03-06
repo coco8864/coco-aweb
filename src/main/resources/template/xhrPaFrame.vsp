@@ -10,6 +10,7 @@
 <script  type="text/javascript"><!--
 
 var bid=null;
+var token=null;
 function sendObjToParent(msg){
   var jsonText=ph.JSON.stringify(msg);
   parent.postMessage(jsonText,'*');
@@ -33,6 +34,7 @@ function onMessageFunc(event){
 function objFromParent(msg){
   if(msg.type==='negotiate'){
     bid=msg.bid;
+    token=msg.token;
     return;
   }
   msgs.push(msg);
@@ -66,7 +68,7 @@ function xhrRequest(){
     return;
   }
   if(msgs.length===0||msgs[0].type!=='negotiate'){
-    msgs.unshift({type:'negotiate',bid:bid});
+    msgs.unshift({type:'negotiate',bid:bid,token:token});
   }
   var jsonText=ph.JSON.stringify(msgs);
 ##alert('xhrRequest:'+jsonText);
