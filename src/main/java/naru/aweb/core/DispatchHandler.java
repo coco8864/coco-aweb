@@ -516,6 +516,7 @@ public class DispatchHandler extends ServerBaseHandler {
 			case SUCCESS:
 				response.element("result", true);
 				response.element("appId", authSession.getAppId());
+				response.element("token", authSession.getToken());
 				break;
 			case PUBLIC:
 				response.element("result", true);
