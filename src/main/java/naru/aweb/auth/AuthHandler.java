@@ -117,7 +117,6 @@ public class AuthHandler extends WebServerHandler {
 	private SessionId authenticate(String url,String authId){
 		// authentication header or parameterで認証
 		//form認証の場合、cleanupAuthPathの場合、authIdをformに埋め込む必要がある
-		setAttribute(SCOPE.REQUEST,AUTH_ID, authId);
 		setRequestAttribute(AUTH_ID, authId);
 		User user = authenticator.webAuthenticate(this);
 		if (user == null) {
