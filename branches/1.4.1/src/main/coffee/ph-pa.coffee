@@ -511,7 +511,7 @@ class Envelope
         @dates=meta?.dates ? []
         for blobMeta in meta.blobs
           size=blobMeta.size
-          blob=ph.blobSlice(blob,offset,offset+size)
+          blob=ph.blobSlice(blob,offset,offset+size,blobMeta.type)
           offset+=size
           blob.type=blobMeta.type
           if blobMeta.name
