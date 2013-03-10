@@ -1075,14 +1075,6 @@ public class WebServerHandler extends ServerBaseHandler {
 		responseEnd();
 	}
 	
-	public AuthSession getAuthSession(){
-		RequestContext requestContext=getRequestContext();
-		if(requestContext==null){
-			return null;
-		}
-		return requestContext.getAuthSession();
-	}
-	
 	/* spdy‘Î‰ž */
 	//header‚ðƒŒƒXƒ|ƒ“ƒX
 	private synchronized void spdyFlushResponseHeader(SpdySession spdySession,boolean isFin){

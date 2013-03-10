@@ -9,6 +9,7 @@ import org.apache.log4j.Logger;
 import naru.async.ChannelHandler;
 import naru.async.pool.PoolManager;
 import naru.async.ssl.SslHandler;
+import naru.aweb.auth.AuthSession;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.http.GzipContext;
@@ -41,6 +42,17 @@ public abstract class ServerBaseHandler extends SslHandler {
 	public static final String ATTRIBUTE_KEEPALIVE_CONTEXT="keepAliveContext";
 	public static final String ATTRIBUTE_SPDY_SESSION="spdySession";
 	public static final String ATTRIBUTE_USER="loginUser";
+	
+	public enum SCOPE{
+		HANDLER,
+		REQUEST,
+		KEEP_ALIVE,
+		BROWSER,
+		SESSION,
+		AUTH_SESSION,
+		APPLICATION,
+		CONFIG
+	}
 	
 	@Override
 	public ChannelHandler forwardHandler(SslHandler handler) {
@@ -85,6 +97,31 @@ public abstract class ServerBaseHandler extends SslHandler {
 		return getRequestContext().getAttributeNames();
 	}
 	
+	public void setAttr(SCOPE scope,String name,Object value){
+		switch(scope){
+		case HANDLER:
+			super.setAttribute(name, value);
+		case REQUEST:
+			getRequestContext().setAttribute(name, value);
+		}
+	}
+	
+	public Object getAttr(SCOPE scope,String name){
+		switch(scope){
+		case REQUEST:
+			return getRequestContext().getAttribute(name);
+		}
+		return null;
+	}
+	
+	public Iterator<String> getAttrNames(SCOPE scope){
+		switch(scope){
+		case REQUEST:
+			return getRequestContext().getAttributeNames();
+		}
+		return null;
+	}
+	
 	public KeepAliveContext getKeepAliveContext(){
 		return getKeepAliveContext(false);
 	}
@@ -122,6 +159,15 @@ public abstract class ServerBaseHandler extends SslHandler {
 	public void setRequestMapping(MappingResult mapping) {
 		getRequestContext().setMapping(mapping);
 	}
+	
+	public AuthSession getAuthSession(){
+		RequestContext requestContext=getRequestContext();
+		if(requestContext==null){
+			return null;
+		}
+		return requestContext.getAuthSession();
+	}
+	
 	
 	public void onFinished() {
 		logger.debug("#finished.cid:"+getChannelId());
