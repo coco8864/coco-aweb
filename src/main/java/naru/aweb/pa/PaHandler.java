@@ -16,6 +16,7 @@ import naru.aweb.auth.AuthSession;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
 import naru.aweb.handler.WebSocketHandler;
+import naru.aweb.http.HeaderParser;
 import naru.aweb.http.ParameterParser;
 import naru.aweb.mapping.MappingResult;
 import net.sf.json.JSON;
@@ -35,6 +36,7 @@ public class PaHandler extends WebSocketHandler implements Timer{
 	private static final String PA_SESSIONS_KEY = "PaSessions";
 	private static final String XHR_FRAME_PATH = "/xhrPaFrame.vsp";
 	private static final String XHR_FRAME_TEMPLATE = "/template/xhrPaFrame.vsp";
+	private static final String DOWNLOAD_PATH="/download";
 	private static int XHR_SLEEP_TIME=1000;
 	private static Config config = Config.getConfig();
 	private static Logger logger=Logger.getLogger(PaHandler.class);
@@ -163,6 +165,18 @@ public class PaHandler extends WebSocketHandler implements Timer{
 		paSession.setupWsHandler(this,null);
 	}
 	
+	private PaSessions getPaSessions(AuthSession authSession){
+		PaSessions paSessions=null;
+		synchronized(authSession){
+			paSessions=(PaSessions)authSession.getAttribute(PA_SESSIONS_KEY);
+			if(paSessions==null){
+				paSessions=new PaSessions();
+				authSession.setAttribute(PA_SESSIONS_KEY, paSessions);
+			}
+			return paSessions;
+		}
+	}
+	
 	/**
 	 * negotiationの時は、新規採番
 	 * @param bid
@@ -181,17 +195,10 @@ public class PaHandler extends WebSocketHandler implements Timer{
 		
 		isNegotiated=true;
 		bid=negoreq.getInt(PaSession.KEY_BID);
-		PaSessions paSessions=null;
-		synchronized(authSession){
-			paSessions=(PaSessions)authSession.getAttribute(PA_SESSIONS_KEY);
-			if(paSessions==null){
-				paSessions=new PaSessions();
-				authSession.setAttribute(PA_SESSIONS_KEY, paSessions);
-			}
-			paSession=paSessions.sessions.get(bid);
-			if(paSession!=null){
-				return true;
-			}
+		PaSessions paSessions=getPaSessions(authSession);
+		paSession=paSessions.sessions.get(bid);
+		if(paSession!=null){
+			return true;
 		}
 		String path=getRequestMapping().getSourcePath();
 		synchronized(paSessions){
@@ -222,6 +229,7 @@ public class PaHandler extends WebSocketHandler implements Timer{
 	@Override
 	*/
 	public void startResponseReqBody() {
+		ParameterParser parameter=getParameterParser();
 		//xhrFrameのコンテンツ処理
 		MappingResult mapping=getRequestMapping();
 		String path=mapping.getResolvePath();
@@ -230,8 +238,21 @@ public class PaHandler extends WebSocketHandler implements Timer{
 			setRequestAttribute(ATTRIBUTE_VELOCITY_TEMPLATE,XHR_FRAME_TEMPLATE);
 			forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
 			return;
+		}else if(path.equals(DOWNLOAD_PATH)){
+			String token=parameter.getParameter(PaSession.KEY_TOKEN);
+			AuthSession authSession=getAuthSession();
+			if(!token.equals(authSession.getToken())){
+				completeResponse("403");
+				return;
+			}
+			int bid=Integer.parseInt(parameter.getParameter("bid"));
+			String key=parameter.getParameter("key");
+			PaSessions paSessions=getPaSessions(authSession);
+			paSession=paSessions.sessions.get(bid);
+			Blob blob=paSession.popDownloadBlob(key);
+			blob.download(this);
+			return;
 		}
-		ParameterParser parameter=getParameterParser();
 		//xhrからの開始
 		//[{type:negotiate,bid:bid},{type:xxx}...]
 		

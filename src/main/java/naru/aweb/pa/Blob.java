@@ -11,6 +11,8 @@ import naru.async.cache.FileInfo;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
+import naru.aweb.http.HeaderParser;
+import naru.aweb.http.WebServerHandler;
 import net.sf.json.JSONObject;
 
 /**
@@ -168,4 +170,48 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 		Object orgUserContext=ctx[1];
 		bufferGetter.onBufferFailure(orgUserContext,failure);
 	}
+	
+	private static class DownloadGetter implements BufferGetter{
+		private Blob blob;
+		
+		DownloadGetter(Blob blob){
+			this.blob=blob;
+		}
+		
+		@Override
+		public boolean onBuffer(Object h, ByteBuffer[] buffers) {
+			WebServerHandler handler=(WebServerHandler)h;
+			handler.responseBody(buffers);
+			return true;
+		}
+
+		@Override
+		public void onBufferEnd(Object h) {
+			WebServerHandler handler=(WebServerHandler)h;
+			handler.responseEnd();
+			blob.unref();
+		}
+
+		@Override
+		public void onBufferFailure(Object h, Throwable arg1) {
+			WebServerHandler handler=(WebServerHandler)h;
+			handler.responseEnd();
+			blob.unref();
+		}
+	}
+	
+	private DownloadGetter downloadGetter=null;
+	
+	/* download‚ªŠ®—¹‚·‚ê‚Î“–ŠYBlob‚Í‰ð•ú‚³‚ê‚é */
+	public void download(WebServerHandler handler){
+		handler.setHeader(HeaderParser.CONTENT_DISPOSITION_HEADER, "attachment; filename=\"" + getName()+"\"");
+		handler.setHeader(HeaderParser.CONTENT_TYPE_HEADER, getType());
+		handler.setNoCacheResponseHeaders();
+		handler.setStatusCode("200");
+		if(downloadGetter==null){
+			downloadGetter=new DownloadGetter(this);
+		}
+		asyncBuffer(downloadGetter,0,handler);
+	}
+	
 }

@@ -1,6 +1,8 @@
 package naru.aweb.pa;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import naru.async.AsyncBuffer;
 import naru.async.pool.PoolBase;
@@ -66,6 +68,28 @@ public class PaPeer extends PoolBase{
 	
 	public void sendBinary(AsyncBuffer data){
 		paSession.sendBinary(data);
+	}
+	
+	/* API */
+	private long downloadSec=0;
+	private synchronized String getDownloadKey(){
+		downloadSec++;
+		return "PP"+downloadSec;
+	}
+	
+	public boolean download(Blob blob){
+		JSONObject json=new JSONObject();
+		json.put(PaSession.KEY_TYPE, PaSession.TYPE_DOWNLOAD);
+		json.put(PaSession.KEY_KEY, getDownloadKey());
+		json.put(PaSession.KEY_QNAME, qname);
+		json.put(PaSession.KEY_SUBNAME, subname);
+		paSession.download(json,blob);
+		return true;
+	}
+	
+	public boolean download(JSONObject message,Blob blob){
+		paSession.download(message,blob);
+		return true;
 	}
 	
 	public void sendJson(JSONObject data){
