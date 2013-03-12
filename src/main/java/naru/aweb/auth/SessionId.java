@@ -311,7 +311,7 @@ public class SessionId extends PoolBase{
 		return true;
 	}
 	
-	public boolean isMatch(Type type,String id,String url,SessionId promaryId){
+	public boolean isMatch(Type type,String id,String url,SessionId primaryId){
 		if(!isMatch(type,id,url)){
 			return false;
 		}
