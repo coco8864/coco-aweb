@@ -134,6 +134,7 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 		throw new UnsupportedOperationException("asyncBuffer(BufferGetter bufferGetter, Object userContext)");
 	}
 
+	/* ˆê‰ñ‚ÌŒÄ‚Ño‚µ‚Å‚P‰ñ‚Ìcallback */
 	public boolean asyncBuffer(BufferGetter bufferGetter, long offset,Object userContext) {
 		long maxLength=size-offset;
 		Object[] ctx={bufferGetter,userContext,maxLength};
