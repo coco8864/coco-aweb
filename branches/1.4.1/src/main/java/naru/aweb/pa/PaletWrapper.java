@@ -160,34 +160,32 @@ public class PaletWrapper implements PaletCtx,Timer{
 		return count;
 	}
 	
+	private long downloadSec=0;
+	private synchronized String getDownloadKey(){
+		downloadSec++;
+		return "PW"+downloadSec;
+	}
 	
 	@Override
-	public int download(Blob data, Set<PaPeer> peers, Set<PaPeer> exceptPeers) {
+	public int download(Blob blob, Set<PaPeer> peers, Set<PaPeer> exceptPeers) {
 		if(peers==null){
 			return 0;
 		}
 		Map message=new HashMap();
 		message.put(PaSession.KEY_TYPE, PaSession.TYPE_DOWNLOAD);
-//		message.put(PaSession.KEY_MESSAGE, data);
+		message.put(PaSession.KEY_KEY, getDownloadKey());
 		message.put(PaSession.KEY_QNAME, qname);
-		
+		Envelope envelope=Envelope.pack(message);
 		int count=0;
 		for(PaPeer peer:peers){
 			if(exceptPeers!=null && exceptPeers.contains(peer)){
 				continue;
 			}
 			String subname=peer.getSubname();
-			peer.sendBinary(envelope.createSendAsyncBuffer(subname));
+			peer.download(envelope.getSendJson(subname),blob);
 			count++;
 		}
-		return count;
-		
-		
-		//subname‚¾‚¯‚Í‚±‚±‚Å‚ÍŒˆ‚ß‚ç‚ê‚È‚¢
-		Envelope envelope=Envelope.pack(message);
-		int count=0;
-		count=messageBin(envelope, peers, exceptPeers);
-		envelope.unref();
+		envelope.unref(true);
 		return count;
 	}
 	

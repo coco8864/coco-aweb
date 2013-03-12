@@ -26,6 +26,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	public static final String KEY_QNAME="qname";
 	public static final String KEY_SUBNAME="subname";
 	public static final String KEY_PALET_CLASS_NAME="paletClassName";
+	public static final String KEY_KEY="key";
 	
 	/* request type */
 	public static final String TYPE_NEGOTIATE="negotiate";
@@ -185,10 +186,10 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		sendJson(makeResponseJson(RESULT_SUCCESS,requestType,qname, subname, message));
 	}
 	
-	private Map<String,Blob>downloadBlobs=new HashMap<String,Blob>();
+	private Map<String,Blob>downloadBlobs=Collections.synchronizedMap(new HashMap<String,Blob>());
 	
 	public synchronized void download(JSONObject message,Blob blob){
-		downloadBlobs.put(message.getString(KEY_MESSAGE),blob);
+		downloadBlobs.put(message.getString(KEY_KEY),blob);
 		sendJson(message);
 	}
 	
@@ -391,4 +392,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		return isWs;
 	}
 	
+	public Blob popDownloadBlob(String key){
+		return downloadBlobs.remove(key);
+	}
 }
