@@ -23,6 +23,7 @@ window.ph.pa={
 #response type
   TYPE_RESPONSE:'response'
   TYPE_MESSAGE:'message'
+  TYPE_DOWNLOAD:'download'
   RESULT_ERROR:'error'
   RESULT_SUCCESS:'success'
 #  _INTERVAL:1000
@@ -35,7 +36,9 @@ window.ph.pa={
   _XHR_FRAME_URL:'/xhrPaFrame.vsp'
   _connections:{} #key:url value:{deferred:dfd,promise:prm}
   connect:(url)->
+    downloadUrl=null
     if url.lastIndexOf('ws://',0)==0||url.lastIndexOf('wss://',0)==0
+      downloadUrl='http' + url.substring(2)+'/download'
       if !ph.useWebSocket
         #webSocket‚ªŽg‚¦‚È‚­‚Äurl‚ªws://‚¾‚Á‚½‚çhttp://‚É•ÏX
         url='http' + url.substring(2)
@@ -50,13 +53,19 @@ window.ph.pa={
           scm='https://'
         else
           scm='http://'
+      if ph.isSsl
+        downloadUrl='https://' + ph.domain+url+'/download'
+      else
+        downloadUrl='http://' + ph.domain+url+'/download'
       url=scm+ph.domain+url
-    ph.log('url:' + url)
+    else
+      downloadUrl=url+'/download'
+    ph.log('url:' + url+':downloadUrl:'+downloadUrl)
     if @_connections[url]
       prm=@_connections[url].promise
     else
       dfd=ph.jQuery.Deferred()
-      prm=dfd.promise(new CD(url,dfd))
+      prm=dfd.promise(new CD(url,downloadUrl,dfd))
       @_connections[url]={deferred:dfd,promise:prm}
     prm._openCount++
     prm
@@ -109,7 +118,7 @@ class EventModule
 #-------------------Connection Deferred-------------------
 class CD extends EventModule
   _BROWSERID_PREFIX:'bid.'
-  constructor: (@url,@deferred) ->
+  constructor: (@url,@downloadUrl,@deferred) ->
     super
     @_subscribes={}
     @isWs=(url.lastIndexOf('ws',0)==0)
@@ -290,6 +299,12 @@ class CD extends EventModule
       @__onMsgNego(msg)
     else if msg.type==ph.pa.TYPE_CLOSE
       @__onClose(msg)
+    else if msg.type==ph.pa.TYPE_DOWNLOAD
+      frame=ph.jQuery('<iframe width="0" height="0" frameborder="no"' +
+        '" src="' + 
+        @downloadUrl + '?bid=' + @_getBid() + '&token=' + @_token + '&key=' + msg.key +
+        '"></iframe>')
+      ph.jQuery('body').append(frame)
     else if msg.type==ph.pa.TYPE_MESSAGE
       key="#{msg.qname}@#{msg.subname}"
       sd=@_subscribes[key]
