@@ -133,8 +133,6 @@ public class PaletWrapper implements PaletCtx,Timer{
 		return count;
 	}
 	
-	
-	
 	/**
 	 * 
 	 * @param data
@@ -158,6 +156,37 @@ public class PaletWrapper implements PaletCtx,Timer{
 		}else{
 			count=messageJson(envelope, peers, exceptPeers);
 		}
+		envelope.unref();
+		return count;
+	}
+	
+	
+	@Override
+	public int download(Blob data, Set<PaPeer> peers, Set<PaPeer> exceptPeers) {
+		if(peers==null){
+			return 0;
+		}
+		Map message=new HashMap();
+		message.put(PaSession.KEY_TYPE, PaSession.TYPE_DOWNLOAD);
+//		message.put(PaSession.KEY_MESSAGE, data);
+		message.put(PaSession.KEY_QNAME, qname);
+		
+		int count=0;
+		for(PaPeer peer:peers){
+			if(exceptPeers!=null && exceptPeers.contains(peer)){
+				continue;
+			}
+			String subname=peer.getSubname();
+			peer.sendBinary(envelope.createSendAsyncBuffer(subname));
+			count++;
+		}
+		return count;
+		
+		
+		//subname‚¾‚¯‚Í‚±‚±‚Å‚ÍŒˆ‚ß‚ç‚ê‚È‚¢
+		Envelope envelope=Envelope.pack(message);
+		int count=0;
+		count=messageBin(envelope, peers, exceptPeers);
 		envelope.unref();
 		return count;
 	}

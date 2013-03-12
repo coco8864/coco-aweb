@@ -173,9 +173,14 @@ public class PaHandler extends WebSocketHandler implements Timer{
 		if(!PaSession.TYPE_NEGOTIATE.equals(type)){
 			return false;
 		}
+		String token=negoreq.getString(PaSession.KEY_TOKEN);
+		AuthSession authSession=getAuthSession();
+		if(!token.equals(authSession.getToken())){
+			return false;
+		}
+		
 		isNegotiated=true;
 		bid=negoreq.getInt(PaSession.KEY_BID);
-		AuthSession authSession=getAuthSession();
 		PaSessions paSessions=null;
 		synchronized(authSession){
 			paSessions=(PaSessions)authSession.getAttribute(PA_SESSIONS_KEY);
