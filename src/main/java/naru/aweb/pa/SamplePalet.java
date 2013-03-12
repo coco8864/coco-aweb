@@ -49,7 +49,9 @@ public class SamplePalet implements Palet{
 	@Override
 	public void onPublishArray(PaPeer peer, List<?> data) {
 		logger.info("onPublishArray.peer:"+peer+":"+data);
-		ctx.message(data);
+		Map f=(Map)data.get(0);
+		peer.download((Blob)f.get("file"));
+//		ctx.message(data);
 	}
 
 }
