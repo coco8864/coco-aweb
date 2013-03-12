@@ -249,7 +249,15 @@ public class PaHandler extends WebSocketHandler implements Timer{
 			String key=parameter.getParameter("key");
 			PaSessions paSessions=getPaSessions(authSession);
 			paSession=paSessions.sessions.get(bid);
+			if(paSession==null){
+				completeResponse("404");
+				return;
+			}
 			Blob blob=paSession.popDownloadBlob(key);
+			if(blob==null){
+				completeResponse("404");
+				return;
+			}
 			blob.download(this);
 			return;
 		}

@@ -174,15 +174,19 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 	
 	private static class DownloadGetter implements BufferGetter{
 		private Blob blob;
+		private long offset=0;
 		
 		DownloadGetter(Blob blob){
 			this.blob=blob;
+			this.offset=0;
 		}
 		
 		@Override
 		public boolean onBuffer(Object h, ByteBuffer[] buffers) {
 			WebServerHandler handler=(WebServerHandler)h;
+			offset+=BuffersUtil.remaining(buffers);
 			handler.responseBody(buffers);
+			blob.asyncBuffer(this,offset,handler);
 			return true;
 		}
 
@@ -201,7 +205,7 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 		}
 	}
 	
-	private DownloadGetter downloadGetter=null;
+	//private DownloadGetter downloadGetter=null;
 	
 	/* download‚ªŠ®—¹‚·‚ê‚Î“–ŠYBlob‚Í‰ð•ú‚³‚ê‚é */
 	public void download(WebServerHandler handler){
@@ -209,9 +213,8 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 		handler.setHeader(HeaderParser.CONTENT_TYPE_HEADER, getType());
 		handler.setNoCacheResponseHeaders();
 		handler.setStatusCode("200");
-		if(downloadGetter==null){
-			downloadGetter=new DownloadGetter(this);
-		}
+		DownloadGetter downloadGetter=new DownloadGetter(this);
+//		Object[]ctx={handler,0};
 		asyncBuffer(downloadGetter,0,handler);
 	}
 	
