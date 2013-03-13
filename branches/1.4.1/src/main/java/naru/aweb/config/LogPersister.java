@@ -30,12 +30,14 @@ import naru.async.store.Store;
 import naru.async.store.StoreManager;
 import naru.async.store.StoreStream;
 import naru.async.timer.TimerManager;
+import naru.aweb.pa.Blob;
+import naru.aweb.pa.PaPeer;
 import naru.aweb.queue.QueueManager;
 import naru.aweb.util.JdoUtil;
 
 public class LogPersister implements Timer {
 	private static Logger logger = Logger.getLogger(LogPersister.class);
-	private static QueueManager queueManager = QueueManager.getInstance();
+//	private static QueueManager queueManager = QueueManager.getInstance();
 
 	private long intervalTimeout = 1000;
 //	private long timerId = -1;
@@ -54,10 +56,10 @@ public class LogPersister implements Timer {
 
 	public void term() {
 		TimerManager.clearInterval(interval);
-		synchronized(queueManager){
+//		synchronized(queueManager){
 			doJobs();//残っているjobを処理
 			isTerm=true;
-		}
+//		}
 	}
 
 	private AccessLog getAccessLog(List<AccessLog> list) {
@@ -84,7 +86,7 @@ public class LogPersister implements Timer {
 			pm.makeTransient(accessLog);// オブジェクトを再利用するために必要
 		}
 		if (chId != null) {
-			queueManager.complete(chId, accessLog.getId());
+//			queueManager.complete(chId, accessLog.getId());
 		}
 		accessLog.unref();
 	}
@@ -96,7 +98,7 @@ public class LogPersister implements Timer {
 	 * @throws IOException
 	 */
 	// TODO非同期
-	public void executeImport(PersistenceManager pm, File importFile)
+	public void executeImport(PersistenceManager pm, Blob importBlob)
 			throws IOException {
 		ZipInputStream zis = null;
 		InputStream fis=new FileInputStream(importFile);
@@ -160,11 +162,11 @@ public class LogPersister implements Timer {
 		}
 	}
 	
-	private static Map<String,File>exportFiles=new HashMap<String,File>();
+	//private static Map<String,Blob>exportBlobs=new HashMap<String,Blob>();
 	
-	public File popExportFile(String cid){
-		return exportFiles.remove(cid);
-	}
+	//public File popExportBlob(String cid){
+	//	return exportBlobs.remove(cid);
+	//}
 
 	// TODO非同期
 	public File executeExport(PersistenceManager pm, Collection<Long> accessLogsIds)
@@ -260,10 +262,8 @@ public class LogPersister implements Timer {
 			try {
 				File exportFile=executeExport(pm, requestInfo.ids);
 				exportFile.deleteOnExit();
-				synchronized(exportFiles){
-					exportFiles.put(requestInfo.chId, exportFile);
-					message=requestInfo.chId;
-				}
+				Blob exportBlob=Blob.create(exportFile);
+				requestInfo.peer.download(exportBlob);
 			} catch (IOException e) {
 				logger.warn("failt to export", e);
 				message = "fail to export";
@@ -271,15 +271,15 @@ public class LogPersister implements Timer {
 			break;
 		case TYPE_IMPORT:
 			try {
-				executeImport(pm, requestInfo.importFile);
+				executeImport(pm, requestInfo.importBlob);
 			} catch (IOException e) {
 				logger.warn("failt to import", e);
 				message = "fail to import";
 			}
 			break;
 		}
-		if (requestInfo.chId != null) {
-			queueManager.complete(requestInfo.chId, message);
+		if (requestInfo.peer != null) {
+			requestInfo.peer.message(message);
 		}
 
 	}
@@ -331,52 +331,53 @@ public class LogPersister implements Timer {
 	private static final int TYPE_IMPORT = 5;
 
 	private static class RequestInfo {
-		RequestInfo(int type, String query, String chId) {
+		RequestInfo(int type, String query, PaPeer peer) {
 			this.type = type;
 			this.query = query;
-			this.chId = chId;
+			this.peer = peer;
 		}
 
-		RequestInfo(int type, Collection<Long> ids, String chId) {
+		RequestInfo(int type, Collection<Long> ids, PaPeer peer) {
 			this.type = type;
 			this.ids = ids;
-			this.chId = chId;
+			this.peer = peer;
 		}
 
-		RequestInfo(int type, File importFile, String chId) {
+		RequestInfo(int type, Blob importBlob, PaPeer peer) {
 			this.type = type;
-			this.importFile = importFile;
-			this.chId = chId;
+			this.importBlob = importBlob;
+			this.peer = peer;
 		}
 
 		int type;
 		String query;
-		String chId;
+//		String chId;
+		PaPeer peer;
 		Collection<Long> ids;
-		File importFile;
+		Blob importBlob;
 	}
 
 	// 条件に一致したaccessLogを削除
-	public void deleteAccessLog(String query,String chId) {
-		queue(new RequestInfo(TYPE_QUERY_DELTE, query, chId));
+	public void deleteAccessLog(String query,PaPeer peer) {
+		queue(new RequestInfo(TYPE_QUERY_DELTE, query, peer));
 	}
 
 	// id列挙されたaccessLogを削除
-	public void deleteAccessLog(Collection<Long> ids,String chId) {
-		queue(new RequestInfo(TYPE_LIST_DELTE, ids, chId));
+	public void deleteAccessLog(Collection<Long> ids,PaPeer peer) {
+		queue(new RequestInfo(TYPE_LIST_DELTE, ids, peer));
 	}
 
 	// 条件に一致したaccessLogを移出
-	public void exportAccessLog(String query, String chId) {
-		queue(new RequestInfo(TYPE_QUERY_EXPORT, query, chId));
+	public void exportAccessLog(String query, PaPeer peer) {
+		queue(new RequestInfo(TYPE_QUERY_EXPORT, query, peer));
 	}
 
 	// id列挙されたaccessLogを移出
-	public void exportAccessLog(Collection<Long> ids, String chId) {
-		queue(new RequestInfo(TYPE_LIST_EXPORT, ids, chId));
+	public void exportAccessLog(Collection<Long> ids, PaPeer peer) {
+		queue(new RequestInfo(TYPE_LIST_EXPORT, ids, peer));
 	}
 
-	public void importAccessLog(File importFile, String chId) {
-		queue(new RequestInfo(TYPE_IMPORT, importFile, chId));
+	public void importAccessLog(Blob importFile, PaPeer peer) {
+		queue(new RequestInfo(TYPE_IMPORT, importFile, peer));
 	}
 }

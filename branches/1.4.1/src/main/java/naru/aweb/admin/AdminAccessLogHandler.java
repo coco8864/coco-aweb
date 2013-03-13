@@ -122,7 +122,7 @@ public class AdminAccessLogHandler extends WebServerHandler{
 			return;
 		}else if("downloadExportFile".equals(command)){
 			String fileId=parameter.getParameter("fileId");
-			File exportFile=config.getLogPersister().popExportFile(fileId);
+			File exportFile=config.getLogPersister().popExportBlob(fileId);
 			if(exportFile==null){
 				completeResponse("404");
 				return;

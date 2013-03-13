@@ -186,6 +186,7 @@ public class PaletWrapper implements PaletCtx,Timer{
 			count++;
 		}
 		envelope.unref(true);
+		blob.unref();
 		return count;
 	}
 	

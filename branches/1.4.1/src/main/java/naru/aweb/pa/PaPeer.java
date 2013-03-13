@@ -1,14 +1,17 @@
 package naru.aweb.pa;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import naru.async.AsyncBuffer;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import net.sf.json.JSONObject;
 
+/*
+ * PaPeerは、PaSessionとPaletWrapperに同一のものが保持されるようにする
+ * 外れる場合には、同時にreleaseすると共にメンバpaSessionをnullにする
+ * !!要チェック!!
+ */
 public class PaPeer extends PoolBase{
 	private static PaManager paManager=PaManager.getInstance();
 	
@@ -23,6 +26,10 @@ public class PaPeer extends PoolBase{
 	private PaSession paSession;
 	private String qname;//queue名
 	private String subname;//クライアントid(認証idが同じでもブラウザの違い等により、clientは別のpeerで接続できる)
+	
+	public void releaseSession(){
+		paSession=null;
+	}
 	
 	public String getPath() {
 		return paSession.getPath();
