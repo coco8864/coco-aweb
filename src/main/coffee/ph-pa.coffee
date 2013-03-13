@@ -32,7 +32,8 @@ window.ph.pa={
   _KEEP_MSG_BEFORE_SUBSCRIBE:true
   _KEEP_MSG_MAX:64
   _DEFAULT_SUB_ID:'@'
-  _XHR_FRAME_NAME_PREFIX:'__pa_'
+  _DOWNLOAD_FRAME_NAME_PREFIX:'__pa_dl_'
+  _XHR_FRAME_NAME_PREFIX:'__pa_xhr_' #xhrPaFrame.vsp‚É“¯‚¶’è‹`‚ ‚è
   _XHR_FRAME_URL:'/xhrPaFrame.vsp'
   _connections:{} #key:url value:{deferred:dfd,promise:prm}
   connect:(url)->
@@ -142,6 +143,13 @@ class CD extends EventModule
       @_openWebSocket()
     else
       @_openXhr()
+    @_downloadFrameName=ph.pa._DOWNLOAD_FRAME_NAME_PREFIX + @url
+    @_downloadFrame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' +
+      @_downloadFrameName + 
+      '"></iframe>')
+#    con=@
+#    @_xhrFrame.load(->con._onXhrLoad())
+    ph.jQuery('body').append(@_downloadFrame)
   _flushMsg:->
     if @stat!=ph.pa.STAT_CONNECT
       return
@@ -300,11 +308,20 @@ class CD extends EventModule
     else if msg.type==ph.pa.TYPE_CLOSE
       @__onClose(msg)
     else if msg.type==ph.pa.TYPE_DOWNLOAD
-      frame=ph.jQuery('<iframe width="0" height="0" frameborder="no"' +
-        '" src="' + 
-        @downloadUrl + '?bid=' + @_getBid() + '&token=' + @_token + '&key=' + msg.key +
-        '"></iframe>')
-      ph.jQuery('body').append(frame)
+      ph.log('download.msg.key:'+msg.key)
+      form=ph.jQuery("<form method='POST' target='#{@_downloadFrameName}' action='#{@downloadUrl}'>" +
+         "<input type='hidden' name='bid' value='#{@_getBid()}'/>" +
+         "<input type='hidden' name='token' value='#{@_token}'/>" +
+         "<input type='hidden' name='key' value='#{msg.key}'/>" +
+         "</form>")
+#      frame=ph.jQuery('<iframe width="0" height="0" frameborder="no"' +
+#        ' src="' + 
+#        @downloadUrl + '?bid=' + @_getBid() + '&token=' + @_token + '&key=' + msg.key +
+#        '"></iframe>')
+#      frame.load(->alert('load'))
+      ph.jQuery('body').append(form)
+      form.submit()
+      form.remove()
     else if msg.type==ph.pa.TYPE_MESSAGE
       key="#{msg.qname}@#{msg.subname}"
       sd=@_subscribes[key]

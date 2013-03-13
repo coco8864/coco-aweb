@@ -1,6 +1,8 @@
 package naru.aweb.pa;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Date;
 
@@ -209,13 +211,71 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 	
 	/* download‚ªŠ®—¹‚·‚ê‚Î“–ŠYBlob‚Í‰ð•ú‚³‚ê‚é */
 	public void download(WebServerHandler handler){
-		handler.setHeader(HeaderParser.CONTENT_DISPOSITION_HEADER, "attachment; filename=\"" + getName()+"\"");
-		handler.setHeader(HeaderParser.CONTENT_TYPE_HEADER, getType());
+		if(name!=null){
+			handler.setHeader(HeaderParser.CONTENT_DISPOSITION_HEADER, "attachment; filename=\"" + getName()+"\"");
+		}
+		if(type!=null){
+			handler.setHeader(HeaderParser.CONTENT_TYPE_HEADER, getType());
+		}else{
+			handler.setHeader(HeaderParser.CONTENT_TYPE_HEADER, "application/octet-stream");
+		}
 		handler.setNoCacheResponseHeaders();
 		handler.setStatusCode("200");
 		DownloadGetter downloadGetter=new DownloadGetter(this);
-//		Object[]ctx={handler,0};
 		asyncBuffer(downloadGetter,0,handler);
 	}
+	
+	private static class InputStreamGetter extends InputStream implements BufferGetter{
+		private Blob blob;
+		private long offset=0;
+		InputStreamGetter(Blob blob){
+			this.blob=blob;
+			this.offset=0;
+		}
+		
+		@Override
+		public boolean onBuffer(Object h, ByteBuffer[] buffers) {
+			WebServerHandler handler=(WebServerHandler)h;
+			offset+=BuffersUtil.remaining(buffers);
+			handler.responseBody(buffers);
+			blob.asyncBuffer(this,offset,handler);
+			return true;
+		}
+
+		@Override
+		public void onBufferEnd(Object h) {
+			WebServerHandler handler=(WebServerHandler)h;
+			handler.responseEnd();
+			blob.unref();
+		}
+
+		@Override
+		public void onBufferFailure(Object h, Throwable arg1) {
+			WebServerHandler handler=(WebServerHandler)h;
+			handler.responseEnd();
+			blob.unref();
+		}
+
+		@Override
+		public int read() throws IOException {
+			// TODO Auto-generated method stub
+			return 0;
+		}
+
+		@Override
+		public int read(byte[] b) throws IOException {
+			// TODO Auto-generated method stub
+			return super.read(b);
+		}
+
+		@Override
+		public int read(byte[] b, int off, int len) throws IOException {
+			// TODO Auto-generated method stub
+			return super.read(b, off, len);
+		}
+		
+		
+	}
+	
 	
 }

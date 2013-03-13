@@ -190,6 +190,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	
 	public synchronized void download(JSONObject message,Blob blob){
 		downloadBlobs.put(message.getString(KEY_KEY),blob);
+		blob.ref();
 		sendJson(message);
 	}
 	
@@ -256,6 +257,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 			if(peer==null){//‚·‚Å‚ÉunsubscribeÏ‚İˆ—‚Í‚È‚¢
 				return false;
 			}
+			peer.releaseSession();
 		}
 		//unsubscribe‚Í‰ß‹‚É”­s‚³‚ê‚½subscribe‚ª¬Œ÷‚µ‚½‚Æ‚µ‚Ä’Ê’m‚·‚é
 		sendSuccess(TYPE_SUBSCRIBE,qname,peer.getSubname(),"unsubscribed by api");
@@ -317,6 +319,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 			if(unsubscribeFromWrapper(peer)){
 				count++;
 			}
+			peer.releaseSession();
 		}
 		sendSuccess(TYPE_CLOSE,null,null,"client:"+count);
 	}
