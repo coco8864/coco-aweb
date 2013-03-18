@@ -45,8 +45,8 @@ public class UnzipConverter {
 		getter.onBufferEnd(null);
 	}
 	
-	private void callback(){
-		byte[] buf=null;
+	private byte[] buf=new byte[1024];
+	private synchronized void callback(){
 		try {
 			while(innerInputStream.isBuffer()){
 				if(zipEntry==null){
