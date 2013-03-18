@@ -101,8 +101,10 @@ public class LogPersister implements Timer {
 	public void executeImport(PersistenceManager pm, Blob importBlob)
 			throws IOException {
 		ZipInputStream zis = null;
-		
-		
+		if(true){
+			return;
+		}
+		File importFile=null;
 		InputStream fis=new FileInputStream(importFile);
 		zis = new ZipInputStream(fis);
 		Set<String> addDigests = new HashSet<String>();

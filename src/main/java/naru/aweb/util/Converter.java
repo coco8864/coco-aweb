@@ -98,7 +98,7 @@ public class Converter extends PoolBase implements BufferGetter{
 			return;
 		}
 		inAsyncBuffer=true;
-		asyncBuffer.asyncBuffer(this,0);
+		asyncBuffer.asyncBuffer((BufferGetter) this,0);
 	}
 	
 	public synchronized void end(){
@@ -113,13 +113,11 @@ public class Converter extends PoolBase implements BufferGetter{
 		return isError;
 	}
 	
-	@Override
 	public boolean onBuffer(Object userContext, ByteBuffer[] buffers) {
 		putBuffer(buffers);
 		return true;
 	}
 	
-	@Override
 	public synchronized void onBufferEnd(Object userContext) {
 		inAsyncBuffer=false;
 		if(bufferQueue.size()==0){
@@ -136,7 +134,6 @@ public class Converter extends PoolBase implements BufferGetter{
 		}
 	}
 	
-	@Override
 	public synchronized void onBufferFailure(Object userContext, Throwable failure) {
 		inAsyncBuffer=false;
 		isError=true;
