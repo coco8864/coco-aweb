@@ -167,6 +167,7 @@ public class PaAdmin implements Palet {
 		}else if("deleteQuery".equals(command)){
 			config.getLogPersister().deleteAccessLog(query(parameter), peer);
 			return;
+		/*
 		}else if("downloadExportFile".equals(command)){
 			String fileId=(String)parameter.get("fileId");
 			File exportFile=config.getLogPersister().popExportBlob(fileId);
@@ -174,6 +175,7 @@ public class PaAdmin implements Palet {
 			blob.setName("phatomProxyExport.zip");
 			peer.download(blob);
 			return;
+		*/
 		}
 	}
 	
