@@ -13,6 +13,19 @@
 <textarea id="chatOutputTextArea" rows="10" cols="80" readonly="readonly">
 </textarea>
 <script type="text/javascript"> 
+function onChatSend(){
+ ph.admin.chatSd.publish({
+  message:jQuery('#chatInputTextArea').val(),
+  date:new Date(),
+  userName:'$esc.javascript($loginUser.loginId)',
+  echoback:jQuery('#chatEchoback').is(':checked')});//echoback可否
+ jQuery('#chatInputTextArea').val('');
+}
+
+(function(){
+if(ph.admin.chatSd){
+  return;
+}
 jQuery("#chatInputTextArea").resizable({
 	handles: "se"
 });
@@ -21,14 +34,6 @@ jQuery("#chatOutputTextArea").resizable({
 });
 
 var chatSd=ph.admin.cd.subscribe('admin','chat');
-function onChatSend(){
- chatSd.publish({
-  message:jQuery('#chatInputTextArea').val(),
-  date:new Date(),
-  userName:'$esc.javascript($loginUser.loginId)',
-  echoback:jQuery('#chatEchoback').is(':checked')});//echoback可否
- jQuery('#chatInputTextArea').val('');
-}
 chatSd.onMessage(
  function(msg){
  ##chat画面を表示していない可能性がある
@@ -42,25 +47,24 @@ chatSd.onMessage(
   outputArea.val(text);
 });
 ph.admin.chatSd=chatSd;
+})();
 
-/*
-function queueInfo(){
-	var queueInfo;
-	if(!ph.queue.isAuth){
-		return "未認証"
-	}else{
-		queueInfo="接続中";
-	}
-	if(ph.useWebSocket){
-		queueInfo+=":WebSocket";
-	}else{
-		queueInfo+=":Polling("+ph.queue.interval+")";
-	}
-	if(ph.useSessionStorage){
-		queueInfo+=":SessionStorage";
-	}
-	return queueInfo;
-}
-*/
-jQuery('#queueInfo').text(/*queueInfo()*/'');
+##function queueInfo(){
+##	var queueInfo;
+##	if(!ph.queue.isAuth){
+##		return "未認証"
+##	}else{
+##		queueInfo="接続中";
+##	}
+##	if(ph.useWebSocket){
+##		queueInfo+=":WebSocket";
+##	}else{
+##		queueInfo+=":Polling("+ph.queue.interval+")";
+##	}
+##	if(ph.useSessionStorage){
+##		queueInfo+=":SessionStorage";
+##	}
+##	return queueInfo;
+##}
+##//jQuery('#queueInfo').text(/*queueInfo()*/'');
 </script>

@@ -79,7 +79,16 @@ ph.jQuery(function() {
 	jQuery("#commonOutputDialog").dialog('close');
 
 	jQuery("#tabs").tabs({
-		cache:true,
+//		cache:true,
+		beforeLoad: function( event, ui ) {
+		if ( ui.tab.data( "loaded" ) ) {
+			event.preventDefault();
+			return;
+		}
+		ui.jqXHR.success(function() {
+			ui.tab.data( "loaded", true );
+			});
+		},
 		ajaxOptions: {
 			error: function(xhr, status, index, anchor) {
 ph.log("tabs ajaxOptions error");
