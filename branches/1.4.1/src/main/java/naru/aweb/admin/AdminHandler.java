@@ -668,9 +668,9 @@ public class AdminHandler extends WebServerHandler{
 		if( "/admin".equals(path)){
 			doCommand(parameter);
 			return;
-		}else if( "/accessLog".equals(path)){
-			forwardHandler(AdminAccessLogHandler.class);
-			return;
+//		}else if( "/accessLog".equals(path)){
+//			forwardHandler(AdminAccessLogHandler.class);
+//			return;
 		}else if( REPLAY_UPLOAD_PATH.equals(path)){
 			replayUpload(parameter);
 			return;
