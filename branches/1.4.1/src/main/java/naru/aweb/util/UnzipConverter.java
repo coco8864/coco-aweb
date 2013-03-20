@@ -8,13 +8,12 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import naru.async.BufferGetter;
+import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.async.store.Page;
 
-public class UnzipConverter {
-	private static UnderFlowException UNDERFLOW=new UnderFlowException();
-	private static class UnderFlowException extends IOException{
-	}
+public class UnzipConverter extends PoolBase{
+	private static IOException UNDERFLOW=new IOException("underFlow");
 	
 	private ZipInputStream zipInputStream;
 	private InnerInputStream innerInputStream=new InnerInputStream();
@@ -22,8 +21,14 @@ public class UnzipConverter {
 	private Page page=new Page();
 	private ZipEntry zipEntry;
 	
+	public static UnzipConverter create(BufferGetter getter){
+		UnzipConverter converter=(UnzipConverter)PoolManager.getInstance(UnzipConverter.class);
+		converter.init(getter);
+		return converter;
+	}
+	
 	public void init(BufferGetter getter){
-		innerInputStream.recycle();
+		this.innerInputStream.recycle();
 		this.zipInputStream=new ZipInputStream(innerInputStream);
 		this.getter=getter;
 		this.zipEntry=null;
@@ -73,19 +78,22 @@ public class UnzipConverter {
 	
 	private class InnerInputStream extends InputStream{
 		private LinkedList<ByteBuffer> buffers=new LinkedList<ByteBuffer>();
-		public void putBuffer(ByteBuffer buffer){
-			this.buffers.add(buffer);
-		}
-		
 		public void recycle(){
 			for(ByteBuffer buffer:buffers){
 				PoolManager.poolBufferInstance(buffer);
 			}
 			buffers.clear();
 		}
+		
+		public void putBuffer(ByteBuffer buffer){
+			this.buffers.add(buffer);
+		}
+		
 		public void putBuffer(ByteBuffer[] buffers){
-			for(int i=0;i<buffers.length;i++)
-				this.buffers.add(buffers[i]);
+			for(ByteBuffer buffer:buffers){
+				this.buffers.add(buffer);
+			}
+			PoolManager.poolArrayInstance(buffers);
 		}
 		public boolean isBuffer(){
 			return (buffers.size()!=0);
