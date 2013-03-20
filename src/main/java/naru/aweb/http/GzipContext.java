@@ -58,14 +58,16 @@ public class GzipContext extends PoolBase{
 	
 	public void putPlainBuffer(ByteBuffer buffer){
 		try {
-			inputLength+=buffer.remaining();
+			int remaining=buffer.remaining();
+			int pos=buffer.position();
+			byte[] array=buffer.array();
+			
+			inputLength+=remaining;
 			if(gzipOutputStream==null){
 				gzipOutputStream=new GZIPOutputStream(zipedOutputStream);
 			}
 			synchronized(gzipOutputStream){//closeとバッティングすると無限ループとなる
-				byte[] writeBytes=new byte[buffer.remaining()];
-				buffer.get(writeBytes);
-				gzipOutputStream.write(writeBytes);
+				gzipOutputStream.write(array,pos,remaining);
 			}
 			PoolManager.poolBufferInstance(buffer);
 		} catch (IOException e) {
