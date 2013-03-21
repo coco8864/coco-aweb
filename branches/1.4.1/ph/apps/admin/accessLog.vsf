@@ -106,18 +106,15 @@ function page(direct){
 
 ##queryString)"where responseLength>100 && contentType.indexOf('image')>=0 ORDER BY id DESC"
 function query(queryString,from,to){
-	var queryObj={};
+	var queryObj={command:'list'};
 	queryObj.from=from-0;
 	queryObj.to=to-0;
-    if(queryString){
-	  queryObj.query=queryString;
-    }else{
-	  delete queryObj.query;
-    }
-	ph.admin.doPramCommand("accessLog","list",queryObj,function(jsonStr){
-		var accessLogList=ph.JSON.parse(jsonStr);
-		refreshTable(accessLogList);
-	});
+	if(queryString){
+		queryObj.query=queryString;
+	}else{
+		delete queryObj.query;
+	}
+	ph.admin.accessLogSd.publish(queryObj);
 	curQuery=queryObj;
 }
 
@@ -348,6 +345,8 @@ Order By:<input type="text" value="id DESC" id="orderBy" size="32" />
 <tbody  id="tableData"></tbody>
 </table>
 </div>
-<script type="text/javascript"> 
+<script type="text/javascript">
+ph.admin.accessLogSd=ph.admin.cd.subscribe('admin','accessLog');
+ph.admin.accessLogSd.onMessage(refreshTable);
 searchPage();
 </script> 
