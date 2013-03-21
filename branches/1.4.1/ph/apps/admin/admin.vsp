@@ -9,11 +9,11 @@
 	<meta http-equiv="Expires" content="0"> 
 	<title>Phatom Proxy Console</title>
 
-	<link type="text/css" href="/pub/css/jquery-ui-1.10.1.custom.css" rel="stylesheet" />
+	<link type="text/css" href="/pub/css/jquery-ui-1.10.2.custom.css" rel="stylesheet" />
 	<script type="text/javascript" src="/pub/js/ph-loader.js?include=ph-pa.js,ph-queue.js"></script>
 	<script type="text/javascript" src="/pub/js/dateformat.js"></script>
 	<script type="text/javascript" src="/pub/js/jquery-1.8.3.min.js"></script>
-	<script type="text/javascript" src="/pub/js/jquery-ui-1.10.1.custom.min.js"></script>
+	<script type="text/javascript" src="/pub/js/jquery-ui-1.10.2.custom.min.js"></script>
 	<link type="text/css" href="/pub/css/ph.css" rel="stylesheet" /> 
 <style type="text/css"><!--
 td,th {border:1px solid #000;text-align:left;font-size:x-small}
