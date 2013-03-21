@@ -95,16 +95,14 @@ public class PaAdmin implements Palet {
 	private JSON listAccessLogJson(Map<String, ?> parameter){
 		try{
 			String query=(String)parameter.get("query");
-			String fromString=(String)parameter.get("from");
-			String toString=(String)parameter.get("to");
+			Integer from=(Integer)parameter.get("from");
+			Integer to=(Integer)parameter.get("to");
 			String orderby=(String)parameter.get("orderby");
-			int from=-1;
-			int to=Integer.MAX_VALUE;
-			if(fromString!=null){
-				from=Integer.parseInt(fromString);
-				if(toString!=null){
-					to=Integer.parseInt(toString);
-				}
+			if(from==null){
+				from=-1;
+			}
+			if(to==null){
+				to=Integer.MAX_VALUE;
 			}
 			Collection<AccessLog> accessLogs=AccessLog.query(query, from, to,orderby);
 			return AccessLog.collectionToJson(accessLogs);
