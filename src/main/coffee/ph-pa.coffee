@@ -201,7 +201,8 @@ class CD extends EventModule
   _onWsMessage:(msg)=>
     ph.log('Pa _onWsMessage:'+msg.data)
     Envelope envelope=new Envelope()
-    envelope.unpack(msg.data,@_onMessage)
+    obj=ph.JSON.parse(msg.data)
+    envelope.unpack(obj,@_onMessage)
   _openWebSocket:=>
     ph.log('Pa WebSocket start')
     @stat=ph.pa.STAT_OPEN
@@ -235,7 +236,9 @@ class CD extends EventModule
       ph.log('_onXhrOpened error.'+ph.JSON.stringify(res))
   _onXhrMessage:(obj)->
     ph.log('Pa _onXhrMessage')
-    @_onMessage(obj)
+    Envelope envelope=new Envelope()
+    envelope.unpack(obj,@_onMessage)
+#   @_onMessage(obj)
   _getBid:->
     str=sessionStorage[@_BROWSERID_PREFIX + @_appId] ? '{}'
     bids=ph.JSON.parse(str)
@@ -518,10 +521,9 @@ class Envelope
       @blobDfd=ph.jQuery.Deferred()
       @blobDfd.done(=>@onDoneBinPtc(onPacked))
   unpack:(data,cb)->
-    if typeof data=='string'
-      obj=ph.JSON.parse(data)
-      @dates=obj.meta?.dates ? []
-      obj=@deserialize(obj)
+    if !ph.useBlob || !(data instanceof Blob)
+      @dates=data.meta?.dates ? []
+      obj=@deserialize(data)
       cb(obj)
       return
     blob=data

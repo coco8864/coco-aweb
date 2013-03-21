@@ -18,12 +18,14 @@ public class PaPeer extends PoolBase{
 	public static PaPeer create(PaSession paSession,String qname,String subname){
 		PaPeer peer=(PaPeer)PoolManager.getInstance(PaPeer.class);
 		peer.paSession=paSession;
+		peer.paSessionId=paSession.getPoolId();
 		peer.qname=qname;
 		peer.subname=subname;
 		return peer;
 	}
 	
 	private PaSession paSession;
+	private long paSessionId;
 	private String qname;//queue名
 	private String subname;//クライアントid(認証idが同じでもブラウザの違い等により、clientは別のpeerで接続できる)
 	
@@ -132,8 +134,7 @@ public class PaPeer extends PoolBase{
 	public int hashCode() {
 		final int prime = 31;
 		int result = 0;//super.hashCode();
-		result = prime * result
-				+ ((paSession == null) ? 0 : paSession.hashCode());
+		result = prime * result	+ (int)paSessionId;
 		result = prime * result + ((qname == null) ? 0 : qname.hashCode());
 		result = prime * result + ((subname == null) ? 0 : subname.hashCode());
 		return result;
@@ -148,10 +149,7 @@ public class PaPeer extends PoolBase{
 		if (getClass() != obj.getClass())
 			return false;
 		PaPeer other = (PaPeer) obj;
-		if (paSession == null) {
-			if (other.paSession != null)
-				return false;
-		} else if (!paSession.equals(other.paSession))
+		if (paSessionId != other.paSessionId)
 			return false;
 		if (qname == null) {
 			if (other.qname != null)
