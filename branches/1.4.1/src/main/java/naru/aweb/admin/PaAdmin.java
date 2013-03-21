@@ -20,6 +20,7 @@ import naru.aweb.pa.PaPeer;
 import naru.aweb.pa.Palet;
 import naru.aweb.pa.PaletCtx;
 import net.sf.json.JSON;
+import net.sf.json.JSONObject;
 
 public class PaAdmin implements Palet {
 	private static Logger logger = Logger.getLogger(PaAdmin.class);
@@ -142,10 +143,13 @@ public class PaAdmin implements Palet {
 	}
 	
 	private void accessLog(PaPeer peer,Map<String, ?> parameter){
+		JSONObject res=new JSONObject();
 		String command=(String)parameter.get("command");
+		res.put("command", command);
 		if("list".equals(command)){
 			JSON list=listAccessLogJson(parameter);
-			peer.message(list);
+			res.put("data", list);
+			peer.message(res);
 			return;
 		}else if("import".equals(command)){
 			importAccesslog(peer,parameter);
