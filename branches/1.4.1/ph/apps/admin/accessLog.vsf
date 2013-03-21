@@ -3,6 +3,13 @@ var curQuery;
 var curWhere;
 var curQueryCondition;
 
+ph.admin.accessLogSd=ph.admin.cd.subscribe('admin','accessLog');
+ph.admin.accessLogSd.onMessage(function(res){
+	if(res.command==='list'){
+		refreshTable(res.data);
+	}
+});
+
 var exportAccessLogCb={
 	onComplete:function(msg){
 		ph.jQuery("#exportFileId").val(msg.message);
@@ -32,27 +39,21 @@ function openStress(){
 }
 
 ##AccessLog移出、削除コマンド
-function accessLogIdsCommand(cmd,cb){
+function accessLogIdsCommand(command,cb){
 	var selectList=logCheckList();
 	if(selectList.length==0){
 		alert(cmd+':選択されていません.');
 		return;
 	}
-	ph.admin.doPramCommand('accessLog',cmd,{list:selectList.join()},function(chId){
-			ph.queue.subscribeById(chId,cb);
-		});
+	ph.admin.accessLogSd.publish({command:command,list:selectList.join()});
 }
 
 function accessLogDeleteQuery(query){
-	ph.admin.doPramCommand('accessLog','deleteQuery',{query:query},function(chId){
-			ph.queue.subscribeById(chId,deleteAccessLogCb);
-		});
+	ph.admin.accessLogSd.publish({command:'deleteQuery',query:query});
 }
 
 function accessLogExportQuery(query){
-	ph.admin.doPramCommand('accessLog','exportQuery',{query:query},function(chId){
-			ph.queue.subscribeById(chId,exportAccessLogCb);
-		});
+	ph.admin.accessLogSd.publish({command:'exportQuery',query:query});
 }
 
 function searchPage(){
@@ -346,7 +347,5 @@ Order By:<input type="text" value="id DESC" id="orderBy" size="32" />
 </table>
 </div>
 <script type="text/javascript">
-ph.admin.accessLogSd=ph.admin.cd.subscribe('admin','accessLog');
-ph.admin.accessLogSd.onMessage(refreshTable);
 searchPage();
 </script> 
