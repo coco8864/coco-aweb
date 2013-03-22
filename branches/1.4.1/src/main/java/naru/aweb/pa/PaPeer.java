@@ -18,7 +18,11 @@ public class PaPeer extends PoolBase{
 	public static PaPeer create(PaSession paSession,String qname,String subname){
 		PaPeer peer=(PaPeer)PoolManager.getInstance(PaPeer.class);
 		peer.paSession=paSession;
-		peer.paSessionId=paSession.getPoolId();
+		if(paSession!=null){
+			peer.paSessionId=paSession.getPoolId();
+		}else{
+			peer.paSessionId=0;
+		}
 		peer.qname=qname;
 		peer.subname=subname;
 		return peer;
