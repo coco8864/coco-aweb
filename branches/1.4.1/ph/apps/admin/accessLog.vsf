@@ -7,6 +7,8 @@ ph.admin.accessLogSd=ph.admin.cd.subscribe('admin','accessLog');
 ph.admin.accessLogSd.onMessage(function(res){
 	if(res.command==='list'){
 		refreshTable(res.data);
+	}else if(res.command==='entry'){
+		updateEntry(res.data);
 	}
 });
 
@@ -130,7 +132,7 @@ function refreshTable(lines){
 	}
 }
 
-##アクセスログの一行(tr)を作成
+##AccessLogの1行を作成
 function tableLine(accessLog){
 	var trTag=document.createElement("tr");
 	var id=accessLog.id;
@@ -236,7 +238,7 @@ function mkIdtag(accessLog){
 //alert('b:'+window.location.hash);
 //			window.location.hash = "#traceTab";
 //alert('a:'+window.location.hash);
-			jQuery("#tabs").tabs("option", "active",4);##AccessLog詳細画面は、5(-1)番目のタグ
+			jQuery("#tabs").tabs("option", "active",4);##AccessLog詳細画面は5(-1)番目のタグ
 			return true;
 		});
 
@@ -312,12 +314,12 @@ Order By:<input type="text" value="id DESC" id="orderBy" size="32" />
 <option value="requestLine.indexOf('google')>=0">requestLineに'google'を含む</option>
 <option value="requestLine.startsWith('POST')">POSTメソッドのみ</option>
 <option value="contentType.indexOf('image')>=0">imageのみ</option>
-<option value="statusCode!='200'">statusCode 200以外</option>
+<option value="statusCode!='200'">statusCode 200以上</option>
 <option value="userId.equals('admin')">adminで採取したログのみ</option>
 <option value="contentEncoding.equals('gzip')">gzipコンテンツ</option>
 <option value="transferEncoding.equals('chunked')">chunkedコンテンツ</option>
 <option value="processTime>=5000">処理時間が5秒以上</option>
-<option value="realHost=='sampleHost'">realHostが'sampleHost'</option>
+<option value="realHost=='sampleHost'">realHostがsampleHost'</option>
 <option value="ip.indexOf('test')>=0">clientIpに'test'を含む</option>
 <option value="destinationType=='H'">http</option>
 <option value="destinationType=='S'">https</option>
@@ -326,15 +328,15 @@ Order By:<input type="text" value="id DESC" id="orderBy" size="32" />
 <option value="sourceType=='E'">edit</option>
 </select>
 </div>
-条件入力:<input type="text" id="logQuery" value="" size="100" />
+条件入力<input type="text" id="logQuery" value="" size="100" />
 <input type="button" onclick="searchPage();" value="更新"/>
 <div>
 <input type="button" value="全" onClick="selectAll();"/>
-選択Log操作:
+選択Log操作
 <input type="button" value="削除" onClick="accessLogIdsCommand('deleteIds',deleteAccessLogCb);"/>
 <input type="button" value="移出" onClick="accessLogIdsCommand('exportIds',exportAccessLogCb);"/>
 <input type="button" value="stress" onClick="openStress();"/>
-現在条件 <span id="curQueryCondition"></span>/現在行:<span id="curLinecount"></span>
+現在条件 <span id="curQueryCondition"></span>/現在行<span id="curLinecount"></span>
 <input type="button" onclick="page(false);" value="前ページ"/>
 <input type="button" onclick="page(true);" value="次ページ"/>
 </div>
