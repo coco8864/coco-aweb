@@ -49,14 +49,13 @@ function updateStastics(stcs){
 }
 
 function watchStastics(){
- var stticsSd=ph.admin.cd.subscribe('admin','sttics');
- stticsSd.onMessage(updateStastics);
- ph.admin.stticsSd=stticsSd;
+ ph.admin.stticsSd=ph.admin.cd.subscribe('admin','sttics',updateStastics);
 }
 
 function unwatchStastics(){
  if(ph.admin.stticsSd){
   ph.admin.stticsSd.unsubscribe();
+  ph.admin.stticsSd=null;
  }
 }
 

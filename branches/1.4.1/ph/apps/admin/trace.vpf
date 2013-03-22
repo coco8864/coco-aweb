@@ -27,7 +27,7 @@ var trace={
 };
 
 var runTraceCb={
-	onComplete:function(msg){changeEntry(msg.message);},
+	onComplete:function(msg){alert('x');changeEntry(msg.message);},
 	onError:function(msg){ph.log('runTrace onError:');ph.dump(msg);},
 	onMessage:function(msg){ph.log('runTrace onMessage:');ph.dump(msg);}
 };
@@ -148,7 +148,7 @@ function changeEntry(newLogId){
 		alert("無効なIDです");
 		return;
 	}
-	ph.jQuery("#traceSaveButton").attr("disabled","disabed");
+	ph.jQuery("#traceSaveButton").attr("disabled",true);
 	trace.clear();
 	trace.accessLogId=newLogId;
 	entryTable();
@@ -159,7 +159,7 @@ function entryTable(){
 }
 
 function jumpTrace(){
-	changeEntry(ph.jQuery("#inputLogId").val());
+	changeEntry(parseInt(ph.jQuery("#inputLogId").val()));
 }
 function jumpParent(){
 	if(trace.accessLog.originalLogId<0){

@@ -32,6 +32,7 @@ var tabIndexs = {'#statusTab' : 0, '#settingTab' : 1, '#mappingTab' : 2, '#acces
 var userTabHashKey='userTabHash.$!esc.html($loginUser.loginId)';
 window.onhashchange = function(){
 	//現在のhashからインデックスの値を取得
+	jQuery('html,body').scrollTop(0);
 	var hash=window.location.hash;
 	if(!hash){
 		//hash from session strage
@@ -55,9 +56,16 @@ ph.jQuery(function() {
 	jQuery("#textEditTextArea").resizable({
 		handles: "se"
 	});
-	var cd=ph.pa.connect('/pa');
-	cd.done(function(){ph.admin.cd=null});
-	ph.admin.cd=cd;
+	ph.admin.cd=ph.pa.connect('/pa');
+	ph.admin.cd.done(function(){ph.admin.cd=null});
+	ph.admin.accessLogSd=ph.admin.cd.subscribe('admin','accessLog',
+		function(res){
+			if(res.command==='list'){
+				if(refreshTable)refreshTable(res.data);
+			}else if(res.command==='entry'){
+				if(updateEntry)updateEntry(res.data);
+			}
+		});
 
 	jQuery("#stress").dialog({title:'stressオプション入力'});
 	jQuery("#stress").dialog('close');

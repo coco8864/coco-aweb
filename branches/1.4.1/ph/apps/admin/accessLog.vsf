@@ -3,26 +3,6 @@ var curQuery;
 var curWhere;
 var curQueryCondition;
 
-ph.admin.accessLogSd=ph.admin.cd.subscribe('admin','accessLog');
-ph.admin.accessLogSd.onMessage(function(res){
-	if(res.command==='list'){
-		refreshTable(res.data);
-	}else if(res.command==='entry'){
-		updateEntry(res.data);
-	}
-});
-
-var exportAccessLogCb={
-	onComplete:function(msg){
-		ph.jQuery("#exportFileId").val(msg.message);
-		ph.jQuery("#exportDownloadForm").submit();},
-	onError:function(msg){ph.log('runTrace onError:');ph.dump(msg);}
-};
-var deleteAccessLogCb={
-	onComplete:function(msg){searchPage();},
-	onError:function(msg){ph.log('runTrace onError:');ph.dump(msg);}
-};
-
 function selectAll(cmd){
 	var checkList=ph.jQuery(".logIdCheck");
 	var checked=checkList.is(":checked");
@@ -41,7 +21,7 @@ function openStress(){
 }
 
 ##AccessLog移出、削除コマンド
-function accessLogIdsCommand(command,cb){
+function accessLogIdsCommand(command){
 	var selectList=logCheckList();
 	if(selectList.length==0){
 		alert(cmd+':選択されていません.');
@@ -235,9 +215,6 @@ function mkIdtag(accessLog){
 	tdTag.appendChild(aTag);
 	ph.jQuery(aTag).bind("click",function(){##AccessLog詳細画面へのジャンプ
 			changeEntry(accessLog.id);
-//alert('b:'+window.location.hash);
-//			window.location.hash = "#traceTab";
-//alert('a:'+window.location.hash);
 			jQuery("#tabs").tabs("option", "active",4);##AccessLog詳細画面は5(-1)番目のタグ
 			return true;
 		});
@@ -333,8 +310,8 @@ Order By:<input type="text" value="id DESC" id="orderBy" size="32" />
 <div>
 <input type="button" value="全" onClick="selectAll();"/>
 選択Log操作
-<input type="button" value="削除" onClick="accessLogIdsCommand('deleteIds',deleteAccessLogCb);"/>
-<input type="button" value="移出" onClick="accessLogIdsCommand('exportIds',exportAccessLogCb);"/>
+<input type="button" value="削除" onClick="accessLogIdsCommand('deleteIds');"/>
+<input type="button" value="移出" onClick="accessLogIdsCommand('exportIds');"/>
 <input type="button" value="stress" onClick="openStress();"/>
 現在条件 <span id="curQueryCondition"></span>/現在行<span id="curLinecount"></span>
 <input type="button" onclick="page(false);" value="前ページ"/>
