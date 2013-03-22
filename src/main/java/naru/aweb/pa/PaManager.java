@@ -51,5 +51,6 @@ public class PaManager {
 		}
 		PaPeer peer=PaPeer.create(null, qname, subname);
 		palet.onPublish(peer, data);
+		peer.unref(true);
 	}
 }
