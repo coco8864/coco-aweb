@@ -106,25 +106,11 @@ function setAuth(){
 }
 
 function accessLogDeleteQuery(query){
-	var deleteAccessLogCb={
-		onComplete:function(msg){searchPage();},
-		onError:function(msg){ph.log('runTrace onError:');ph.dump(msg);}
-	};
-	ph.admin.doPramCommand('accessLog','deleteQuery',{query:query},function(chId){
-			ph.queue.subscribeById(chId,deleteAccessLogCb);
-		});
+	ph.admin.accessLogSd.publish({command:'deleteQuery',query:query});
 }
 
 function accessLogExportQuery(query){
-	var exportAccessLogCb={
-		onComplete:function(msg){
-			ph.jQuery("#exportFileId").val(msg.message);
-			ph.jQuery("#exportDownloadForm").submit();},
-		onError:function(msg){ph.log('runTrace onError:');ph.dump(msg);}
-	};
-	ph.admin.doPramCommand('accessLog','exportQuery',{query:query},function(chId){
-			ph.queue.subscribeById(chId,exportAccessLogCb);
-		});
+	ph.admin.accessLogSd.publish({command:'exportQuery',query:query});
 }
 
 ##realHostの一行(tr)を作成
