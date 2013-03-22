@@ -1,20 +1,15 @@
 package naru.aweb.admin;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.log4j.Logger;
 
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
-import naru.aweb.config.Mapping;
-import naru.aweb.http.ParameterParser;
 import naru.aweb.pa.Blob;
 import naru.aweb.pa.PaPeer;
 import naru.aweb.pa.Palet;
@@ -149,6 +144,12 @@ public class PaAdmin implements Palet {
 		if("list".equals(command)){
 			JSON list=listAccessLogJson(parameter);
 			res.put("data", list);
+			peer.message(res);
+			return;
+		}else if("entry".equals(command)){
+			Integer id=(Integer)parameter.get("id");
+			AccessLog accessLog=AccessLog.getById((long)id);
+			res.put("data", accessLog);
 			peer.message(res);
 			return;
 		}else if("import".equals(command)){
