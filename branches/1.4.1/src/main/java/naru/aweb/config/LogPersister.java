@@ -8,12 +8,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -32,7 +30,6 @@ import naru.async.store.StoreStream;
 import naru.async.timer.TimerManager;
 import naru.aweb.pa.Blob;
 import naru.aweb.pa.PaPeer;
-import naru.aweb.queue.QueueManager;
 import naru.aweb.util.JdoUtil;
 
 public class LogPersister implements Timer {
