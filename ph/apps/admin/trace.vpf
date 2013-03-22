@@ -155,11 +155,7 @@ function changeEntry(newLogId){
 }
 
 function entryTable(){
-	var queryJsonObj={query:"WHERE id=="+trace.accessLogId,from:-1};
-	ph.admin.doPramCommand('accessLog','list',queryJsonObj, function(jsonStr){
-		var accessLogs=ph.JSON.parse(jsonStr);
-		updateEntry(accessLogs);
-	});
+	ph.admin.accessLogSd.publish({command:'entry',id:trace.accessLogId});
 }
 
 function jumpTrace(){
@@ -176,8 +172,8 @@ function jumpParent(){
 var sourceTypeDef={w:'PLAIN_WEB',W:'SSL_WEB',p:'PLAIN_PROXY',P:'SSL_PROXY',s:'SIMULATE',E:'EDIT'};
 var destinationTypeDef={H:'HTTP',S:'HTTPS',F:'FILE',A:'HANDLER',R:'REPLAY',E:'EDIT'};
 
-function updateEntry(accessLogs){
-	if(accessLogs.length==0){
+function updateEntry(accessLog){
+	if(!accessLog){
 		alert("無効なIDです");
 		return;
 	}
@@ -186,7 +182,6 @@ function updateEntry(accessLogs){
 	ph.jQuery("#logId").text(trace.accessLogId);
 	ph.jQuery("#inputLogId").val(trace.accessLogId);
 	ph.jQuery("#viewAccessLogId").val(trace.accessLogId);
-	var accessLog=accessLogs[0];
 	trace.accessLog=accessLog;
 	if(accessLog.originalLogId>=0){
 		ph.jQuery("#traceParentButton").attr("disabled","");

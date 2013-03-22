@@ -72,12 +72,7 @@ var streeCommandCb=function(chId){
 };
 
 function doStress(){
-//	if(!doStressCb.isComplete){
-//		alert("実行中");
-//	}
 	window.location.hash = "#stressTab";
-//	jQuery("#tabs").tabs("select",5);
-//	if(typeof perfProgress!='undefined'){perfProgress();}
 	if(ph.jQuery('#isStressFile').is(':checked')){
 		ph.jQuery('#fileStressAccessLogList').val( ph.jQuery('#stressAccessLogList').text() );
 		ph.jQuery('#stressFileForm').submit();
@@ -109,9 +104,9 @@ function updateStressDialog(){
 		ph.jQuery('.stressFile').hide();
 		ph.jQuery('.stressItem').show();
 		if(ph.jQuery('#stressAccessLog').is(':checked')){
-			ph.jQuery('.stressTrace').attr('disabled','')
+			ph.jQuery('.stressTrace').attr('disabled',false)
 		}else{
-			ph.jQuery('.stressTrace').attr('disabled','disabled')
+			ph.jQuery('.stressTrace').attr('disabled',true)
 		}
 	}
 }
