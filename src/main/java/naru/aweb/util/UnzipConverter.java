@@ -7,12 +7,14 @@ import java.util.LinkedList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import naru.async.AsyncBuffer;
 import naru.async.BufferGetter;
+import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.async.store.Page;
 
-public class UnzipConverter extends PoolBase{
+public class UnzipConverter extends PoolBase implements BufferGetter{
 	private static IOException UNDERFLOW=new IOException("underFlow");
 	
 	private ZipInputStream zipInputStream;
@@ -33,6 +35,39 @@ public class UnzipConverter extends PoolBase{
 		this.getter=getter;
 		this.zipEntry=null;
 		this.page.recycle();
+		this.asyncBuffer=null;
+	}
+	
+	private AsyncBuffer asyncBuffer;
+	private long offset;
+	
+	@Override
+	public boolean onBuffer(Object userContext, ByteBuffer[] buffers) {
+		put(buffers);
+		offset+=BuffersUtil.remaining(buffers);
+		asyncBuffer.asyncBuffer(this, offset, null);
+		return false;
+	}
+
+	@Override
+	public void onBufferEnd(Object userContext) {
+		end();
+		asyncBuffer=null;
+	}
+
+	@Override
+	public void onBufferFailure(Object userContext, Throwable failure) {
+		getter.onBufferFailure(userContext, failure);
+		asyncBuffer=null;
+	}
+	
+	public synchronized void parse(AsyncBuffer asyncBuffer){
+		if(this.asyncBuffer!=null){
+			throw new RuntimeException("UnzipConverter parse");
+		}
+		this.asyncBuffer=asyncBuffer;
+		this.offset=0;
+		asyncBuffer.asyncBuffer(this, offset, null);
 	}
 	
 	public void put(ByteBuffer buffer){
