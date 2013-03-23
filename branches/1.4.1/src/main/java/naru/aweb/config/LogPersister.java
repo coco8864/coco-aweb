@@ -30,7 +30,9 @@ import naru.async.store.StoreStream;
 import naru.async.timer.TimerManager;
 import naru.aweb.pa.Blob;
 import naru.aweb.pa.PaPeer;
+import naru.aweb.util.DummyGetter;
 import naru.aweb.util.JdoUtil;
+import naru.aweb.util.UnzipConverter;
 
 public class LogPersister implements Timer {
 	private static Logger logger = Logger.getLogger(LogPersister.class);
@@ -98,6 +100,10 @@ public class LogPersister implements Timer {
 	public void executeImport(PersistenceManager pm, Blob importBlob)
 			throws IOException {
 		ZipInputStream zis = null;
+		
+		UnzipConverter converter=UnzipConverter.create(new DummyGetter());
+		converter.parse(importBlob);
+		
 		if(true){
 			return;
 		}
