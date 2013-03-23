@@ -207,8 +207,6 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 		}
 	}
 	
-	//private DownloadGetter downloadGetter=null;
-	
 	/* download‚ªŠ®—¹‚·‚ê‚Î“–ŠYBlob‚Í‰ð•ú‚³‚ê‚é */
 	public void download(WebServerHandler handler){
 		if(name!=null){
@@ -224,58 +222,5 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 		DownloadGetter downloadGetter=new DownloadGetter(this);
 		asyncBuffer(downloadGetter,0,handler);
 	}
-	
-	private static class InputStreamGetter extends InputStream implements BufferGetter{
-		private Blob blob;
-		private long offset=0;
-		InputStreamGetter(Blob blob){
-			this.blob=blob;
-			this.offset=0;
-		}
-		
-		@Override
-		public boolean onBuffer(Object h, ByteBuffer[] buffers) {
-			WebServerHandler handler=(WebServerHandler)h;
-			offset+=BuffersUtil.remaining(buffers);
-			handler.responseBody(buffers);
-			blob.asyncBuffer(this,offset,handler);
-			return true;
-		}
-
-		@Override
-		public void onBufferEnd(Object h) {
-			WebServerHandler handler=(WebServerHandler)h;
-			handler.responseEnd();
-			blob.unref();
-		}
-
-		@Override
-		public void onBufferFailure(Object h, Throwable arg1) {
-			WebServerHandler handler=(WebServerHandler)h;
-			handler.responseEnd();
-			blob.unref();
-		}
-
-		@Override
-		public int read() throws IOException {
-			// TODO Auto-generated method stub
-			return 0;
-		}
-
-		@Override
-		public int read(byte[] b) throws IOException {
-			// TODO Auto-generated method stub
-			return super.read(b);
-		}
-
-		@Override
-		public int read(byte[] b, int off, int len) throws IOException {
-			// TODO Auto-generated method stub
-			return super.read(b, off, len);
-		}
-		
-		
-	}
-	
 	
 }
