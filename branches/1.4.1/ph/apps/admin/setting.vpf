@@ -113,6 +113,16 @@ function accessLogExportQuery(query){
 	ph.admin.accessLogSd.publish({command:'exportQuery',query:query});
 }
 
+function accessLogImort(){
+	var files=ph.jQuery('#importsFile').prop('files');
+	if(files.length<=0){
+		alert('fileが選択されていません');
+		return;
+	}
+	ph.admin.accessLogSd.publish({command:'import',importsFile:files[0]});
+}
+
+
 ##realHostの一行(tr)を作成
 function realHostLine(realHost){
 	var trTag=document.createElement("tr");
@@ -289,12 +299,13 @@ sessionTimeout:<input type="text" id="authSessionTimeout" size="12" value="$!esc
 <H2 onclick="ph.jQuery('#accesslogDiv').toggle();">+AccessLogs操作</H2>
 <div class="settingItem" id="accesslogDiv">
 <p>ログ、トレースデータを移出、移入することで別環境で採取した資料を取り扱うことができます</p>
-<form method="post" enctype="multipart/form-data" action="accessLog" target="uploadFrame">
+##<form method="post" enctype="multipart/form-data" action="accessLog" target="uploadFrame">
 <input type="hidden" name="command" value="import" />
 <input type="hidden" name="token" value="$esc.html(${session.token})"/>
 移入ファイル指定:<input type="file" name="importsFile" id="importsFile" />
-<input type="submit" value="移入"/><br/>
-</form>
+<input type="button" value="移入" onclick="accessLogImort();"/><br/>
+##<input type="submit" value="移入"/><br/>
+##</form>
 全AccessLog削除:<input type="button" onclick="accessLogDeleteQuery('');" value="削除" /><br/>
 全AccessLog移出:<input type="button" onclick="accessLogExportQuery('');" value="移出" /><br/>
 </div>

@@ -60,7 +60,9 @@ ph.jQuery(function() {
 	ph.admin.cd.done(function(){ph.admin.cd=null});
 	ph.admin.accessLogSd=ph.admin.cd.subscribe('admin','accessLog',
 		function(res){
-			if(res.command==='list'){
+			if(!res){
+				ph.log('res is null');
+			}else if(res.command==='list'){
 				if(refreshTable)refreshTable(res.data);
 			}else if(res.command==='entry'){
 				if(updateEntry)updateEntry(res.data);

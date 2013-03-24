@@ -274,6 +274,8 @@ public class LogPersister implements Timer {
 			} catch (IOException e) {
 				logger.warn("failt to export", e);
 				message = "fail to export";
+			} catch (Throwable t){
+				logger.error("failt to export", t);
 			}
 			break;
 		case TYPE_IMPORT:
