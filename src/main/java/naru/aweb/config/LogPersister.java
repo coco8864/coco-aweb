@@ -6,6 +6,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -23,7 +26,9 @@ import javax.jdo.Query;
 
 import org.apache.log4j.Logger;
 
+import naru.async.BufferGetter;
 import naru.async.Timer;
+import naru.async.pool.PoolManager;
 import naru.async.store.Store;
 import naru.async.store.StoreManager;
 import naru.async.store.StoreStream;
@@ -89,6 +94,68 @@ public class LogPersister implements Timer {
 		}
 		accessLog.unref();
 	}
+	
+	private static class ImportGetter implements BufferGetter {
+		private PaPeer peer;
+		private ZipEntry currentZe=null;
+		private Store store=null;//Store.open(true);
+		private CharsetDecoder charsetDecoder=null;
+		
+		private void endBuffer(ZipEntry ze){
+			if(ze==null){
+				return;
+			}
+			ze.getName();
+			if(store!=null){
+				store.close();//終了処理は別スレッドで実行中
+				String digest=store.getDigest();
+				store=null;
+			}else{
+			}
+		}
+		
+		private void startBuffer(ZipEntry ze){
+			String name=ze.getName();
+			if(name.startsWith("/store")){
+				store=Store.open(true);
+			}else if(name.startsWith("/accessLog")){
+				Charset c=Charset.forName("utf-8");
+				charsetDecoder=c.newDecoder();
+			}
+		}
+
+		@Override
+		public boolean onBuffer(Object userContext, ByteBuffer[] buffers) {
+			if(currentZe!=userContext){
+				endBuffer(currentZe);
+				currentZe=(ZipEntry)userContext;
+				startBuffer(currentZe);
+			}
+			if(store!=null){
+				store.putBuffer(buffers);
+			}else if(charsetDecoder!=null){
+				for(ByteBuffer buffer:buffers){
+					charsetDecoder.decode(buffer, out, false);
+				}
+				PoolManager.poolBufferInstance(buffers);
+			}
+			return true;
+		}
+
+		@Override
+		public void onBufferEnd(Object userContext) {
+			endBuffer(currentZe);
+			peer.message("done");
+		}
+
+		@Override
+		public void onBufferFailure(Object userContext, Throwable failure) {
+			if(store!=null){
+				store.close(false);
+				store=null;
+			}
+		}
+	}
 
 	/**
 	 * /store id1 id2 /accessLog id1 id2 id3
@@ -97,7 +164,7 @@ public class LogPersister implements Timer {
 	 * @throws IOException
 	 */
 	// TODO非同期
-	public void executeImport(PersistenceManager pm, Blob importBlob)
+	public void executeImport(PersistenceManager pm, Blob importBlob,PaPeer peer)
 			throws IOException {
 		ZipInputStream zis = null;
 		
@@ -168,12 +235,6 @@ public class LogPersister implements Timer {
 			digests.add(digest);
 		}
 	}
-	
-	//private static Map<String,Blob>exportBlobs=new HashMap<String,Blob>();
-	
-	//public File popExportBlob(String cid){
-	//	return exportBlobs.remove(cid);
-	//}
 
 	// TODO非同期
 	public File executeExport(PersistenceManager pm, Collection<Long> accessLogsIds)
@@ -280,7 +341,7 @@ public class LogPersister implements Timer {
 			break;
 		case TYPE_IMPORT:
 			try {
-				executeImport(pm, requestInfo.importBlob);
+				executeImport(pm, requestInfo.importBlob,requestInfo.peer);
 			} catch (IOException e) {
 				logger.warn("failt to import", e);
 				message = "fail to import";
