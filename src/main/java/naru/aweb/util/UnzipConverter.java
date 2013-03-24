@@ -96,8 +96,9 @@ public class UnzipConverter extends PoolBase implements BufferGetter{
 				int len=zipInputStream.read(buf);
 				if(len>0){
 					page.putBytes(buf, 0, len);
-				}else if(len==0){
+				}else if(len<=0){
 					page=null;
+					break;
 				}
 			}
 		} catch (IOException e) {
