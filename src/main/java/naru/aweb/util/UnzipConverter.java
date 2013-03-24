@@ -97,18 +97,22 @@ public class UnzipConverter extends PoolBase implements BufferGetter{
 				if(len>0){
 					page.putBytes(buf, 0, len);
 				}else if(len<=0){
-					page=null;
-					break;
+					ByteBuffer[] buffers=page.getBuffer();
+					if(buffers!=null){
+						getter.onBuffer(zipEntry, buffers);
+					}
+					zipEntry=zipInputStream.getNextEntry();
 				}
 			}
 		} catch (IOException e) {
 			if(e!=UNDERFLOW){
 				getter.onBufferFailure(zipEntry, e);
+				return;
 			}
-		}
-		ByteBuffer[] buffers=page.getBuffer();
-		if(buffers!=null){
-			getter.onBuffer(zipEntry, buffers);
+			ByteBuffer[] buffers=page.getBuffer();
+			if(buffers!=null){
+				getter.onBuffer(zipEntry, buffers);
+			}
 		}
 	}
 	
