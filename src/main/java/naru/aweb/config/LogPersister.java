@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.util.ArrayList;
@@ -97,9 +98,19 @@ public class LogPersister implements Timer {
 	
 	private static class ImportGetter implements BufferGetter {
 		private PaPeer peer;
+		PersistenceManager pm;
 		private ZipEntry currentZe=null;
 		private Store store=null;//Store.open(true);
 		private CharsetDecoder charsetDecoder=null;
+		private CharBuffer charBuffer=null;
+		private Set<String> addDigests = new HashSet<String>();
+		private List<String> refDigests = new ArrayList<String>();
+		
+		private void addDigest(Collection<String> digests, String digest) {
+			if (digest != null) {
+				digests.add(digest);
+			}
+		}
 		
 		private void endBuffer(ZipEntry ze){
 			if(ze==null){
@@ -109,8 +120,25 @@ public class LogPersister implements Timer {
 			if(store!=null){
 				store.close();//終了処理は別スレッドで実行中
 				String digest=store.getDigest();
+				addDigests.add(digest);
 				store=null;
-			}else{
+			}else if(charsetDecoder!=null){
+				charBuffer.flip();
+				charBuffer.array();
+				String accessLogJson=new String(charBuffer.array(),charBuffer.position(),charBuffer.limit());
+				charsetDecoder=null;
+				charBuffer=null;
+				AccessLog accessLog = AccessLog.fromJson(accessLogJson);
+				if (accessLog == null) {
+					continue;
+				}
+				addDigest(refDigests, accessLog.getRequestHeaderDigest());
+				addDigest(refDigests, accessLog.getRequestBodyDigest());
+				addDigest(refDigests, accessLog.getResponseHeaderDigest());
+				addDigest(refDigests, accessLog.getResponseBodyDigest());
+				accessLog.setId(null);
+				accessLog.setPersist(true);
+				executeInsert(pm, accessLog);
 			}
 		}
 		
@@ -121,6 +149,8 @@ public class LogPersister implements Timer {
 			}else if(name.startsWith("/accessLog")){
 				Charset c=Charset.forName("utf-8");
 				charsetDecoder=c.newDecoder();
+				//accessLogをjson化したものなので無制限に大きくならない
+				charBuffer=CharBuffer.allocate(4096);
 			}
 		}
 
@@ -135,7 +165,7 @@ public class LogPersister implements Timer {
 				store.putBuffer(buffers);
 			}else if(charsetDecoder!=null){
 				for(ByteBuffer buffer:buffers){
-					charsetDecoder.decode(buffer, out, false);
+					charsetDecoder.decode(buffer, charBuffer, false);
 				}
 				PoolManager.poolBufferInstance(buffers);
 			}
@@ -145,6 +175,14 @@ public class LogPersister implements Timer {
 		@Override
 		public void onBufferEnd(Object userContext) {
 			endBuffer(currentZe);
+			Iterator<String> itr = refDigests.iterator();
+			while (itr.hasNext()) {
+				StoreManager.ref(itr.next());
+			}
+			itr = addDigests.iterator();
+			while (itr.hasNext()) {
+				StoreManager.unref(itr.next());
+			}
 			peer.message("done");
 		}
 
