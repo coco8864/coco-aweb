@@ -1,11 +1,8 @@
 package naru.aweb.config;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -36,21 +33,16 @@ import naru.async.store.StoreStream;
 import naru.async.timer.TimerManager;
 import naru.aweb.pa.Blob;
 import naru.aweb.pa.PaPeer;
-import naru.aweb.util.DummyGetter;
 import naru.aweb.util.JdoUtil;
 import naru.aweb.util.UnzipConverter;
 
 public class LogPersister implements Timer {
 	private static Logger logger = Logger.getLogger(LogPersister.class);
-//	private static QueueManager queueManager = QueueManager.getInstance();
 
 	private long intervalTimeout = 1000;
-//	private long timerId = -1;
 	private Object interval=null;
 
 	private List requestQueue = new LinkedList();
-	// private List<AccessLog> insertQueue=new LinkedList<AccessLog>();
-	// private List<AccessLog> deleteQueue=new LinkedList<AccessLog>();
 	private boolean isTerm = false;
 	private Config config;
 
@@ -98,7 +90,8 @@ public class LogPersister implements Timer {
 	
 	private static class ImportGetter implements BufferGetter {
 		private PaPeer peer;
-		PersistenceManager pm;
+		private PersistenceManager pm;
+		private LogPersister logPersister;
 		private ZipEntry currentZe=null;
 		private Store store=null;//Store.open(true);
 		private CharsetDecoder charsetDecoder=null;
@@ -106,21 +99,20 @@ public class LogPersister implements Timer {
 		private Set<String> addDigests = new HashSet<String>();
 		private List<String> refDigests = new ArrayList<String>();
 		
-		private void addDigest(Collection<String> digests, String digest) {
-			if (digest != null) {
-				digests.add(digest);
-			}
+		private ImportGetter(LogPersister logPersister,PersistenceManager pm,PaPeer peer){
+			this.logPersister=logPersister;
+			this.pm=pm;
+			this.peer=peer;
 		}
 		
 		private void endBuffer(ZipEntry ze){
 			if(ze==null){
 				return;
 			}
-			ze.getName();
 			if(store!=null){
 				store.close();//終了処理は別スレッドで実行中
 				String digest=store.getDigest();
-				addDigests.add(digest);
+				logPersister.addDigest(addDigests, digest);
 				store=null;
 			}else if(charsetDecoder!=null){
 				charBuffer.flip();
@@ -130,15 +122,15 @@ public class LogPersister implements Timer {
 				charBuffer=null;
 				AccessLog accessLog = AccessLog.fromJson(accessLogJson);
 				if (accessLog == null) {
-					continue;
+					return;
 				}
-				addDigest(refDigests, accessLog.getRequestHeaderDigest());
-				addDigest(refDigests, accessLog.getRequestBodyDigest());
-				addDigest(refDigests, accessLog.getResponseHeaderDigest());
-				addDigest(refDigests, accessLog.getResponseBodyDigest());
+				logPersister.addDigest(refDigests, accessLog.getRequestHeaderDigest());
+				logPersister.addDigest(refDigests, accessLog.getRequestBodyDigest());
+				logPersister.addDigest(refDigests, accessLog.getResponseHeaderDigest());
+				logPersister.addDigest(refDigests, accessLog.getResponseBodyDigest());
 				accessLog.setId(null);
 				accessLog.setPersist(true);
-				executeInsert(pm, accessLog);
+				logPersister.executeInsert(pm, accessLog);
 			}
 		}
 		
@@ -206,66 +198,8 @@ public class LogPersister implements Timer {
 			throws IOException {
 		ZipInputStream zis = null;
 		
-		UnzipConverter converter=UnzipConverter.create(new DummyGetter());
+		UnzipConverter converter=UnzipConverter.create(new ImportGetter(this,pm,peer));
 		converter.parse(importBlob);
-		
-		if(true){
-			return;
-		}
-		File importFile=null;
-		InputStream fis=new FileInputStream(importFile);
-		zis = new ZipInputStream(fis);
-		Set<String> addDigests = new HashSet<String>();
-		List<String> refDigests = new ArrayList<String>();
-		// byte[] accessLogBytes=new byte[4096];
-		while (true) {
-			ZipEntry ze = zis.getNextEntry();
-			if (ze == null) {
-				break;
-			}
-			int size = (int) ze.getSize();
-			String fileName = ze.getName();
-			if (fileName.startsWith("/store")) {
-				String digest = StoreStream.streamToStore(zis);
-				addDigest(addDigests, digest);
-
-			} else if (fileName.startsWith("/accessLog")) {
-				InputStreamReader reader = new InputStreamReader(zis, "utf-8");
-				StringBuilder sb = new StringBuilder();
-				char[] buf = new char[1024];
-				while (true) {
-					int len = reader.read(buf);
-					if (len <= 0) {
-						break;
-					}
-					sb.append(buf, 0, len);
-				}
-				AccessLog accessLog = AccessLog.fromJson(sb.toString());
-				if (accessLog == null) {
-					continue;
-				}
-				addDigest(refDigests, accessLog.getRequestHeaderDigest());
-				addDigest(refDigests, accessLog.getRequestBodyDigest());
-				addDigest(refDigests, accessLog.getResponseHeaderDigest());
-				addDigest(refDigests, accessLog.getResponseBodyDigest());
-
-				accessLog.setId(null);
-				accessLog.setPersist(true);
-				executeInsert(pm, accessLog);
-			}
-		}
-
-		Iterator<String> itr = refDigests.iterator();
-		while (itr.hasNext()) {
-			StoreManager.ref(itr.next());
-		}
-		itr = addDigests.iterator();
-		while (itr.hasNext()) {
-			StoreManager.unref(itr.next());
-		}
-		if(fis!=null){
-			fis.close();
-		}
 	}
 
 	private void addDigest(Collection<String> digests, String digest) {
