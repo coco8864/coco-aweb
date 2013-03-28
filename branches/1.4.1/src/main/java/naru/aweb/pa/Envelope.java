@@ -253,6 +253,7 @@ public class Envelope extends PoolBase{
 			}
 			blobsList.add(blob);
 		}
+		PoolManager.poolBufferInstance(topBufs);
 		prot.unref();//Blobに必要な参照は、Blob.create時に加算されている
 		return unpack(header,blobsList);
 	}

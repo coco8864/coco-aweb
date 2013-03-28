@@ -43,8 +43,8 @@ public class UnzipConverter extends PoolBase implements BufferGetter{
 	
 	@Override
 	public boolean onBuffer(Object userContext, ByteBuffer[] buffers) {
-		put(buffers);
 		offset+=BuffersUtil.remaining(buffers);
+		put(buffers);
 		asyncBuffer.asyncBuffer(this, offset, null);
 		return false;
 	}
@@ -52,13 +52,21 @@ public class UnzipConverter extends PoolBase implements BufferGetter{
 	@Override
 	public void onBufferEnd(Object userContext) {
 		end();
+		if(asyncBuffer instanceof PoolBase){
+			((PoolBase)asyncBuffer).unref();
+		}
 		asyncBuffer=null;
+		unref();
 	}
 
 	@Override
 	public void onBufferFailure(Object userContext, Throwable failure) {
 		getter.onBufferFailure(userContext, failure);
+		if(asyncBuffer instanceof PoolBase){
+			((PoolBase)asyncBuffer).unref();
+		}
 		asyncBuffer=null;
+		unref();
 	}
 	
 	public synchronized void parse(AsyncBuffer asyncBuffer){
