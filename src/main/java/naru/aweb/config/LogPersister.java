@@ -90,7 +90,7 @@ public class LogPersister implements Timer {
 	
 	private static class ImportGetter implements BufferGetter {
 		private PaPeer peer;
-		private PersistenceManager pm;
+//		private PersistenceManager pm;
 		private LogPersister logPersister;
 		private ZipEntry currentZe=null;
 		private Store store=null;//Store.open(true);
@@ -99,9 +99,9 @@ public class LogPersister implements Timer {
 		private Set<String> addDigests = new HashSet<String>();
 		private List<String> refDigests = new ArrayList<String>();
 		
-		private ImportGetter(LogPersister logPersister,PersistenceManager pm,PaPeer peer){
+		private ImportGetter(LogPersister logPersister,PaPeer peer){
 			this.logPersister=logPersister;
-			this.pm=pm;
+	//		this.pm=pm;
 			this.peer=peer;
 		}
 		
@@ -130,7 +130,12 @@ public class LogPersister implements Timer {
 				logPersister.addDigest(refDigests, accessLog.getResponseBodyDigest());
 				accessLog.setId(null);
 				accessLog.setPersist(true);
+				
+				PersistenceManager pm = JdoUtil.getPersistenceManager();
 				logPersister.executeInsert(pm, accessLog);
+				if(pm.currentTransaction().isActive()){
+					pm.currentTransaction().rollback();
+				}
 			}
 		}
 		
@@ -194,11 +199,9 @@ public class LogPersister implements Timer {
 	 * @throws IOException
 	 */
 	// TODO”ñ“¯Šú
-	public void executeImport(PersistenceManager pm, Blob importBlob,PaPeer peer)
+	public void executeImport(Blob importBlob,PaPeer peer)
 			throws IOException {
-		ZipInputStream zis = null;
-		
-		UnzipConverter converter=UnzipConverter.create(new ImportGetter(this,pm,peer));
+		UnzipConverter converter=UnzipConverter.create(new ImportGetter(this,peer));
 		converter.parse(importBlob);
 	}
 
@@ -282,10 +285,10 @@ public class LogPersister implements Timer {
 		}
 	}
 
-	private void doJob(PersistenceManager pm, Object req) {
+	private PersistenceManager doJob(PersistenceManager pm, Object req) {
 		if (req instanceof AccessLog) {
 			executeInsert(pm, (AccessLog) req);
-			return;
+			return pm;
 		}
 		RequestInfo requestInfo = (RequestInfo) req;
 		String message = null;
@@ -313,7 +316,8 @@ public class LogPersister implements Timer {
 			break;
 		case TYPE_IMPORT:
 			try {
-				executeImport(pm, requestInfo.importBlob,requestInfo.peer);
+				pm=null;
+				executeImport(requestInfo.importBlob,requestInfo.peer);
 			} catch (IOException e) {
 				logger.warn("failt to import", e);
 				message = "fail to import";
@@ -323,13 +327,11 @@ public class LogPersister implements Timer {
 		if (requestInfo.peer != null) {
 			requestInfo.peer.message(message);
 		}
-
+		return pm;
 	}
 
 	private void doJobs() {
 		PersistenceManager pm = JdoUtil.getPersistenceManager();
-		// pm.currentTransaction().begin();
-		// try {
 		while (true) {
 			Object req = null;
 			synchronized (requestQueue) {
@@ -339,9 +341,9 @@ public class LogPersister implements Timer {
 				req = requestQueue.remove(0);
 			}
 			try{
-				doJob(pm, req);
+				pm=doJob(pm, req);
 			} finally {
-				if(pm.currentTransaction().isActive()){
+				if(pm!=null && pm.currentTransaction().isActive()){
 					pm.currentTransaction().rollback();
 				}
 			}

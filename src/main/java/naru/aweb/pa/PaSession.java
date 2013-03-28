@@ -224,7 +224,6 @@ public class PaSession extends PoolBase implements LogoutEvent{
 			return;
 		}
 		PaPeer keyPeer=PaPeer.create(this, qname, subname);
-		
 		synchronized(peers){
 			PaPeer peer=peers.get(keyPeer);
 			if(peer!=null){//‚·‚Å‚ÉsubscribeÏ‚İˆ—‚Í‚È‚¢
