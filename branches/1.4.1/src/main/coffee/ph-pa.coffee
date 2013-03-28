@@ -425,7 +425,9 @@ class Envelope
     if ph.jQuery.isArray(obj)
       result=[]
       size=obj.length
-      for i in [0..size-1]
+      if size<=0
+        return result
+      for i in [0..(size-1)]
         result[i]=@serialize(obj[i])
       return result
     else if ph.useBlob && obj instanceof Uint8Array
@@ -475,6 +477,8 @@ class Envelope
     if ph.jQuery.isArray(obj)
       result=[]
       size=obj.length
+      if size<=0
+        return result
       for i in [0..(size-1)]
         result[i]=@deserialize(obj[i])
       return result

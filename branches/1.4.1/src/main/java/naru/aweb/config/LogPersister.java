@@ -35,6 +35,7 @@ import naru.aweb.pa.Blob;
 import naru.aweb.pa.PaPeer;
 import naru.aweb.util.JdoUtil;
 import naru.aweb.util.UnzipConverter;
+import net.sf.json.JSONObject;
 
 public class LogPersister implements Timer {
 	private static Logger logger = Logger.getLogger(LogPersister.class);
@@ -180,7 +181,10 @@ public class LogPersister implements Timer {
 			while (itr.hasNext()) {
 				StoreManager.unref(itr.next());
 			}
-			peer.message("done");
+			JSONObject response=new JSONObject();
+			response.element("command", "import");
+			response.element("result", "success");
+			peer.message(response);
 		}
 
 		@Override
@@ -286,17 +290,19 @@ public class LogPersister implements Timer {
 	}
 
 	private PersistenceManager doJob(PersistenceManager pm, Object req) {
+		JSONObject response=null;
 		if (req instanceof AccessLog) {
 			executeInsert(pm, (AccessLog) req);
 			return pm;
 		}
 		RequestInfo requestInfo = (RequestInfo) req;
-		String message = null;
 		switch (requestInfo.type) {
 		case TYPE_QUERY_DELTE:
 			requestInfo.ids=queryAccessLog(pm,requestInfo.query);
 		case TYPE_LIST_DELTE:
-			message = "delete count:" + requestInfo.ids.size();
+			response=new JSONObject();
+			response.element("command", "listDelete");
+			response.element("result", "success");
 			executeDelete(pm, requestInfo.ids);
 			break;
 		case TYPE_QUERY_EXPORT:
@@ -308,9 +314,14 @@ public class LogPersister implements Timer {
 				Blob exportBlob=Blob.create(exportFile);
 				requestInfo.peer.download(exportBlob);
 			} catch (IOException e) {
+				response=new JSONObject();
+				response.element("command", "listExport");
+				response.element("result", "fail");
 				logger.warn("failt to export", e);
-				message = "fail to export";
 			} catch (Throwable t){
+				response=new JSONObject();
+				response.element("command", "listExport");
+				response.element("result", "fail");
 				logger.error("failt to export", t);
 			}
 			break;
@@ -320,12 +331,14 @@ public class LogPersister implements Timer {
 				executeImport(requestInfo.importBlob,requestInfo.peer);
 			} catch (IOException e) {
 				logger.warn("failt to import", e);
-				message = "fail to import";
+				response=new JSONObject();
+				response.element("command", "import");
+				response.element("result", "fail");
 			}
 			break;
 		}
-		if (requestInfo.peer != null) {
-			requestInfo.peer.message(message);
+		if (requestInfo.peer != null && response!=null) {
+			requestInfo.peer.message(response);
 		}
 		return pm;
 	}
