@@ -62,10 +62,13 @@ ph.jQuery(function() {
 		function(res){
 			if(!res){
 				ph.log('res is null');
+				searchPage();
 			}else if(res.command==='list'){
-				if(refreshTable)refreshTable(res.data);
+				if(typeof refreshTable!=='undefined')refreshTable(res.data);
 			}else if(res.command==='entry'){
-				if(updateEntry)updateEntry(res.data);
+				if(typeof updateEntry!=='undefined')updateEntry(res.data);
+			}else{
+				if(typeof searchPage!=='undefined')searchPage();
 			}
 		});
 
