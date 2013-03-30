@@ -13,7 +13,6 @@ import net.sf.json.JSONObject;
  * !!要チェック!!
  */
 public class PaPeer extends PoolBase{
-	
 	public static PaPeer create(PaManager paManager,PaSession paSession,String qname,String subname){
 		PaPeer peer=(PaPeer)PoolManager.getInstance(PaPeer.class);
 		peer.paSession=paSession;
@@ -60,6 +59,15 @@ public class PaPeer extends PoolBase{
 
 	public boolean isWs() {
 		return paSession.isWs();
+	}
+	
+	/**
+	 * browserからのメッセージか否か
+	 * server側のアプリからpublishされた場合は、falseを返却
+	 * @return
+	 */
+	public boolean fromBrowser(){
+		return (paSession!=null);
 	}
 	
 	/* API */

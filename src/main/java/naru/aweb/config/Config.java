@@ -38,7 +38,6 @@ import naru.aweb.handler.InjectionHelper;
 import naru.aweb.handler.ReplayHelper;
 import naru.aweb.mapping.Mapper;
 import naru.aweb.pa.PaManager;
-//import naru.aweb.queue.QueueManager;
 import naru.aweb.secure.SslContextPool;
 import naru.aweb.spdy.SpdyConfig;
 import naru.aweb.util.JdoUtil;
@@ -117,9 +116,8 @@ public class Config {
 	private FilterHelper filterHelper;
 	private InjectionHelper injectionHelper;
 	private Configuration configuration = null;
-//	private QueueletContext queueletContext = null;
+	private PaManager paManager =null;
 	private Object stasticsObject;
-//	private String[] spdyProtocols;
 	private File tmpDir;
 	private DiskFileItemFactory uploadItemFactory;
 	private File settingDir;
@@ -484,7 +482,6 @@ public class Config {
 	private boolean isAleadyTerm = false;
 
 	public void term() {
-		PaManager paManager = PaManager.getInstance("/pa");
 		paManager.undeploy("admin");
 		
 		if (isAleadyTerm) {
@@ -709,10 +706,7 @@ public class Config {
 			injectionHelper = new InjectionHelper(this);
 			dir = configuration.getString(PATH_APPS_DOCROOT);
 			appsDocumentRoot = new File(dir).getCanonicalFile();
-			
-			//adminDocumentRoot = new File(appsDocumentRoot,"admin").getCanonicalFile();
-			//authDocumentRoot = new File(appsDocumentRoot,"auth").getCanonicalFile();
-			PaManager paManager = PaManager.getInstance("/pa");
+			paManager = PaManager.getInstance("/pa");
 			JSONObject subscribers=JSONObject.fromObject("{accessLog:'naru.aweb.admin.AccessLogPalet'}");
 			paManager.deploy("admin", "naru.aweb.admin.PaAdmin",subscribers);
 			
@@ -1242,6 +1236,10 @@ public class Config {
 	
 	public SpdyConfig getSpsyConfig(){
 		return spdyConfig;
+	}
+	
+	public PaManager getAdminPaManager(){
+		return paManager;
 	}
 	
 	private VelocityEngine velocityEngine = null;

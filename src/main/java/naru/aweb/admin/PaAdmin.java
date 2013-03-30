@@ -9,8 +9,14 @@ import naru.aweb.config.Config;
 import naru.aweb.pa.PaPeer;
 import naru.aweb.pa.Palet;
 import naru.aweb.pa.PaletCtx;
+import naru.aweb.robot.ConnectChecker;
 
 public class PaAdmin implements Palet {
+	public static final String QNAME = "admin";
+	public static final String SUBNAME_CONNECT_CHECKER = "connectChecker";
+	public static final String SUBNAME_CHAT = "chat";
+	public static final String SUBNAME_ACCESS_LOG = "accessLog";
+	
 	private static Logger logger = Logger.getLogger(PaAdmin.class);
 	private static Config config=Config.getConfig();
 	
@@ -38,9 +44,9 @@ public class PaAdmin implements Palet {
 
 	private void chat(PaPeer peer,Map<String, ?> data){
 		if(Boolean.TRUE.equals(data.get("echoback"))){
-			ctx.message(data, "chat");
+			ctx.message(data, SUBNAME_CHAT);
 		}else{
-			ctx.message(data, "chat", peer);
+			ctx.message(data, SUBNAME_CHAT, peer);
 		}
 	}
 	
@@ -72,14 +78,26 @@ public class PaAdmin implements Palet {
 	}
 
 	@Override
-	public void onPublishObj(PaPeer peer, Map<String, ?> data) {
+	public void onPublishObj(PaPeer peer, Map parameter) {
 		String subname=peer.getSubname();
-		if("chat".equals(subname)){
-			chat(peer,data);
+		if(SUBNAME_CHAT.equals(subname)){
+			chat(peer,parameter);
 		}else if("sttics".equals(subname)){
-			ctx.message(data, "sttics");
+			ctx.message(parameter, subname);
+		}else if(SUBNAME_CONNECT_CHECKER.equals(subname)){
+			if(peer.fromBrowser()){
+				Integer count=(Integer)parameter.get("count");
+				Integer maxFailCount=(Integer)parameter.get("maxFailCount");
+				if( ConnectChecker.start(count, maxFailCount, 0)==false ){
+					parameter.put("kind","result");
+					parameter.put("result","fail");
+					peer.message(parameter);
+				}
+			}else{
+				ctx.message(parameter, subname);
+			}
 		}else if("setting".equals(subname)){
-			setting(peer,data);
+			setting(peer,parameter);
 		}
 	}
 
