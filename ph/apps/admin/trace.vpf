@@ -36,7 +36,7 @@ function runTrace(){
 		alert("対象がありません");
 		return;
 	}
-	var param={accessLogId:trace.accessLogId};
+	var param={command:'runAccessLog',accessLogId:trace.accessLogId};
 	for(var i=0;i<PARTS.length;i++){
 		var part=PARTS[i];
 		if(trace[part]!=null){
@@ -44,7 +44,7 @@ function runTrace(){
 			param[part]=trace[part];
 		}
 	}
-	ph.admin.doCommand("runAccessLog",param,function(chId){ph.queue.subscribeById(chId,runTraceCb)});
+	ph.admin.accessLogSd.publish(param);
 }
 
 function saveTrace(){
@@ -52,7 +52,7 @@ function saveTrace(){
 		alert('not change');
 		return;
 	}
-	var param={accessLogId:trace.accessLogId};
+	var param={command:'saveAccessLog',accessLogId:trace.accessLogId};
 	for(var i=0;i<PARTS.length;i++){
 		var part=PARTS[i];
 		if(trace[part]!=null){
@@ -60,7 +60,7 @@ function saveTrace(){
 			param[part]=trace[part];
 		}
 	}
-	ph.admin.doCommand("saveAccessLog",param,function(accessLogId){changeEntry(parseInt(accessLogId));});
+	ph.admin.accessLogSd.publish(param);
 }
 
 function requestHeaderEdit(){
@@ -301,7 +301,6 @@ ID:<input type="text" name="logId" id="inputLogId" size="8"/>
 <input type="button" onclick="changeEntry(trace.accessLogId+1);" value="next"/>
 </div>
 
-<!--div style="margin: 0.8em 0.0em; padding: 0.5em 1.0em;background: #fff none; border: solid 0pt #000"-->
 <div style="margin: 0.4em 0.0em; padding: 0.0em 0.0em;background: #fff none; border: solid 0pt #000;">
 <table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
 <thead>

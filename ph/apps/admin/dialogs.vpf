@@ -111,57 +111,43 @@ function updateStressDialog(){
 	}
 }
 
+function perfCheckServer(res){
+  if(res.kind==='checkServerProgress'){
+    ph.dump(res);
+    ph.jQuery("#checkStatus").text(res.status);
+    ph.jQuery("#checkUrl").text(res.url);
+    ph.jQuery("#checkIsUseProxy").text(res.useProxy);
+    ph.jQuery("#checkProxyServer").text(res.proxyServer);
+    ph.jQuery("#checkStatusLine").text(res.statusLine);
+    ph.jQuery("#checkServer").text(res.serverHeader);
+    ph.jQuery("#checkConnection").text(res.connectionHeader);
+    ph.jQuery("#checkProxyConnection").text(res.proxyConnectionHeader);
+    ph.jQuery("#checkKeepAliveHeader").text(res.keepAliveHeader);
+
+    ph.jQuery("#checkContentType").text(res.contentType);
+    ph.jQuery("#checkContentLength").text(res.contentLength);
+##  ph.jQuery("#checkTransferEncoding").text(res.transferEncoding);
+##  ph.jQuery("#checkContentEncoding").text(res.contentEncoding);
+
+    ph.jQuery("#checkConnectTime").text(res.connectTimes);
+    ph.jQuery("#checkSslProxyTime").text(res.sslProxyTimes);
+    ph.jQuery("#checkHandshakeTime").text(res.handshakeTimes);
+    ph.jQuery("#checkRequestHeaderTime").text(res.requestHeaderTimes);
+    ph.jQuery("#checkResponseHeaderTime").text(res.responseHeaderTimes);
+    ph.jQuery("#checkResponseBodyTime").text(res.responseBodyTimes);
+  }else if(res.kind==='checkServerResult' && d.result==='fail'){
+    alert('fail to checkServer');
+  }
+}
+
 function checkServer(){
-//	var selectList=logCheckList();
-//	if(selectList.length==0){
-//		alert('選択されていません.');
-//		return;
-//	}
-	var url=ph.jQuery("#checkReqUrl").val();
-	var isKeepAlive=ph.jQuery("#checkKeepAlive").is(':checked');
-	var isTrace=ph.jQuery("#checkTrace").is(':checked');
-	var requestCount=ph.jQuery("#checkRequestCount").val();
-	var checkServerCb={
-		_serverInfo:function(msg){
-			var sv=msg.message;
-			ph.dump(sv);
-			ph.jQuery("#checkStatus").text(sv.status);
-			ph.jQuery("#checkUrl").text(sv.url);
-			ph.jQuery("#checkIsUseProxy").text(sv.useProxy);
-			ph.jQuery("#checkProxyServer").text(sv.proxyServer);
-			ph.jQuery("#checkStatusLine").text(sv.statusLine);
-			ph.jQuery("#checkServer").text(sv.serverHeader);
-			ph.jQuery("#checkConnection").text(sv.connectionHeader);
-			ph.jQuery("#checkProxyConnection").text(sv.proxyConnectionHeader);
-			ph.jQuery("#checkKeepAliveHeader").text(sv.keepAliveHeader);
-
-			ph.jQuery("#checkContentType").text(sv.contentType);
-			ph.jQuery("#checkContentLength").text(sv.contentLength);
-//			ph.jQuery("#checkTransferEncoding").text(sv.transferEncoding);
-//			ph.jQuery("#checkContentEncoding").text(sv.contentEncoding);
-
-
-			ph.jQuery("#checkConnectTime").text(sv.connectTimes);
-			ph.jQuery("#checkSslProxyTime").text(sv.sslProxyTimes);
-			ph.jQuery("#checkHandshakeTime").text(sv.handshakeTimes);
-			ph.jQuery("#checkRequestHeaderTime").text(sv.requestHeaderTimes);
-			ph.jQuery("#checkResponseHeaderTime").text(sv.responseHeaderTimes);
-			ph.jQuery("#checkResponseBodyTime").text(sv.responseBodyTimes);
-			},
-		onComplete:function(msg){this._serverInfo(msg);},
-		onMessage:function(msg){this._serverInfo(msg);},
-		onError:function(msg){
-			ph.log('checkServer onError:');
-			ph.dump(msg);
-			}
-	};
-	ph.admin.doPramCommand(
-		'perf',
-		'checkServer',
-		{url:url,isKeepAlive:isKeepAlive,isTrace:isTrace,requestCount:requestCount},
-		function(chId){ 
-			ph.queue.subscribeById(chId,checkServerCb)}
-	);
+  var url=ph.jQuery("#checkReqUrl").val();
+  var isKeepAlive=ph.jQuery("#checkKeepAlive").is(':checked');
+  var isTrace=ph.jQuery("#checkTrace").is(':checked');
+  var requestCount=parseInt(ph.jQuery("#checkRequestCount").val());
+  ph.admin.perfSd.publish(
+    {kind:'checkServer',url:url,isKeepAlive:isKeepAlive,isTrace:isTrace,requestCount:requestCount}
+  );
 }
 
 function reloadEditDialog(){
