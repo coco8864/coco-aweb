@@ -10,11 +10,13 @@ import org.apache.log4j.Logger;
 import naru.async.Timer;
 import naru.async.cache.CacheBuffer;
 import naru.async.timer.TimerManager;
+import naru.aweb.admin.PaAdmin;
 import naru.aweb.config.Config;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.WsClient;
 import naru.aweb.http.WsClientHandler;
-import naru.aweb.queue.QueueManager;
+import naru.aweb.pa.PaManager;
+//import naru.aweb.queue.QueueManager;
 import net.sf.json.JSONObject;
 
 /* そのサーバでいくつconnectionが張れるかをチェックする */
@@ -34,18 +36,19 @@ public class ConnectChecker implements Timer,WsClient{
 	
 	private List<WsClientHandler> clients=new ArrayList<WsClientHandler>();
 	private int failCount;
-	private String chId;
+	private PaManager paManager;
+//	private String chId;
 	private int count;
 	private int maxFailCount;
 	private Stat stat=Stat.READY;
-	private QueueManager queueManager=QueueManager.getInstance();
+//	private QueueManager queueManager=QueueManager.getInstance();
 	private long timerId;
 	private long startTime;
 //	private JSONObject eventObj=new JSONObject();
 	
-	public static boolean start(int count,int maxFailCount,long timeout,String chId){
+	public static boolean start(int count,int maxFailCount,long timeout){
 //		ConnectChecker checker=(ConnectChecker)PoolManager.getInstance(ConnectChecker.class);
-		if( instance.init(count, maxFailCount,chId)==false ){
+		if( instance.init(count, maxFailCount)==false ){
 			return false;
 		}
 		instance.run(timeout);
@@ -56,16 +59,16 @@ public class ConnectChecker implements Timer,WsClient{
 		instance.stop();
 	}
 	
-	private synchronized boolean init(int count,int maxFailCount,String chId){
+	private synchronized boolean init(int count,int maxFailCount){
 		if(stat!=Stat.READY){
 			logger.error("aleady start."+stat);
-			queueManager.complete(chId, null);
+//			queueManager.complete(chId, null);
 			return false;
 		}
 		this.count=count;
 		this.maxFailCount=maxFailCount;
 		this.failCount=0;
-		this.chId=chId;
+		this.paManager=config.getAdminPaManager();
 		if(count>0){
 			stat=Stat.INC;
 		}else{
@@ -77,12 +80,13 @@ public class ConnectChecker implements Timer,WsClient{
 	private static Runtime runtime=Runtime.getRuntime();
 	private void publish(int count,int failCount,boolean isComplete){
 		JSONObject eventObj=new JSONObject();
+		eventObj.put("kind","progress");
 		eventObj.put("time",(System.currentTimeMillis()-startTime));
 		eventObj.put("connectCount", count);
 		eventObj.put("failCount", failCount);
 		eventObj.put("useMemory", (runtime.totalMemory()-runtime.freeMemory()));
 		eventObj.put("stat", stat);
-		queueManager.publish(chId, eventObj);
+		paManager.publish(PaAdmin.QNAME, PaAdmin.SUBNAME_CONNECT_CHECKER, eventObj);
 	}
 	
 	private synchronized void addWsClient(){
