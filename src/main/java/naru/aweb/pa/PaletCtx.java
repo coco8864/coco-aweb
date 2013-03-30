@@ -53,4 +53,7 @@ public interface PaletCtx{
 	 */
 	public Palet getPalet(String subname);
 	
+	public Object getAttribute(String name);
+	public void setAttribute(String name, Object value);
+	
 }

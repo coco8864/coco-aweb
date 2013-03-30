@@ -136,7 +136,7 @@ public class AdminHandler extends WebServerHandler{
 			if(digest==null){
 				return null;
 			}
-			buffers=DataUtil.toByteBuffers(digest);;
+			buffers=DataUtil.toByteBuffers(digest);
 		}else{
 			byte[] data=null;
 			data=bytes(text,encode);//TODO content-type‚Ìcharset=‚Ì‰E‚È‚Ì‚ÅAjava‚Ìencode‚Æ‚µ‚Äê’ê—‚ª‚ ‚é

@@ -16,17 +16,36 @@ public class PaletWrapper implements PaletCtx,Timer{
 	private static Logger logger=Logger.getLogger(PaSession.class);
 	private Object intervalObj=null;
 	private String qname;
-	private Palet palet;//root palet
+	private Palet rootPalet;//root palet
 	private Map<String,Palet> subscribers=new HashMap<String,Palet>();
 	private boolean isTerminate=false;
 	private Set<PaPeer> peers=new HashSet<PaPeer>();
 	private Map<String,Set<PaPeer>> subnamePeersMap=new HashMap<String,Set<PaPeer>>();
-	
-	public PaletWrapper(String qname,Palet palet){
+	private Map<String,Object> attribute=new HashMap<String,Object>();//ìØÇ∂qnameîzâ∫ÇÃpaletä‘Ç≈èÓïÒÇã§óLÇ∑ÇÈ
+
+	public PaletWrapper(String qname,Palet rootPalet){
+		this(qname, rootPalet, null);
+	}
+	public PaletWrapper(String qname,Palet rootPalet,Map<String,Palet> subscribers){
 		this.qname=qname;
-		this.palet=palet;
-		palet.init(this);
+		this.rootPalet=rootPalet;
+		rootPalet.init(qname,null,this);
+		if(subscribers!=null){
+			for(String subname:subscribers.keySet()){
+				Palet palet=subscribers.get(subname);
+				palet.init(qname,subname,this);
+				this.subscribers.put(subname, palet);
+			}
+		}
 		isTerminate=false;
+	}
+	
+	private Palet getPalet(PaPeer peer){
+		Palet palet=subscribers.get(peer.getSubname());
+		if(palet!=null){
+			return palet;
+		}
+		return rootPalet;
 	}
 	
 	void onSubscribe(PaPeer peer){
@@ -44,6 +63,7 @@ public class PaletWrapper implements PaletCtx,Timer{
 			}
 			subnamePeers.add(peer);
 		}
+		Palet palet=getPalet(peer);
 		palet.onSubscribe(peer);
 	}
 	
@@ -58,6 +78,7 @@ public class PaletWrapper implements PaletCtx,Timer{
 			}
 		}
 		if(exist){
+			Palet palet=getPalet(peer);
 			palet.onUnsubscribe(peer,reason);
 			return true;
 		}else{
@@ -66,6 +87,7 @@ public class PaletWrapper implements PaletCtx,Timer{
 	}
 	
 	void onPublish(PaPeer peer,Object data){
+		Palet palet=getPalet(peer);
 		if(data instanceof String){
 			palet.onPublishText(peer,(String)data);
 		}else if(data instanceof Map){
@@ -239,13 +261,16 @@ public class PaletWrapper implements PaletCtx,Timer{
 			peers.clear();
 			subnamePeersMap.clear();
 		}
-		palet.term(null);
+		for(Palet palet:subscribers.values()){
+			palet.term(null);
+		}
+		rootPalet.term(null);
 		return false;
 	}
 
 	@Override
 	public void onTimer(Object arg0) {
-		palet.onTimer();
+		rootPalet.onTimer();
 	}
 
 	/**
@@ -254,9 +279,16 @@ public class PaletWrapper implements PaletCtx,Timer{
 	@Override
 	public Palet getPalet(String subname) {
 		if(subname==null){
-			return palet;
+			return rootPalet;
 		}
 		return subscribers.get(subname);
 	}
-
+	
+	public Object getAttribute(String name){
+		return attribute.get(name);
+	}
+	
+	public void setAttribute(String name, Object value) {
+		attribute.put(name, value);
+	}
 }

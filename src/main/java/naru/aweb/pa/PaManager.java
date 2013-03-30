@@ -17,14 +17,27 @@ public class PaManager {
 	}
 	
 	private Map<String,PaletWrapper> paletWrappers=new HashMap<String,PaletWrapper>();//qname->palet
-	public synchronized PaletWrapper deploy(String qname,String paletName){
+	public PaletWrapper deploy(String qname,String paletName){
+		return deploy(qname, paletName,null);
+	}
+	public synchronized PaletWrapper deploy(String qname,String paletName,Map subscriberNames){
 		try {
 			if(paletWrappers.get(qname)!=null){
 				return null;
 			}
 			Class clazz = Class.forName(paletName);
-			Palet palet = (Palet) clazz.newInstance();
-			PaletWrapper paletWrapper = new PaletWrapper(qname, palet);
+			Palet rootPalet = (Palet) clazz.newInstance();
+			Map<String,Palet> subscrivers=null;
+			if(subscriberNames!=null){
+				subscrivers=new HashMap<String,Palet>();
+				for(Object subname:subscriberNames.keySet()){
+					String className=(String)subscriberNames.get((String)subname);
+					clazz=Class.forName(className);
+					Palet palet = (Palet) clazz.newInstance();
+					subscrivers.put((String)subname, palet);
+				}
+			}
+			PaletWrapper paletWrapper = new PaletWrapper(qname, rootPalet,subscrivers);
 			paletWrappers.put(qname, paletWrapper);
 			return paletWrapper;
 		} catch (Exception e) {
