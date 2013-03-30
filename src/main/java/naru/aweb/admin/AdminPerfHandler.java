@@ -60,7 +60,7 @@ public class AdminPerfHandler extends WebServerHandler{
 	private String checkServer(URL url,boolean isKeepAlive,int requestCount,boolean isTrace){
 		QueueManager queueManager=QueueManager.getInstance();
 		String chId=queueManager.createQueue(true);
-		ServerChecker.start(url,isKeepAlive,requestCount,isTrace,"check",chId);
+//		ServerChecker.start(url,isKeepAlive,requestCount,isTrace,"check",chId);
 		return chId;
 	}
 	

@@ -261,6 +261,9 @@ public class Envelope extends PoolBase{
 	public static Map unpack(JSONObject header,List<Blob> blobs){
 		JSONObject meta=header.getJSONObject("meta");
 		JSONArray dates=meta.getJSONArray("dates");
+		if(blobs==null && dates.size()==0){
+			return header;
+		}
 		Envelope envelop=(Envelope)PoolManager.getInstance(Envelope.class);
 		if(blobs!=null){
 			envelop.blobs.addAll(blobs);

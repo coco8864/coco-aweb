@@ -13,8 +13,8 @@ import naru.aweb.robot.ConnectChecker;
 
 public class PaAdmin implements Palet {
 	public static final String QNAME = "admin";
-	public static final String SUBNAME_CONNECT_CHECKER = "connectChecker";
 	public static final String SUBNAME_CHAT = "chat";
+	public static final String SUBNAME_PERF = "perf";
 	public static final String SUBNAME_ACCESS_LOG = "accessLog";
 	
 	private static Logger logger = Logger.getLogger(PaAdmin.class);
@@ -84,18 +84,6 @@ public class PaAdmin implements Palet {
 			chat(peer,parameter);
 		}else if("sttics".equals(subname)){
 			ctx.message(parameter, subname);
-		}else if(SUBNAME_CONNECT_CHECKER.equals(subname)){
-			if(peer.fromBrowser()){
-				Integer count=(Integer)parameter.get("count");
-				Integer maxFailCount=(Integer)parameter.get("maxFailCount");
-				if( ConnectChecker.start(count, maxFailCount, 0)==false ){
-					parameter.put("kind","result");
-					parameter.put("result","fail");
-					peer.message(parameter);
-				}
-			}else{
-				ctx.message(parameter, subname);
-			}
 		}else if("setting".equals(subname)){
 			setting(peer,parameter);
 		}
