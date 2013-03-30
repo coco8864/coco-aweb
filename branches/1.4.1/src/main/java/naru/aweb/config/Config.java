@@ -483,7 +483,7 @@ public class Config {
 	private boolean isAleadyTerm = false;
 
 	public void term() {
-		PaManager paManager = PaManager.getInstance();
+		PaManager paManager = PaManager.getInstance("/pa");
 		paManager.undeploy("admin");
 		
 		if (isAleadyTerm) {
@@ -711,7 +711,7 @@ public class Config {
 			
 			//adminDocumentRoot = new File(appsDocumentRoot,"admin").getCanonicalFile();
 			//authDocumentRoot = new File(appsDocumentRoot,"auth").getCanonicalFile();
-			PaManager paManager = PaManager.getInstance();
+			PaManager paManager = PaManager.getInstance("/pa");
 			paManager.deploy("admin", "naru.aweb.admin.PaAdmin");
 			
 		} catch (IOException e) {

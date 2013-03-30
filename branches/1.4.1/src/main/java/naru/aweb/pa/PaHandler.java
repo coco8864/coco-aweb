@@ -16,7 +16,6 @@ import naru.aweb.auth.AuthSession;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
 import naru.aweb.handler.WebSocketHandler;
-import naru.aweb.http.HeaderParser;
 import naru.aweb.http.ParameterParser;
 import naru.aweb.mapping.MappingResult;
 import net.sf.json.JSON;

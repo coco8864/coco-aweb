@@ -22,7 +22,7 @@ public class Broadcaster implements Timer {
 	private static Logger logger=Logger.getLogger(Broadcaster.class);	
 	private static final long BROADCAST_INTERVAL=1000;
 	private static final long LOG_WATCH_INTERVAL=300000;
-	private PaManager paManager=PaManager.getInstance();
+	private PaManager paManager=PaManager.getInstance("/pa");
 	private long timerId=TimerManager.INVALID_ID;
 	private Config config;
 	

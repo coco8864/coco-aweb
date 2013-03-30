@@ -16,7 +16,8 @@ public class PaletWrapper implements PaletCtx,Timer{
 	private static Logger logger=Logger.getLogger(PaSession.class);
 	private Object intervalObj=null;
 	private String qname;
-	private Palet palet;
+	private Palet palet;//root palet
+	private Map<String,Palet> subscribers=new HashMap<String,Palet>();
 	private boolean isTerminate=false;
 	private Set<PaPeer> peers=new HashSet<PaPeer>();
 	private Map<String,Set<PaPeer>> subnamePeersMap=new HashMap<String,Set<PaPeer>>();
@@ -245,6 +246,17 @@ public class PaletWrapper implements PaletCtx,Timer{
 	@Override
 	public void onTimer(Object arg0) {
 		palet.onTimer();
+	}
+
+	/**
+	 * “¯‚¶qnameŠÔ‚Åî•ñ‹¤—L‚·‚éd‘g‚İ
+	 */
+	@Override
+	public Palet getPalet(String subname) {
+		if(subname==null){
+			return palet;
+		}
+		return subscribers.get(subname);
 	}
 
 }

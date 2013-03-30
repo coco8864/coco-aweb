@@ -6,9 +6,14 @@ import java.util.Set;
 
 public class PaManager {
 	
-	private static PaManager instance=new PaManager();
-	public static PaManager getInstance(){
-		return instance;
+	private static Map<String,PaManager> instances=new HashMap<String,PaManager>();
+	public static synchronized PaManager getInstance(String path){
+		PaManager manager=instances.get(path);
+		if(manager==null){
+			manager=new PaManager();
+			instances.put(path, manager);
+		}
+		return manager;
 	}
 	
 	private Map<String,PaletWrapper> paletWrappers=new HashMap<String,PaletWrapper>();//qname->palet
@@ -49,7 +54,7 @@ public class PaManager {
 		if(palet==null){
 			return;
 		}
-		PaPeer peer=PaPeer.create(null, qname, subname);
+		PaPeer peer=PaPeer.create(this,null, qname, subname);
 		palet.onPublish(peer, data);
 		peer.unref(true);
 	}

@@ -51,11 +51,11 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	public static final String RESULT_ERROR="error";
 	
 	private static Logger logger=Logger.getLogger(PaSession.class);
-	private static PaManager paManager=PaManager.getInstance();
 	
 	static PaSession create(String path,Integer bid,boolean isWs,AuthSession authSession){
 		PaSession paSession=(PaSession)PoolManager.getInstance(PaSession.class);
 		paSession.path=path;
+		paSession.paManager=PaManager.getInstance(path);
 		paSession.bid=bid;
 		paSession.isWs=isWs;
 		
@@ -79,6 +79,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		isWs=false;
 		super.recycle();
 	}
+	private PaManager paManager;
 	
 	private String path;//ê⁄ë±path
 	
@@ -223,7 +224,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 			sendError(TYPE_SUBSCRIBE,qname, subname,null);
 			return;
 		}
-		PaPeer keyPeer=PaPeer.create(this, qname, subname);
+		PaPeer keyPeer=PaPeer.create(paManager,this, qname, subname);
 		synchronized(peers){
 			PaPeer peer=peers.get(keyPeer);
 			if(peer!=null){//Ç∑Ç≈Ç…subscribeçœÇ›èàóùÇÕÇ»Ç¢
@@ -238,7 +239,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	public void unsubscribe(JSONObject msg){
 		String qname=msg.getString(KEY_QNAME);
 		String subname=msg.optString(KEY_SUBNAME,null);
-		PaPeer keyPeer=PaPeer.create(this, qname, subname);
+		PaPeer keyPeer=PaPeer.create(paManager,this, qname, subname);
 		if( !unsubscribeFromWrapper(keyPeer) ){
 			sendError(TYPE_UNSUBSCRIBE,qname, subname,"not found peer");
 			keyPeer.unref(true);
@@ -267,7 +268,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		String qname=(String)msg.get(KEY_QNAME);
 		String subname=(String)msg.get(KEY_SUBNAME);
 		Object message=msg.get(KEY_MESSAGE);
-		PaPeer keyPeer=PaPeer.create(this, qname, subname);
+		PaPeer keyPeer=PaPeer.create(paManager,this, qname, subname);
 		PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
 		if(subname==null){//ëóêMå≥Ç™Ç»Ç¢Publish ï÷ãXìIÇ»Peer
 			paletWrapper.onPublish(keyPeer, message);
