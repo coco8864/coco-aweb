@@ -29,6 +29,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
 import naru.async.cache.FileCache;
+import naru.aweb.admin.PaAdmin;
 import naru.aweb.auth.Authenticator;
 import naru.aweb.auth.Authorizer;
 import naru.aweb.core.Main;
@@ -482,8 +483,7 @@ public class Config {
 	private boolean isAleadyTerm = false;
 
 	public void term() {
-		paManager.undeploy("admin");
-		
+		paManager.undeploy(PaAdmin.QNAME);
 		if (isAleadyTerm) {
 			return;
 		}
@@ -706,10 +706,13 @@ public class Config {
 			injectionHelper = new InjectionHelper(this);
 			dir = configuration.getString(PATH_APPS_DOCROOT);
 			appsDocumentRoot = new File(dir).getCanonicalFile();
+			//TODO ìÆìIÇ…ê›íËÇ≈Ç´ÇÈÇÊÇ§Ç…Ç∑ÇÈ
 			paManager = PaManager.getInstance("/pa");
-			JSONObject subscribers=JSONObject.fromObject("{accessLog:'naru.aweb.admin.AccessLogPalet'}");
-			paManager.deploy("admin", "naru.aweb.admin.PaAdmin",subscribers);
-			
+			JSONObject subscribers=JSONObject.fromObject(
+					"{accessLog:'naru.aweb.admin.AccessLogPalet'," +
+					"perf:'naru.aweb.admin.PerfPalet'" +
+					"}");
+			paManager.deploy(PaAdmin.QNAME, "naru.aweb.admin.PaAdmin",subscribers);
 		} catch (IOException e) {
 			logger.error("getCanonicalFile error.",e);
 			return false;

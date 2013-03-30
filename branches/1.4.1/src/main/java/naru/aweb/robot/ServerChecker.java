@@ -11,17 +11,16 @@ import naru.aweb.config.Config;
 import naru.aweb.config.WebClientLog;
 import naru.aweb.http.WebClientConnection;
 import naru.aweb.http.WebClientHandler;
-import naru.aweb.queue.QueueManager;
+import naru.aweb.pa.PaPeer;
 
 public class ServerChecker extends PoolBase implements Timer{
 	private static final int READ_TIMEOUT_MAX=31000;
 	private static Config config=Config.getConfig();
 	
-	private String chId;
+	private PaPeer peer;
 	private URL url;
 	
 	private String status;
-	
 	private boolean isTrace;
 	private int requestCount;
 	private boolean isKeepAlive;
@@ -57,25 +56,17 @@ public class ServerChecker extends PoolBase implements Timer{
 	private int listenBacklog;
 	
 	private Caller caller;
-//	private WebClientHandler handler;
 	private WebClientConnection connection;
-//	private long nomalResponseHeaderTime;
 	
-	//çÏã∆óp
-	private int timeCount;
-	private long connectTimeSum;
-	private long sslProxyTimeSum;
-	private long handshakeTimeSum;
-	
-	public static boolean start(URL url,boolean isKeepAlive,int requestCount,boolean isTrace,String browserName,String chId){
+	public static boolean start(URL url,boolean isKeepAlive,int requestCount,boolean isTrace,String browserName,PaPeer peer){
 		ServerChecker serverChecker=(ServerChecker)PoolManager.getInstance(ServerChecker.class);
-		serverChecker.setup(url,isKeepAlive,requestCount,isTrace,browserName,chId);
+		serverChecker.setup(url,isKeepAlive,requestCount,isTrace,browserName,peer);
 		TimerManager.setTimeout(0, serverChecker, null);
 		return true;
 	}
 
-	private void setup(URL url,boolean isKeepAlive,int requestCount,boolean isTrace,String browserName,String chId){
-		this.chId=chId;
+	private void setup(URL url,boolean isKeepAlive,int requestCount,boolean isTrace,String browserName,PaPeer peer){
+		this.peer=peer;
 		this.url=url;
 		this.isKeepAlive=isKeepAlive;
 		this.isTrace=isTrace;
@@ -207,7 +198,6 @@ public class ServerChecker extends PoolBase implements Timer{
 	}
 	
 	public void onTimer(Object userContext) {
-		QueueManager queueManager=QueueManager.getInstance();
 		WebClientHandler handler=null;
 		for(int i=0;i<requestCount;i++){
 			if(handler==null){
@@ -215,7 +205,7 @@ public class ServerChecker extends PoolBase implements Timer{
 				handler.ref();
 			}
 			status=Integer.toString(i)+"/" +requestCount;
-			queueManager.publish(chId, this);
+			peer.message(this);
 			checkRequest(handler,isTrace);
 			if( !handler.isKeepAlive()){
 				handler.unref();
@@ -226,17 +216,8 @@ public class ServerChecker extends PoolBase implements Timer{
 			handler.unref();
 			handler=null;
 		}
-		
-//		status="checkMultipulConnect...";
-//		queueManager.publish(chId, this);
-//		checkMultipulConnect();
-		
-//		status="readTimeout...";
-//		queueManager.publish(chId, this);
-//		checkReadTimeout();
-		
 		status="done";
-		queueManager.publish(chId, this, true, true);
+		peer.message(this);
 		this.unref(true);
 	}
 
@@ -314,7 +295,10 @@ public class ServerChecker extends PoolBase implements Timer{
 
 	@Override
 	public void recycle() {
-		chId=null;
+		if(peer!=null){
+			peer.unref();
+		}
+		peer=null;
 		url=null;
 		isUseProxy=isHttps=false;
 		contentEncoding=transferEncoding=statusLine=proxyServer=contentType=serverHeader=
@@ -330,7 +314,11 @@ public class ServerChecker extends PoolBase implements Timer{
 			caller.unref();
 		}
 	}
-
+	
+	public String getKind(){
+		return "checkServerProgress";
+	}
+	
 	public String getStatus() {
 		return status;
 	}

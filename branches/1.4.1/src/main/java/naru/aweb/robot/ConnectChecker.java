@@ -80,13 +80,13 @@ public class ConnectChecker implements Timer,WsClient{
 	private static Runtime runtime=Runtime.getRuntime();
 	private void publish(int count,int failCount,boolean isComplete){
 		JSONObject eventObj=new JSONObject();
-		eventObj.put("kind","progress");
+		eventObj.put("kind","checkConnectProgress");
 		eventObj.put("time",(System.currentTimeMillis()-startTime));
 		eventObj.put("connectCount", count);
 		eventObj.put("failCount", failCount);
 		eventObj.put("useMemory", (runtime.totalMemory()-runtime.freeMemory()));
 		eventObj.put("stat", stat);
-		paManager.publish(PaAdmin.QNAME, PaAdmin.SUBNAME_CONNECT_CHECKER, eventObj);
+		paManager.publish(PaAdmin.QNAME, PaAdmin.SUBNAME_PERF, eventObj);
 	}
 	
 	private synchronized void addWsClient(){

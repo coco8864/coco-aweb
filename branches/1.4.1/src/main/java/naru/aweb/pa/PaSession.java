@@ -278,7 +278,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		PaPeer peer=null;
 		synchronized(peers){
 			peer=peers.get(keyPeer);
-			keyPeer.unref(true);
+//			keyPeer.unref(true);
 			if(peer==null){//“o˜^‚Ì‚È‚¢‚Æ‚±‚ë‚©‚ç‚Ìpublish?
 				sendError(TYPE_PUBLISH, qname, subname, "not found subname");
 				return;
