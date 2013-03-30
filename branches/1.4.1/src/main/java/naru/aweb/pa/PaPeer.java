@@ -133,7 +133,7 @@ public class PaPeer extends PoolBase{
 	
 	boolean unsubscribe(String reason){
 		/* client‚Éunsubscribe(subscribeŽ¸”s)‚ð’Ê’m‚·‚é */
-		if( paSession.unsubscribeByPeer(this) ){
+		if( paSession!=null && paSession.unsubscribeByPeer(this) ){
 			/* palet‚ÉonUnsubscribe‚ð’Ê’m‚·‚é */
 			PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
 			return paletWrapper.onUnubscribe(this,reason);

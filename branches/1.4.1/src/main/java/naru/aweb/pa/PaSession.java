@@ -365,7 +365,12 @@ public class PaSession extends PoolBase implements LogoutEvent{
 				break;
 			}
 			for(Object peer:reqs){
-				((PaPeer)peer).unsubscribe();
+				if( ((PaPeer)peer).unsubscribe()==false){
+					//TODO 意味不明だが停止時にループした
+					logger.error("fail to onLogout for unsubscribe",new Exception());
+					unref();//セションが終わったらPaSessionも必要なし
+					return;
+				}
 			}
 		}
 		unref();//セションが終わったらPaSessionも必要なし
