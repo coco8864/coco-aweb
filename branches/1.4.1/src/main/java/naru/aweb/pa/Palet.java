@@ -6,9 +6,12 @@ import java.util.Map;
 public interface Palet {
 	/**
 	 * call when this object is loaded
+	 * subname‚ªnull‚Ìê‡‚ÍArootPalet
+	 * @param qname
+	 * @param subname
 	 * @param ctx
 	 */
-	void init(PaletCtx ctx);
+	void init(String qname,String subname,PaletCtx ctx);
 	
 	/**
 	 * call when this object is unloaded
@@ -17,6 +20,7 @@ public interface Palet {
 	
 	/**
 	 * call when time interval
+	 * this method call only rootPalet
 	 * @see PaletCtx#setInterval
 	 */
 	void onTimer();

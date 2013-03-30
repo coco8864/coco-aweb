@@ -48,6 +48,7 @@ import naru.aweb.wsq.WsqManager;
 import naru.queuelet.QueueletContext;
 import net.sf.json.JSON;
 import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
 
 import org.apache.commons.configuration.Configuration;
@@ -712,7 +713,8 @@ public class Config {
 			//adminDocumentRoot = new File(appsDocumentRoot,"admin").getCanonicalFile();
 			//authDocumentRoot = new File(appsDocumentRoot,"auth").getCanonicalFile();
 			PaManager paManager = PaManager.getInstance("/pa");
-			paManager.deploy("admin", "naru.aweb.admin.PaAdmin");
+			JSONObject subscribers=JSONObject.fromObject("{accessLog:'naru.aweb.admin.AccessLogPalet'}");
+			paManager.deploy("admin", "naru.aweb.admin.PaAdmin",subscribers);
 			
 		} catch (IOException e) {
 			logger.error("getCanonicalFile error.",e);
