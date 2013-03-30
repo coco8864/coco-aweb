@@ -45,4 +45,12 @@ public interface PaletCtx{
 	public Set<PaPeer> getPeers(String subname);
 	public boolean setInterval(long interval);
 	public boolean terminate();
+	
+	/**
+	 * “¯ˆê‚Ìqname‚É“o˜^‚³‚ê‚Ä‚¢‚é•Ê‚Ìpalet‚ğæ“¾‚·‚é
+	 * @param subname
+	 * @return@palet
+	 */
+	public Palet getPalet(String subname);
+	
 }

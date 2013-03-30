@@ -13,11 +13,11 @@ import net.sf.json.JSONObject;
  * !!要チェック!!
  */
 public class PaPeer extends PoolBase{
-	private static PaManager paManager=PaManager.getInstance();
 	
-	public static PaPeer create(PaSession paSession,String qname,String subname){
+	public static PaPeer create(PaManager paManager,PaSession paSession,String qname,String subname){
 		PaPeer peer=(PaPeer)PoolManager.getInstance(PaPeer.class);
 		peer.paSession=paSession;
+		peer.paManager=paManager;
 		if(paSession!=null){
 			peer.paSessionId=paSession.getPoolId();
 		}else{
@@ -28,6 +28,7 @@ public class PaPeer extends PoolBase{
 		return peer;
 	}
 	
+	private PaManager paManager;
 	private PaSession paSession;
 	private long paSessionId;
 	private String qname;//queue名
