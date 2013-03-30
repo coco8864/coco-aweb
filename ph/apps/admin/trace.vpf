@@ -60,7 +60,7 @@ function saveTrace(){
 			param[part]=trace[part];
 		}
 	}
-	ph.admin.doCommand("saveAccessLog",param,function(accessLogId){changeEntry(accessLogId);});
+	ph.admin.doCommand("saveAccessLog",param,function(accessLogId){changeEntry(parseInt(accessLogId));});
 }
 
 function requestHeaderEdit(){
