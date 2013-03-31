@@ -11,14 +11,18 @@ import org.apache.log4j.Logger;
 
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
+import naru.aweb.admin.PaAdmin;
 import naru.aweb.config.AccessLog;
+import naru.aweb.config.Config;
 import naru.aweb.config.Performance;
-import naru.aweb.queue.QueueManager;
+import naru.aweb.pa.PaManager;
+//import naru.aweb.queue.QueueManager;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 public class Scenario extends PoolBase{
 	private static Logger logger = Logger.getLogger(Scenario.class);
+	private static Config config=Config.getConfig();
 	private static Map<String,Scenario> chIdScenarioMap=new HashMap<String,Scenario>();//åªèÛëñçsíÜÇÃScenarioÇï€éùÅ@cancelëŒâû
 	
 	private String name;
@@ -92,12 +96,20 @@ public class Scenario extends PoolBase{
 		stat.element("loop", loop);
 		stat.element("runnningBrowserCount", runnningBrowserCount);
 		
+		stat.element("kind", "stressProgress");
+		stat.element("isComplete", isComplete);
+		PaManager paManager=config.getAdminPaManager();
+		paManager.publish(PaAdmin.QNAME, PaAdmin.SUBNAME_PERF,stat);
+		
+		/*
 		QueueManager queueManager=QueueManager.getInstance();
 		if(isComplete){
+			stat
 			queueManager.complete(chId, stat);
 		}else{
 			queueManager.publish(chId, stat);
 		}
+		*/
 	}
 	
 	/**
@@ -270,7 +282,7 @@ public class Scenario extends PoolBase{
 	public synchronized void start(){
 		start(null);
 	}
-	private String chId;
+//	private String chId;
 	
 	public synchronized void start(String chId){
 		System.gc();

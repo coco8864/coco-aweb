@@ -41,14 +41,6 @@ public class PaAdmin implements Palet {
 	@Override
 	public void onUnsubscribe(PaPeer peer, String reason) {
 	}
-
-	private void chat(PaPeer peer,Map<String, ?> data){
-		if(Boolean.TRUE.equals(data.get("echoback"))){
-			ctx.message(data, SUBNAME_CHAT);
-		}else{
-			ctx.message(data, SUBNAME_CHAT, peer);
-		}
-	}
 	
 	private void setting(PaPeer peer,Map<String, ?> data){
 		
@@ -80,9 +72,7 @@ public class PaAdmin implements Palet {
 	@Override
 	public void onPublishObj(PaPeer peer, Map parameter) {
 		String subname=peer.getSubname();
-		if(SUBNAME_CHAT.equals(subname)){
-			chat(peer,parameter);
-		}else if("sttics".equals(subname)){
+		if("sttics".equals(subname)){
 			ctx.message(parameter, subname);
 		}else if("setting".equals(subname)){
 			setting(peer,parameter);

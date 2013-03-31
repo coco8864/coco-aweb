@@ -710,6 +710,7 @@ public class Config {
 			paManager = PaManager.getInstance("/pa");
 			JSONObject subscribers=JSONObject.fromObject(
 					"{accessLog:'naru.aweb.admin.AccessLogPalet'," +
+					"chat:'naru.aweb.admin.ChatPalet'," +
 					"perf:'naru.aweb.admin.PerfPalet'" +
 					"}");
 			paManager.deploy(PaAdmin.QNAME, "naru.aweb.admin.PaAdmin",subscribers);

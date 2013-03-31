@@ -1,26 +1,20 @@
 package naru.aweb.admin;
 
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import naru.async.pool.BuffersUtil;
-import naru.async.pool.PoolManager;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
-import naru.aweb.http.HeaderParser;
-import naru.aweb.http.ParameterParser;
 import naru.aweb.pa.PaPeer;
 import naru.aweb.pa.Palet;
 import naru.aweb.pa.PaletCtx;
 import naru.aweb.queue.QueueManager;
-import naru.aweb.robot.Browser;
 import naru.aweb.robot.ConnectChecker;
+import naru.aweb.robot.Scenario;
 import naru.aweb.robot.ServerChecker;
 import net.sf.json.JSONObject;
 
@@ -82,11 +76,57 @@ public class PerfPalet implements Palet {
 				parameter.put("result","fail");
 				peer.message(parameter);
 			}
+		}else if("stress".equals(kind)){
+			String list=parameter.getString("list");
+			AccessLog[] accessLogs=listToAccessLogs(list);
+//			Set<Long> accessLogIds=new HashSet<Long>();
+			String name=parameter.getString("name");
+			String browserCount=parameter.getString("browserCount");
+			String call=parameter.getString("loopCount");
+//			String time=parameter.getParameter("time");
+//			String trace=parameter.getParameter("trace");
+			boolean keepAlive=parameter.getBoolean("keepAlive");
+			boolean accessLog=parameter.getBoolean("accessLog");
+			boolean tesponseHeaderTrace=parameter.getBoolean("tesponseHeaderTrace");
+			boolean tesponseBodyTrace=parameter.getBoolean("tesponseBodyTrace");
+			int thinkingTime=parameter.getInt("thinkingTime");
+			try {
+				doStress(accessLogs,name,
+						Integer.parseInt(browserCount),
+						Integer.parseInt(call),
+						keepAlive,
+						thinkingTime,
+						accessLog,
+						tesponseHeaderTrace,
+						tesponseBodyTrace);
+			} catch (NumberFormatException e) {
+				parameter.put("kind","stressResult");
+				parameter.put("result","fail");
+				peer.message(parameter);
+				return;
+			}
 		}
 	}
 
 	@Override
 	public void onPublishArray(PaPeer peer, List<?> data) {
 	}
-
+	
+	private AccessLog[] listToAccessLogs(String list){
+		String[] ids=list.split(",");
+		AccessLog[] accessLogs=new AccessLog[ids.length];
+		for(int i=0;i<ids.length;i++){
+			long accessLogId=Long.parseLong(ids[i]);
+			accessLogs[i]=AccessLog.getById(accessLogId);
+		}
+		return accessLogs;
+	}
+	private String doStress(AccessLog[] accessLogs,String name,int browserCount,int callCount,
+			boolean isCallerKeepAlive,long thinkingTime,
+			boolean isAccessLog,boolean isResponseHeaderTrace,boolean isResponseBodyTrace){
+		if( Scenario.run(accessLogs, name, browserCount, callCount, isCallerKeepAlive, thinkingTime, isAccessLog, isResponseHeaderTrace, isResponseBodyTrace,"0")){
+			return "0";
+		}
+		return null;
+	}
 }

@@ -18,12 +18,10 @@ import naru.async.store.StoreManager;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.http.HeaderParser;
-import naru.aweb.http.ParameterParser;
 import naru.aweb.pa.Blob;
 import naru.aweb.pa.PaPeer;
 import naru.aweb.pa.Palet;
 import naru.aweb.pa.PaletCtx;
-import naru.aweb.queue.QueueManager;
 import naru.aweb.robot.Browser;
 import net.sf.json.JSON;
 import net.sf.json.JSONObject;
@@ -314,10 +312,7 @@ public class AccessLogPalet implements Palet {
 		requestHeaderParser.setHost(accessLog.getResolveOrigin());
 		boolean isHttps=(accessLog.getDestinationType()==AccessLog.DESTINATION_TYPE_HTTPS);
 		Browser browser=Browser.create("run:"+accessLogId,isHttps, requestHeaderParser, requestBodyBuffer);
-//		QueueManager queueManager=QueueManager.getInstance();
-//		String chId=queueManager.createQueue();
 		browser.start("0");//TODO
-//		return chId;
 	}
 	
 	private JSON listAccessLogJson(Map<String, ?> parameter){
