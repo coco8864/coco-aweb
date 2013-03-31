@@ -231,6 +231,10 @@ public class AccessLogPalet implements Palet {
 			accessLog.setRequestLine(requestHeaderParser.getRequestLine());
 			String requestHeaderDigest=digest(requestHeaderParser.getHeaderBuffer());
 			accessLog.setRequestHeaderDigest(requestHeaderDigest);//xx
+			
+			/* requestHeaderの解放 */
+			requestHeaderParser.unref();
+			requestHeaderParser=null;
 		}else{
 			storeRef(accessLog.getRequestHeaderDigest());
 		}
@@ -263,6 +267,7 @@ public class AccessLogPalet implements Palet {
 			String responseHeaderDigest=digest(responseHeaderParser.getHeaderBuffer());
 			accessLog.setResponseHeaderDigest(responseHeaderDigest);//xx
 			responseHeaderParser.unref(true);//getPartHeaderメソッドで獲得したオブジェクトを開放
+			responseHeaderParser=null;
 		}else{
 			storeRef(accessLog.getResponseHeaderDigest());
 		}
