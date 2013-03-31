@@ -10,7 +10,7 @@ public class SamplePalet implements Palet{
 	private PaletCtx ctx;
 
 	@Override
-	public void init(PaletCtx ctx) {
+	public void init(String qname,String subname,PaletCtx ctx) {
 		this.ctx=ctx;
 	}
 

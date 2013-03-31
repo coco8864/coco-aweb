@@ -261,6 +261,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		}
 		//unsubscribe‚Í‰ß‹‚É”­s‚³‚ê‚½subscribe‚ª¬Œ÷‚µ‚½‚Æ‚µ‚Ä’Ê’m‚·‚é
 		sendSuccess(TYPE_SUBSCRIBE,qname,peer.getSubname(),"unsubscribed by api");
+		peer.unref();
 		return true;
 	}
 	
@@ -278,7 +279,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		PaPeer peer=null;
 		synchronized(peers){
 			peer=peers.get(keyPeer);
-//			keyPeer.unref(true);
+			keyPeer.unref(true);
 			if(peer==null){//“o˜^‚Ì‚È‚¢‚Æ‚±‚ë‚©‚ç‚Ìpublish?
 				sendError(TYPE_PUBLISH, qname, subname, "not found subname");
 				return;
