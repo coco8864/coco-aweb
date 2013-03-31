@@ -120,6 +120,7 @@ function accessLogImort(){
 		return;
 	}
 	ph.admin.accessLogSd.publish({command:'import',importsFile:files[0]});
+	ph.jQuery('#importsForm')[0].reset();
 }
 
 
@@ -299,13 +300,13 @@ sessionTimeout:<input type="text" id="authSessionTimeout" size="12" value="$!esc
 <H2 onclick="ph.jQuery('#accesslogDiv').toggle();">+AccessLogs操作</H2>
 <div class="settingItem" id="accesslogDiv">
 <p>ログ、トレースデータを移出、移入することで別環境で採取した資料を取り扱うことができます</p>
-##<form method="post" enctype="multipart/form-data" action="accessLog" target="uploadFrame">
+<form method="post" enctype="multipart/form-data" action="accessLog" target="uploadFrame" id="importsForm">
 <input type="hidden" name="command" value="import" />
 <input type="hidden" name="token" value="$esc.html(${session.token})"/>
 移入ファイル指定:<input type="file" name="importsFile" id="importsFile" />
 <input type="button" value="移入" onclick="accessLogImort();"/><br/>
 ##<input type="submit" value="移入"/><br/>
-##</form>
+</form>
 全AccessLog削除:<input type="button" onclick="accessLogDeleteQuery('');" value="削除" /><br/>
 全AccessLog移出:<input type="button" onclick="accessLogExportQuery('');" value="移出" /><br/>
 </div>

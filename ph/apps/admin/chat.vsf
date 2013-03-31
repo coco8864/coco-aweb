@@ -3,7 +3,7 @@
 <div id="queueInfo"></div>
 <p>入力
 <input type="button" value="send" onclick="onChatSend();"/>
-<input type="button" value="who" onclick="ph.queue.listUsers('phChat');"/>
+<input type="button" value="who" onclick="ph.admin.chatSd.publish({kind:'who'});"/>
 <input type="reset" value="clear" onclick="jQuery('#chatInputTextArea').val('');"/>
 <input type="checkBox" value="echoback" id="chatEchoback" checked="checked">echoback</input></p>
 <textarea id="chatInputTextArea" rows="10" cols="80">
@@ -15,6 +15,7 @@
 <script type="text/javascript"> 
 function onChatSend(){
  ph.admin.chatSd.publish({
+  kind:'message',
   message:jQuery('#chatInputTextArea').val(),
   date:new Date(),
   userName:'$esc.javascript($loginUser.loginId)',
@@ -41,8 +42,14 @@ chatSd.onMessage(
   if(outputArea.length==0){
     return;
   }
-  var addText=ph.admin.df_ymdhms.format(msg.date)+':'+msg.userName +'>\n' +
-  msg.message+'\n';
+  var addText="";
+  if(msg.kind==='who'){
+    addText='who>\n' +
+    msg.users+'\n';
+  }else if(msg.kind==='message'){
+    addText=ph.admin.df_ymdhms.format(msg.date)+':'+msg.userName +'>\n' +
+    msg.message+'\n';
+  }
   var text=addText+outputArea.val();
   outputArea.val(text);
 });
