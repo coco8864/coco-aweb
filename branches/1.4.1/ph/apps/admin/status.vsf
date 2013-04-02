@@ -49,7 +49,7 @@ function updateStastics(stcs){
 }
 
 function watchStastics(){
- ph.admin.stticsSd=ph.admin.cd.subscribe('admin','sttics',updateStastics);
+ ph.admin.stticsSd=ph.admin.cd.subscribe('admin','stastics',updateStastics);
 }
 
 function unwatchStastics(){
