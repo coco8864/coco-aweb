@@ -74,17 +74,8 @@ public class LogPersister implements Timer {
 			return;
 		}
 		// ログに出力
-//		logger.info("###"+accessLog,new Exception());
 		accessLog.log(false);
 		accessLog.persist(pm);
-		/*
-		if (accessLog.isPersist()) {
-			pm.currentTransaction().begin();
-			pm.makePersistent(accessLog);
-			pm.currentTransaction().commit();
-			pm.makeTransient(accessLog);// オブジェクトを再利用するために必要
-		}
-		*/
 		accessLog.unref();
 	}
 	

@@ -449,14 +449,11 @@ public class Browser extends PoolBase implements Timer{
 			scenario.onRequest(accessLog);
 		}else{
 			//scenario‚È‚µ‚Å‚æ‚Ñ‚¾‚³‚ê‚½ê‡‚ÍAAccessLog‚ğ‹L˜^‚·‚é
-			/*
-			if(chId!=null){
-				accessLog.setChId(chId);
-				chId=null;
-			}
-			*/
 			accessLog.setPeer(peer);
-			peer=null;
+			if(peer!=null){
+				peer.unref();
+				peer=null;
+			}
 			accessLog.setPersist(true);
 			accessLog.decTrace();
 		}
