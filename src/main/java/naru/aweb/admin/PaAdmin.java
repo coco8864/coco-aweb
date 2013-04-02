@@ -9,13 +9,13 @@ import naru.aweb.config.Config;
 import naru.aweb.pa.PaPeer;
 import naru.aweb.pa.Palet;
 import naru.aweb.pa.PaletCtx;
-import naru.aweb.robot.ConnectChecker;
 
 public class PaAdmin implements Palet {
 	public static final String QNAME = "admin";
 	public static final String SUBNAME_CHAT = "chat";
 	public static final String SUBNAME_PERF = "perf";
 	public static final String SUBNAME_ACCESS_LOG = "accessLog";
+	public static final String SUBNAME_STASTICS="setting";
 	
 	private static Logger logger = Logger.getLogger(PaAdmin.class);
 	private static Config config=Config.getConfig();
@@ -72,7 +72,7 @@ public class PaAdmin implements Palet {
 	@Override
 	public void onPublishObj(PaPeer peer, Map parameter) {
 		String subname=peer.getSubname();
-		if("sttics".equals(subname)){
+		if(SUBNAME_STASTICS.equals(subname)){
 			ctx.message(parameter, subname);
 		}else if("setting".equals(subname)){
 			setting(peer,parameter);

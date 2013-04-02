@@ -13,6 +13,7 @@ import naru.async.pool.PoolManager;
 import naru.async.store.StoreManager;
 import naru.async.store.StoreStastics;
 import naru.async.timer.TimerManager;
+import naru.aweb.admin.PaAdmin;
 import naru.aweb.auth.AuthSession;
 import naru.aweb.http.RequestContext;
 import naru.aweb.pa.PaManager;
@@ -160,7 +161,7 @@ public class Broadcaster implements Timer {
 		Stastics stastics=(Stastics)userContext;
 		stastics.update();
 		logWatch(stastics);
-		paManager.publish("admin", "sttics", JSONObject.fromObject(stastics));
+		paManager.publish(PaAdmin.QNAME,PaAdmin.SUBNAME_STASTICS, JSONObject.fromObject(stastics));
 		long interval=config.getLong("broardcastInterval", BROADCAST_INTERVAL);
 		timerId=TimerManager.setTimeout(interval, this, stastics);
 	}

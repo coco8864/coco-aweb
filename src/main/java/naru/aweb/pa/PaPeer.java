@@ -72,6 +72,10 @@ public class PaPeer extends PoolBase{
 	
 	/* API */
 	public boolean message(Object message){
+		if(paSession==null){
+			paManager.publish(qname, subname, message);
+			return true;
+		}
 		JSONObject json=new JSONObject();
 		json.put(PaSession.KEY_TYPE, PaSession.TYPE_MESSAGE);
 		json.put(PaSession.KEY_MESSAGE, message);
