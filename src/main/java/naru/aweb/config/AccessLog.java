@@ -179,8 +179,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		return (Collection<AccessLog>)pm.detachCopyAll((Collection<AccessLog>)q.execute());
 	}
 	
-	private void insert(){
-		PersistenceManager pm=JdoUtil.getPersistenceManager();
+	private void insert(PersistenceManager pm){
 		Transaction tx=pm.currentTransaction();
 		if(tx.isActive()){
 			tx.rollback();
@@ -189,12 +188,22 @@ public class AccessLog extends PoolBase implements BufferGetter{
 			tx.begin();
 			pm.makePersistent(this);
 			tx.commit();
+			if(peer!=null){
+				JSONObject json=toJson();
+				peer.message(json);
+				setPeer(null);
+			}
 			pm.makeTransient(this);//再利用するために必要?
 		}finally{
 			if(tx.isActive()){
 				tx.rollback();
 			}
 		}
+	}
+	
+	/* jsonフィールドに追加してブラウザでaccessLogオブジェクトであることの判定に使う */
+	public String getKind(){
+		return "accessLog";
 	}
 	
 	/* dbに保存するか否か */
@@ -207,8 +216,13 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	}
 	
 	public void persist(){
+		PersistenceManager pm=JdoUtil.getPersistenceManager();
+		persist(pm);
+	}
+	
+	public void persist(PersistenceManager pm){
 		if(isPersist){
-			insert();
+			insert(pm);
 		}
 	}
 	/* 保存時に通知するQueueのchannelId */
@@ -221,9 +235,14 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		return chId;
 	}
 	*/
-	//TODO xx
 	private PaPeer peer;
 	public void setPeer(PaPeer peer){
+		if(peer!=null){
+			peer.ref();
+		}
+		if(this.peer!=null){
+			this.peer.unref();
+		}
 		this.peer=peer;
 	}
 	
@@ -483,10 +502,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		resolveDigest=null;
 		traceCount=1;//ReqestContextからの参照分
 		//chId=null;
-		if(peer!=null){
-			peer.unref();
-		}
-		peer=null;
+		setPeer(null);
 		isSkipPhlog=isShortFormat=false;
 		thinkingTime=0;
 		rawRead=rawWrite=0;
@@ -507,13 +523,6 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	private WebClientLog webClientLog;
 	
 	public void log(boolean debug){
-		if(peer!=null){
-			JSONObject json=toJson();
-			json.element("kind", "accessLog");
-			peer.message(json);
-			peer.unref();
-			peer=null;
-		}
 		if(!debug&&isSkipPhlog){//'/queue'のように大量に出力されるlogは出力を抑止する
 			return;
 		}

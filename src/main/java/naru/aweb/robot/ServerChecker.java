@@ -167,9 +167,7 @@ public class ServerChecker extends PoolBase implements Timer{
 		
 		if(isTrace){
 			accessLog.setPersist(true);
-			JSONObject json=accessLog.toJson();
-			json.put("kind", "accessLog");
-			peer.message(json);
+			accessLog.setPeer(peer);
 		}
 		accessLog.decTrace();
 	}

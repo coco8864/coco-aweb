@@ -76,16 +76,15 @@ public class LogPersister implements Timer {
 		// ログに出力
 //		logger.info("###"+accessLog,new Exception());
 		accessLog.log(false);
-//		String chId = accessLog.getChId();
+		accessLog.persist(pm);
+		/*
 		if (accessLog.isPersist()) {
 			pm.currentTransaction().begin();
 			pm.makePersistent(accessLog);
 			pm.currentTransaction().commit();
 			pm.makeTransient(accessLog);// オブジェクトを再利用するために必要
 		}
-//		if (chId != null) {
-//			queueManager.complete(chId, accessLog.getId());
-//		}
+		*/
 		accessLog.unref();
 	}
 	
