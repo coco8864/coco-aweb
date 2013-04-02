@@ -148,7 +148,6 @@ function changeEntry(newLogId){
 		alert("無効なIDです");
 		return;
 	}
-	ph.jQuery("#traceSaveButton").attr("disabled",true);
 	trace.clear();
 	trace.accessLogId=newLogId;
 	entryTable();
@@ -177,8 +176,8 @@ function updateEntry(accessLog){
 		alert("無効なIDです");
 		return;
 	}
-
-
+	ph.jQuery("#traceSaveButton").attr("disabled",true);
+	trace.accessLogId=accessLog.id
 	ph.jQuery("#logId").text(trace.accessLogId);
 	ph.jQuery("#inputLogId").val(trace.accessLogId);
 	ph.jQuery("#viewAccessLogId").val(trace.accessLogId);

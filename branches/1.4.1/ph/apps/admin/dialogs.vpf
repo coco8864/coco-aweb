@@ -135,6 +135,8 @@ function perfCheckServer(res){
     ph.jQuery("#checkRequestHeaderTime").text(res.requestHeaderTimes);
     ph.jQuery("#checkResponseHeaderTime").text(res.responseHeaderTimes);
     ph.jQuery("#checkResponseBodyTime").text(res.responseBodyTimes);
+  }else if(res.kind==='accessLog'){
+    updateEntry(res);
   }else if(res.kind==='checkServerResult' && d.result==='fail'){
     alert('fail to checkServer');
   }

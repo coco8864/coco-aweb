@@ -65,8 +65,8 @@ ph.jQuery(function() {
 				searchPage();
 			}else if(res.command==='list'){
 				if(typeof refreshTable!=='undefined')refreshTable(res.data);
-			}else if(res.command==='entry'){
-				if(typeof updateEntry!=='undefined')updateEntry(res.data);
+			}else if(res.kind==='accessLog'){
+				if(typeof updateEntry!=='undefined')updateEntry(res);
 			}else{
 				if(typeof searchPage!=='undefined')searchPage();
 			}
