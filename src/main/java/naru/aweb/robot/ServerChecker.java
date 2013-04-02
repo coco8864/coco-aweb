@@ -12,6 +12,7 @@ import naru.aweb.config.WebClientLog;
 import naru.aweb.http.WebClientConnection;
 import naru.aweb.http.WebClientHandler;
 import naru.aweb.pa.PaPeer;
+import net.sf.json.JSONObject;
 
 public class ServerChecker extends PoolBase implements Timer{
 	private static final int READ_TIMEOUT_MAX=31000;
@@ -66,6 +67,7 @@ public class ServerChecker extends PoolBase implements Timer{
 	}
 
 	private void setup(URL url,boolean isKeepAlive,int requestCount,boolean isTrace,String browserName,PaPeer peer){
+		peer.ref();
 		this.peer=peer;
 		this.url=url;
 		this.isKeepAlive=isKeepAlive;
@@ -165,6 +167,9 @@ public class ServerChecker extends PoolBase implements Timer{
 		
 		if(isTrace){
 			accessLog.setPersist(true);
+			JSONObject json=accessLog.toJson();
+			json.put("kind", "accessLog");
+			peer.message(json);
 		}
 		accessLog.decTrace();
 	}

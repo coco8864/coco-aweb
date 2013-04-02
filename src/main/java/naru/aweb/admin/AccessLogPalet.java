@@ -69,8 +69,9 @@ public class AccessLogPalet implements Palet {
 		}else if("entry".equals(command)){
 			Integer id=(Integer)parameter.get("id");
 			AccessLog accessLog=AccessLog.getById((long)id);
-			res.put("data", accessLog);
-			peer.message(res);
+			JSONObject json=accessLog.toJson();
+			json.put("kind", "accessLog");
+			peer.message(json);
 			return;
 		}else if("import".equals(command)){
 			importAccesslog(peer,parameter);
@@ -102,9 +103,12 @@ public class AccessLogPalet implements Palet {
 				AccessLog accessLog=getEditedAccessLog((JSONObject)parameter);
 				accessLog.setOriginalLogId(accessLog.getId());
 				accessLog.setId(null);
+				JSONObject json=accessLog.toJson();
 				accessLog.setPersist(true);
 				accessLog.persist();
-				peer.message(res);
+				json.put("id", accessLog.getId());
+				json.put("kind", "accessLog");
+				peer.message(json);
 			} catch (Exception e) {
 				logger.error("getEditedAccessLog error.",e);
 				peer.message(res);

@@ -234,7 +234,7 @@ public class LogPersister implements Timer {
 			addDigest(traceDigests, accessLog.getRequestBodyDigest());
 			addDigest(traceDigests, accessLog.getResponseHeaderDigest());
 			addDigest(traceDigests, accessLog.getResponseBodyDigest());
-			String json = accessLog.toJson();
+			String json = accessLog.toJson().toString();
 			byte[] jsonBytes = json.getBytes("utf-8");
 			int length = jsonBytes.length;
 			ze.setSize(length);

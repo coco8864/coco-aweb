@@ -15,7 +15,7 @@ public class PaAdmin implements Palet {
 	public static final String SUBNAME_CHAT = "chat";
 	public static final String SUBNAME_PERF = "perf";
 	public static final String SUBNAME_ACCESS_LOG = "accessLog";
-	public static final String SUBNAME_STASTICS="setting";
+	public static final String SUBNAME_STASTICS="stastics";
 	
 	private static Logger logger = Logger.getLogger(PaAdmin.class);
 	private static Config config=Config.getConfig();

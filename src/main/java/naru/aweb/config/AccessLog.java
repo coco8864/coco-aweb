@@ -233,9 +233,8 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		JdoUtil.commit();
 	}
 	
-	public String toJson(){
-		JSON json=JSONSerializer.toJSON(this,jsonConfig);
-		return json.toString();
+	public JSONObject toJson(){
+		return (JSONObject)JSONSerializer.toJSON(this,jsonConfig);
 	}
 	
 	@Persistent(primaryKey="true",valueStrategy = IdGeneratorStrategy.IDENTITY)
@@ -509,7 +508,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	
 	public void log(boolean debug){
 		if(peer!=null){
-			JSONObject json=(JSONObject)JSONSerializer.toJSON(this,jsonConfig);
+			JSONObject json=toJson();
 			json.element("kind", "accessLog");
 			peer.message(json);
 			peer.unref();
