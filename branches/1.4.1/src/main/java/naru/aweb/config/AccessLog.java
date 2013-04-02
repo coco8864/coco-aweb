@@ -24,6 +24,7 @@ import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
 import naru.async.store.Store;
 import naru.aweb.http.HeaderParser;
+import naru.aweb.pa.PaPeer;
 import naru.aweb.util.DatePropertyFilter;
 import naru.aweb.util.JdoUtil;
 import net.sf.json.JSON;
@@ -211,12 +212,19 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		}
 	}
 	/* 保存時に通知するQueueのchannelId */
+	/*
 	private String chId;
 	public void setChId(String chId){
 		this.chId=chId;
 	}
 	public String getChId(){
 		return chId;
+	}
+	*/
+	//TODO xx
+	private PaPeer peer;
+	public void setPeer(PaPeer peer){
+		this.peer=peer;
 	}
 	
 	public void delete(){
@@ -475,7 +483,11 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		resolveOrigin=null;
 		resolveDigest=null;
 		traceCount=1;//ReqestContextからの参照分
-		chId=null;
+		//chId=null;
+		if(peer!=null){
+			peer.unref();
+		}
+		peer=null;
 		isSkipPhlog=isShortFormat=false;
 		thinkingTime=0;
 		rawRead=rawWrite=0;
@@ -496,6 +508,13 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	private WebClientLog webClientLog;
 	
 	public void log(boolean debug){
+		if(peer!=null){
+			JSONObject json=(JSONObject)JSONSerializer.toJSON(this,jsonConfig);
+			json.element("kind", "accessLog");
+			peer.message(json);
+			peer.unref();
+			peer=null;
+		}
 		if(!debug&&isSkipPhlog){//'/queue'のように大量に出力されるlogは出力を抑止する
 			return;
 		}

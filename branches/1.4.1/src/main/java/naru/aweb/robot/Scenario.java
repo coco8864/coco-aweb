@@ -23,7 +23,7 @@ import net.sf.json.JSONObject;
 public class Scenario extends PoolBase{
 	private static Logger logger = Logger.getLogger(Scenario.class);
 	private static Config config=Config.getConfig();
-	private static Map<String,Scenario> chIdScenarioMap=new HashMap<String,Scenario>();//現状走行中のScenarioを保持　cancel対応
+//	private static Map<String,Scenario> chIdScenarioMap=new HashMap<String,Scenario>();//現状走行中のScenarioを保持　cancel対応
 	
 	private String name;
 	private boolean isProcessing;
@@ -50,13 +50,13 @@ public class Scenario extends PoolBase{
 	
 	private Performance masterPerformance;
 	private Map<String,Performance> requestPerformances=new HashMap<String,Performance>();
-//	private Map<String,Performance> requestStatusCodePerformances;
 	private JSONObject stat=new JSONObject();
 	
 	private Random random=new Random();
 	
 	public static String cancelScenario(String chId){
 		String name=null;
+		/*
 		synchronized(chIdScenarioMap){
 			Scenario scenario=chIdScenarioMap.get(chId);
 			if(scenario!=null){
@@ -67,6 +67,7 @@ public class Scenario extends PoolBase{
 				logger.info("cancelScenario notFound Scenario.chId:"+chId);
 			}
 		}
+		*/
 		return name;
 	}
 	
@@ -80,10 +81,7 @@ public class Scenario extends PoolBase{
 	}
 	
 	//chidに通知,100単位 or 時間単位 ,scenarioIndex/scenarioCount,loop/loopCount,runnningBrowserCount/browserCount,メモリ使用量,
-	private void broadcast(String chId,boolean isComplete){
-		if(chId==null){
-			return;
-		}
+	private void broadcast(boolean isComplete){
 		if(loop!=0 && loop!=loopCount && (loop%loopUnit)!=0 && !isComplete){
 			return;
 		}
@@ -238,7 +236,7 @@ public class Scenario extends PoolBase{
 	
 	private synchronized boolean startBrowserIfNeed(Browser browser){
 		if(!isReceiveStop && loopCount>loop){
-			broadcast(chId,false);
+			broadcast(false);
 			//TODO browser行方不明問題あり,"...favicon.ico HTTP/1.1" null 0 125#123,-,H,null,null,15,15,0,0,-1"こんな感じに記録される
 			loop++;
 			if(thinkingTime==0){
@@ -265,17 +263,14 @@ public class Scenario extends PoolBase{
 				performance.insert();
 			}
 			if(!isReceiveStop && nextScenario!=null){//次のSceinarioを実行
-				broadcast(chId,false);
-				nextScenario.start(chId);
+				broadcast(false);
+				nextScenario.start();
 			}else{
-				broadcast(chId,true);
-				synchronized(chIdScenarioMap){
-					chIdScenarioMap.remove(chId);
-				}
+				broadcast(true);
 			}
 			unref();//このSceinarioは終了
 		}else{
-			broadcast(chId,false);
+			broadcast(false);
 		}
 		return false;
 	}
@@ -286,11 +281,7 @@ public class Scenario extends PoolBase{
 	
 	public synchronized void start(String chId){
 		System.gc();
-		synchronized(chIdScenarioMap){
-			chIdScenarioMap.put(chId,this);
-		}
 		loop=0;
-		this.chId=chId;
 		startTime=System.currentTimeMillis();
 		stat.element("name", name);
 		stat.element("startTime", startTime);
@@ -302,7 +293,7 @@ public class Scenario extends PoolBase{
 		runnningBrowserCount=browsers.size();
 		
 		logger.info("###Scenario start.name:" +name);
-		broadcast(chId,false);//開始時のbroadcast
+		broadcast(false);//開始時のbroadcast
 		Object[] browserArray=browsers.toArray();//ConcurrentModificationException対策
 		for(Object browser:browserArray){
 			startBrowserIfNeed((Browser)browser);

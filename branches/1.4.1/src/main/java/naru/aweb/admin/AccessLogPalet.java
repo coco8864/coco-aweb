@@ -200,6 +200,10 @@ public class AccessLogPalet implements Palet {
 		StoreManager.ref(digest);
 	}
 	
+	/*
+	 * traceタブにあるsave newボタン
+	 * runした後は、そのプロトコル情報をtrace画面で表示
+	 */
 	private AccessLog getEditedAccessLog(JSONObject parameter) throws UnsupportedEncodingException{
 		String accessLogId=parameter.getString("accessLogId");
 		String requestHeader=parameter.optString("requestHeader",null);
@@ -278,6 +282,10 @@ public class AccessLogPalet implements Palet {
 		return accessLog;
 	}
 	
+	/*
+	 * traceタブにあるrunボタン
+	 * runした後は、そのプロトコル情報をtrace画面で表示
+	 */
 	private void runAccessLog(JSONObject parameter,PaPeer peer) throws UnsupportedEncodingException{
 		String accessLogId=parameter.getString("accessLogId");
 		String requestBody=parameter.optString("requestBody",null);
@@ -312,7 +320,7 @@ public class AccessLogPalet implements Palet {
 		requestHeaderParser.setHost(accessLog.getResolveOrigin());
 		boolean isHttps=(accessLog.getDestinationType()==AccessLog.DESTINATION_TYPE_HTTPS);
 		Browser browser=Browser.create("run:"+accessLogId,isHttps, requestHeaderParser, requestBodyBuffer);
-		browser.start("0");//TODO
+		browser.start(peer);//TODO
 	}
 	
 	private JSON listAccessLogJson(Map<String, ?> parameter){

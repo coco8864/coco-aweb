@@ -20,7 +20,8 @@ import naru.aweb.config.AccessLog;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.WebClientConnection;
 import naru.aweb.http.WebClientHandler;
-import naru.aweb.queue.QueueManager;
+import naru.aweb.pa.PaPeer;
+//import naru.aweb.queue.QueueManager;
 import naru.aweb.util.ServerParser;
 
 public class Browser extends PoolBase implements Timer{
@@ -70,6 +71,10 @@ public class Browser extends PoolBase implements Timer{
 	@Override
 	public void recycle() {
 		scenario=null;
+		if(peer!=null){
+			peer.unref();
+			peer=null;
+		}
 		name=null;
 		startCallers.clear();
 		connections.clear();
@@ -331,9 +336,9 @@ public class Browser extends PoolBase implements Timer{
 		startCallers.add(caller);
 	}
 	
-	private String chId;//終了時に通知するQueueのchannelId
+//	private String chId;//終了時に通知するQueueのchannelId
 	private long startTime;
-	
+	private PaPeer peer=null;//TODO 通知先
 	public void start(){
 		start(null);
 	}
@@ -346,9 +351,10 @@ public class Browser extends PoolBase implements Timer{
 	 * 
 	 * @param chId
 	 */
-	public void start(String chId){
+	public void start(PaPeer peer){
+		peer.ref();
+		this.peer=peer;
 		logger.debug("#start startCallers.size():"+startCallers.size());
-		this.chId=chId;
 		this.startTime=System.currentTimeMillis();
 		synchronized(this){
 			if(isAsyncStop==false || isProcessing){
@@ -426,10 +432,12 @@ public class Browser extends PoolBase implements Timer{
 				logger.debug("call onBrowserEnd");
 				scenario.onBrowserEnd(this);
 			}
+			/*
 			if(chId!=null){//accessLogに設定する前に終わった...異常ルート
 				QueueManager queueManager=QueueManager.getInstance();
 				queueManager.complete(chId, "browser end.time:"+(System.currentTimeMillis()-startTime));
 			}
+			*/
 		}
 	}
 	
@@ -441,10 +449,14 @@ public class Browser extends PoolBase implements Timer{
 			scenario.onRequest(accessLog);
 		}else{
 			//scenarioなしでよびだされた場合は、AccessLogを記録する
+			/*
 			if(chId!=null){
 				accessLog.setChId(chId);
 				chId=null;
 			}
+			*/
+			accessLog.setPeer(peer);
+			peer=null;
 			accessLog.setPersist(true);
 			accessLog.decTrace();
 		}
