@@ -31,7 +31,7 @@ public class AdminPerfHandler extends WebServerHandler{
 			boolean isAccessLog,boolean isResponseHeaderTrace,boolean isResponseBodyTrace){
 		QueueManager queueManager=QueueManager.getInstance();
 		String chId=queueManager.createQueue(true);
-		if( Scenario.run(accessLogs, name, browserCount, callCount, isCallerKeepAlive, thinkingTime, isAccessLog, isResponseHeaderTrace, isResponseBodyTrace,chId)){
+		if( Scenario.run(accessLogs, name, browserCount, callCount, isCallerKeepAlive, thinkingTime, isAccessLog, isResponseHeaderTrace, isResponseBodyTrace,null)){
 			return chId;
 		}
 		return null;
@@ -40,7 +40,7 @@ public class AdminPerfHandler extends WebServerHandler{
 	private String doStressFile(AccessLog[] accessLogs,JSONArray stressJson){
 		QueueManager queueManager=QueueManager.getInstance();
 		String chId=queueManager.createQueue(true);
-		if( Scenario.run(accessLogs, stressJson,chId)){
+		if( Scenario.run(accessLogs, stressJson,null)){
 			return chId;
 		}
 		return null;
@@ -67,7 +67,7 @@ public class AdminPerfHandler extends WebServerHandler{
 	private String checkConnection(int count,int maxFailCount,long timeout){
 //		QueueManager queueManager=QueueManager.getInstance();
 //		String chId=queueManager.createQueue(true);
-		ConnectChecker.start(count,maxFailCount,timeout);
+		ConnectChecker.start(count,maxFailCount,timeout,null);
 		return "0";
 	}
 	

@@ -11,12 +11,10 @@ import org.apache.log4j.Logger;
 
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
-import naru.aweb.admin.PaAdmin;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.config.Performance;
-import naru.aweb.pa.PaManager;
-//import naru.aweb.queue.QueueManager;
+import naru.aweb.pa.PaPeer;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -51,6 +49,7 @@ public class Scenario extends PoolBase{
 	private Performance masterPerformance;
 	private Map<String,Performance> requestPerformances=new HashMap<String,Performance>();
 	private JSONObject stat=new JSONObject();
+	private PaPeer peer;
 	
 	private Random random=new Random();
 	
@@ -93,13 +92,13 @@ public class Scenario extends PoolBase{
 		stat.element("maxMemory", runtime.maxMemory());
 		stat.element("loop", loop);
 		stat.element("runnningBrowserCount", runnningBrowserCount);
-		
 		stat.element("kind", "stressProgress");
 		stat.element("isComplete", isComplete);
+		peer.message(stat);
+		/*
 		PaManager paManager=config.getAdminPaManager();
 		paManager.publish(PaAdmin.QNAME, PaAdmin.SUBNAME_PERF,stat);
 		
-		/*
 		QueueManager queueManager=QueueManager.getInstance();
 		if(isComplete){
 			stat
@@ -117,7 +116,7 @@ public class Scenario extends PoolBase{
 	 * @param chId
 	 * @return
 	 */
-	public static boolean run(AccessLog[] accessLogs,JSONArray stresses,String chId){
+	public static boolean run(AccessLog[] accessLogs,JSONArray stresses,PaPeer peer){
 		int n=stresses.size();
 		Scenario topScenario=null;
 		Scenario lastScenario=null;
@@ -139,7 +138,7 @@ public class Scenario extends PoolBase{
 			boolean isAccessLog=stress.optBoolean("isAccessLog",false);
 			boolean isResponseHeaderTrace=stress.optBoolean("isResponseHeaderTrace",false);
 			boolean isResponseBodyTrace=stress.optBoolean("isResponseBodyTrace",false);
-			if(scenario.setup(accessLogs,name,browserCount,loopCount,isCallerKeepAlive,thinkingTime,isAccessLog,isResponseHeaderTrace,isResponseBodyTrace)==false){
+			if(scenario.setup(accessLogs,name,browserCount,loopCount,isCallerKeepAlive,thinkingTime,isAccessLog,isResponseHeaderTrace,isResponseBodyTrace,peer)==false){
 				//rollback処理
 				scenario=topScenario;
 				while(scenario!=null){
@@ -151,18 +150,18 @@ public class Scenario extends PoolBase{
 			}
 			lastScenario=scenario;
 		}
-		topScenario.start(chId);
+		topScenario.start();
 		return true;
 	}
 	
-	public static boolean run(AccessLog[] accessLogs,String name,int browserCount,int loopCount,
-			boolean isCallerKeepAlive,
-			long thinkingTime,
+	public static boolean run(
+			AccessLog[] accessLogs,String name,int browserCount,int loopCount,
+			boolean isCallerKeepAlive,long thinkingTime,
 			boolean isAccessLog,boolean isResponseHeaderTrace,boolean isResponseBodyTrace,
-			String chId){
+			PaPeer peer){
 		Scenario scenario=(Scenario)PoolManager.getInstance(Scenario.class);
-		if(scenario.setup(accessLogs,name,browserCount,loopCount,isCallerKeepAlive,thinkingTime,isAccessLog,isResponseHeaderTrace,isResponseBodyTrace)){
-			scenario.start(chId);
+		if(scenario.setup(accessLogs,name,browserCount,loopCount,isCallerKeepAlive,thinkingTime,isAccessLog,isResponseHeaderTrace,isResponseBodyTrace,peer)){
+			scenario.start();
 			return true;
 		}
 		scenario.unref(true);
@@ -175,10 +174,12 @@ public class Scenario extends PoolBase{
 	 * @param loopCount
 	 * @param requests リクエストAccessLog
 	 */
-	public boolean setup(AccessLog[] accessLogs,String name,int browserCount,int loopCount,
-			boolean isCallerkeepAlive,
-			long thinkingTime,
-			boolean isAccessLog,boolean isResponseHeaderTrace,boolean isResponseBodyTrace){
+	public boolean setup(
+			AccessLog[] accessLogs,String name,int browserCount,int loopCount,
+			boolean isCallerkeepAlive,long thinkingTime,boolean isAccessLog,
+			boolean isResponseHeaderTrace,boolean isResponseBodyTrace,PaPeer peer){
+		peer.ref();
+		this.peer=peer;
 		this.name=name;
 		this.browserCount=browserCount;
 		this.requestCount=accessLogs.length;
@@ -274,12 +275,8 @@ public class Scenario extends PoolBase{
 		}
 		return false;
 	}
-	public synchronized void start(){
-		start(null);
-	}
-//	private String chId;
 	
-	public synchronized void start(String chId){
+	public synchronized void start(){
 		System.gc();
 		loop=0;
 		startTime=System.currentTimeMillis();
@@ -350,6 +347,10 @@ public class Scenario extends PoolBase{
 
 	@Override
 	public void recycle() {
+		if(peer!=null){
+			peer.unref();
+			peer=null;
+		}
 		nextScenario=null;
 		isReceiveStop=false;
 		isProcessing=false;
