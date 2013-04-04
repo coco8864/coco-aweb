@@ -252,14 +252,23 @@ public class PaletWrapper implements PaletCtx,Timer{
 		return true;
 	}
 	
-	public boolean terminate(){
+	private PaPeer getTerminalPeer(){
 		synchronized(peers){
 			isTerminate=true;
 			for(PaPeer peer:peers){
-				peer.unsubscribe("terminate");
+				return peer;
 			}
-			peers.clear();
-			subnamePeersMap.clear();
+		}
+		return null;
+	}
+	
+	public boolean terminate(){
+		while(true){
+			PaPeer peer=getTerminalPeer();
+			if(peer==null){
+				break;
+			}
+			peer.unsubscribe("terminate");
 		}
 		for(Palet palet:subscribers.values()){
 			palet.term(null);

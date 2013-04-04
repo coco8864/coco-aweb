@@ -93,6 +93,7 @@ public class Scenario extends PoolBase{
 		stat.element("loop", loop);
 		stat.element("runnningBrowserCount", runnningBrowserCount);
 		stat.element("kind", "stressProgress");
+		stat.element("currentTime", System.currentTimeMillis());
 		stat.element("isComplete", isComplete);
 		peer.message(stat);
 		/*
@@ -241,7 +242,7 @@ public class Scenario extends PoolBase{
 			//TODO browserçsï˚ïsñæñ‚ëËÇ†ÇË,"...favicon.ico HTTP/1.1" null 0 125#123,-,H,null,null,15,15,0,0,-1"Ç±ÇÒÇ»ä¥Ç∂Ç…ãLò^Ç≥ÇÍÇÈ
 			loop++;
 			if(thinkingTime==0){
-				browser.start();
+				browser.start(peer);
 			}else{
 				long delay=calcThinkingtime();
 				browser.startDelay(delay);
@@ -286,6 +287,7 @@ public class Scenario extends PoolBase{
 		stat.element("scenarioIndex", scenarioIndex);
 		stat.element("loopCount", loopCount);
 		stat.element("browserCount", browserCount);
+		stat.element("currentTime", startTime);
 		isProcessing=true;
 		runnningBrowserCount=browsers.size();
 		
