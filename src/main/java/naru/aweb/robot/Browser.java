@@ -352,8 +352,10 @@ public class Browser extends PoolBase implements Timer{
 	 * @param chId
 	 */
 	public void start(PaPeer peer){
-		peer.ref();
-		this.peer=peer;
+		if(peer!=null){
+			peer.ref();
+			this.peer=peer;
+		}
 		logger.debug("#start startCallers.size():"+startCallers.size());
 		this.startTime=System.currentTimeMillis();
 		synchronized(this){
