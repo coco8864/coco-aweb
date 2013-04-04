@@ -158,19 +158,19 @@ function perfLine(trTag,perf){
 		stdev(perf.responseBodyTimeSum,perf.responseBodyTimeSumsq,count) +')');
 	trTag.appendChild(tdTag);
 }
-function perfProgress(){
-	if(!stressData || stressData.appId!=ph.queue.getAppId()){
-		stressData={isComplete:true,time:0,msg:null};
-	}
+function perfProgress(msg){
+##	if(!stressData || stressData.appId!=ph.queue.getAppId()){
+##		stressData={isComplete:true,time:0,msg:null};
+##	}
 	var bar=jQuery("#progressbar");
-	if(!stressData.msg){
+	if(!msg){
 		ph.jQuery("#stTestStatus").text("-");
 		ph.jQuery("#stCancelBtn").hide();
 		bar.progressbar({value:0});
 		return;
 	}
-	var st=stressData.msg;
-	var totalTime=stressData.time-st.startTime;
+	var st=msg;
+	var totalTime=st.currentTime-st.startTime;
 	var ratio=((st.maxMemory-st.freeMemory)/st.maxMemory)*100.0;
 	ph.jQuery("#stTestMemory").text(ratio.toFixed(2));
 	ph.jQuery("#stTestName").text(st.name);
@@ -179,7 +179,7 @@ function perfProgress(){
 	ph.jQuery("#stTestTotalTime").text(totalTime);
 	ph.jQuery("#stTestBrowser").text((st.runnningBrowserCount)+"/"+st.browserCount);
 	ph.jQuery("#stTestLoop").text((st.loop)+"/"+st.loopCount);
-	if(stressData.isComplete){
+	if(st.isComplete){
 		ph.jQuery("#stTestStatus").text("complete");
 		ph.jQuery("#stCancelBtn").hide();
 		bar.progressbar({value:100});
