@@ -220,7 +220,7 @@ function checkConnect(){
 
 <h1>Performance list</h1>
 <hr/>
-<div>stress進捗:<span id="stTestStatus"></span><input type="button" value="stop" onclick="ph.admin.doPramCommand('perf','cancel',{chId:stressData.chId});" id="stCancelBtn" style="display: none">
+<div>stress進捗:<span id="stTestStatus"></span><input type="button" value="stop" onclick="ph.admin.perfSd.publish({kind:'stopStress'});" id="stCancelBtn" style="display: none">
 scenario:<span id="stTestScenario"></span>
 name:<span id="stTestName"></span>
 start:<span id="stTestStartTime"></span>

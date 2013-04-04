@@ -42,35 +42,6 @@ ph.jQuery(function(){
 	}
 });
 
-var doStressCb={
-	update:function(msg,time,isComplete){
-		stressData.appId=ph.queue.getAppId();
-		stressData.msg=msg;
-		stressData.time=time;
-		stressData.isComplete=isComplete;
-		if(isComplete){
-			stressData.chId=null;
-		}
-		if(ph.useSessionStorage){
-			var json=ph.JSON.stringify(stressData);
-			sessionStorage['stressData']=json;
-		}
-		##stressタブを表示しているか否かを判定
-		if(typeof perfProgress!='undefined'){perfProgress();}
-		},
-	onComplete:function(msg){ph.log('doStress onComplete');doStressCb.update(msg.message,msg.time,true);},
-	onError:function(msg){ph.log('doStress onError:');ph.dump(msg);},
-	onMessage:function(msg){ph.log('doStress onMessage');doStressCb.update(msg.message,msg.time,false);}
-};
-var streeCommandCb=function(chId){
-	ph.log("streeCommandCb chId:"+chId);
-	if(stressData.chId){//先行しているstressがあった.cancelする
-		ph.admin.doPramCommand('perf','cancel',{chId:stressData.chId},function(){},function(){});
-	}
-	stressData.chId=chId;
-	ph.queue.subscribeById(chId,doStressCb);
-};
-
 function doStress(){
 	window.location.hash = "#stressTab";
 	if(ph.jQuery('#isStressFile').is(':checked')){
@@ -84,7 +55,7 @@ function doStress(){
 			browserCount:ph.jQuery('#stressBrowserCount').val(),
 			loopCount:ph.jQuery('#loopCount').val(),
 			thinkingTime:ph.jQuery('#thinkingTime').val(),
-			time:ph.jQuery('#stressTime').val(),//未使用
+			time:ph.jQuery('#stressTime').val(),##未使用
 			keepAlive:ph.jQuery('#stressKeepAlive').is(':checked'),
 			accessLog:ph.jQuery('#stressAccessLog').is(':checked'),
 			tesponseHeaderTrace:ph.jQuery('#stressTesponseHeaderTrace').is(':checked'),
