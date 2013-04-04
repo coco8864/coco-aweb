@@ -1,17 +1,17 @@
 <H1>Chat操作</H1>
 <hr/>
 <div id="queueInfo"></div>
-<p>入力
+<p>output
+<input type="button" value="clear" onclick="jQuery('#chatOutputTextArea').val('');"/></p>
+<textarea id="chatOutputTextArea" rows="10" cols="80" readonly="readonly">
+</textarea>
+<p>input
 <input type="button" value="send" onclick="onChatSend();"/>
 <input type="button" value="who" onclick="ph.admin.chatSd.publish({kind:'who'});"/>
 <input type="reset" value="clear" onclick="jQuery('#chatInputTextArea').val('');"/>
 <input type="checkBox" value="echoback" id="chatEchoback" checked="checked">echoback</input></p>
 <textarea id="chatInputTextArea" rows="10" cols="80">
 </textarea><br/>
-<p>出力
-<input type="button" value="clear" onclick="jQuery('#chatOutputTextArea').val('');"/></p>
-<textarea id="chatOutputTextArea" rows="10" cols="80" readonly="readonly">
-</textarea>
 <script type="text/javascript"> 
 function onChatSend(){
  ph.admin.chatSd.publish({

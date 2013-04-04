@@ -50,9 +50,9 @@ window.onhashchange = function(){
 };
 ph.jQuery(function() {
 	ph.setShowDebug(ph.showDebug);
-	ph.queue.start('/queue',function(){
-	ph.log('disconnect ph.queue');
-/*location=ph.publicWebUrl*/});
+##	ph.queue.start('/queue',function(){
+##	ph.log('disconnect ph.queue');
+##/*location=ph.publicWebUrl*/});
 	jQuery("#textEditTextArea").resizable({
 		handles: "se"
 	});
