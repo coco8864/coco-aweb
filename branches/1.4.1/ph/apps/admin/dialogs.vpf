@@ -77,7 +77,8 @@ function doStress(){
 		ph.jQuery('#fileStressAccessLogList').val( ph.jQuery('#stressAccessLogList').text() );
 		ph.jQuery('#stressFileForm').submit();
 	}else{
-		ph.admin.doPramCommand('perf','stress',{
+		ph.admin.perfSd.publish({
+			kind:'stress',
 			name:ph.jQuery('#stressName').val(),
 			list:ph.jQuery('#stressAccessLogList').text(),
 			browserCount:ph.jQuery('#stressBrowserCount').val(),
@@ -88,10 +89,8 @@ function doStress(){
 			accessLog:ph.jQuery('#stressAccessLog').is(':checked'),
 			tesponseHeaderTrace:ph.jQuery('#stressTesponseHeaderTrace').is(':checked'),
 			tesponseBodyTrace:ph.jQuery('#stressTesponseBodyTrace').is(':checked')
-			},
-			streeCommandCb,
-			function(x){alert('faild to stress test.'+x.responseText)}//errorCB
-			);
+			}
+		);
 	}
 	ph.jQuery(".logIdCheck").attr("checked",false);
 	jQuery('#stress').dialog('close');
@@ -137,6 +136,8 @@ function perfCheckServer(res){
     ph.jQuery("#checkResponseBodyTime").text(res.responseBodyTimes);
   }else if(res.kind==='accessLog'){
     updateEntry(res);
+  }else if(res.kind==='stressProgress'){
+	if(typeof perfProgress!='undefined'){perfProgress(res);}
   }else if(res.kind==='checkServerResult' && d.result==='fail'){
     alert('fail to checkServer');
   }
