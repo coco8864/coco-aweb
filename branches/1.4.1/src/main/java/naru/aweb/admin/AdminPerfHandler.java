@@ -31,9 +31,9 @@ public class AdminPerfHandler extends WebServerHandler{
 			boolean isAccessLog,boolean isResponseHeaderTrace,boolean isResponseBodyTrace){
 		QueueManager queueManager=QueueManager.getInstance();
 		String chId=queueManager.createQueue(true);
-		if( Scenario.run(accessLogs, name, browserCount, callCount, isCallerKeepAlive, thinkingTime, isAccessLog, isResponseHeaderTrace, isResponseBodyTrace,null)){
-			return chId;
-		}
+		//if( Scenario.run(accessLogs, name, browserCount, callCount, isCallerKeepAlive, thinkingTime, isAccessLog, isResponseHeaderTrace, isResponseBodyTrace,null)){
+		//	return chId;
+		//}
 		return null;
 	}
 
