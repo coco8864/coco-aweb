@@ -155,7 +155,7 @@ public class Scenario extends PoolBase{
 		return true;
 	}
 	
-	public static boolean run(
+	public static Scenario run(
 			AccessLog[] accessLogs,String name,int browserCount,int loopCount,
 			boolean isCallerKeepAlive,long thinkingTime,
 			boolean isAccessLog,boolean isResponseHeaderTrace,boolean isResponseBodyTrace,
@@ -163,10 +163,10 @@ public class Scenario extends PoolBase{
 		Scenario scenario=(Scenario)PoolManager.getInstance(Scenario.class);
 		if(scenario.setup(accessLogs,name,browserCount,loopCount,isCallerKeepAlive,thinkingTime,isAccessLog,isResponseHeaderTrace,isResponseBodyTrace,peer)){
 			scenario.start();
-			return true;
+			return scenario;
 		}
 		scenario.unref(true);
-		return false;
+		return null;
 	}
 	
 	/**
@@ -270,7 +270,7 @@ public class Scenario extends PoolBase{
 			}else{
 				broadcast(true);
 			}
-			unref();//Ç±ÇÃSceinarioÇÕèIóπ
+//			unref();//Ç±ÇÃSceinarioÇÕèIóπ
 		}else{
 			broadcast(false);
 		}
@@ -304,6 +304,9 @@ public class Scenario extends PoolBase{
 		Object[] objs=browsers.toArray();
 		for(Object browser:objs){
 			((Browser)browser).asyncStop();
+		}
+		if(nextScenario!=null){
+			nextScenario.stop();
 		}
 	}
 	
@@ -353,7 +356,10 @@ public class Scenario extends PoolBase{
 			peer.unref();
 			peer=null;
 		}
-		nextScenario=null;
+		if(nextScenario!=null){
+			nextScenario.unref();
+			nextScenario=null;
+		}
 		isReceiveStop=false;
 		isProcessing=false;
 		scenarioCount=1;

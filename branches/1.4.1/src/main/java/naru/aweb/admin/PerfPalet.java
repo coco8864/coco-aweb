@@ -23,7 +23,7 @@ public class PerfPalet implements Palet {
 	private static Config config=Config.getConfig();
 
 	private PaletCtx ctx;
-	private boolean inStress=false;
+	private Scenario scenario=null;
 	
 	@Override
 	public void init(String qname,String subname,PaletCtx ctx) {
@@ -55,7 +55,10 @@ public class PerfPalet implements Palet {
 		JSONObject parameter=(JSONObject)data;
 		if(!peer.fromBrowser()){
 			if( parameter.getBoolean("isComplete")==true){
-				inStress=false;
+				if(scenario!=null){
+					scenario.unref();
+					scenario=null;
+				}
 			}
 			ctx.message(parameter, peer.getSubname());
 			return;
@@ -82,6 +85,16 @@ public class PerfPalet implements Palet {
 				parameter.put("result","fail");
 				peer.message(parameter);
 			}
+		}else if("stopStress".equals(kind)){
+			if(scenario!=null){
+				scenario.stop();
+			}else{
+				parameter.put("kind","stopStressResult");
+				parameter.put("result","fail");
+				parameter.put("reason","not running");
+				peer.message(parameter);
+				return;
+			}
 		}else if("stress".equals(kind)){
 			String list=parameter.getString("list");
 			AccessLog[] accessLogs=listToAccessLogs(list);
@@ -96,19 +109,16 @@ public class PerfPalet implements Palet {
 			boolean tesponseHeaderTrace=parameter.getBoolean("tesponseHeaderTrace");
 			boolean tesponseBodyTrace=parameter.getBoolean("tesponseBodyTrace");
 			int thinkingTime=parameter.getInt("thinkingTime");
-			synchronized(this){
-				if(inStress){
-					//aleady runnnig
-					parameter.put("kind","stressResult");
-					parameter.put("result","fail");
-					peer.message(parameter);
-					return;
-				}
-				inStress=true;
+			if(scenario!=null){
+				//aleady runnnig
+				parameter.put("kind","stressResult");
+				parameter.put("result","fail");
+				parameter.put("reason","aleady execute");
+				peer.message(parameter);
+				return;
 			}
-			try {
-				PaPeer publishPeer=PaPeer.create(config.getAdminPaManager(), null,peer.getQname(),peer.getSubname());
-				doStress(accessLogs,name,
+			PaPeer publishPeer=PaPeer.create(config.getAdminPaManager(), null,peer.getQname(),peer.getSubname());
+			if(!doStress(accessLogs,name,
 						Integer.parseInt(browserCount),
 						Integer.parseInt(call),
 						keepAlive,
@@ -116,13 +126,12 @@ public class PerfPalet implements Palet {
 						accessLog,
 						tesponseHeaderTrace,
 						tesponseBodyTrace,
-						publishPeer);
-			} catch (NumberFormatException e) {
-				inStress=false;
+						publishPeer)){
+				publishPeer.unref();
 				parameter.put("kind","stressResult");
 				parameter.put("result","fail");
+				parameter.put("reason","doStress error");
 				peer.message(parameter);
-				return;
 			}
 		}
 	}
@@ -140,12 +149,21 @@ public class PerfPalet implements Palet {
 		}
 		return accessLogs;
 	}
-	private String doStress(AccessLog[] accessLogs,String name,int browserCount,int callCount,
+	private boolean doStress(AccessLog[] accessLogs,String name,int browserCount,int callCount,
 			boolean isCallerKeepAlive,long thinkingTime,
 			boolean isAccessLog,boolean isResponseHeaderTrace,boolean isResponseBodyTrace,PaPeer peer){
-		if( Scenario.run(accessLogs, name, browserCount, callCount, isCallerKeepAlive, thinkingTime, isAccessLog, isResponseHeaderTrace, isResponseBodyTrace,peer)){
-			return "0";
+		Scenario scenario=Scenario.run(accessLogs, name, browserCount, callCount, isCallerKeepAlive, thinkingTime, isAccessLog, isResponseHeaderTrace, isResponseBodyTrace,peer);
+		if(scenario==null){
+			return false;
 		}
-		return null;
+		synchronized(this){
+			if(this.scenario!=null){
+				scenario.stop();
+				return false;
+			}
+			scenario.ref();
+			this.scenario=scenario;
+		}
+		return true;
 	}
 }
