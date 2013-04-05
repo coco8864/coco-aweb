@@ -510,18 +510,26 @@ public class ParameterParser extends PoolBase{
 		values.add(value);
 	}
 
-	public String getParameter(String name) {
+	public Object getObject(String name) {
 		List parameters = getParameters(name);
 		if(parameters==null){
 			return null;
 		}
-		return (String) parameters.get(0);
+		return parameters.get(0);
+	}
+	
+	public String getParameter(String name) {
+		Object value=getObject(name);
+		if(value instanceof String){
+			return (String) value;
+		}
+		return null;
 	}
 	
 	public DiskFileItem getItem(String name) {
-		Object param=parameter.get(name);
-		if(param instanceof DiskFileItem){
-			return (DiskFileItem) param;
+		Object value=getObject(name);
+		if(value instanceof DiskFileItem){
+			return (DiskFileItem) value;
 		}
 		return null;
 	}

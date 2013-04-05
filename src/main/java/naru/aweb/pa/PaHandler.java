@@ -5,9 +5,11 @@ package naru.aweb.pa;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import naru.async.Timer;
 import naru.async.cache.CacheBuffer;
@@ -22,6 +24,7 @@ import net.sf.json.JSON;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
+import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.log4j.Logger;
 
 /**
@@ -36,6 +39,7 @@ public class PaHandler extends WebSocketHandler implements Timer{
 	private static final String XHR_FRAME_PATH = "/xhrPaFrame.vsp";
 	private static final String XHR_FRAME_TEMPLATE = "/template/xhrPaFrame.vsp";
 	private static final String DOWNLOAD_PATH="/download";
+	private static final String UPLOAD_PATH="/upload";
 	private static int XHR_SLEEP_TIME=1000;
 	private static Config config = Config.getConfig();
 	private static Logger logger=Logger.getLogger(PaHandler.class);
@@ -223,6 +227,54 @@ public class PaHandler extends WebSocketHandler implements Timer{
 		logger.debug("onWsOpen subprotocol:"+subprotocol);
 	}
 	
+	private static final Set<String> UPLOAD_RESERVE_KEY=new HashSet<String>();
+	static{
+		UPLOAD_RESERVE_KEY.add(PaSession.KEY_QNAME);
+		UPLOAD_RESERVE_KEY.add(PaSession.KEY_SUBNAME);
+		UPLOAD_RESERVE_KEY.add(PaSession.KEY_BID);
+	}
+	private void formPublish(ParameterParser parameter){
+		String token=parameter.getParameter(PaSession.KEY_TOKEN);
+		AuthSession authSession=getAuthSession();
+		if(!token.equals(authSession.getToken())){
+			completeResponse("403");
+			return;
+		}
+		int bid=Integer.parseInt(parameter.getParameter(PaSession.KEY_BID));
+		PaSessions paSessions=getPaSessions(authSession);
+		paSession=paSessions.sessions.get(bid);
+		if(paSession==null){
+			completeResponse("404");
+			return;
+		}
+		//Map rawParam=parameter.getParameterMap();
+		Map msg=new HashMap();
+		Map message=new HashMap();
+		msg.put(PaSession.KEY_TYPE, PaSession.TYPE_PUBLISH);
+		msg.put(PaSession.KEY_QNAME, parameter.getParameter(PaSession.KEY_QNAME));
+		msg.put(PaSession.KEY_SUBNAME, parameter.getParameter(PaSession.KEY_SUBNAME));
+		msg.put(PaSession.KEY_MESSAGE, message);
+		
+		Iterator itr=parameter.getParameterNames();
+		while(itr.hasNext()){
+			String name=(String)itr.next();
+			if(UPLOAD_RESERVE_KEY.contains(name)){
+				continue;
+			}
+			Object value=parameter.getObject(name);
+			if(value instanceof DiskFileItem){
+				DiskFileItem item=(DiskFileItem)value;
+				Blob blob=Blob.create(item.getStoreLocation());
+				blob.setName(item.getName());
+				message.put(name, blob);
+			}else{
+				message.put(name, value);
+			}
+		}
+		paSession.publish(msg);
+		return;
+	}
+	
 	/**
 	 * HTTP(s)として動作した場合ここでリクエストを受ける
 	@Override
@@ -244,7 +296,7 @@ public class PaHandler extends WebSocketHandler implements Timer{
 				completeResponse("403");
 				return;
 			}
-			int bid=Integer.parseInt(parameter.getParameter("bid"));
+			int bid=Integer.parseInt(parameter.getParameter(PaSession.KEY_BID));
 			String key=parameter.getParameter("key");
 			PaSessions paSessions=getPaSessions(authSession);
 			paSession=paSessions.sessions.get(bid);
@@ -258,6 +310,9 @@ public class PaHandler extends WebSocketHandler implements Timer{
 				return;
 			}
 			blob.download(this);
+			return;
+		}else if(path.equals(UPLOAD_PATH)){
+			formPublish(parameter);
 			return;
 		}
 		//xhrからの開始
