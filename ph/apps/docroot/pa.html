@@ -50,8 +50,9 @@ var sd;
 <div>cd.deploy('admin','naru.aweb.admin.PaAdmin');<pre>
 </pre></div>
 <form id='testForm'>
-<input type='file' name='name1' />
-<input type='text' name='name2' value='xxx'/>
+<input type='file' name='file' />
+<input type='hidden' name='from' value='form'/>
+<input type='text' name='test' value='hello'/>
 </form>
 
 <div id='target'><p>dorag and dromp file upload</p></div>
@@ -66,24 +67,26 @@ function onDropFiles(){
   sd.onMessage(function(data){
   var fr=new FileReader();
   fr.onload=function(e){
-
+/*
   var evt = document.createEvent("HTMLEvents");
   evt.initEvent("click",false,false);
   ph.jQuery("<a>", {
     download: "test.txt",
     href: e.target.result
   }).get(0).dispatchEvent(evt);
-
+*/
 //   ph.jQuery("#test").attr("href",e.target.result);
-//ph.log(e.target.result);
-   }
+    ph.log('fr.onload:'+e.target.result);
+    };
+
 //    data[0].type=
-////ph.log('type'+data[0].file.type);
+  ph.log('onMessage:type:'+data.file.type);
 //   var file=ph.blobSlice(data[0].file,0,data[0].file.size,'application/octet-stream;content-disposition=attachment;filename=test.txt');
-////   file=data[0].file;
-////    fr.readAsDataURL(file,'utf-8');
+    file=data.file;
+    fr.readAsDataURL(file,'utf-8');
   });
 }
+
 function connect(){
   cd=ph.pa.connect('/pa');
   cd.done(
@@ -160,12 +163,9 @@ ph.jQuery(function(){
   $("body").bind("drop", function (e) {
   // ドラッグされたファイル情報を取得
     var files = e.originalEvent.dataTransfer.files;
-	var blobData=[];
-    for (var i = 0; i < files.length; i++) {
-      blobData.push({file:files[i],no:i});
-    }
+    var data={file:files[0],from:'drop'};
     try{
-    sd.publish(blobData);
+    sd.publish(data);
     }catch(e){
     ph.log(e);
     alert(e);
