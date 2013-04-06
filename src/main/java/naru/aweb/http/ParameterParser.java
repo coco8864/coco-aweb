@@ -62,7 +62,7 @@ public class ParameterParser extends PoolBase{
 	
 	private static String defaultEncoding="ISO8859_1";
 	//isUrlEncoded関連
-	private Map parameter=new HashMap();
+	private Map<String,List> parameter=new HashMap<String,List>();
 	//isText関連
 	private String text;
 	private JSON jsonObject;
@@ -381,7 +381,7 @@ public class ParameterParser extends PoolBase{
 //					System.out.println("item.getString(encoding):"+item.getString(encoding));
 					item.delete();
 				}else{
-					parameter.put(item.getFieldName(), item);
+					addParameter(item.getFieldName(), item);
 //					System.out.println("item.getName():"+item.getName());
 					//item.getName();clientのファイル名
 					//item.isInMemory()がtrueの場合は、item.get();にbyte配列
@@ -501,7 +501,7 @@ public class ParameterParser extends PoolBase{
 		return null;
 	}
 	
-	private void addParameter(String name, String value){
+	private void addParameter(String name, Object value){
 		List values = getParameters(name);
 		if (values == null) {
 			values = new ArrayList();
@@ -515,7 +515,7 @@ public class ParameterParser extends PoolBase{
 		if(parameters!=null){
 			return parameters.get(0);
 		}
-		return getItem(name);
+		return null;
 	}
 	
 	public String getParameter(String name) {
