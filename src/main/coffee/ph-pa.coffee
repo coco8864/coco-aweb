@@ -412,7 +412,7 @@ class SD extends EventModule
     if form.length==0 || form[0].tagName!='FORM'
       throw 'not form tag id'
     form.attr("method","POST")
-    form.attr("enctye","multipart/form-data")
+    form.attr("enctype","multipart/form-data")
     form.attr("action","#{@_cd.httpUrl}/upload")
     form.attr("target","#{@_cd._downloadFrameName}")
     bidInput=ph.jQuery("<input type='hidden' name='bid' value='#{@_cd._getBid()}'/>")
