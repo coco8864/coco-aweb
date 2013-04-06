@@ -200,8 +200,7 @@ class CD extends EventModule
       @_openWebSocket()
   _onWsMessage:(msg)=>
     ph.log('Pa _onWsMessage:'+msg.data)
-    Envelope envelope=new Envelope()
-##  obj=ph.JSON.parse(msg.data)
+    envelope=new Envelope()
     envelope.unpack(msg.data,@_onMessage)
   _openWebSocket:=>
     ph.log('Pa WebSocket start')
@@ -236,7 +235,7 @@ class CD extends EventModule
       ph.log('_onXhrOpened error.'+ph.JSON.stringify(res))
   _onXhrMessage:(obj)->
     ph.log('Pa _onXhrMessage')
-    Envelope envelope=new Envelope()
+    envelope=new Envelope()
     envelope.unpack(obj,@_onMessage)
 #   @_onMessage(obj)
   _getBid:->
@@ -549,6 +548,8 @@ class Envelope
       @blobDfd.done(=>@onDoneBinPtc(onPacked))
   unpack:(data,cb)->
     if !ph.useBlob || !(data instanceof Blob)
+      if typeof data == 'string'
+        data=ph.JSON.parse(data)
       @dates=data.meta?.dates ? []
       obj=@deserialize(data)
       cb(obj)
