@@ -117,7 +117,7 @@ public class Scenario extends PoolBase{
 	 * @param chId
 	 * @return
 	 */
-	public static boolean run(AccessLog[] accessLogs,JSONArray stresses,PaPeer peer){
+	public static Scenario run(AccessLog[] accessLogs,JSONArray stresses,PaPeer peer){
 		int n=stresses.size();
 		Scenario topScenario=null;
 		Scenario lastScenario=null;
@@ -147,12 +147,12 @@ public class Scenario extends PoolBase{
 					scenario.unref(true);
 					scenario=lastScenario;
 				}
-				return false;
+				return null;
 			}
 			lastScenario=scenario;
 		}
 		topScenario.start();
-		return true;
+		return topScenario;
 	}
 	
 	public static Scenario run(

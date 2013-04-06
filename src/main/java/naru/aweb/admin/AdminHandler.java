@@ -27,7 +27,6 @@ import naru.aweb.http.ParameterParser;
 import naru.aweb.http.RequestContext;
 import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.MappingResult;
-import naru.aweb.queue.QueueManager;
 import naru.aweb.robot.Browser;
 import naru.aweb.spdy.SpdyConfig;
 import naru.aweb.spdy.SpdyFrame;
