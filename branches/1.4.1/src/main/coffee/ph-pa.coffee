@@ -201,8 +201,8 @@ class CD extends EventModule
   _onWsMessage:(msg)=>
     ph.log('Pa _onWsMessage:'+msg.data)
     Envelope envelope=new Envelope()
-    obj=ph.JSON.parse(msg.data)
-    envelope.unpack(obj,@_onMessage)
+##  obj=ph.JSON.parse(msg.data)
+    envelope.unpack(msg.data,@_onMessage)
   _openWebSocket:=>
     ph.log('Pa WebSocket start')
     @stat=ph.pa.STAT_OPEN
