@@ -1,14 +1,17 @@
 package naru.aweb.admin;
 
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.log4j.Logger;
 
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
+import naru.aweb.pa.Blob;
 import naru.aweb.pa.PaPeer;
 import naru.aweb.pa.Palet;
 import naru.aweb.pa.PaletCtx;
@@ -16,6 +19,7 @@ import naru.aweb.queue.QueueManager;
 import naru.aweb.robot.ConnectChecker;
 import naru.aweb.robot.Scenario;
 import naru.aweb.robot.ServerChecker;
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 public class PerfPalet implements Palet {
@@ -133,6 +137,18 @@ public class PerfPalet implements Palet {
 				parameter.put("reason","doStress error");
 				peer.message(parameter);
 			}
+		}else if("stressFile".equals(kind)){
+			String list=parameter.getString("list");
+			AccessLog[] accessLogs=listToAccessLogs(list);
+			Blob blob=(Blob)parameter.get("stressFile");
+//			blob.asyncBuffer(bufferGetter, offset, userContext)
+			
+			
+			if(!doStressFile(accessLogs,null)){
+				JSONObject res=JSONObject.fromObject("kind:'stressFileResult',result:'fail',reason:'doStressFile error'");
+				peer.message(res);
+			}
+			
 		}
 	}
 
@@ -149,10 +165,8 @@ public class PerfPalet implements Palet {
 		}
 		return accessLogs;
 	}
-	private boolean doStress(AccessLog[] accessLogs,String name,int browserCount,int callCount,
-			boolean isCallerKeepAlive,long thinkingTime,
-			boolean isAccessLog,boolean isResponseHeaderTrace,boolean isResponseBodyTrace,PaPeer peer){
-		Scenario scenario=Scenario.run(accessLogs, name, browserCount, callCount, isCallerKeepAlive, thinkingTime, isAccessLog, isResponseHeaderTrace, isResponseBodyTrace,peer);
+	
+	private boolean settingScenario(Scenario scenario){
 		if(scenario==null){
 			return false;
 		}
@@ -166,4 +180,17 @@ public class PerfPalet implements Palet {
 		}
 		return true;
 	}
+	
+	private boolean doStress(AccessLog[] accessLogs,String name,int browserCount,int callCount,
+			boolean isCallerKeepAlive,long thinkingTime,
+			boolean isAccessLog,boolean isResponseHeaderTrace,boolean isResponseBodyTrace,PaPeer peer){
+		Scenario scenario=Scenario.run(accessLogs, name, browserCount, callCount, isCallerKeepAlive, thinkingTime, isAccessLog, isResponseHeaderTrace, isResponseBodyTrace,peer);
+		return settingScenario(scenario);
+	}
+	
+	private boolean doStressFile(AccessLog[] accessLogs,JSONArray stressJson){
+		Scenario scenario=Scenario.run(accessLogs, stressJson,null);
+		return settingScenario(scenario);
+	}
+	
 }

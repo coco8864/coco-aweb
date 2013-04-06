@@ -44,7 +44,6 @@ import naru.aweb.spdy.SpdyConfig;
 import naru.aweb.util.JdoUtil;
 import naru.aweb.util.JsonUtil;
 import naru.aweb.util.ServerParser;
-import naru.aweb.wsq.WsqManager;
 import naru.queuelet.QueueletContext;
 import net.sf.json.JSON;
 import net.sf.json.JSONArray;
@@ -124,8 +123,6 @@ public class Config {
 	private File settingDir;
 	
 	private String selfDomain;
-	
-	private WsqManager wsqManager;
 	
 	/* コンテンツエンコードに何を許すか?実際zgip or not */
 	// private String contentEncoding;
@@ -488,10 +485,6 @@ public class Config {
 			return;
 		}
 		isAleadyTerm = true;
-		if(wsqManager!=null){
-			wsqManager.term();
-			wsqManager=null;
-		}
 		if(broadcaster!=null){//initの途中で例外した場合broadcasterの可能性がある。
 			broadcaster.term();
 			broadcaster=null;
@@ -753,7 +746,6 @@ public class Config {
 		// proxy除外リストの初期化
 		updateProxyFinder(pacUrl,proxyServer,sslProxyServer,exceptProxyDomains);
 		broadcaster=new Broadcaster(this);
-		wsqManager=WsqManager.getInstance();
 		
 		boolean useCache=getBoolean(USE_FILE_CACHE);
 		getFileCache().setUseCache(useCache);

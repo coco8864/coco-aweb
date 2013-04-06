@@ -14,7 +14,6 @@ import naru.aweb.config.CommissionAuthUrl;
 import naru.aweb.http.ParameterParser;
 import naru.aweb.http.WebServerHandler;
 import naru.aweb.portal.PortalHandler;
-import naru.aweb.queue.QueueManager;
 import naru.aweb.util.JdoUtil;
 import net.sf.json.JSON;
 import net.sf.json.JSONArray;
@@ -24,7 +23,7 @@ import org.apache.log4j.Logger;
 
 public class AdminCommissionAuthHandler extends WebServerHandler{
 	private static Logger logger = Logger.getLogger(AdminCommissionAuthHandler.class);
-	private static QueueManager queueManger=QueueManager.getInstance();
+//	private static QueueManager queueManger=QueueManager.getInstance();
 	
 	void doCommand(String command,ParameterParser parameter){
 		if("listCommissionUrl".equals(command)){
