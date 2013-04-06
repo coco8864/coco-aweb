@@ -37,9 +37,9 @@ window.ph.pa={
   _XHR_FRAME_URL:'/xhrPaFrame.vsp'
   _connections:{} #key:url value:{deferred:dfd,promise:prm}
   connect:(url)->
-    downloadUrl=null
+    httpUrl=null
     if url.lastIndexOf('ws://',0)==0||url.lastIndexOf('wss://',0)==0
-      downloadUrl='http' + url.substring(2)+'/download'
+      httpUrl='http' + url.substring(2)
       if !ph.useWebSocket
         #webSocket‚ªŽg‚¦‚È‚­‚Äurl‚ªws://‚¾‚Á‚½‚çhttp://‚É•ÏX
         url='http' + url.substring(2)
@@ -55,18 +55,18 @@ window.ph.pa={
         else
           scm='http://'
       if ph.isSsl
-        downloadUrl='https://' + ph.domain+url+'/download'
+        httpUrl='https://' + ph.domain+url
       else
-        downloadUrl='http://' + ph.domain+url+'/download'
+        httpUrl='http://' + ph.domain+url
       url=scm+ph.domain+url
     else
-      downloadUrl=url+'/download'
-    ph.log('url:' + url+':downloadUrl:'+downloadUrl)
+      httpUrl=url
+    ph.log('url:' + url+':httpUrl:'+httpUrl)
     if @_connections[url]
       prm=@_connections[url].promise
     else
       dfd=ph.jQuery.Deferred()
-      prm=dfd.promise(new CD(url,downloadUrl,dfd))
+      prm=dfd.promise(new CD(url,httpUrl,dfd))
       @_connections[url]={deferred:dfd,promise:prm}
     prm._openCount++
     prm
@@ -119,7 +119,7 @@ class EventModule
 #-------------------Connection Deferred-------------------
 class CD extends EventModule
   _BROWSERID_PREFIX:'bid.'
-  constructor: (@url,@downloadUrl,@deferred) ->
+  constructor: (@url,@httpUrl,@deferred) ->
     super
     @_subscribes={}
     @isWs=(url.lastIndexOf('ws',0)==0)
@@ -312,7 +312,7 @@ class CD extends EventModule
       @__onClose(msg)
     else if msg.type==ph.pa.TYPE_DOWNLOAD
       ph.log('download.msg.key:'+msg.key)
-      form=ph.jQuery("<form method='POST' target='#{@_downloadFrameName}' action='#{@downloadUrl}'>" +
+      form=ph.jQuery("<form method='POST' target='#{@_downloadFrameName}' action='#{@httpUrl}/download'>" +
          "<input type='hidden' name='bid' value='#{@_getBid()}'/>" +
          "<input type='hidden' name='token' value='#{@_token}'/>" +
          "<input type='hidden' name='key' value='#{msg.key}'/>" +
@@ -406,6 +406,29 @@ class SD extends EventModule
   publish:(msg)->
     @checkState()
     @_cd._send({type:ph.pa.TYPE_PUBLISH,qname:@qname,subname:@subname,message:msg})
+  publishForm:(formId)->
+    @checkState()
+    form=ph.jQuery('#'+formId)
+    if form.length==0 || form[0].tagName!='FORM'
+      throw 'not form tag id'
+    form.attr("method","POST")
+    form.attr("enctye","multipart/form-data")
+    form.attr("action","#{@_cd.httpUrl}/upload")
+    form.attr("target","#{@_cd._downloadFrameName}")
+    bidInput=ph.jQuery("<input type='hidden' name='bid' value='#{@_cd._getBid()}'/>")
+    tokenInput=ph.jQuery("<input type='hidden' name='token' value='#{@_cd._token}'/>")
+    qnameInput=ph.jQuery("<input type='hidden' name='qname' value='#{@qname}'/>")
+    subnameInput=ph.jQuery("<input type='hidden' name='subname' value='#{@subname}'/>")
+    form.append(bidInput)
+    form.append(tokenInput)
+    form.append(qnameInput)
+    form.append(subnameInput)
+    form.submit()
+    form[0].reset()
+    bidInput.remove()
+    tokenInput.remove()
+    qnameInput.remove()
+    subnameInput.remove()
   onMessage:(cb)->
     @on(ph.pa.TYPE_MESSAGE,cb)
 
