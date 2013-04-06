@@ -41,7 +41,11 @@ public class PaletWrapper implements PaletCtx,Timer{
 	}
 	
 	private Palet getPalet(PaPeer peer){
-		Palet palet=subscribers.get(peer.getSubname());
+		String subname=peer.getSubname();
+		Palet palet=null;
+		if(subname!=null){
+			palet=subscribers.get(subname);
+		}
 		if(palet!=null){
 			return palet;
 		}

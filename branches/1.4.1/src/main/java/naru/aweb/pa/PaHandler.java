@@ -229,6 +229,7 @@ public class PaHandler extends WebSocketHandler implements Timer{
 	
 	private static final Set<String> UPLOAD_RESERVE_KEY=new HashSet<String>();
 	static{
+		UPLOAD_RESERVE_KEY.add(PaSession.KEY_TOKEN);
 		UPLOAD_RESERVE_KEY.add(PaSession.KEY_QNAME);
 		UPLOAD_RESERVE_KEY.add(PaSession.KEY_SUBNAME);
 		UPLOAD_RESERVE_KEY.add(PaSession.KEY_BID);
@@ -272,6 +273,7 @@ public class PaHandler extends WebSocketHandler implements Timer{
 			}
 		}
 		paSession.publish(msg);
+		completeResponse("205");
 		return;
 	}
 	
