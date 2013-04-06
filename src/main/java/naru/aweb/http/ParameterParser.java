@@ -512,10 +512,10 @@ public class ParameterParser extends PoolBase{
 
 	public Object getObject(String name) {
 		List parameters = getParameters(name);
-		if(parameters==null){
-			return null;
+		if(parameters!=null){
+			return parameters.get(0);
 		}
-		return parameters.get(0);
+		return getItem(name);
 	}
 	
 	public String getParameter(String name) {
