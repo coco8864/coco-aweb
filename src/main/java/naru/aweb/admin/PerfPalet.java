@@ -58,7 +58,10 @@ public class PerfPalet implements Palet,Event {
 
 	@Override
 	public void onPublishObj(PaPeer peer, Map data) {
-		JSONObject parameter=(JSONObject)data;
+		JSONObject parameter=null;
+		if(data instanceof JSONObject){
+			parameter=(JSONObject)data;
+		}
 		if(!peer.fromBrowser()){
 			if( parameter.getBoolean("isComplete")==true){
 				if(scenario!=null){
@@ -69,7 +72,7 @@ public class PerfPalet implements Palet,Event {
 			ctx.message(parameter, peer.getSubname());
 			return;
 		}
-		String kind=(String)parameter.get("kind");
+		String kind=(String)data.get("kind");
 		if("checkConnect".equals(kind)){
 			Integer count=parameter.getInt("count");
 			Integer maxFailCount=parameter.getInt("maxFailCount");
@@ -140,8 +143,9 @@ public class PerfPalet implements Palet,Event {
 				peer.message(parameter);
 			}
 		}else if("stressFile".equals(kind)){
-			stressFileList=parameter.getString("list");
-			Blob blob=(Blob)parameter.get("stressFile");
+			stressFileList=(String)data.get("list");
+			stressFilePeer=peer;
+			Blob blob=(Blob)data.get("stressFile");
 			StringConverter.decode(this,blob,"utf-8",4096);
 		}
 	}
@@ -183,7 +187,8 @@ public class PerfPalet implements Palet,Event {
 	}
 	
 	private boolean doStressFile(AccessLog[] accessLogs,JSONArray stressJson){
-		Scenario scenario=Scenario.run(accessLogs, stressJson,null);
+		PaPeer publishPeer=PaPeer.create(config.getAdminPaManager(), null,stressFilePeer.getQname(),stressFilePeer.getSubname());
+		Scenario scenario=Scenario.run(accessLogs, stressJson,publishPeer);
 		return settingScenario(scenario);
 	}
 
@@ -197,7 +202,11 @@ public class PerfPalet implements Palet,Event {
 			AccessLog[] accessLogs=listToAccessLogs(stressFileList);
 			doStressFile(accessLogs,json);
 		}else{
-			stressFilePeer.message(message);
+			JSONObject res=new JSONObject();
+			res.put("kind","stressFileResult");
+			res.put("result","fail");
+			res.put("reason","doStressFile error");
+			stressFilePeer.message(res);
 		}
 	}
 }

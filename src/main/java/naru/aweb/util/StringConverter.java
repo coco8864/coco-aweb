@@ -42,6 +42,7 @@ public class StringConverter extends PoolBase implements BufferGetter{
 			asyncBuffer=null;
 		}
 		if(result){
+			charBuffer.flip();
 			event.done(true, charBuffer.toString());
 		}else{
 			event.done(false,null);
@@ -50,13 +51,14 @@ public class StringConverter extends PoolBase implements BufferGetter{
 
 	@Override
 	public boolean onBuffer(Object arg0, ByteBuffer[] buffers) {
-		offset+=BuffersUtil.remaining(buffers);
+		long length=asyncBuffer.bufferLength();
 		for(ByteBuffer buffer:buffers){
-			CoderResult coderResult=charsetDecoder.decode(buffer, charBuffer, false);
-			if(coderResult.isError()){
+			offset+=buffer.remaining();
+			CoderResult coderResult=charsetDecoder.decode(buffer, charBuffer, (offset>=length));
+/*			if(!coderResult.isUnderflow()){
 				term(false);
 				return false;
-			}
+			}*/
 		}
 		PoolManager.poolBufferInstance(buffers);
 		asyncBuffer.asyncBuffer(this, offset, null);
@@ -65,13 +67,8 @@ public class StringConverter extends PoolBase implements BufferGetter{
 
 	@Override
 	public void onBufferEnd(Object arg0) {
-		CoderResult coderResult=charsetDecoder.decode(null, charBuffer, true);
-		if(coderResult.isError()){
-			term(false);
-		}else{
-			charsetDecoder.flush(charBuffer);
-			term(true);
-		}
+		charsetDecoder.flush(charBuffer);
+		term(true);
 	}
 
 	@Override
