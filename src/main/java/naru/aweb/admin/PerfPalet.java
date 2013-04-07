@@ -2,11 +2,14 @@ package naru.aweb.admin;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import naru.async.BufferGetter;
+import naru.async.pool.BuffersUtil;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.pa.Blob;
@@ -16,10 +19,12 @@ import naru.aweb.pa.PaletCtx;
 import naru.aweb.robot.ConnectChecker;
 import naru.aweb.robot.Scenario;
 import naru.aweb.robot.ServerChecker;
+import naru.aweb.util.Event;
+import naru.aweb.util.StringConverter;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
-public class PerfPalet implements Palet {
+public class PerfPalet implements Palet,Event {
 	private static Logger logger = Logger.getLogger(PerfPalet.class);
 	private static Config config=Config.getConfig();
 
@@ -135,17 +140,9 @@ public class PerfPalet implements Palet {
 				peer.message(parameter);
 			}
 		}else if("stressFile".equals(kind)){
-			String list=parameter.getString("list");
-			AccessLog[] accessLogs=listToAccessLogs(list);
+			stressFileList=parameter.getString("list");
 			Blob blob=(Blob)parameter.get("stressFile");
-//			blob.asyncBuffer(bufferGetter, offset, userContext)
-			
-			
-			if(!doStressFile(accessLogs,null)){
-				JSONObject res=JSONObject.fromObject("kind:'stressFileResult',result:'fail',reason:'doStressFile error'");
-				peer.message(res);
-			}
-			
+			StringConverter.decode(this,blob,"utf-8",4096);
 		}
 	}
 
@@ -189,5 +186,18 @@ public class PerfPalet implements Palet {
 		Scenario scenario=Scenario.run(accessLogs, stressJson,null);
 		return settingScenario(scenario);
 	}
-	
+
+	private String stressFileList;
+	private PaPeer stressFilePeer;
+
+	@Override
+	public void done(boolean result, Object obj) {
+		if(result){
+			JSONArray json=JSONArray.fromObject((String)obj);
+			AccessLog[] accessLogs=listToAccessLogs(stressFileList);
+			doStressFile(accessLogs,json);
+		}else{
+			stressFilePeer.message(message);
+		}
+	}
 }
