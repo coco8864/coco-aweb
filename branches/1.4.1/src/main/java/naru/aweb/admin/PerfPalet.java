@@ -53,11 +53,7 @@ public class PerfPalet implements Palet,Event {
 	}
 
 	@Override
-	public void onPublishText(PaPeer peer, String data) {
-	}
-
-	@Override
-	public void onPublishObj(PaPeer peer, Map data) {
+	public void onPublish(PaPeer peer, Map data) {
 		JSONObject parameter=null;
 		if(data instanceof JSONObject){
 			parameter=(JSONObject)data;
@@ -150,10 +146,6 @@ public class PerfPalet implements Palet,Event {
 		}
 	}
 
-	@Override
-	public void onPublishArray(PaPeer peer, List<?> data) {
-	}
-	
 	private AccessLog[] listToAccessLogs(String list){
 		String[] ids=list.split(",");
 		AccessLog[] accessLogs=new AccessLog[ids.length];

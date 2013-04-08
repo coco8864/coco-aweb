@@ -34,18 +34,14 @@ public class SamplePalet implements Palet{
 		logger.info("onUnsubscribe.peer:"+peer+":"+reason);
 	}
 
-	@Override
-	public void onPublishText(PaPeer peer, String data) {
-		logger.info("onPublishText.peer:"+peer+":"+data);
-		ctx.message(data);
-	}
 
 	@Override
-	public void onPublishObj(PaPeer peer, Map<String,?> data) {
+	public void onPublish(PaPeer peer, Map<String,?> data) {
 		logger.info("onPublishObj.peer:"+peer+":"+data);
 		ctx.message(data);
 	}
 
+	/*
 	@Override
 	public void onPublishArray(PaPeer peer, List<?> data) {
 		logger.info("onPublishArray.peer:"+peer+":"+data);
@@ -54,5 +50,5 @@ public class SamplePalet implements Palet{
 		ctx.download((Blob)f.get("file"), ctx.getPeers(), null);
 //		ctx.message(data);
 	}
-
+	*/
 }

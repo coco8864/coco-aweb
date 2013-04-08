@@ -1,6 +1,5 @@
 package naru.aweb.pa;
 
-import java.util.List;
 import java.util.Map;
 
 public interface Palet {
@@ -31,7 +30,15 @@ public interface Palet {
 	 */
 	void onSubscribe(PaPeer peer);
 	void onUnsubscribe(PaPeer peer,String reason);
-	void onPublishText(PaPeer peer,String data);
-	void onPublishObj(PaPeer peer,Map<String,?> data);
-	void onPublishArray(PaPeer peer,List<?> data);
+	
+	/**
+	 * Connection Deffedにpublishした場合は、peerにsubnameが設定されない。
+	 * この場合、peerに直接messageすることができない
+	 * サーバ側からmessageした場合は、PaSessionが設定されない。
+	 * この場合、peerにmessageするとqname,subnameに合致するpeerに広報される
+	 * dataは、BlobやDateを含む場合、HashMap,それ以外の場合、JSONObjectで通知
+	 * @param peer
+	 * @param data
+	 */
+	void onPublish(PaPeer peer,Map<String,?> data);
 }
