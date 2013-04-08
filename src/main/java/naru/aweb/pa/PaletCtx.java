@@ -38,6 +38,13 @@ public interface PaletCtx{
 	public int message(Object data,Set<PaPeer> peers,Set<PaPeer> exceptPeers);
 	public int message(Object data,Set<PaPeer> peers,PaPeer exceptPeer);
 	
+	/**
+	 * ブラウザにblobをダウンロードさせる
+	 * @param data
+	 * @param peers
+	 * @param exceptPeers
+	 * @return
+	 */
 	public int download(Blob data,Set<PaPeer> peers,Set<PaPeer> exceptPeers);
 	
 	public String getQname();

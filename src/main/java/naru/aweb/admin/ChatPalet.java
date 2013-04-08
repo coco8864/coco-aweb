@@ -44,11 +44,7 @@ public class ChatPalet implements Palet {
 	}
 
 	@Override
-	public void onPublishText(PaPeer peer, String data) {
-	}
-
-	@Override
-	public void onPublishObj(PaPeer peer, Map<String, ?> data) {
+	public void onPublish(PaPeer peer, Map<String, ?> data) {
 		String kind=(String)data.get("kind");
 		if("who".equals(kind)){
 			JSONObject res=new JSONObject();
@@ -63,9 +59,4 @@ public class ChatPalet implements Palet {
 			ctx.message(data, PaAdmin.SUBNAME_CHAT, peer);
 		}
 	}
-
-	@Override
-	public void onPublishArray(PaPeer peer, List<?> data) {
-	}
-
 }

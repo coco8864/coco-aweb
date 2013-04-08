@@ -53,11 +53,7 @@ public class AccessLogPalet implements Palet {
 	}
 
 	@Override
-	public void onPublishText(PaPeer peer, String data) {
-	}
-
-	@Override
-	public void onPublishObj(PaPeer peer, Map<String, ?> parameter) {
+	public void onPublish(PaPeer peer, Map<String, ?> parameter) {
 		JSONObject res=new JSONObject();
 		String command=(String)parameter.get("command");
 		res.put("command", command);
@@ -114,10 +110,6 @@ public class AccessLogPalet implements Palet {
 				peer.message(res);
 			}
 		}
-	}
-
-	@Override
-	public void onPublishArray(PaPeer peer, List<?> data) {
 	}
 	
 	private static final String HEX_0A =new String(new byte[]{(byte)0x0a});

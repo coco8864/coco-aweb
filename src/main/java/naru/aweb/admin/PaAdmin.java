@@ -70,23 +70,13 @@ public class PaAdmin implements Palet {
 	}
 
 	@Override
-	public void onPublishObj(PaPeer peer, Map parameter) {
+	public void onPublish(PaPeer peer, Map parameter) {
 		String subname=peer.getSubname();
 		if(SUBNAME_STASTICS.equals(subname)){
 			ctx.message(parameter, subname);
 		}else if("setting".equals(subname)){
 			setting(peer,parameter);
 		}
-	}
-
-	@Override
-	public void onPublishArray(PaPeer peer, List<?> data) {
-		// TODO Auto-generated method stub
-	}
-	
-	@Override
-	public void onPublishText(PaPeer peer, String data) {
-		// TODO Auto-generated method stub
 	}
 
 }
