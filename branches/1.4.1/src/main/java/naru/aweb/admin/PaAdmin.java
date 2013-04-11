@@ -6,6 +6,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import naru.aweb.config.Config;
+import naru.aweb.pa.PaMsg;
 import naru.aweb.pa.PaPeer;
 import naru.aweb.pa.Palet;
 import naru.aweb.pa.PaletCtx;
@@ -70,7 +71,7 @@ public class PaAdmin implements Palet {
 	}
 
 	@Override
-	public void onPublish(PaPeer peer, Map parameter) {
+	public void onPublish(PaPeer peer, PaMsg parameter) {
 		String subname=peer.getSubname();
 		if(SUBNAME_STASTICS.equals(subname)){
 			ctx.message(parameter, subname);

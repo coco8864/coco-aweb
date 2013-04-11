@@ -40,5 +40,5 @@ public interface Palet {
 	 * @param peer
 	 * @param data
 	 */
-	void onPublish(PaPeer peer,Map<String,?> data);
+	void onPublish(PaPeer peer,PaMsg data);
 }
