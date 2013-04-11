@@ -92,10 +92,18 @@ public class PaletWrapper implements PaletCtx,Timer{
 	
 	void onPublish(PaPeer peer,Object data){
 		Palet palet=getPalet(peer);
-		if(data instanceof Map){
-			palet.onPublish(peer,(Map)data);
+		PaMsg msg=null;
+		if(data instanceof PaMsg){
+			msg=(PaMsg)data;
+		}else if(data instanceof Map){
+			msg=PaMsg.wrap((Map)data);
 		}else{
 			logger.error("onPublish data type" + data.getClass().getName());
+		}
+		try{
+			palet.onPublish(peer,msg);
+		}finally{
+			msg.unref();
 		}
 	}
 	

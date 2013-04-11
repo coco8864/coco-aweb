@@ -160,7 +160,7 @@ public class Envelope extends PoolBase{
 	
 	public Object deserialize(Object obj){
 		if(obj instanceof JSONObject){
-			Map clone=new HashMap();
+			PaMsg clone=PaMsg.create();
 			JSONObject json=(JSONObject)obj;
 			for(Object key:json.keySet()){
 				clone.put((String)key, deserialize(json.get(key)));
@@ -215,7 +215,7 @@ public class Envelope extends PoolBase{
 	
 	/* protocol data -> user obj
 	 */
-	public static Map unpack(CacheBuffer prot){
+	public static PaMsg unpack(CacheBuffer prot){
 		if(!prot.isInTopBuffer()){
 			prot.unref();
 			throw new UnsupportedOperationException("Envelope parse");
@@ -258,11 +258,11 @@ public class Envelope extends PoolBase{
 		return unpack(header,blobsList);
 	}
 	
-	public static Map unpack(JSONObject header,List<Blob> blobs){
+	public static PaMsg unpack(JSONObject header,List<Blob> blobs){
 		JSONObject meta=header.getJSONObject("meta");
 		JSONArray dates=meta.getJSONArray("dates");
 		if(blobs==null && dates.size()==0){
-			return header;
+			return PaMsg.wrap(header);
 		}
 		Envelope envelop=(Envelope)PoolManager.getInstance(Envelope.class);
 		if(blobs!=null){
@@ -272,7 +272,7 @@ public class Envelope extends PoolBase{
 		for(int i=0;i<size;i++){
 			envelop.dates.add(dates.getLong(i));
 		}
-		Map result=(Map)envelop.deserialize(header);
+		PaMsg result=(PaMsg)envelop.deserialize(header);
 		envelop.unref();
 		return result;
 	}

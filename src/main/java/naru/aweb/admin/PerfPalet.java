@@ -13,6 +13,7 @@ import naru.async.pool.BuffersUtil;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.pa.Blob;
+import naru.aweb.pa.PaMsg;
 import naru.aweb.pa.PaPeer;
 import naru.aweb.pa.Palet;
 import naru.aweb.pa.PaletCtx;
@@ -53,11 +54,11 @@ public class PerfPalet implements Palet,Event {
 	}
 
 	@Override
-	public void onPublish(PaPeer peer, Map data) {
-		JSONObject parameter=null;
-		if(data instanceof JSONObject){
-			parameter=(JSONObject)data;
-		}
+	public void onPublish(PaPeer peer, PaMsg parameter) {
+//		JSONObject parameter=null;
+//		if(data instanceof JSONObject){
+//			parameter=(JSONObject)data;
+//		}
 		if(!peer.fromBrowser()){
 			if( parameter.getBoolean("isComplete")==true){
 				if(scenario!=null){
@@ -68,7 +69,7 @@ public class PerfPalet implements Palet,Event {
 			ctx.message(parameter, peer.getSubname());
 			return;
 		}
-		String kind=(String)data.get("kind");
+		String kind=parameter.getString("kind");
 		if("checkConnect".equals(kind)){
 			Integer count=parameter.getInt("count");
 			Integer maxFailCount=parameter.getInt("maxFailCount");
@@ -139,9 +140,9 @@ public class PerfPalet implements Palet,Event {
 				peer.message(parameter);
 			}
 		}else if("stressFile".equals(kind)){
-			stressFileList=(String)data.get("list");
+			stressFileList=parameter.getString("list");
 			stressFilePeer=peer;
-			Blob blob=(Blob)data.get("stressFile");
+			Blob blob=parameter.getBlob("stressFile");
 			StringConverter.decode(this,blob,"utf-8",4096);
 		}
 	}

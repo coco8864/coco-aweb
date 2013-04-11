@@ -19,6 +19,7 @@ import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.pa.Blob;
+import naru.aweb.pa.PaMsg;
 import naru.aweb.pa.PaPeer;
 import naru.aweb.pa.Palet;
 import naru.aweb.pa.PaletCtx;
@@ -53,7 +54,7 @@ public class AccessLogPalet implements Palet {
 	}
 
 	@Override
-	public void onPublish(PaPeer peer, Map<String, ?> parameter) {
+	public void onPublish(PaPeer peer, PaMsg parameter) {
 		JSONObject res=new JSONObject();
 		String command=(String)parameter.get("command");
 		res.put("command", command);
@@ -89,14 +90,14 @@ public class AccessLogPalet implements Palet {
 			return;
 		}else if("runAccessLog".equals(command)){
 			try {
-				runAccessLog((JSONObject)parameter,peer);
+				runAccessLog(parameter,peer);
 			} catch (Exception e) {
 				logger.error("runAccessLog error.",e);
 				peer.message(res);
 			}
 		}else if("saveAccessLog".equals(command)){
 			try {
-				AccessLog accessLog=getEditedAccessLog((JSONObject)parameter);
+				AccessLog accessLog=getEditedAccessLog(parameter);
 				accessLog.setOriginalLogId(accessLog.getId());
 				accessLog.setId(null);
 				JSONObject json=accessLog.toJson();
@@ -138,7 +139,7 @@ public class AccessLogPalet implements Palet {
 		return header;
 	}
 	
-	private HeaderParser getPartHeader(JSONObject parameter,String part,String digest) throws UnsupportedEncodingException{
+	private HeaderParser getPartHeader(PaMsg parameter,String part,String digest) throws UnsupportedEncodingException{
 		String text=parameter.optString(part,null);
 		String encode=parameter.optString(part+"Encode",null);
 		if(text!=null){
@@ -165,7 +166,7 @@ public class AccessLogPalet implements Palet {
 		return store.getDigest();
 	}
 	
-	private ByteBuffer[] getPartBuffer(JSONObject parameter,String part,String digest) throws UnsupportedEncodingException{
+	private ByteBuffer[] getPartBuffer(PaMsg parameter,String part,String digest) throws UnsupportedEncodingException{
 		String body=parameter.optString(part,null);
 		String bodyEncode=parameter.optString(part+"Encode",null);
 		if(body==null){
@@ -200,7 +201,7 @@ public class AccessLogPalet implements Palet {
 	 * traceタブにあるsave newボタン
 	 * runした後は、そのプロトコル情報をtrace画面で表示
 	 */
-	private AccessLog getEditedAccessLog(JSONObject parameter) throws UnsupportedEncodingException{
+	private AccessLog getEditedAccessLog(PaMsg parameter) throws UnsupportedEncodingException{
 		String accessLogId=parameter.getString("accessLogId");
 		String requestHeader=parameter.optString("requestHeader",null);
 		String requestBody=parameter.optString("requestBody",null);
@@ -282,10 +283,10 @@ public class AccessLogPalet implements Palet {
 	 * traceタブにあるrunボタン
 	 * runした後は、そのプロトコル情報をtrace画面で表示
 	 */
-	private void runAccessLog(JSONObject parameter,PaPeer peer) throws UnsupportedEncodingException{
-		String accessLogId=parameter.getString("accessLogId");
+	private void runAccessLog(PaMsg parameter,PaPeer peer) throws UnsupportedEncodingException{
+		long accessLogId=parameter.getLong("accessLogId");
 		String requestBody=parameter.optString("requestBody",null);
-		AccessLog accessLog=AccessLog.getById(Long.parseLong(accessLogId));
+		AccessLog accessLog=AccessLog.getById(accessLogId);
 		if(accessLog.getDestinationType()!=AccessLog.DESTINATION_TYPE_HTTP&&accessLog.getDestinationType()!=AccessLog.DESTINATION_TYPE_HTTPS){
 			peer.message("fail to runAccessLog");
 			return;

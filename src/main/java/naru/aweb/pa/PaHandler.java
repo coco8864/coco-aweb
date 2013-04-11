@@ -81,7 +81,7 @@ public class PaHandler extends WebSocketHandler implements Timer{
 		}else if(PaSession.TYPE_UNSUBSCRIBE.equals(type)){
 			paSession.unsubscribe(msg);
 		}else if(PaSession.TYPE_PUBLISH.equals(type)){
-			Map realMessage=Envelope.unpack(msg, null);
+			PaMsg realMessage=Envelope.unpack(msg, null);
 			paSession.publish(realMessage);
 		}else if(PaSession.TYPE_CLOSE.equals(type)){
 			paSession.close();
@@ -249,7 +249,7 @@ public class PaHandler extends WebSocketHandler implements Timer{
 			return;
 		}
 		//Map rawParam=parameter.getParameterMap();
-		Map msg=new HashMap();
+		PaMsg msg=PaMsg.create();
 		Map message=new HashMap();
 		msg.put(PaSession.KEY_TYPE, PaSession.TYPE_PUBLISH);
 		msg.put(PaSession.KEY_QNAME, parameter.getParameter(PaSession.KEY_QNAME));
