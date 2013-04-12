@@ -6,6 +6,8 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Date;
 
+import org.apache.log4j.Logger;
+
 import naru.async.AsyncBuffer;
 import naru.async.BufferGetter;
 import naru.async.cache.CacheBuffer;
@@ -34,6 +36,7 @@ import net.sf.json.JSONObject;
  * @author Naru
  */
 public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
+	private static Logger logger = Logger.getLogger(Blob.class);
 	private CacheBuffer buffer;
 	private long offset;
 	private long size;
@@ -41,10 +44,15 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 	private Date lastModifiedDate;
 	private String type;
 	private String jsType;
+	private File deleteFile;
 	
-	public static Blob create(File file){
+	public static Blob create(File file,boolean deleteOnFinish){
 		CacheBuffer buffer=CacheBuffer.open(file);
-		return create(buffer);
+		Blob blob=create(buffer);
+		if(deleteOnFinish){
+			blob.deleteFile=file;
+		}
+		return blob;
 	}
 	
 	public static Blob create(ByteBuffer[] byteBuffer){
@@ -126,10 +134,19 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 	@Override
 	public void recycle() {
 		if(buffer!=null){
+			buffer.close();
 			buffer.unref();
 			buffer=null;
 		}
 		size=offset=0;
+		if(deleteFile!=null){
+			try {
+				deleteFile.delete();
+			} catch (Throwable e) {
+				logger.warn("Blob fail to file delete.");
+			}
+			deleteFile=null;
+		}
 	}
 
 	public boolean asyncBuffer(BufferGetter bufferGetter, Object userContext) {

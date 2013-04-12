@@ -47,6 +47,7 @@ public class StringConverter extends PoolBase implements BufferGetter{
 		}else{
 			event.done(false,null);
 		}
+		unref();
 	}
 
 	@Override

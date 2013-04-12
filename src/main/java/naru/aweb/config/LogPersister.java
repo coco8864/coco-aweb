@@ -300,8 +300,7 @@ public class LogPersister implements Timer {
 		case TYPE_LIST_EXPORT:
 			try {
 				File exportFile=executeExport(pm, requestInfo.ids);
-				exportFile.deleteOnExit();
-				Blob exportBlob=Blob.create(exportFile);
+				Blob exportBlob=Blob.create(exportFile,true);
 				requestInfo.peer.download(exportBlob);
 			} catch (IOException e) {
 				response=new JSONObject();
