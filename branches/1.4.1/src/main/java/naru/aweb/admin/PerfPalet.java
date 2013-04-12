@@ -142,6 +142,7 @@ public class PerfPalet implements Palet,Event {
 		}else if("stressFile".equals(kind)){
 			stressFileList=parameter.getString("list");
 			stressFilePeer=peer;
+			stressFilePeer.ref();
 			Blob blob=parameter.getBlob("stressFile");
 			StringConverter.decode(this,blob,"utf-8",4096);
 		}
@@ -166,7 +167,6 @@ public class PerfPalet implements Palet,Event {
 				scenario.stop();
 				return false;
 			}
-			scenario.ref();
 			this.scenario=scenario;
 		}
 		return true;
@@ -181,7 +181,10 @@ public class PerfPalet implements Palet,Event {
 	
 	private boolean doStressFile(AccessLog[] accessLogs,JSONArray stressJson){
 		PaPeer publishPeer=PaPeer.create(config.getAdminPaManager(), null,stressFilePeer.getQname(),stressFilePeer.getSubname());
+		stressFilePeer.unref();
+		stressFilePeer=null;
 		Scenario scenario=Scenario.run(accessLogs, stressJson,publishPeer);
+		publishPeer.unref();//Scenario‚Ì’†‚ÅQÆ‚ğ‰ÁZI—¹Œ¸Z‚µ‚Ä‚¢‚é
 		return settingScenario(scenario);
 	}
 
@@ -200,6 +203,8 @@ public class PerfPalet implements Palet,Event {
 			res.put("result","fail");
 			res.put("reason","doStressFile error");
 			stressFilePeer.message(res);
+			stressFilePeer.unref();
+			stressFilePeer=null;
 		}
 	}
 }

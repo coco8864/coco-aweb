@@ -15,6 +15,7 @@ public class ByteBufferInputStream extends InputStream {
 		for(int i=0;i<buffers.length;i++){
 			buffersList.add(buffers[i]);
 		}
+		PoolManager.poolArrayInstance(buffers);
 	}
 	
 	@Override

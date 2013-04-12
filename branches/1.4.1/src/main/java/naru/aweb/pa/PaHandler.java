@@ -265,7 +265,7 @@ public class PaHandler extends WebSocketHandler implements Timer{
 			Object value=parameter.getObject(name);
 			if(value instanceof DiskFileItem){
 				DiskFileItem item=(DiskFileItem)value;
-				Blob blob=Blob.create(item.getStoreLocation());
+				Blob blob=Blob.create(item.getStoreLocation(),true);
 				blob.setName(item.getName());
 				message.put(name, blob);
 			}else{

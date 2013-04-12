@@ -93,8 +93,8 @@ public class PaMsg extends PoolBase implements Map{
 			return;
 		}
 		for(Object value:values()){
-			if(value instanceof PoolBase){
-				((PoolBase)value).unref();
+			if(value instanceof PaMsg){
+				((PaMsg)value).unref();
 			}
 		}
 		root=null;

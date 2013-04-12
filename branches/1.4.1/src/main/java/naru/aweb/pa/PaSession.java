@@ -191,7 +191,6 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	
 	public synchronized void download(JSONObject message,Blob blob){
 		downloadBlobs.put(message.getString(KEY_KEY),blob);
-		blob.ref();
 		sendJson(message);
 	}
 	
@@ -269,6 +268,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		String qname=msg.getString(KEY_QNAME);
 		String subname=msg.getString(KEY_SUBNAME);
 		Object message=msg.get(KEY_MESSAGE);
+		msg.unref();
 		PaPeer keyPeer=PaPeer.create(paManager,this, qname, subname);
 		PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
 		if(subname==null){//ëóêMå≥Ç™Ç»Ç¢Publish ï÷ãXìIÇ»Peer
