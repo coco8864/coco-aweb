@@ -66,6 +66,12 @@ public class AccessLogPalet implements Palet {
 		}else if("entry".equals(command)){
 			Integer id=(Integer)parameter.get("id");
 			AccessLog accessLog=AccessLog.getById((long)id);
+			if(accessLog==null){
+				res.put("result", false);
+				res.put("reason", "not found");
+				peer.message(res);
+				return;
+			}
 			JSONObject json=accessLog.toJson();
 			json.put("kind", "accessLog");
 			peer.message(json);
