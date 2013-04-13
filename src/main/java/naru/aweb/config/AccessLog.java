@@ -523,7 +523,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	private WebClientLog webClientLog;
 	
 	public void log(boolean debug){
-		if(!debug&&isSkipPhlog){//'/queue'‚Ì‚æ‚¤‚É‘å—Ê‚Éo—Í‚³‚ê‚élog‚Ío—Í‚ğ—}~‚·‚é
+		if(!debug&&isSkipPhlog){//'/pa'‚Ì‚æ‚¤‚É‘å—Ê‚Éo—Í‚³‚ê‚élog‚Ío—Í‚ğ—}~‚·‚é
 			return;
 		}
 		StringBuffer sb=new StringBuffer(256);
