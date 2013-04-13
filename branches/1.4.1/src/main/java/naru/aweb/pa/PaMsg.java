@@ -76,7 +76,11 @@ public class PaMsg extends PoolBase implements Map{
 	}
 	
 	public boolean getBoolean(String key){
-		return (Boolean)root.get(key); 
+		Object value=root.get(key);
+		if(value==null){
+			return false;
+		}
+		return (Boolean)value; 
 	}
 	public int getInt(String key){
 		Object value=root.get(key);
