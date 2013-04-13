@@ -134,7 +134,9 @@ public class PaMsg extends PoolBase implements Map{
 		if(map instanceof PaMsg){
 			return (PaMsg)map;
 		}else{
-			return wrap(map);
+			PaMsg value=wrap(map);
+			root.put(key, value);
+			return value;
 		}
 	}
 	public List getList(String key){
