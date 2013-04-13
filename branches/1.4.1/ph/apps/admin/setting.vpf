@@ -58,7 +58,7 @@ function setHtml5(){
   },
   function(x){
 ##setHtml5完了
-    alert('HTML5設定完了');
+    alert('websocket設定完了');
   });
 }
 
@@ -392,7 +392,7 @@ WebSocketPingInterval:<input type="text" name="webSocketPingInterval" id="webSoc
 value="${config.getInt('webSocketPingInterval',0)}"
 >ms<br/>
 isWebSocketLog:<input type="checkBox" name="webSocketLog" id="webSocketLog"
-#if(${config.getBoolean('isWebSocketLog')})
+#if(${config.getBoolean('isWebSocketLog',false)})
 checked="checked"
 #end
 ><br/>
