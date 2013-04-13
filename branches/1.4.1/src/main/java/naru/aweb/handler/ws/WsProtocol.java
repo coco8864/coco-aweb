@@ -58,7 +58,7 @@ public abstract class WsProtocol extends PoolBase{
 	private static Set<String> webSocketSpecs=null;
 	private static boolean isWebSocketResponseMask=config.getBoolean("isWebSocketResponseMask",false);
 	/* アクセスログにwebsocketの個々fremaのreq/resを記録するか否か */
-	private static boolean isWebSocketLog=config.getBoolean("isWebSocketLog",true);
+	private static boolean isWebSocketLog=config.getBoolean("isWebSocketLog",false);
 	
 	private static void setupWebSocketSpecs(String specs){
 		webSocketSpecs=new HashSet<String>();
