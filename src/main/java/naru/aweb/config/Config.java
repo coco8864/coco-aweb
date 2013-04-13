@@ -687,8 +687,6 @@ public class Config {
 			}
 			RealHost.addRealHost(realHost);
 		}
-		// Mapper作成には、realHostsが必要、realHostsの初期化の後に呼び出す。
-		authorizer=new Authorizer(configuration);
 		try {
 			String dir = configuration.getString(PATH_PUBLIC_DOCROOT);
 			publicDocumentRoot = new File(dir).getCanonicalFile();
@@ -711,7 +709,33 @@ public class Config {
 			logger.error("getCanonicalFile error.",e);
 			return false;
 		}
+		isAllowChunked=getBoolean("allowChunked",false);
+		isDebugTrace=getBoolean(DEBUG_TRACE,false);
+		
+		contentEncoding=configuration.getString(CONTENT_ENCODING);
+		isProxyKeepAlive=configuration.getBoolean(IS_PROXY_KEEP_ALIVE, false);
+		isWebKeepAlive=configuration.getBoolean(IS_WEB_KEEP_ALIVE, false);
+		maxKeepAliveRequests=configuration.getInt(MAX_KEEP_ALIVE_REQUESTS, 100);
+		keepAliveTimeout=configuration.getInt(KEEP_ALIVE_TIMEOUT, 15000);
+		
+		writeTimeout=getLong(WRITE_TIMEOUT, WRITE_TIMEOUT_DEFAULT);
+		readTimeout=getLong(READ_TIMEOUT, READ_TIMEOUT_DEFAULT);
+		connectTimeout=getLong(CONNECT_TIMEOUT, CONNECT_TIMEOUT_DEFAULT);
+		acceptTimeout=getLong(ACCEPT_TIMEOUT, ACCEPT_TIMEOUT_DEFAULT);
+		
+		serverHeader=config.getString(PHANTOM_SERVER_HEADER, null);
+		
+		boolean useCache=getBoolean(USE_FILE_CACHE);
+		getFileCache().setUseCache(useCache);
+		return true;
+	}
+	
+	//bind完了後のinit
+	public void initAfterBind(){
+		// Mapper作成には、realHostsが必要、realHostsの初期化の後に呼び出す。
+		authorizer=new Authorizer(configuration);
 		mapper = new Mapper(this);
+		// proxy除外リストの初期化
 		String pacUrl = configuration.getString("pacUrl");
 		if("".equals(pacUrl)){
 			pacUrl=null;
@@ -728,28 +752,9 @@ public class Config {
 		if("".equals(exceptProxyDomains)){
 			exceptProxyDomains=null;
 		}
-		isAllowChunked=getBoolean("allowChunked",false);
-		isDebugTrace=getBoolean(DEBUG_TRACE,false);
-		
-		contentEncoding=configuration.getString(CONTENT_ENCODING);
-		isProxyKeepAlive=configuration.getBoolean(IS_PROXY_KEEP_ALIVE, false);
-		isWebKeepAlive=configuration.getBoolean(IS_WEB_KEEP_ALIVE, false);
-		maxKeepAliveRequests=configuration.getInt(MAX_KEEP_ALIVE_REQUESTS, 100);
-		keepAliveTimeout=configuration.getInt(KEEP_ALIVE_TIMEOUT, 15000);
-		
-		writeTimeout=getLong(WRITE_TIMEOUT, WRITE_TIMEOUT_DEFAULT);
-		readTimeout=getLong(READ_TIMEOUT, READ_TIMEOUT_DEFAULT);
-		connectTimeout=getLong(CONNECT_TIMEOUT, CONNECT_TIMEOUT_DEFAULT);
-		acceptTimeout=getLong(ACCEPT_TIMEOUT, ACCEPT_TIMEOUT_DEFAULT);
-		
-		serverHeader=config.getString(PHANTOM_SERVER_HEADER, null);
-		// proxy除外リストの初期化
 		updateProxyFinder(pacUrl,proxyServer,sslProxyServer,exceptProxyDomains);
-		broadcaster=new Broadcaster(this);
 		
-		boolean useCache=getBoolean(USE_FILE_CACHE);
-		getFileCache().setUseCache(useCache);
-		return true;
+		broadcaster=new Broadcaster(this);//統計情報監視の開始
 	}
 	
 	private Broadcaster broadcaster;
