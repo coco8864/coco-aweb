@@ -131,6 +131,8 @@ datanucleus.validateConstraints=false
 			logger.error("fail to bindAll.");
 			context.finish(false,true,startupInfo);
 		}
+		//auth‚Ì‰Šú‰»‚ÍbindŒã‚¶‚á‚È‚¢‚Æhost‚ªŠm’è‚µ‚È‚¢ê‡‚ª‚ ‚é
+		config.initAfterBind();
 	}
 	
 	/**
