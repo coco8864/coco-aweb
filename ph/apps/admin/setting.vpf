@@ -50,6 +50,7 @@ function setHtml5(){
    websocketSpecs:specs,
    webSocketMessageLimit:ph.jQuery("#webSocketMessageLimit").val(),
    webSocketPingInterval:ph.jQuery("#webSocketPingInterval").val(),
+   isWebSocketLog:ph.jQuery("#webSocketLog").is(':checked'),
    isUseSessionStorage:true,
 ##ph.jQuery("#isUseSessionStorage").is(':checked'),
    isUseCrossDomain:true
@@ -366,12 +367,8 @@ checked="checked"
 </div>
 
 <Hr/>
-<H2 onclick="ph.jQuery('#html5Div').toggle();">+HTML5設定</H2>
+<H2 onclick="ph.jQuery('#html5Div').toggle();">+Websocket</H2>
 <div class="settingItem" id="html5Div">
-<p>利用可能なブラウザでHTML5機能を使用するか否かを設定してください</p>
-Web Storage sessionStorage:必須</br>
-Cross-document messaging:必須</br>
-
 WebSocket spec:hixie75:<input type="checkBox" name="isUseHixie75" id="isUseHixie75"
 #if(${config.getString('websocketSpecs').indexOf('hixie75')}>=0)
 checked="checked"
@@ -394,6 +391,11 @@ value="${config.getInt('webSocketMessageLimit',2048000)}"
 WebSocketPingInterval:<input type="text" name="webSocketPingInterval" id="webSocketPingInterval"
 value="${config.getInt('webSocketPingInterval',0)}"
 >ms<br/>
+isWebSocketLog:<input type="checkBox" name="webSocketLog" id="webSocketLog"
+#if(${config.getBoolean('isWebSocketLog')})
+checked="checked"
+#end
+><br/>
 
 ##Web Storage sessionStorage:<input type="checkBox" name="isUseSessionStorage" id="isUseSessionStorage"
 ###if(${config.getBoolean('useSessionStorage',true)})
