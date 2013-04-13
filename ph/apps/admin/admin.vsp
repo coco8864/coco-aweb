@@ -7,7 +7,7 @@
 	<meta http-equiv="Pragma" content="no-cache"> 
 	<meta http-equiv="Cache-Control" content="no-cache"> 
 	<meta http-equiv="Expires" content="0"> 
-	<title>Phatom Proxy Console</title>
+	<title>Phatom Server Console</title>
 
 	<link type="text/css" href="/pub/css/jquery-ui-1.10.2.custom.css" rel="stylesheet" />
 	<script type="text/javascript" src="/pub/js/ph-loader.js?include=ph-pa.js,ph-queue.js"></script>
@@ -123,7 +123,7 @@ ph.log("tabs ajaxOptions success.index:"+index +":anchor:"+anchor);
 	</script> 
 </head> 
 <body> 
-<H1 class="mainTitle" style="float: left;">Phantom Proxy Console</H1>
+<H1 class="mainTitle" style="float: left;">Phantom Server Console</H1>
 <div style="float: right;" class="welcom">$!esc.html($loginUser.loginId)さんようこそ
 <img src="/pub/images/home.gif" title="home" onclick='location=ph.publicWebUrl'/>
 <img src="/pub/images/logout.gif" title="logout" onclick='location=(ph.authUrl+"/logout")'/>
