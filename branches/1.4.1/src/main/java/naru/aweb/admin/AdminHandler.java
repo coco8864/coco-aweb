@@ -2,7 +2,6 @@ package naru.aweb.admin;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -27,7 +26,6 @@ import naru.aweb.http.ParameterParser;
 import naru.aweb.http.RequestContext;
 import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.MappingResult;
-import naru.aweb.robot.Browser;
 import naru.aweb.spdy.SpdyConfig;
 import naru.aweb.spdy.SpdyFrame;
 import naru.aweb.util.ServerParser;
@@ -100,7 +98,6 @@ public class AdminHandler extends WebServerHandler{
 	
 	private static final byte[] HEADER_END_BYTE =new byte[]{(byte)0x0d,(byte)0x0a,(byte)0x0d,(byte)0x0a};
 	
-	
 	/* レスポンスの内容をそのままレスポンスする */
 	private void viewAccessLog(ParameterParser parameter){
 		String accessLogId=parameter.getParameter("accessLogId");
@@ -136,11 +133,9 @@ public class AdminHandler extends WebServerHandler{
 		forwardHandler(Mapping.STORE_HANDLER);
 	}
 	
-	
 	//phamtomProxyの設定はここに集中する
 	private void doCommand(ParameterParser parameter){
 		String cmd=parameter.getParameter("command");
-		String callback=parameter.getParameter("callback");
 		if("setTimeouts".equals(cmd)){
 			String connectTimeout=parameter.getParameter("connectTimeout");
 			String acceptTimeout=parameter.getParameter("acceptTimeout");
@@ -168,12 +163,6 @@ public class AdminHandler extends WebServerHandler{
 			if("".equals(exceptProxyDomains)){
 				exceptProxyDomains=null;
 			}
-			/*
-			config.setProperty("pacUrl", pacUrl);
-			config.setProperty("proxyServer", proxyServer);
-			config.setProperty("sslProxyServer", sslProxyServer);
-			config.setProperty("exceptProxyDomains", exceptProxyDomains);
-			*/
 			boolean result=config.updateProxyFinder(pacUrl,proxyServer,sslProxyServer,exceptProxyDomains);
 			JSONObject json=new JSONObject();
 			json.put("pacUrl", config.getProperty("pacUrl"));
@@ -262,32 +251,6 @@ public class AdminHandler extends WebServerHandler{
 			String debugTrace=parameter.getParameter("debugTrace");
 			config.setDebugTrace("true".equalsIgnoreCase(debugTrace));
 			responseJson(config.isDebugTrace());
-		/*
-		}else if("runAccessLog".equals(cmd)){
-			try {
-				String chId=runAccessLog(parameter);
-				responseJson(chId,callback);
-			} catch (Exception e) {
-				logger.error("runAccessLog error.",e);
-				completeResponse("500");
-			}
-		}else if("saveAccessLog".equals(cmd)){
-			try {
-				AccessLog accessLog=getEditedAccessLog(parameter);
-				accessLog.setOriginalLogId(accessLog.getId());
-				accessLog.setId(null);
-				accessLog.setPersist(true);
-				accessLog.persist();
-				responseJson(accessLog.getId(),callback);
-			} catch (Exception e) {
-				logger.error("getEditedAccessLog error.",e);
-				completeResponse("500");
-			}
-		*/
-//		}else if("notify".equals(cmd)){
-//			QueueManager queueManager=QueueManager.getInstance();
-//			String chId=queueManager.createQueue();
-//			responseJson(chId,callback);
 		}else if("logdownload".equals(cmd)){
 			//ph.log,accesslogダウンロード
 			String logType=parameter.getParameter("logType");
@@ -399,7 +362,6 @@ public class AdminHandler extends WebServerHandler{
 	
 	private boolean checkToken(ParameterParser parameter){
 		RequestContext requestContext=getRequestContext();
-//		KeepAliveContext keepAliveContext=getKeepAliveContext();
 		String token=requestContext.getAuthSession().getToken();
 		String paramToken=parameter.getParameter("token");
 		if(paramToken!=null){
@@ -468,17 +430,9 @@ public class AdminHandler extends WebServerHandler{
 			}
 			return;
 		}
-//		if(doCommand(parameter)==false){
-//			return;
-//		}
-		//'/' および queryを含まないfile名
-//		String file=requestHeader.getFile();
 		if( "/admin".equals(path)){
 			doCommand(parameter);
 			return;
-//		}else if( "/accessLog".equals(path)){
-//			forwardHandler(AdminAccessLogHandler.class);
-//			return;
 		}else if( REPLAY_UPLOAD_PATH.equals(path)){
 			replayUpload(parameter);
 			return;

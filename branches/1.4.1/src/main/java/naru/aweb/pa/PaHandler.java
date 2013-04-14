@@ -36,10 +36,11 @@ import org.apache.log4j.Logger;
  */
 public class PaHandler extends WebSocketHandler implements Timer{
 	private static final String PA_SESSIONS_KEY = "PaSessions";
-	private static final String XHR_FRAME_PATH = "/xhrPaFrame.vsp";
+	private static final String XHR_FRAME_PATH = "/!xhrPaFrame";
 	private static final String XHR_FRAME_TEMPLATE = "/template/xhrPaFrame.vsp";
-	private static final String DOWNLOAD_PATH="/download";
-	private static final String UPLOAD_PATH="/upload";
+	private static final String XHR_POLLING_PATH="/!xhrPolling";
+	private static final String DOWNLOAD_PATH="/!paDownload";
+	private static final String UPLOAD_PATH="/!paUpload";
 	private static int XHR_SLEEP_TIME=1000;
 	private static Config config = Config.getConfig();
 	private static Logger logger=Logger.getLogger(PaHandler.class);
@@ -277,49 +278,32 @@ public class PaHandler extends WebSocketHandler implements Timer{
 		return;
 	}
 	
-	/**
-	 * HTTP(s)として動作した場合ここでリクエストを受ける
-	@Override
-	*/
-	public void startResponseReqBody() {
-		ParameterParser parameter=getParameterParser();
-		//xhrFrameのコンテンツ処理
-		MappingResult mapping=getRequestMapping();
-		String path=mapping.getResolvePath();
-		if(path.equals(XHR_FRAME_PATH)){
-			setRequestAttribute(ATTRIBUTE_VELOCITY_ENGINE,config.getVelocityEngine());
-			setRequestAttribute(ATTRIBUTE_VELOCITY_TEMPLATE,XHR_FRAME_TEMPLATE);
-			forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
-			return;
-		}else if(path.equals(DOWNLOAD_PATH)){
-			String token=parameter.getParameter(PaSession.KEY_TOKEN);
-			AuthSession authSession=getAuthSession();
-			if(!token.equals(authSession.getToken())){
-				completeResponse("403");
-				return;
-			}
-			int bid=Integer.parseInt(parameter.getParameter(PaSession.KEY_BID));
-			String key=parameter.getParameter("key");
-			PaSessions paSessions=getPaSessions(authSession);
-			paSession=paSessions.sessions.get(bid);
-			if(paSession==null){
-				completeResponse("404");
-				return;
-			}
-			Blob blob=paSession.popDownloadBlob(key);
-			if(blob==null){
-				completeResponse("404");
-				return;
-			}
-			blob.download(this);
-			return;
-		}else if(path.equals(UPLOAD_PATH)){
-			formPublish(parameter);
+	private void download(ParameterParser parameter){
+		String token=parameter.getParameter(PaSession.KEY_TOKEN);
+		AuthSession authSession=getAuthSession();
+		if(!token.equals(authSession.getToken())){
+			completeResponse("403");
 			return;
 		}
+		int bid=Integer.parseInt(parameter.getParameter(PaSession.KEY_BID));
+		String key=parameter.getParameter("key");
+		PaSessions paSessions=getPaSessions(authSession);
+		paSession=paSessions.sessions.get(bid);
+		if(paSession==null){
+			completeResponse("404");
+			return;
+		}
+		Blob blob=paSession.popDownloadBlob(key);
+		if(blob==null){
+			completeResponse("404");
+			return;
+		}
+		blob.download(this);
+	}
+	
+	private void pooling(ParameterParser parameter){
 		//xhrからの開始
 		//[{type:negotiate,bid:bid},{type:xxx}...]
-		
 		JSONArray reqs=(JSONArray)parameter.getJsonObject();
 		JSONObject negoreq=(JSONObject)reqs.remove(0);
 		if(!negotiation(negoreq)){
@@ -333,6 +317,31 @@ public class PaHandler extends WebSocketHandler implements Timer{
 			ref();
 			TimerManager.setTimeout(XHR_SLEEP_TIME, this,null);
 		}
+	}
+	
+	/**
+	 * HTTP(s)として動作した場合ここでリクエストを受ける
+	@Override
+	*/
+	public void startResponseReqBody() {
+		ParameterParser parameter=getParameterParser();
+		MappingResult mapping=getRequestMapping();
+		String path=mapping.getResolvePath();
+		if(path.equals(XHR_FRAME_PATH)){//xhr frameの要求
+			setRequestAttribute(ATTRIBUTE_VELOCITY_ENGINE,config.getVelocityEngine());
+			setRequestAttribute(ATTRIBUTE_VELOCITY_TEMPLATE,XHR_FRAME_TEMPLATE);
+			return;
+		}else if(path.equals(XHR_POLLING_PATH)){//xhr frameからのpolling
+			pooling(parameter);
+			return;
+		}else if(path.equals(DOWNLOAD_PATH)){//pa経由のdownload要求
+			download(parameter);
+			return;
+		}else if(path.equals(UPLOAD_PATH)){//formからのpublish要求
+			formPublish(parameter);
+			return;
+		}
+		forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
 	}
 	
 	/**
@@ -358,7 +367,7 @@ public class PaHandler extends WebSocketHandler implements Timer{
 	
 	/* xhrから利用する場合、メッセージなければしばらく待ってから復帰したいため */
 	public void onTimer(Object userContext) {
-		paSession.xhrTerminal(this);
+		paSession.xhrResponse(this);
 		unref();
 	}
 }

@@ -42,7 +42,7 @@ function objFromParent(msg){
 
 function xhrSuccess(text){
   errorCount=0;
-  if(text){##受け取ったtextはそ�?ままparentFrameに送信
+  if(text){##受け取ったtextはそのままparentFrameに送信
     parent.postMessage(text,'*');
   }
   if(msgs.length===0){
@@ -88,7 +88,7 @@ function frameNameToUrl(frameName){
   if( frameName.lastIndexOf(XHR_FRAME_NAME_PREFIX,0)!=0 ){
     return null;
   }
-  var url=frameName.substring(XHR_FRAME_NAME_PREFIX.length);
+  var url=frameName.substring(XHR_FRAME_NAME_PREFIX.length)+'/!xhrPolling';
   return url;
 }
 
@@ -103,7 +103,7 @@ ph.jQuery(function(){
   if(!xhrUrl){
     return;
   }
-  //unload後queueされてmessageを�?信,subscribeは行わないTODO
+  //unload後queueされてmessageを送信,subscribeは行わないTODO
   ph.jQuery(window).unload(function(){
     xhrRequest(true);
   });

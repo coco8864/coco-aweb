@@ -34,7 +34,7 @@ window.ph.pa={
   _DEFAULT_SUB_ID:'@'
   _DOWNLOAD_FRAME_NAME_PREFIX:'__pa_dl_'
   _XHR_FRAME_NAME_PREFIX:'__pa_xhr_' #xhrPaFrame.vsp‚É“¯‚¶’è‹`‚ ‚è
-  _XHR_FRAME_URL:'/xhrPaFrame.vsp'
+  _XHR_FRAME_URL:'/!xhrPaFrame'
   _connections:{} #key:url value:{deferred:dfd,promise:prm}
   connect:(url)->
     httpUrl=null
@@ -311,7 +311,7 @@ class CD extends EventModule
       @__onClose(msg)
     else if msg.type==ph.pa.TYPE_DOWNLOAD
       ph.log('download.msg.key:'+msg.key)
-      form=ph.jQuery("<form method='POST' target='#{@_downloadFrameName}' action='#{@httpUrl}/download'>" +
+      form=ph.jQuery("<form method='POST' target='#{@_downloadFrameName}' action='#{@httpUrl}/!paDownload'>" +
          "<input type='hidden' name='bid' value='#{@_getBid()}'/>" +
          "<input type='hidden' name='token' value='#{@_token}'/>" +
          "<input type='hidden' name='key' value='#{msg.key}'/>" +
@@ -412,7 +412,7 @@ class SD extends EventModule
       throw 'not form tag id'
     form.attr("method","POST")
     form.attr("enctype","multipart/form-data")
-    form.attr("action","#{@_cd.httpUrl}/upload")
+    form.attr("action","#{@_cd.httpUrl}/!paUpload")
     form.attr("target","#{@_cd._downloadFrameName}")
     bidInput=ph.jQuery("<input type='hidden' name='bid' value='#{@_cd._getBid()}'/>")
     tokenInput=ph.jQuery("<input type='hidden' name='token' value='#{@_cd._token}'/>")

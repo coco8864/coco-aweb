@@ -156,7 +156,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	}
 	
 	/* レスポンスするオブジェクトがなかったとしても一定時間後にはレスポンスする */
-	public synchronized void xhrTerminal(PaHandler handler){
+	public synchronized void xhrResponse(PaHandler handler){
 		if(handler.doneXhr()){
 			return;
 		}
