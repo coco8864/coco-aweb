@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import naru.aweb.config.Mapping;
+
 public class PaManager {
 	
 	private static Map<String,PaManager> instances=new HashMap<String,PaManager>();
@@ -20,6 +22,22 @@ public class PaManager {
 	public PaletWrapper deploy(String qname,String paletName){
 		return deploy(qname, paletName,null);
 	}
+	
+	/*
+	 * nextHanderの意味
+	 * 動的コンテンツをwebsocketで、静的コンテンツをFileHandler or VerocityHandlerで実施するのが基本
+	 * Handlerで動的要素を使うのは、Pahtom Appplicationとしては推奨できないがAdminは既にHandlerで
+	 * 実装してしまっていたため、このルートが必要だった。
+	 * TODO adminの完全pa化
+	 */
+	private Class nextHandler=Mapping.FILE_SYSTEM_HANDLER;
+	public void setNextHandler(Class nextHandler){
+		this.nextHandler=nextHandler;
+	}
+	public Class getNextHandler(){
+		return nextHandler;
+	}
+	
 	public synchronized PaletWrapper deploy(String qname,String paletName,Map subscriberNames){
 		try {
 			if(paletWrappers.get(qname)!=null){
