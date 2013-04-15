@@ -14,9 +14,13 @@
 </textarea><br/>
 <script type="text/javascript"> 
 function onChatSend(){
+ var message=jQuery('#chatInputTextArea').val();
+ if(message===''){//空白の場合sendさせない
+  return;
+ }
  ph.admin.chatSd.publish({
   kind:'message',
-  message:jQuery('#chatInputTextArea').val(),
+  message:message,
   date:new Date(),
   userName:'$esc.javascript($loginUser.loginId)',
   echoback:jQuery('#chatEchoback').is(':checked')});//echoback可否
@@ -32,6 +36,21 @@ jQuery("#chatInputTextArea").resizable({
 });
 jQuery("#chatOutputTextArea").resizable({
 	handles: "se"
+});
+
+var inputArea=ph.jQuery("#chatInputTextArea");
+//inputArea.triggerHandler('focus');
+inputArea.keydown(function(e){
+  if (e.which === 13) { // enter key was pressed
+    if(e.altKey){
+      var text=inputArea.val()+'\n';
+      inputArea.val(text);
+    }else{
+      onChatSend();
+    }
+    return false;
+  }
+  return true;
 });
 
 var chatSd=ph.admin.cd.subscribe('admin','chat');
