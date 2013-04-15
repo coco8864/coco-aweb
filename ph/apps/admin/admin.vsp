@@ -56,7 +56,7 @@ ph.jQuery(function() {
 	jQuery("#textEditTextArea").resizable({
 		handles: "se"
 	});
-	ph.admin.cd=ph.pa.connect('/pa');
+	ph.admin.cd=ph.pa.connect('/admin');
 	ph.admin.cd.done(function(){ph.admin.cd=null});
 	ph.admin.accessLogSd=ph.admin.cd.subscribe('admin','accessLog',
 		function(res){
