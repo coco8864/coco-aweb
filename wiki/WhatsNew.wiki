@@ -2,7 +2,7 @@
 
 = 新着情報=
 
- Phatom Proxyの改版情報を提供します。
+ Phatom Server(Proxy)の改版情報を提供します。
  ==  2013.4.15 Phatom Server1.5.0 公開 ==
  * 名称をPhantom Proxy -> Phantom Serverに変更
  * Phantom Application(PA:application frame work)サポート
