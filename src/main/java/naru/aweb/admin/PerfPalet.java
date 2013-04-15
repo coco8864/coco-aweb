@@ -114,7 +114,7 @@ public class PerfPalet implements Palet,Event {
 			boolean accessLog=parameter.getBoolean("accessLog");
 			boolean tesponseHeaderTrace=parameter.getBoolean("tesponseHeaderTrace");
 			boolean tesponseBodyTrace=parameter.getBoolean("tesponseBodyTrace");
-			int thinkingTime=parameter.getInt("thinkingTime");
+			String thinkingTime=parameter.getString("thinkingTime");
 			if(scenario!=null){
 				//aleady runnnig
 				parameter.put("kind","stressResult");
@@ -128,7 +128,7 @@ public class PerfPalet implements Palet,Event {
 						Integer.parseInt(browserCount),
 						Integer.parseInt(call),
 						keepAlive,
-						thinkingTime,
+						Integer.parseInt(thinkingTime),
 						accessLog,
 						tesponseHeaderTrace,
 						tesponseBodyTrace,
