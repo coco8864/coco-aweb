@@ -6,12 +6,14 @@
   * 10.0.648.204
   * 12.0.725.0 dev
   * 16.0.899.0 dev-m
+  * 26.0.1410.64 m
 
  = <img src='http://windows.microsoft.com/favicon.ico?dmy.png' height='16' width='16'>Internat Explorer =
   * 8.0.6001.18702
   * 8.0.6001.19019
   * 9.0.8080.16413
-  !WebSocketはすべての版でサポートされていません。
+  上記は、websocketがサポートされていません。
+  * 10.0.9200.16540
 
  = <img src='http://devimages.apple.com/assets/elements/safari/devcenter/safari-logo.png' height='20' width='20'>Safari(Windows) =
   * 5.0(7533.16)
@@ -32,6 +34,7 @@
     # アドレスバーに “about:config” と入力
     # network.websocket.override-security-block の値を"true"に変更
   * 7.0
+  * 20.0.1
 
  = <img src='http://jp.opera.com/favicon.ico?dmy.png' height='16' width='16'>Opera =
   * 11.10 Build 2092
