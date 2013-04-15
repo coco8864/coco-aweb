@@ -1,11 +1,11 @@
-#summary Phanotm Proxyの基本的な使い方
+#summary Phanotm Serverの基本的な使い方
 
 = Getting Started =
 
- Phanotm Proxyの基本的な使い方を説明します。
+ Phanotm Serverの基本的な使い方を説明します。
 
- Phanotm Proxyは、自端末にインストールしローカルプロキシとして利用する形態と、サーバにインストールして複数ユーザから使う形態があります。
- 既にサーバでPhantom Proxyが運用されている場合には、[ProxySetting Proxy設定]でブラウザの設定を行うと共に、Consoleへのログイン情報を入手してください。
+ Phanotm Serverは、自端末にインストールしローカルプロキシとして利用する形態と、サーバにインストールして複数ユーザから使う形態があります。
+ 既にサーバでPhantom Serverが運用されている場合には、[ProxySetting Proxy設定]でブラウザの設定を行うと共に、Consoleへのログイン情報を入手してください。
 
  以下にインストールから簡単な利用方法までの手順を説明します。
   * [HowToInstall インストール]
@@ -13,11 +13,11 @@
   * [ProxySetting Proxy設定]
   * [SampleTrace トレース採取]
 
- この後、Phantom Proxy Console（以降Console)から各種操作、設定が可能となります。
+ この後、Phantom Server Console（以降Console)から各種操作、設定が可能となります。
 {{{
-  http://${selfDomain}:${selfPort}/admin
+  https://${selfDomain}:${selfPort}/admin
 }}}
-   初期値:http://127.0.0.1:1280/admin 
+   初期値:https://127.0.0.1:1280/admin 
    初期ログイン情報:admin/admin
  以降の基本的な操作の流れは、以下となります。
 
