@@ -1,5 +1,5 @@
  * [WhatsNew 新着情報]
- * [WhatIsPhantomProxy Phantom Proxyとは]
+ * [WhatIsPhantomProxy Phantom Serverとは]
  * [GettingStarted Getting Started]
   * [HowToInstall インストール]
   * [HowToStart 起動・停止]
