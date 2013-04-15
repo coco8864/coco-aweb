@@ -1,7 +1,7 @@
-#summary Phantom Proxyの起動および停止方法を説明します
+#summary Phantom Serverの起動および停止方法を説明します
 
 = 起動・停止 =
-Phantom Proxyの起動方法、停止方法を説明します。起動はコマンドで実施し停止は、ブラウザからの操作となります。
+Phantom Serverの起動方法、停止方法を説明します。起動はコマンドで実施し停止は、ブラウザからの操作となります。
 
 == 起動方法 ==
  # 起動シェルを実行してください。
@@ -23,21 +23,22 @@ WatchDeamonQueuelet:start success:phantom Thu Nov 03 20:43:19 JST 2011 interval:
 }}}
    * 起動シェルに"cleanup"引数を付加した場合、既存の設定内容をクリアして起動します。
  # 以下がブラウザから表示できるようになります。
-  * Phntom Proxy Home
+  * Phntom Server Home
 {{{
   http://${selfDomain}:${selfPort}/
+  https://${selfDomain}:${selfPort}/
 }}}
-   初期値:http://127.0.0.1:1280/
-  * Phntom Proxy Console（以降Console)
+   初期値:http://127.0.0.1:1280/ and https://127.0.0.1:1280/
+  * Phntom Server Console（以降Console)
 {{{
-  http://${selfDomain}:${selfPort}/admin
+  https://${selfDomain}:${selfPort}/admin
 }}}
-   初期値:http://127.0.0.1:1280/admin 
+   初期値:https://127.0.0.1:1280/admin 
    初期ログイン情報:admin/admin
 
 == 停止方法 ==
  # ブラウザよりConsoleにloginしてください。
- # pahtom proxy停止ボタンを押下してください。
+ # pahtom server停止ボタンを押下してください。
  以下のようなメッセージがコンソールに出力され、起動シェルが終了します。
 {{{
 mainHost listen stop
