@@ -3,6 +3,15 @@
 = 新着情報=
 
  Phatom Proxyの改版情報を提供します。
+ ==  2013.4.15 Phatom Server1.5.0 公開 ==
+ * 名称をPhantom Proxy -> Phantom Serverに変更
+ * Spdyサポート
+ * Phantom Application(PA:application frame work)
+ * 管理コンソールをPA Applicationに対応
+ * 管理コンソールをデフォルトをSSL
+ * バグ修正
+
+
  ==  2012.7.19 Phatom Proxy1.4.0 公開 ==
  * sessionStorage,Cross-document messagingを必須とした
  * クロスサイト認証を可能とした
