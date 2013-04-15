@@ -25,6 +25,7 @@ import javax.jdo.annotations.PersistenceCapable;
 import javax.jdo.annotations.Persistent;
 
 import naru.async.pool.PoolManager;
+import naru.aweb.admin.AdminHandler;
 import naru.aweb.admin.StoreHandler;
 import naru.aweb.auth.MappingAuth;
 import naru.aweb.core.RealHost;
@@ -51,6 +52,7 @@ import org.apache.log4j.Logger;
  */
 @PersistenceCapable(identityType = IdentityType.APPLICATION,table="MAPPING",detachable="true")
 public class Mapping{
+	public static Class ADMIN_HANDLER=AdminHandler.class;
 	public static Class SSL_PROXY_HANDLER=SslProxyHandler.class;
 	public static Class VELOCITY_PAGE_HANDLER=VelocityPageHandler.class;
 	public static Class PROXY_HANDLER=ProxyHandler.class;

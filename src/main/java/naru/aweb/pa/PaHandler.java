@@ -330,6 +330,7 @@ public class PaHandler extends WebSocketHandler implements Timer{
 		if(path.equals(XHR_FRAME_PATH)){//xhr frameÇÃóvãÅ
 			setRequestAttribute(ATTRIBUTE_VELOCITY_ENGINE,config.getVelocityEngine());
 			setRequestAttribute(ATTRIBUTE_VELOCITY_TEMPLATE,XHR_FRAME_TEMPLATE);
+			forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
 			return;
 		}else if(path.equals(XHR_POLLING_PATH)){//xhr frameÇ©ÇÁÇÃpolling
 			pooling(parameter);
@@ -341,7 +342,9 @@ public class PaHandler extends WebSocketHandler implements Timer{
 			formPublish(parameter);
 			return;
 		}
-		forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
+		String srcPath=getRequestMapping().getSourcePath();
+		PaManager paManager=PaManager.getInstance(srcPath);
+		forwardHandler(paManager.getNextHandler());
 	}
 	
 	/**

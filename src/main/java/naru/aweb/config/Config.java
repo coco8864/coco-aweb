@@ -697,14 +697,6 @@ public class Config {
 			injectionHelper = new InjectionHelper(this);
 			dir = configuration.getString(PATH_APPS_DOCROOT);
 			appsDocumentRoot = new File(dir).getCanonicalFile();
-			//TODO 動的に設定できるようにする
-			paManager = PaManager.getInstance("/pa");
-			JSONObject subscribers=JSONObject.fromObject(
-					"{accessLog:'naru.aweb.admin.AccessLogPalet'," +
-					"chat:'naru.aweb.admin.ChatPalet'," +
-					"perf:'naru.aweb.admin.PerfPalet'" +
-					"}");
-			paManager.deploy(PaAdmin.QNAME, "naru.aweb.admin.PaAdmin",subscribers);
 		} catch (IOException e) {
 			logger.error("getCanonicalFile error.",e);
 			return false;
@@ -754,7 +746,17 @@ public class Config {
 		}
 		updateProxyFinder(pacUrl,proxyServer,sslProxyServer,exceptProxyDomains);
 		
-		broadcaster=new Broadcaster(this);//統計情報監視の開始
+		//adminハンドラーの設定
+		//TODO 動的に設定できるようにする
+		paManager = PaManager.getInstance("/admin");
+		JSONObject subscribers=JSONObject.fromObject(
+				"{accessLog:'naru.aweb.admin.AccessLogPalet'," +
+				"chat:'naru.aweb.admin.ChatPalet'," +
+				"perf:'naru.aweb.admin.PerfPalet'" +
+				"}");
+		paManager.deploy(PaAdmin.QNAME, "naru.aweb.admin.PaAdmin",subscribers);
+		paManager.setNextHandler(Mapping.ADMIN_HANDLER);
+		broadcaster=new Broadcaster(this,paManager);//統計情報監視の開始
 	}
 	
 	private Broadcaster broadcaster;

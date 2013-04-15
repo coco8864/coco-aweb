@@ -23,12 +23,13 @@ public class Broadcaster implements Timer {
 	private static Logger logger=Logger.getLogger(Broadcaster.class);	
 	private static final long BROADCAST_INTERVAL=1000;
 	private static final long LOG_WATCH_INTERVAL=300000;
-	private PaManager paManager=PaManager.getInstance("/pa");
+	private PaManager paManager;/*=PaManager.getInstance("/pa");*/
 	private long timerId=TimerManager.INVALID_ID;
 	private Config config;
 	
-	Broadcaster(Config config){
+	Broadcaster(Config config,PaManager paManager){
 		this.config=config;
+		this.paManager=paManager;
 		long interval=config.getLong("broardcastInterval", BROADCAST_INTERVAL);
 		Stastics stastics=new Stastics();
 		config.setStasticsObject(stastics);
