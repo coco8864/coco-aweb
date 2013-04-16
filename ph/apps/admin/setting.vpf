@@ -260,7 +260,7 @@ ph.jQuery(function(){
 <H2 onclick="ph.jQuery('#realHostDiv').toggle();">+RealHost設定</H2>
 <div class="settingItem" id="realHostDiv">
 <p>サービスするサーバ情報を設定します</p>
-selfDomain:<input type="text" id="selfDomain" size="64" value="$!esc.html($!{config.selfDomain})"/><input type="button" value="設定" onClick="ph.admin.doCommand('setSelfDomain',{domain:ph.jQuery('#selfDomain').val()},function(){alert('変更を有効にするにはPhantomProxyの再起動が必要です.')});"><br>
+selfDomain:<input type="text" id="selfDomain" size="64" value="$!esc.html($!{config.selfDomain})"/><input type="button" value="設定" onClick="ph.admin.doCommand('setSelfDomain',{domain:ph.jQuery('#selfDomain').val()},function(){alert('変更を有効にするにはPhantomServerの再起動が必要です.')});"><br>
 <input type="button" value="real host作成" onClick="realHostDialog({name:'',realHostInitBind:false,bindHost:'*',bindPort:'',backlog:'100',binding:false});">
 <table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
 <thead>
