@@ -242,8 +242,8 @@ public class AdminHandler extends WebServerHandler{
 		}else if("setSelfDomain".equals(cmd)){
 			String domain=parameter.getParameter("domain");
 			config.setProperty(Config.SELF_DOMAIN, domain);
-			String port=config.getString(Config.SELF_PORT);
-			config.setProperty(Config.SELF_URL, "http://" + domain +":"+port);
+//			String port=config.getString(Config.SELF_PORT);
+//			config.setProperty(Config.SELF_URL, "http://" + domain +":"+port);
 			responseJson(true);
 		}else if("getStastics".equals(cmd)){
 			responseJson(JSONObject.fromObject(config.getStasticsObject()));
