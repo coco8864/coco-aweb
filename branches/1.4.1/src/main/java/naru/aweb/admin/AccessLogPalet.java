@@ -43,6 +43,7 @@ public class AccessLogPalet implements Palet {
 
 	@Override
 	public void onTimer() {
+		
 	}
 
 	@Override
@@ -53,6 +54,14 @@ public class AccessLogPalet implements Palet {
 	public void onUnsubscribe(PaPeer peer, String reason) {
 	}
 
+	private void list(PaPeer peer, PaMsg parameter){
+		JSONObject res=new JSONObject();
+		res.put("command", "list");
+		JSON list=listAccessLogJson(parameter);
+		res.put("data", list);
+		peer.message(res);
+	}
+	
 	@Override
 	public void onPublish(PaPeer peer, PaMsg parameter) {
 		JSONObject res=new JSONObject();
@@ -326,12 +335,12 @@ public class AccessLogPalet implements Palet {
 		browser.start(peer);//TODO
 	}
 	
-	private JSON listAccessLogJson(Map<String, ?> parameter){
+	private JSON listAccessLogJson(PaMsg parameter){
 		try{
-			String query=(String)parameter.get("query");
-			Integer from=(Integer)parameter.get("from");
-			Integer to=(Integer)parameter.get("to");
-			String orderby=(String)parameter.get("orderby");
+			String query=parameter.getString("query");
+			Integer from=parameter.getInt("from");
+			Integer to=parameter.getInt("to");
+			String orderby=parameter.getString("orderby");
 			if(from==null){
 				from=-1;
 			}
