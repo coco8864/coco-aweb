@@ -117,11 +117,11 @@ public class PaHandler extends WebSocketHandler implements Timer{
 	 * @param wsHandler WebSocketプロトコルを処理しているハンドラ
 	 * @return
 	 */
-	private void processMessages(JSON json){
-		if(!json.isArray()){
-			dispatchMessage((JSONObject)json);
-			return;
-		}
+	private void processMessages(JSONArray json){
+//		if(!json.isArray()){
+//			dispatchMessage((JSONObject)json);
+//			return;
+//		}
 		List<JSONObject> messages=new ArrayList<JSONObject>();
 		parseMessage(json, messages);
 		Iterator<JSONObject> itr=messages.iterator();
@@ -274,7 +274,7 @@ public class PaHandler extends WebSocketHandler implements Timer{
 			}
 		}
 		paSession.publish(msg);
-		completeResponse("205");
+		completeResponse("204");
 		return;
 	}
 	
@@ -311,7 +311,12 @@ public class PaHandler extends WebSocketHandler implements Timer{
 			return;
 		}
 		doneXhr=false;
-		processMessages(reqs);
+		if(reqs.size()==0){
+			//リクエストがnegotiaion以外になければaccesslogに記録しない
+			getAccessLog().setSkipPhlog(true);
+		}else{
+			processMessages(reqs);
+		}
 		paSession.setupXhrHandler(this);
 		if(!doneXhr){
 			ref();

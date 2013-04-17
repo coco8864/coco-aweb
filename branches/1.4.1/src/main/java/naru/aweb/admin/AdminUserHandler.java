@@ -114,7 +114,7 @@ public class AdminUserHandler extends WebServerHandler{
 				User.deleteById(id);
 			}
 			authenticator.removeUserCache(user.getLoginId());
-			completeResponse("205");
+			completeResponse("204");
 			return;
 		}
 		completeResponse("404");

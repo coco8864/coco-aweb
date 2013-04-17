@@ -291,7 +291,7 @@ public abstract class WsProtocol extends PoolBase{
 	 * @param transferEncoding
 	 * @param message
 	 */
-	private void wsTrace(char sourceType,String contentType,String comment,String statusCode,ByteBuffer[] message,boolean isPersist){
+	private void wsTrace(char sourceType,String contentType,String comment,String statusCode,long length,ByteBuffer[] message,boolean isPersist){
 		AccessLog accessLog=handler.getAccessLog();
 		AccessLog wsAccessLog=accessLog.copyForWs();
 		wsAccessLog.setContentType(contentType);
@@ -301,6 +301,7 @@ public abstract class WsProtocol extends PoolBase{
 		wsAccessLog.setStartTime(new Date());
 		wsAccessLog.endProcess();
 		wsAccessLog.setPersist(isPersist);
+		wsAccessLog.setResponseLength(length);
 		if(message!=null){
 			Store store = Store.open(true);
 			store.putBuffer(message);
@@ -313,7 +314,7 @@ public abstract class WsProtocol extends PoolBase{
 		wsAccessLog.decTrace();//traceを出力する
 	}
 	
-	private void wsPostTrace(boolean isTop,boolean isFin,String contentType,ByteBuffer[] message,boolean isPersist){
+	private void wsPostTrace(boolean isTop,boolean isFin,String contentType,long length,ByteBuffer[] message,boolean isPersist){
 		//ブラウザにはonMessageが通知されるので
 		StringBuilder sb=new StringBuilder();
 		sb.append('[');
@@ -328,7 +329,7 @@ public abstract class WsProtocol extends PoolBase{
 			sb.append(":fin");
 		}
 		sb.append(']');
-		wsTrace(AccessLog.SOURCE_TYPE_WS_ON_MESSAGE,contentType,sb.toString(),"B<S",message,isPersist);
+		wsTrace(AccessLog.SOURCE_TYPE_WS_ON_MESSAGE,contentType,sb.toString(),"B<S",length,message,isPersist);
 	}
 	
 	private void wsCloseTrace(short code,String reason,boolean isPersist){
@@ -340,10 +341,10 @@ public abstract class WsProtocol extends PoolBase{
 		sb.append(":reason:");
 		sb.append(reason);
 		sb.append(']');
-		wsTrace(AccessLog.SOURCE_TYPE_WS_ON_MESSAGE,null,sb.toString(),"B<S",null,isPersist);
+		wsTrace(AccessLog.SOURCE_TYPE_WS_ON_MESSAGE,null,sb.toString(),"B<S",0,null,isPersist);
 	}
 	
-	private void wsOnTrace(boolean isTop,boolean isFin,String contentType,ByteBuffer[] message,boolean isPersist){
+	private void wsOnTrace(boolean isTop,boolean isFin,String contentType,long length,ByteBuffer[] message,boolean isPersist){
 		//ブラウザのpostMessageに起因して記録されるので
 		StringBuilder sb=new StringBuilder();
 		sb.append('[');
@@ -358,7 +359,7 @@ public abstract class WsProtocol extends PoolBase{
 			sb.append(":fin");
 		}
 		sb.append(']');
-		wsTrace(AccessLog.SOURCE_TYPE_WS_POST_MESSAGE,contentType,sb.toString(),"B>S",message,isPersist);
+		wsTrace(AccessLog.SOURCE_TYPE_WS_POST_MESSAGE,contentType,sb.toString(),"B>S",length,message,isPersist);
 	}
 	
 	private void wsOnCloseTrace(short code,String reason,boolean isPersist){
@@ -370,7 +371,7 @@ public abstract class WsProtocol extends PoolBase{
 		sb.append(":reason:");
 		sb.append(reason);
 		sb.append(']');
-		wsTrace(AccessLog.SOURCE_TYPE_WS_POST_MESSAGE,null,sb.toString(),"B>S",null,isPersist);
+		wsTrace(AccessLog.SOURCE_TYPE_WS_POST_MESSAGE,null,sb.toString(),"B>S",0,null,isPersist);
 	}
 	
 	private ByteBuffer[] stringToBuffers(String message){
@@ -400,7 +401,8 @@ public abstract class WsProtocol extends PoolBase{
 			messageBuffers=stringToBuffers(message);
 			break;
 		}
-		wsPostTrace(true,true,"text/plain",messageBuffers,isPersist);
+		long length=message.length();//マルチバイトが含まれた場合誤差がでる
+		wsPostTrace(true,true,"text/plain",length,messageBuffers,isPersist);
 	}
 	
 	public void tracePostMessage(boolean isTop,boolean isFin,ByteBuffer[] message){
@@ -423,7 +425,8 @@ public abstract class WsProtocol extends PoolBase{
 			messageBuffers=PoolManager.duplicateBuffers(message);
 			break;
 		}
-		wsPostTrace(isTop,isFin,"application/octet-stream",messageBuffers,isPersist);
+		long length=BuffersUtil.remaining(message);
+		wsPostTrace(isTop,isFin,"application/octet-stream",length,messageBuffers,isPersist);
 	}
 	
 	public void traceClose(short code,String reason){
@@ -463,7 +466,8 @@ public abstract class WsProtocol extends PoolBase{
 			messageBuffers=stringToBuffers(message);
 			break;
 		}
-		wsOnTrace(true,true,"text/plain",messageBuffers,isPersist);
+		long length=message.length();//マルチバイトが含まれた場合誤差がでる
+		wsOnTrace(true,true,"text/plain",length,messageBuffers,isPersist);
 	}
 
 	public void traceOnMessage(boolean isTop,boolean isFin,ByteBuffer[] message){
@@ -484,7 +488,8 @@ public abstract class WsProtocol extends PoolBase{
 			messageBuffers=PoolManager.duplicateBuffers(message);
 			break;
 		}
-		wsOnTrace(isTop,isFin,"octedstream",messageBuffers,isPersist);
+		long length=BuffersUtil.remaining(message);
+		wsOnTrace(isTop,isFin,"octedstream",length,messageBuffers,isPersist);
 	}
 	
 	public void traceOnClose(short code,String reason){
@@ -521,6 +526,6 @@ public abstract class WsProtocol extends PoolBase{
 		sb.append(":");
 		sb.append(handler.getChannelId());
 		sb.append(']');
-		wsTrace(AccessLog.SOURCE_TYPE_WS_POST_MESSAGE,null,sb.toString(),"B>S",null,isPersist);
+		wsTrace(AccessLog.SOURCE_TYPE_WS_POST_MESSAGE,null,sb.toString(),"B>S",0,null,isPersist);
 	}
 }

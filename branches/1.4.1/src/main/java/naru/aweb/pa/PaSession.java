@@ -109,8 +109,10 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	
 	private void xhrSend(PaHandler handler,List<Object> qdata){
 		if(qdata.size()==0){
-			handler.completeResponse("205");
+			handler.completeResponse("204");
 		}else{
+			/*レスポンスに有為なコンテンツがあればアクセスログに記録する*/
+			handler.getAccessLog().setSkipPhlog(false);
 			handler.responseJson(qdata);
 		}
 		handler.setDoneXhr();

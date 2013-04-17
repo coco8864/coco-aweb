@@ -246,9 +246,9 @@ public class DispatchHandler extends ServerBaseHandler {
 		if (user != null) {
 			accessLog.setUserId(user.getLoginId());
 		}
-		if(Boolean.TRUE.equals(mapping.getOption("skipPhlog"))){
-			accessLog.setSkipPhlog(true);
-		}
+		//if(Boolean.TRUE.equals(mapping.getOption("skipPhlog"))){
+		//	accessLog.setSkipPhlog(true);
+		//}
 		if(Boolean.TRUE.equals(mapping.getOption("shortFormatLog"))){
 			accessLog.setShortFormat(true);
 		}
