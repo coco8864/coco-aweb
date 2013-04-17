@@ -82,14 +82,14 @@ public class PaMsg extends PoolBase implements Map{
 		}
 		return (Boolean)value; 
 	}
-	public int getInt(String key){
+	public Integer getInt(String key){
 		Object value=root.get(key);
 		if(value instanceof Long){
 			return ((Long)value).intValue();
 		}else if(value instanceof Integer){
 			return (Integer)value;
 		}
-		throw new RuntimeException("fail to getLong");
+		return null;
 	}
 	@Override
 	public void recycle() {
@@ -104,15 +104,16 @@ public class PaMsg extends PoolBase implements Map{
 		root=null;
 	}
 
-	public long getLong(String key){
+	public Long getLong(String key){
 		Object value=root.get(key);
 		if(value instanceof Long){
 			return (Long)value;
 		}else if(value instanceof Integer){
-			return (Integer)value;
+			return ((Integer)value).longValue();
 		}
-		throw new RuntimeException("fail to getLong");
+		return null;
 	}
+	
 	public double getDouble(String key){
 		return (Double)root.get(key); 
 	}
