@@ -276,7 +276,7 @@ public class AdminHandler extends WebServerHandler{
 			System.gc();
 			ChannelContext.dumpChannelContexts();
 			PoolManager.dump();
-			completeResponse("205");
+			completeResponse("204");
 		}else if("terminate".equals(cmd)){
 			String isRestartValue=parameter.getParameter("isRestart");
 			String isCleanupValue=parameter.getParameter("isCleanup");
@@ -308,15 +308,15 @@ public class AdminHandler extends WebServerHandler{
 						Main.terminate(true,isCleanup,javaHeapSize);
 					}
 				}}.init(isRestart, isCleanup, javaHeapSize);
-			boolean addEvent=getRequestContext().getAuthSession().addLogoutEvent(logoutEvent);
+			boolean addEvent=getAuthSession().addLogoutEvent(logoutEvent);
 			responseJson(addEvent);
 		}else if("replayDelete".equals(cmd)){
 			replayDelete();
-			completeResponse("205");
+			completeResponse("204");
 		}else if("dumpStore".equals(cmd)){
 			try {
 				StoreManager.dumpStore();
-				completeResponse("205");
+				completeResponse("204");
 			} catch (IOException e) {
 				logger.warn("fail to dumpStore",e);
 				completeResponse("500");
@@ -361,8 +361,7 @@ public class AdminHandler extends WebServerHandler{
 	}
 	
 	private boolean checkToken(ParameterParser parameter){
-		RequestContext requestContext=getRequestContext();
-		String token=requestContext.getAuthSession().getToken();
+		String token=getAuthSession().getToken();
 		String paramToken=parameter.getParameter("token");
 		if(paramToken!=null){
 			if(token.equals(paramToken)){

@@ -103,7 +103,7 @@ public class AdminMappingHandler extends WebServerHandler{
 			return;
 		}else if("reloadMappings".equals(command)){
 			config.getMapper().reloadMappings();
-			completeResponse("205");
+			completeResponse("204");
 			return;
 		}
 		completeResponse("404");
@@ -203,7 +203,7 @@ public class AdminMappingHandler extends WebServerHandler{
 			}else{
 				Mapping.deleteById(id);
 			}
-			completeResponse("205");
+			completeResponse("204");
 			return;
 		}
 		completeResponse("404");

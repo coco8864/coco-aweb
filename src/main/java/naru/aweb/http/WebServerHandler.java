@@ -14,7 +14,6 @@ import naru.async.ChannelHandler;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.async.store.Store;
-import naru.aweb.auth.AuthSession;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.core.DispatchHandler;
@@ -395,7 +394,11 @@ public class WebServerHandler extends ServerBaseHandler {
 		accessLog.setPlainResponseLength(responseWriteBodyApl);
 		accessLog.setResponseLength(responseWriteBodyApl);
 		accessLog.setContentEncoding(responseHeader.getHeader(HeaderParser.CONTENT_ENCODING_HEADER));
-
+		MappingResult mapping=getRequestMapping();
+		if(Boolean.TRUE.equals(mapping.getOption("skipPhlog"))){
+			accessLog.setSkipPhlog(true);
+		}
+		
 		SpdySession spdySession=getSpdySession();
 		if(spdySession==null){
 			//当該リクエストでの実read長、warite長(sslの場合を考慮)
