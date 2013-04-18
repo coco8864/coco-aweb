@@ -174,7 +174,7 @@ function mappingOpen2(){
         height=250;
 	}else{
 		jQuery("#mappingDestinationUrl").val('');
-		jQuery("#mappingDestinationUrl").attr("disabled","");
+		jQuery("#mappingDestinationUrl").attr("disabled",false);
 		jQuery("#mappingDestinationType").val("HTTP");##確定ではない,HTTPSかもしれない
         height=200;
 	}
