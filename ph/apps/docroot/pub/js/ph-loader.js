@@ -9,7 +9,6 @@ if(window.ph){
  }
  return;
 }
-//$!{handler.getSpdySession()}
 ## spdyInfoの取得
 #set( $spdySession='$!{handler.getSpdySession()}' )
 #if( ${spdySession}=='' )
