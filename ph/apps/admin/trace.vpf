@@ -125,7 +125,8 @@ function responseBodyEdit(){
 ##trace.accessLog.transferEncoding ...?'chunked'
 ##trace.accessLog.contentEncoding ...?'gzip'
 ##/charset=(.*)/i
-		var charset='utf-8';
+//		var charset='utf-8';
+		var charset=null;
 		if( trace.accessLog.contentType.match(/charset=(.*)/i) ){
 			charset=RegExp.$1;
 		}

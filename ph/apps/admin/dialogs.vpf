@@ -137,7 +137,7 @@ function reloadEditDialog(){
 		
 	}else{
 //		url+="&encode=utf-8";
-		url+="&Content-Type=text/plain;%20charset=utf-8";
+//		url+="&Content-Type=text/plain;%20charset=utf-8";
 	}
 	if(ph.jQuery("#textEditGzip").is(":checked")){
 		url+="&zgip=true"
@@ -145,8 +145,13 @@ function reloadEditDialog(){
 	if(ph.jQuery("#textEditChunk").is(":checked")){
 		url+="&chunk=true"
 	}
-	ph.jQuery.get(url,null, function(text){
+	ph.jQuery.get(url,null, function(text,state,jqXhr){
+		var TEXT_CHARSET='text/plain; charset=';
 		ph.jQuery("#textEditTextArea").val(text);
+		var contentType=jqXhr.getResponseHeader('Content-Type');
+		if(contentType.lastIndexOf(TEXT_CHARSET,0)===0){
+			ph.jQuery("#textEditEncode").val(contentType.substring(TEXT_CHARSET.length));
+		}
 	},"html");
 }
 
@@ -183,12 +188,16 @@ function openEditDialog(digest,id,requestLine,part,readonly,chunk,gzip,charset){
 		if(gzip){
 			url+='&zgip=true'
 		}
-		if(!charset){
-			charset='utf-8';
+		if(charset){
+			url+='&Content-Type=text/plain;%20charset=' + charset;
 		}
-		url+='&Content-Type=text/plain;%20charset=' + charset;
 		ph.jQuery.get(url,null,
-			function(text){
+			function(text,status,jqXhr){
+				var TEXT_CHARSET='text/plain; charset=';
+				var contentType=jqXhr.getResponseHeader('Content-Type');
+				if(contentType.lastIndexOf(TEXT_CHARSET,0)===0){
+					charset=contentType.substring(TEXT_CHARSET.length);
+				}
 				_openEditDialog(digest,id,requestLine,part,readonly,text,charset,chunk,gzip);
 		},"html");
 	}
