@@ -14,12 +14,16 @@ public class PaMsg extends PoolBase implements Map{
 	private Map root;
 	
 	public static PaMsg create(){
-		return wrap(new HashMap());
+		return wrap(null);
 	}
 	
 	public static PaMsg wrap(Map root){
 		PaMsg paData=(PaMsg)PoolManager.getInstance(PaMsg.class);
-		paData.root=root;
+		if(root==null){
+			paData.root=new HashMap();
+		}else{
+			paData.root=new HashMap(root);
+		}
 		return paData;
 	}
 

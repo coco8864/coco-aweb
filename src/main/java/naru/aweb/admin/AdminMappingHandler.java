@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Collection;
-import java.util.List;
 
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;

@@ -54,7 +54,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		DatePropertyFilter dpf=new DatePropertyFilter();
 		jsonConfig.setJavaPropertyFilter(dpf);
 		jsonConfig.setJsonPropertyFilter(dpf);
-		jsonConfig.setExcludes(new String[]{"poolId","chId","persist","timeCheckPint","life","shortFormat","skipPhlog"});
+		jsonConfig.setExcludes(new String[]{"poolId","chId","persist","timeCheckPint","life","shortFormat","skipPhlog","peer"});
 	}
 	private static SimpleDateFormat logDateFormat=null; 
 	static{
@@ -235,7 +235,6 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		return chId;
 	}
 	*/
-	private PaPeer peer;
 	public void setPeer(PaPeer peer){
 		if(peer!=null){
 			peer.ref();
@@ -521,6 +520,12 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	
 	@NotPersistent
 	private WebClientLog webClientLog;
+	
+	@NotPersistent
+	private PaPeer peer;
+	
+	@NotPersistent
+	private int traceCount=1;
 	
 	public void log(boolean debug){
 		if(!debug&&isSkipPhlog){//'/pa'のように大量に出力されるlogは出力を抑止する
@@ -934,8 +939,6 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	4)responseHeaderTraceが終了する
 	5)responseBodyTraceが終了する
 	*/
-	@NotPersistent
-	private int traceCount=1;
 	public synchronized void incTrace(){
 		traceCount++;
 	}
