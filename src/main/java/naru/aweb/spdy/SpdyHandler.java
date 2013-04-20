@@ -202,6 +202,15 @@ public class SpdyHandler extends ServerBaseHandler {
 	}
 	
 	public void responseHeader(SpdySession spdySession,boolean isFin,HeaderParser responseHeader){
+		if(responseHeader.getStatusCode()==null){
+			logger.warn("spdyHandler stausCode unsetted.");
+			responseHeader.setStatusCode("500");
+		}
+		if(responseHeader.getResHttpVersion()==null){
+			logger.warn("spdyHandler httpVersion unsetted.");
+			responseHeader.setResHttpVersion(HeaderParser.HTTP_VESION_11);
+		}
+		
 		char flags=0;
 		if(isFin){
 			flags=SpdyFrame.FLAG_FIN;

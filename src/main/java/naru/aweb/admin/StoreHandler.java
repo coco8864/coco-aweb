@@ -143,13 +143,13 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 			length=lengthValue.longValue();
 		}
 		//SPDYの場合、chankヘッダがあるとエラーになる。
-		boolean isChank=false;
+		boolean isStoreChunk=false;
 		String transferEncoding=getHeader(HeaderParser.TRANSFER_ENCODING_HEADER);
 		if(HeaderParser.TRANSFER_ENCODING_CHUNKED.equalsIgnoreCase(transferEncoding)){
-			isChunk=true;
+			isStoreChunk=true;
 			removeHeader(HeaderParser.TRANSFER_ENCODING_HEADER);
 		}
-		responsStore(store,headers,null,offset,length,isChank,false);
+		responsStore(store,headers,null,offset,length,isStoreChunk,false);
 	}
 	
 	//TODO
