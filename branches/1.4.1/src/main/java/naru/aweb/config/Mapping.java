@@ -121,8 +121,8 @@ public class Mapping{
 	
 	public static void deleteById(Long id){
 		PersistenceManager pm=JdoUtil.getPersistenceManager();
-		pm.currentTransaction().begin();
 		try {
+			pm.currentTransaction().begin();
 			Mapping mapping = pm.getObjectById(Mapping.class, id);
 			if (mapping == null) {
 				return;
