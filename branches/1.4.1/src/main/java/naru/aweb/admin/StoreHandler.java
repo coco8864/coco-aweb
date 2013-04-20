@@ -5,6 +5,8 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import naru.async.BufferGetter;
 import naru.async.pool.BuffersUtil;
@@ -12,6 +14,7 @@ import naru.async.pool.PoolManager;
 import naru.async.store.Store;
 import naru.aweb.http.ChunkContext;
 import naru.aweb.http.GzipContext;
+import naru.aweb.http.HeaderParser;
 import naru.aweb.http.ParameterParser;
 import naru.aweb.http.WebServerHandler;
 import naru.aweb.util.CodeConverter;
@@ -121,6 +124,12 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 		store.asyncBuffer(this, store);
 	}
 	
+	/**
+	 * forwardする前にcontentTypeを設定すること
+	 * 設定されていない場合は、textと判断、コンテンツ内容からcharsetを推定して以下を設定する
+	 * text/plain; charset='???'
+	 * @param store
+	 */
 	private void responseStoreByForward(Store store){
 		Map<String,String> headers=(Map<String,String>)getAttribute("headers");
 		long offset=0;
@@ -133,7 +142,14 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 		if(lengthValue!=null){
 			length=lengthValue.longValue();
 		}
-		responsStore(store,headers,null,offset,length,false,false);
+		//SPDYの場合、chankヘッダがあるとエラーになる。
+		boolean isChank=false;
+		String transferEncoding=getHeader(HeaderParser.TRANSFER_ENCODING_HEADER);
+		if(HeaderParser.TRANSFER_ENCODING_CHUNKED.equalsIgnoreCase(transferEncoding)){
+			isChunk=true;
+			removeHeader(HeaderParser.TRANSFER_ENCODING_HEADER);
+		}
+		responsStore(store,headers,null,offset,length,isChank,false);
 	}
 	
 	//TODO
@@ -256,6 +272,32 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 		}
 	}
 
+	/*
+	 * charsetを類推
+	 * 以下のパターン
+	 * <?xml version="1.0" encoding="EUC-JP"?>
+	 * <meta http-equiv="content-type" content="text/html; charset=EUC-JP" />
+	 * 
+	 */
+	private static Pattern CHARSET_PATTERN = Pattern.compile("(?:encoding=\"([^\"\\s]*)\")|(?:charset=([^\"'\\s]*))");
+	private String guessCharset(String text){
+		Matcher matcher=null;
+		synchronized(CHARSET_PATTERN){
+			matcher=CHARSET_PATTERN.matcher(text);
+		}
+		String charset="utf-8";
+		if(matcher.find()){
+			for(int i=1;i<=matcher.groupCount();i++){
+				String c=matcher.group(i);
+				if(c!=null){
+					charset=c;
+					break;
+				}
+			}
+		}
+		return charset;
+	}
+	
 	public boolean onBuffer(Object userContext, ByteBuffer[] buffers) {
 		if(isResponseEnd()){//レスポンスが終わってる場合
 			PoolManager.poolBufferInstance(buffers);
@@ -294,6 +336,12 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 			if(BuffersUtil.remaining(buffers)==0){
 				return true;//次のバッファを要求
 			}
+		}
+		String contentType=getHeader(HeaderParser.CONTENT_TYPE_HEADER);
+		if(contentType==null){
+			//TODO 類推してcharsetを設定
+			String charset=guessCharset(BuffersUtil.toStringFromBuffer(buffers[0], "iso8859_1"));
+			setContentType("text/plain; charset="+charset);
 		}
 		responseBody(buffers);
 		return false;
