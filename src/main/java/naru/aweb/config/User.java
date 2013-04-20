@@ -73,15 +73,15 @@ public class User {
 			queryString+= whereSection;//where‹å‚Æ‚ÍŒÀ‚ç‚È‚¢
 		}
 		PersistenceManager pm=JdoUtil.getPersistenceManager();
-		pm.currentTransaction().begin();
-		Query q=pm.newQuery(queryString);
-		if(from>=0){
-			q.setRange(from, to);
-		}
-		if(ordering!=null){
-			q.setOrdering(ordering);
-		}
 		try{
+			pm.currentTransaction().begin();
+			Query q=pm.newQuery(queryString);
+			if(from>=0){
+				q.setRange(from, to);
+			}
+			if(ordering!=null){
+				q.setOrdering(ordering);
+			}
 			return (Collection<User>)pm.detachCopyAll((Collection<User>)q.execute());
 		}finally{
 			if(pm.currentTransaction().isActive()){
@@ -118,8 +118,8 @@ public class User {
 	
 	public static void deleteById(Long id){
 		PersistenceManager pm=JdoUtil.getPersistenceManager();
-		pm.currentTransaction().begin();
 		try {
+			pm.currentTransaction().begin();
 			User user = pm.getObjectById(User.class, id);
 			if (user == null) {
 				return;
