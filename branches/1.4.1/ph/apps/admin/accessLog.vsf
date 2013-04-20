@@ -256,7 +256,7 @@ function mkImageTag(accessLog){
 		var dialog=jQuery("#textEdit");
 		ph.jQuery(imgNode).bind("click",
 			function(){
-				var charset='utf-8';
+				var charset=null;
 				if( accessLog.contentType.match(/charset=(.*)/i) ){
 					charset=RegExp.$1;
 				}

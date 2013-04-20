@@ -71,6 +71,10 @@ ph.jQuery(function() {
 				if(typeof searchPage!=='undefined')searchPage();
 			}
 		});
+	var logId=sessionStorage['logId'];
+	if(logId){
+		changeEntry(parseInt(logId));
+	}
 	ph.admin.perfSd=ph.admin.cd.subscribe('admin','perf');
 	ph.admin.perfSd.onMessage(perfCheckServer);
 

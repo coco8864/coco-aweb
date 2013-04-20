@@ -26,11 +26,6 @@ var trace={
 	}
 };
 
-var runTraceCb={
-	onComplete:function(msg){alert('x');changeEntry(msg.message);},
-	onError:function(msg){ph.log('runTrace onError:');ph.dump(msg);},
-	onMessage:function(msg){ph.log('runTrace onMessage:');ph.dump(msg);}
-};
 function runTrace(){
 	if(trace.accessLogId<0){
 		alert("対象がありません");
@@ -151,6 +146,7 @@ function changeEntry(newLogId){
 	}
 	trace.clear();
 	trace.accessLogId=newLogId;
+	sessionStorage['logId']=newLogId;
 	entryTable();
 }
 
