@@ -3,8 +3,8 @@ package naru.aweb.admin;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -35,6 +35,7 @@ public class AccessLogPalet implements Palet {
 	@Override
 	public void init(String qname,String subname,PaletCtx ctx) {
 		this.ctx=ctx;
+		ctx.setInterval(2000);
 	}
 
 	@Override
@@ -43,7 +44,14 @@ public class AccessLogPalet implements Palet {
 
 	@Override
 	public void onTimer() {
-		
+		PaPeer[] peers=null;
+		synchronized(watchsMap){
+			peers=(PaPeer[])watchsMap.keySet().toArray(new PaPeer[0]);
+		}
+		for(PaPeer peer:peers){
+			PaMsg parameter=watchsMap.get(peer);
+			list(peer, parameter);
+		}
 	}
 
 	@Override
@@ -62,15 +70,32 @@ public class AccessLogPalet implements Palet {
 		peer.message(res);
 	}
 	
+	private Map<PaPeer,PaMsg> watchsMap=new HashMap<PaPeer,PaMsg>();
+	private void checkWatch(PaPeer peer, PaMsg parameter){
+		boolean isWatch=parameter.getBoolean("isWatch");
+		synchronized(watchsMap){
+			if(isWatch){
+				parameter.ref();
+				watchsMap.put(peer,parameter);
+			}else{
+				PaMsg msg=watchsMap.remove(peer);
+				if(msg!=null){
+					msg.unref();
+				}
+			}
+		}
+	}
+	
 	@Override
 	public void onPublish(PaPeer peer, PaMsg parameter) {
 		JSONObject res=new JSONObject();
-		String command=(String)parameter.get("command");
+		String command=parameter.getString("command");
 		res.put("command", command);
 		if("list".equals(command)){
 			JSON list=listAccessLogJson(parameter);
 			res.put("data", list);
 			peer.message(res);
+			checkWatch(peer, parameter);
 			return;
 		}else if("entry".equals(command)){
 			Integer id=(Integer)parameter.get("id");

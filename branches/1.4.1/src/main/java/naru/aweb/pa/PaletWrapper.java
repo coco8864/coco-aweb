@@ -287,6 +287,9 @@ public class PaletWrapper implements PaletCtx,Timer{
 	@Override
 	public void onTimer(Object arg0) {
 		rootPalet.onTimer();
+		for(Palet palet:subscribers.values()){
+			palet.onTimer();
+		}
 	}
 
 	/**

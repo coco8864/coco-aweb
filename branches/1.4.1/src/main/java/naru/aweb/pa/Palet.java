@@ -1,7 +1,5 @@
 package naru.aweb.pa;
 
-import java.util.Map;
-
 public interface Palet {
 	/**
 	 * call when this object is loaded
@@ -19,7 +17,6 @@ public interface Palet {
 	
 	/**
 	 * call when time interval
-	 * this method call only rootPalet
 	 * @see PaletCtx#setInterval
 	 */
 	void onTimer();
