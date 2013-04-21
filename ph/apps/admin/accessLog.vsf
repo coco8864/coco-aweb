@@ -38,7 +38,18 @@ function accessLogExportQuery(query){
 	ph.admin.accessLogSd.publish({command:'exportQuery',query:query});
 }
 
-function searchPage(){
+function watchPage(){
+ var isWatch;
+ if(ph.jQuery('#accessLogWatch').is(":checked")){
+  isWatch=true;
+ }else{
+  isWatch=false;
+ }
+ ph.jQuery('#accessLogSearch').attr('disabled',isWatch);
+ searchPage(isWatch);
+}
+
+function searchPage(isWatch){
 	var maxResults=ph.jQuery("#maxResults").val();
 ##画面入力条件を更新
 	var orderBy=ph.jQuery("#orderBy").val();
@@ -56,7 +67,7 @@ function searchPage(){
 		topIndex=0;
 		ph.jQuery("#topIndex").val(topIndex)
 	}
-	query(queryString,topIndex,topIndex+maxResults);
+	query(queryString,topIndex,topIndex+maxResults,isWatch);
 	curQueryCondition="最大行:" + maxResults;
 }
 
@@ -88,8 +99,8 @@ function page(direct){
 }
 
 ##queryString)"where responseLength>100 && contentType.indexOf('image')>=0 ORDER BY id DESC"
-function query(queryString,from,to){
-	var queryObj={command:'list'};
+function query(queryString,from,to,isWatch){
+	var queryObj={command:'list',isWatch:(isWatch===true)};
 	queryObj.from=from-0;
 	queryObj.to=to-0;
 	if(queryString){
@@ -306,7 +317,8 @@ Order By:<input type="text" value="id DESC" id="orderBy" size="32" />
 </select>
 </div>
 条件入力<input type="text" id="logQuery" value="" size="100" />
-<input type="button" onclick="searchPage();" value="更新"/>
+<input type="button" onclick="searchPage();" value="更新" id='accessLogSearch'/>
+監視:<input type="checkBox" onclick="watchPage();"id='accessLogWatch'/>
 <div>
 <input type="button" value="全" onClick="selectAll();"/>
 選択Log操作
