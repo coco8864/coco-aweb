@@ -50,6 +50,9 @@ public class AccessLogPalet implements Palet {
 		}
 		for(PaPeer peer:peers){
 			PaMsg parameter=watchsMap.get(peer);
+			if(parameter==null){
+				continue;
+			}
 			list(peer, parameter);
 		}
 	}

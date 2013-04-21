@@ -267,7 +267,9 @@ public class RealHost {
 				}
 				config.setProperty(Config.SELF_DOMAIN,selfDomain);
 			}
+			System.out.println("selfDomain:"+selfDomain);
 			config.setProperty(Config.SELF_URL, "http://" + selfDomain +":"+port);
+			
 			selfOrigins.add("http://"+selfDomain+":"+port+"/");
 			selfOrigins.add("https://"+selfDomain+":"+port+"/");
 			if(port==80){
