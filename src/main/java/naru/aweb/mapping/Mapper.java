@@ -155,6 +155,7 @@ public class Mapper {
 			sb.append(realHost.getBindPort());
 			sb.append(mapping.getSourcePath());
 			adminUrl=sb.toString();
+			System.out.println("adminUrl:"+adminUrl);
 		}
 		
 		Object publicWeb=mapping.getOption(OPTION_PUBLIC_WEB);//publicWebのportとプロトコルを知るため
