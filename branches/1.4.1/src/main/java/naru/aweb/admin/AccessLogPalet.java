@@ -53,6 +53,12 @@ public class AccessLogPalet implements Palet {
 			if(parameter==null){
 				continue;
 			}
+			if(peer.isPaSession()==false){
+				watchsMap.remove(peer);
+				peer.unref();
+				parameter.unref();
+				continue;
+			}
 			list(peer, parameter);
 		}
 	}
@@ -79,11 +85,13 @@ public class AccessLogPalet implements Palet {
 		synchronized(watchsMap){
 			if(isWatch){
 				parameter.ref();
+				peer.ref();
 				watchsMap.put(peer,parameter);
 			}else{
 				PaMsg msg=watchsMap.remove(peer);
 				if(msg!=null){
 					msg.unref();
+					peer.unref();
 				}
 			}
 		}

@@ -59,7 +59,7 @@ public class PerfPalet implements Palet,Event {
 //		if(data instanceof JSONObject){
 //			parameter=(JSONObject)data;
 //		}
-		if(!peer.fromBrowser()){
+		if(!peer.isPaSession()){
 			if( parameter.getBoolean("isComplete")==true){
 				if(scenario!=null){
 					scenario.unref();

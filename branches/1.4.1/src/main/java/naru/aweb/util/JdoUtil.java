@@ -66,8 +66,10 @@ public class JdoUtil {
 	public static PersistenceManager getPersistenceManager(){
 		PersistenceManager pm=persistenceManagers.get();
 		if(pm!=null){
+			logger.debug("pm exist");
 			return pm;
 		}
+		logger.debug("pm not exist");
 		PersistenceManagerFactory pmf=getPersistenceManagerFactory();
 		pm=pmf.getPersistenceManager();
         persistenceManagers.set(pm);

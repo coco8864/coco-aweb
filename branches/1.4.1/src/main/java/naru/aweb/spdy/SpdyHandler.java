@@ -156,10 +156,11 @@ public class SpdyHandler extends ServerBaseHandler {
 
 	@Override
 	public void onReadTimeout(Object userContext) {
-		logger.warn("onReadTimeout.cid:"+getChannelId());
 		if(sessions.size()==0){
+			logger.debug("onReadTimeout nomal end.cid:"+getChannelId());
 			sendGoaway(SpdyFrame.GOWST_OK);
 		}else{
+			logger.warn("onReadTimeout abnomal end.cid:"+getChannelId()+":"+sessions.size());
 			sendGoaway(SpdyFrame.GOWST_INTERNAL_ERROR);
 		}
 		super.onReadTimeout(userContext);
