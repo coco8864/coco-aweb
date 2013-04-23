@@ -66,7 +66,7 @@ public class PaPeer extends PoolBase{
 	 * server‘¤‚ÌƒAƒvƒŠ‚©‚çpublish‚³‚ê‚½ê‡‚ÍAfalse‚ğ•Ô‹p
 	 * @return
 	 */
-	public boolean fromBrowser(){
+	public boolean isPaSession(){
 		return (paSession!=null);
 	}
 	
