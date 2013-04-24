@@ -25,6 +25,7 @@ import javax.jdo.annotations.PersistenceCapable;
 import javax.jdo.annotations.Persistent;
 
 import naru.async.pool.PoolManager;
+import naru.aweb.admin.AdminHandler;
 import naru.aweb.admin.StoreHandler;
 import naru.aweb.auth.MappingAuth;
 import naru.aweb.core.RealHost;
@@ -51,6 +52,7 @@ import org.apache.log4j.Logger;
  */
 @PersistenceCapable(identityType = IdentityType.APPLICATION,table="MAPPING",detachable="true")
 public class Mapping{
+	public static Class ADMIN_HANDLER=AdminHandler.class;
 	public static Class SSL_PROXY_HANDLER=SslProxyHandler.class;
 	public static Class VELOCITY_PAGE_HANDLER=VelocityPageHandler.class;
 	public static Class PROXY_HANDLER=ProxyHandler.class;
@@ -87,36 +89,13 @@ public class Mapping{
 	
 	public static void cleanup(JSONArray mappings){
 		JdoUtil.cleanup(Mapping.class);
-//		if(!mappingInitFile.exists()){
-//			logger.warn("cleanup but mappingInitFile not exists."+mappingInitFile);
-//			return;
-//		}
-//		InputStream is=null;
-//		try {
-//			is=new FileInputStream(mappingInitFile);//Mapping.class.getResourceAsStream("MappingIni.properties");
-//			Properties prop=new Properties();
-//			prop.load(is);
-			int size=mappings.size();
-			for(int i=0;i<size;i++){
-//				String jsonString=prop.getProperty(Integer.toString(i));
-//				if(jsonString==null){
-//					break;
-//				}
-				JSONObject mapping=mappings.getJSONObject(i);
-				Mapping m=fromJson(mapping);
-				m.save();
-				logger.info("cleanup add mapping."+mapping);
-			}
-//		} catch (IOException e) {
-//			logger.error("fail to init.",e);
-//		}finally{
-//			if(is!=null){
-//				try {
-//					is.close();
-//				} catch (IOException ignore) {
-//				}
-//			}
-//		}
+		int size=mappings.size();
+		for(int i=0;i<size;i++){
+			JSONObject mapping=mappings.getJSONObject(i);
+			Mapping m=fromJson(mapping);
+			m.save();
+			logger.info("cleanup add mapping."+mapping);
+		}
 	}
 	
 	public static Mapping fromJson(String jsonString){
@@ -142,8 +121,8 @@ public class Mapping{
 	
 	public static void deleteById(Long id){
 		PersistenceManager pm=JdoUtil.getPersistenceManager();
-		pm.currentTransaction().begin();
 		try {
+			pm.currentTransaction().begin();
 			Mapping mapping = pm.getObjectById(Mapping.class, id);
 			if (mapping == null) {
 				return;
@@ -288,7 +267,6 @@ public class Mapping{
 	@Persistent
 	@Column(name="ROLES",jdbcType="VARCHAR", length=256)
 	private String roles;
-
 	
 	/**
 	 * HTTP,HTTPS,SSLPROXY,FILE,HANDLER
@@ -377,12 +355,6 @@ public class Mapping{
 	private LogType logType=LogType.NONE;
 
 	private boolean isSessionUpdate=true;
-
-//	@NotPersistent
-//	private boolean isReplay=false;
-	
-//	@NotPersistent
-//	private boolean isAuth=false;
 	
 	@NotPersistent
 	private List<String> rolesList=new ArrayList<String>();
@@ -428,7 +400,6 @@ public class Mapping{
 		String sourcePatternString="^"+this.sourcePath;
 		if(!sourcePatternString.endsWith("/")){
 			sourcePatternString+="($|[/;\\?])";
-//			sourcePatternString+="($|/)";
 		}
 		if( this.sourcePath.indexOf("*")>=0){
 			this.isSourceMatchEntry=true;
@@ -747,9 +718,6 @@ public class Mapping{
 			}
 		}
 		return true;
-//		ServerParser resolveServer=resolveServer(serverMatcher,targetServer.getPort());
-//		return resolveServer;
-//		return true;
 	}
 	
 	private String resolvePath(Matcher pathMatcher){
@@ -970,7 +938,6 @@ public class Mapping{
 			return null;
 		}
 		if( options.indexOf("listing:false")>=0 ){
-//		if( Boolean.FALSE.equals(getOption("listing"))){
 			return null;
 		}
 		StringBuffer sb=new StringBuffer();

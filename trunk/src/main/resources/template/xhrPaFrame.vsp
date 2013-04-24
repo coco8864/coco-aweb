@@ -10,6 +10,7 @@
 <script  type="text/javascript"><!--
 
 var bid=null;
+var token=null;
 function sendObjToParent(msg){
   var jsonText=ph.JSON.stringify(msg);
   parent.postMessage(jsonText,'*');
@@ -33,6 +34,7 @@ function onMessageFunc(event){
 function objFromParent(msg){
   if(msg.type==='negotiate'){
     bid=msg.bid;
+    token=msg.token;
     return;
   }
   msgs.push(msg);
@@ -66,7 +68,7 @@ function xhrRequest(){
     return;
   }
   if(msgs.length===0||msgs[0].type!=='negotiate'){
-    msgs.unshift({type:'negotiate',bid:bid});
+    msgs.unshift({type:'negotiate',bid:bid,token:token});
   }
   var jsonText=ph.JSON.stringify(msgs);
 ##alert('xhrRequest:'+jsonText);
@@ -86,11 +88,11 @@ function frameNameToUrl(frameName){
   if( frameName.lastIndexOf(XHR_FRAME_NAME_PREFIX,0)!=0 ){
     return null;
   }
-  var url=frameName.substring(XHR_FRAME_NAME_PREFIX.length);
+  var url=frameName.substring(XHR_FRAME_NAME_PREFIX.length)+'/!xhrPolling';
   return url;
 }
 
-var XHR_FRAME_NAME_PREFIX='__pa_';
+var XHR_FRAME_NAME_PREFIX='__pa_xhr_';
 var INTERVAL=1000;
 var timer=null;
 var msgs=[];
@@ -101,7 +103,7 @@ ph.jQuery(function(){
   if(!xhrUrl){
     return;
   }
-  //unload後queueされてmessageを・信,subscribeは行わないTODO
+  //unload後queueされてmessageを送信,subscribeは行わないTODO
   ph.jQuery(window).unload(function(){
     xhrRequest(true);
   });

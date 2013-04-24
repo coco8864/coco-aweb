@@ -21,9 +21,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 
 import org.apache.log4j.Logger;
-
 import naru.aweb.config.Config;
-
 
 public class SslContextPool {
 	private static Logger logger = Logger.getLogger(SslContextPool.class);
@@ -82,18 +80,20 @@ public class SslContextPool {
 		Process p;
 		try {
 			String args[]={
+/*
+ * keytool -genkey -alias phantom -keystore cacerts_127.0.0.1 -storepass changeit -keypass changeit  -validity 1461 -dname "OU=phantom Project, O=coco8864, L=Numazu-shi, ST=Shizuoka, C=JP, CN=127.0.0.1"
+ */
 //					"C:\\jdk1.5.0_18\\bin\\keytool.exe",
 					keytool,
-//					"keytool",
 					"-genkey",
 					"-keyalg","RSA",
-					"-keysize","512",
-					"-validity","365",
-					"-storetype","JKS",
-					"-alias","ssltest",
+					"-keysize","1024",
+					"-validity","1461",
+//					"-storetype","JKS",
+					"-alias","phantom",
 					"-keypass",password,
 					"-storepass",password,
-					"-dname","CN="+cn,
+					"-dname","C=JP, ST=Shizuoka, L=Numazu-shi, O=coco8864, OU=phantom Project ,CN="+cn,
 					"-keystore",trustStoreFile.getAbsolutePath()
 			};
 			p = Runtime.getRuntime().exec(args);

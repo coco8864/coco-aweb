@@ -9,6 +9,7 @@ import org.apache.log4j.Logger;
 import naru.async.ChannelHandler;
 import naru.async.pool.PoolManager;
 import naru.async.ssl.SslHandler;
+import naru.aweb.auth.AuthSession;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.http.GzipContext;
@@ -41,6 +42,17 @@ public abstract class ServerBaseHandler extends SslHandler {
 	public static final String ATTRIBUTE_KEEPALIVE_CONTEXT="keepAliveContext";
 	public static final String ATTRIBUTE_SPDY_SESSION="spdySession";
 	public static final String ATTRIBUTE_USER="loginUser";
+	
+	public enum SCOPE{
+		HANDLER,
+		REQUEST,
+		KEEP_ALIVE,
+		BROWSER,/* リクエストすべてにbidを振る必要がある、awebの機能としては提供しない */
+		SESSION,
+		AUTH_SESSION,
+		APPLICATION,
+		CONFIG
+	}
 	
 	@Override
 	public ChannelHandler forwardHandler(SslHandler handler) {
@@ -85,6 +97,81 @@ public abstract class ServerBaseHandler extends SslHandler {
 		return getRequestContext().getAttributeNames();
 	}
 	
+	private AuthSession getRootAuthSession(){
+		AuthSession session=getAuthSession();
+		if(session==null){
+			return null;
+		}
+		return session.getSessionId().getPrimaryId().getAuthSession();
+	}
+	
+	public void setAttr(SCOPE scope,String name,Object value){
+		AuthSession session=null;
+		switch(scope){
+		case HANDLER:
+			setAttribute(name, value);
+		case REQUEST:
+			getRequestContext().setAttribute(name, value);
+		case SESSION:
+			session=getAuthSession();
+			if(session!=null){
+				session.setAttribute(name, value);
+			}
+		case AUTH_SESSION:
+			session=getRootAuthSession();
+			if(session!=null){
+				session.setAttribute(name, value);
+			}
+		default:
+			break;
+		}
+	}
+	
+	public Object getAttr(SCOPE scope,String name){
+		AuthSession session=null;
+		switch(scope){
+		case HANDLER:
+			return getAttribute(name);
+		case REQUEST:
+			return getRequestContext().getAttribute(name);
+		case SESSION:
+			session=getAuthSession();
+			if(session!=null){
+				return session.getAttribute(name);
+			}
+		case AUTH_SESSION:
+			session=getRootAuthSession();
+			if(session!=null){
+				return session.getAttribute(name);
+			}
+		default:
+			break;
+		}
+		return null;
+	}
+	
+	public Iterator<String> getAttrNames(SCOPE scope){
+		switch(scope){
+		case HANDLER:
+			throw new UnsupportedOperationException("handler scope getAttrNames");
+		case REQUEST:
+			return getRequestContext().getAttributeNames();
+		case SESSION:
+			AuthSession session=getAuthSession();
+			if(session!=null){
+				return session.getAttributeNames();
+			}
+		case AUTH_SESSION:
+			session=getRootAuthSession();
+			if(session!=null){
+				return session.getAttributeNames();
+			}
+		default:
+			break;
+		}
+		return null;
+	}
+	
 	public KeepAliveContext getKeepAliveContext(){
 		return getKeepAliveContext(false);
 	}
@@ -121,6 +208,14 @@ public abstract class ServerBaseHandler extends SslHandler {
 	}
 	public void setRequestMapping(MappingResult mapping) {
 		getRequestContext().setMapping(mapping);
+	}
+	
+	public AuthSession getAuthSession(){
+		RequestContext requestContext=getRequestContext();
+		if(requestContext==null){
+			return null;
+		}
+		return requestContext.getAuthSession();
 	}
 	
 	public void onFinished() {

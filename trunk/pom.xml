@@ -34,25 +34,25 @@
       <version>1.4.0</version>
 
       <configuration>
-         <bare>true</bare>
-         <minifiedFile>${basedir}/ph/apps/docroot/pub/js/admin.js</minifiedFile>
+         <bare>false</bare>
+         <!--minifiedFile>${basedir}/ph/apps/docroot/pub/js/admin.js</minifiedFile>
          <setOfFilesToMinify>
             <directory>${project.build.directory}/coffee</directory>
             <includes>
                 <include>*.js</include>
             </includes>
-         </setOfFilesToMinify>
+         </setOfFilesToMinify-->
 
          <!--coffeeOutputDirectory>${project.build.directory}/coffee</coffeeOutputDirectory-->
          <coffeeOutputDirectory>${basedir}/ph/apps/docroot/pub/js</coffeeOutputDirectory>
          <compileIndividualFiles>true</compileIndividualFiles>
          <coffeeJoinSets>
             <joinSet>
-                <id>admin</id>
+                <id>ph-pa</id>
                 <fileSet>
                     <directory>${basedir}/src/main/coffee</directory>
                     <includes>
-                        <include>**/*.coffee</include>
+                        <include>ph-pa.coffee</include>
                     </includes>
                 </fileSet>
             </joinSet>
@@ -125,7 +125,6 @@
 									<include name="setting.vpf" />
 									<include name="trace.vpf" />
 									<include name="dialogs.vpf" />
-									<include name="wsq/xhrFrame.html" />
 								</fileset>
 							</copy>
 							<copy todir="pack/phantom/ph/apps/auth/">
@@ -164,9 +163,7 @@
 									<include name="pub/js/ph-auth.js" />
 									<include name="pub/js/ph-json2.js" />
 									<include name="pub/js/ph-jqnoconflict.js" />
-									<include name="pub/js/ph-history.js" />
-									<include name="pub/js/ph-injection.js" />
-									<include name="pub/js/ph-wsq.js" />
+									<include name="pub/js/ph-pa.js" />
 								</fileset>
 							</copy>
 							<copy todir="pack/phantom/ph/lib/">

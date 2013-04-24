@@ -7,20 +7,35 @@ import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import net.sf.json.JSONObject;
 
+/*
+ * PaPeerは、PaSessionとPaletWrapperに同一のものが保持されるようにする
+ * 外れる場合には、同時にreleaseすると共にメンバpaSessionをnullにする
+ * !!要チェック!!
+ */
 public class PaPeer extends PoolBase{
-	private static PaManager paManager=PaManager.getInstance();
-	
-	public static PaPeer create(PaSession paSession,String qname,String subname){
+	public static PaPeer create(PaManager paManager,PaSession paSession,String qname,String subname){
 		PaPeer peer=(PaPeer)PoolManager.getInstance(PaPeer.class);
 		peer.paSession=paSession;
+		peer.paManager=paManager;
+		if(paSession!=null){
+			peer.paSessionId=paSession.getPoolId();
+		}else{
+			peer.paSessionId=0;
+		}
 		peer.qname=qname;
 		peer.subname=subname;
 		return peer;
 	}
 	
+	private PaManager paManager;
 	private PaSession paSession;
+	private long paSessionId;
 	private String qname;//queue名
 	private String subname;//クライアントid(認証idが同じでもブラウザの違い等により、clientは別のpeerで接続できる)
+	
+	public void releaseSession(){
+		paSession=null;
+	}
 	
 	public String getPath() {
 		return paSession.getPath();
@@ -46,8 +61,21 @@ public class PaPeer extends PoolBase{
 		return paSession.isWs();
 	}
 	
+	/**
+	 * browserからのメッセージか否か
+	 * server側のアプリからpublishされた場合は、falseを返却
+	 * @return
+	 */
+	public boolean isPaSession(){
+		return (paSession!=null);
+	}
+	
 	/* API */
 	public boolean message(Object message){
+		if(paSession==null){
+			paManager.publish(qname, subname, message);
+			return true;
+		}
 		JSONObject json=new JSONObject();
 		json.put(PaSession.KEY_TYPE, PaSession.TYPE_MESSAGE);
 		json.put(PaSession.KEY_MESSAGE, message);
@@ -66,6 +94,28 @@ public class PaPeer extends PoolBase{
 	
 	public void sendBinary(AsyncBuffer data){
 		paSession.sendBinary(data);
+	}
+	
+	/* API */
+	private long downloadSec=0;
+	private synchronized String getDownloadKey(){
+		downloadSec++;
+		return "PP"+downloadSec;
+	}
+	
+	public boolean download(Blob blob){
+		JSONObject json=new JSONObject();
+		json.put(PaSession.KEY_TYPE, PaSession.TYPE_DOWNLOAD);
+		json.put(PaSession.KEY_KEY, getDownloadKey());
+		json.put(PaSession.KEY_QNAME, qname);
+		json.put(PaSession.KEY_SUBNAME, subname);
+		paSession.download(json,blob);
+		return true;
+	}
+	
+	public boolean download(JSONObject message,Blob blob){
+		paSession.download(message,blob);
+		return true;
 	}
 	
 	public void sendJson(JSONObject data){
@@ -87,7 +137,7 @@ public class PaPeer extends PoolBase{
 	
 	boolean unsubscribe(String reason){
 		/* clientにunsubscribe(subscribe失敗)を通知する */
-		if( paSession.unsubscribeByPeer(this) ){
+		if( paSession!=null && paSession.unsubscribeByPeer(this) ){
 			/* paletにonUnsubscribeを通知する */
 			PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
 			return paletWrapper.onUnubscribe(this,reason);
@@ -101,8 +151,7 @@ public class PaPeer extends PoolBase{
 	public int hashCode() {
 		final int prime = 31;
 		int result = 0;//super.hashCode();
-		result = prime * result
-				+ ((paSession == null) ? 0 : paSession.hashCode());
+		result = prime * result	+ (int)paSessionId;
 		result = prime * result + ((qname == null) ? 0 : qname.hashCode());
 		result = prime * result + ((subname == null) ? 0 : subname.hashCode());
 		return result;
@@ -117,10 +166,7 @@ public class PaPeer extends PoolBase{
 		if (getClass() != obj.getClass())
 			return false;
 		PaPeer other = (PaPeer) obj;
-		if (paSession == null) {
-			if (other.paSession != null)
-				return false;
-		} else if (!paSession.equals(other.paSession))
+		if (paSessionId != other.paSessionId)
 			return false;
 		if (qname == null) {
 			if (other.qname != null)

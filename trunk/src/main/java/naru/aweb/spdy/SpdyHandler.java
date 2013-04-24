@@ -156,10 +156,11 @@ public class SpdyHandler extends ServerBaseHandler {
 
 	@Override
 	public void onReadTimeout(Object userContext) {
-		logger.warn("onReadTimeout.cid:"+getChannelId());
 		if(sessions.size()==0){
+			logger.debug("onReadTimeout nomal end.cid:"+getChannelId());
 			sendGoaway(SpdyFrame.GOWST_OK);
 		}else{
+			logger.warn("onReadTimeout abnomal end.cid:"+getChannelId()+":"+sessions.size());
 			sendGoaway(SpdyFrame.GOWST_INTERNAL_ERROR);
 		}
 		super.onReadTimeout(userContext);
@@ -202,6 +203,15 @@ public class SpdyHandler extends ServerBaseHandler {
 	}
 	
 	public void responseHeader(SpdySession spdySession,boolean isFin,HeaderParser responseHeader){
+		if(responseHeader.getStatusCode()==null){
+			logger.warn("spdyHandler stausCode unsetted.");
+			responseHeader.setStatusCode("500");
+		}
+		if(responseHeader.getResHttpVersion()==null){
+			logger.warn("spdyHandler httpVersion unsetted.");
+			responseHeader.setResHttpVersion(HeaderParser.HTTP_VESION_11);
+		}
+		
 		char flags=0;
 		if(isFin){
 			flags=SpdyFrame.FLAG_FIN;

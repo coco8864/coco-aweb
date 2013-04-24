@@ -53,7 +53,7 @@ public class WsHixie75 extends WsProtocol {
 		String host=requestHeader.getHeader(HeaderParser.HOST_HEADER);
 		String path=requestHeader.getPath();
 		
-		handler.setHttpVersion("HTTP/1.1");
+		handler.setHttpVersion(HeaderParser.HTTP_VESION_11);
 		//‡”Ô‚ğç‚ç‚È‚¢‚ÆChrome5‚ÍA“®ì‚µ‚È‚¢
 //		setStatusCode("101","Web Socket Protocol Handshake");
 //		setHeader("Upgrade", "WebSocket");

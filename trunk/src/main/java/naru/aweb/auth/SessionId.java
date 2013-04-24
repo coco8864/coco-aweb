@@ -1,6 +1,5 @@
 package naru.aweb.auth;
 
-import java.net.URL;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -311,7 +310,7 @@ public class SessionId extends PoolBase{
 		return true;
 	}
 	
-	public boolean isMatch(Type type,String id,String url,SessionId promaryId){
+	public boolean isMatch(Type type,String id,String url,SessionId primaryId){
 		if(!isMatch(type,id,url)){
 			return false;
 		}
@@ -419,11 +418,19 @@ public class SessionId extends PoolBase{
 	}
 
 	public void setLastAccessTime() {
-		this.lastAccessTime=System.currentTimeMillis();
+		if(type==type.SECONDARY){
+			primaryId.getLastAccessTime();
+		}else{
+			this.lastAccessTime=System.currentTimeMillis();
+		}
 	}
 
 	public long getLastAccessTime() {
-		return lastAccessTime;
+		if(type==type.SECONDARY){
+			return primaryId.getLastAccessTime();
+		}else{
+			return lastAccessTime;
+		}
 	}
 
 	public Type getType() {

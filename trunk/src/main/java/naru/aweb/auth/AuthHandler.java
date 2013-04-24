@@ -33,21 +33,13 @@ public class AuthHandler extends WebServerHandler {
 	private static Authenticator authenticator = config.getAuthenticator();
 	private static Authorizer authorizer=config.getAuthorizer();
 	public static String APP_ID="appId";//javascript側でセションを識別するID,setAuthメソッド復帰情報、jsonのキーとして使用
+	public static String TOKEN="token";
 	public static String AUTHORIZE_MARK="ahthorizeMark";//authorize目的で呼び出された場合に付加される。
 	public static String AUTHENTICATE_PATH="/authenticate";//必要があれば認証処理も行うパス
 	public static String INFO_PATH="/info";//ユーザ情報,利用可能サービスの問い合わせAPI
 	private static String CLEANUP_AUTH_HEADER_PATH="/cleanupAuthHeader";//auth header削除用path
-//	private static String CHECK_SESSION_PATH="/checkSession";//webSocket,ajax api認証を行う場合呼び出す前にこのパスをiframeに表示
 	private static String LOGOUT_PATH="/logout";//logout用
-//	private static String AUTH_PAGE_FILEPATH="/auth";
 	private static String AUTH_ID="authId";//...temporaryIdの別名
-
-	/*
-	public static String QUERY_AUTH_MARK="queryAuthMark";//queryでauth呼び出しが指定された場合
-	public static String QUERY_AUTH_CHECK="check";
-	public static String QUERY_AUTH_AUTH="auth";
-	public static String QUERY_SETAUTH_AUTH="setAuth";
-	*/
 	
 	public static String AUTH_MARK="authMark";
 	public static String AUTH_CD_CHECK="crossDomainAuthCheck";
@@ -264,7 +256,8 @@ public class AuthHandler extends WebServerHandler {
 			return;
 		}
 		response.element("result", true);
-		response.element("appId", secondaryId.getAuthSession().getAppId());
+		response.element(AUTH_ID, secondaryId.getAuthSession().getAppId());
+		response.element(TOKEN, secondaryId.getAuthSession().getToken());
 		crossDomainResponse(response,secondaryId.getSetCookieString());
 	}
 	

@@ -24,6 +24,7 @@ import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
 import naru.async.store.Store;
 import naru.aweb.http.HeaderParser;
+import naru.aweb.pa.PaPeer;
 import naru.aweb.util.DatePropertyFilter;
 import naru.aweb.util.JdoUtil;
 import net.sf.json.JSON;
@@ -53,7 +54,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		DatePropertyFilter dpf=new DatePropertyFilter();
 		jsonConfig.setJavaPropertyFilter(dpf);
 		jsonConfig.setJsonPropertyFilter(dpf);
-		jsonConfig.setExcludes(new String[]{"poolId","chId","persist","timeCheckPint","life","shortFormat","skipPhlog"});
+		jsonConfig.setExcludes(new String[]{"poolId","chId","persist","timeCheckPint","life","shortFormat","skipPhlog","peer"});
 	}
 	private static SimpleDateFormat logDateFormat=null; 
 	static{
@@ -178,8 +179,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		return (Collection<AccessLog>)pm.detachCopyAll((Collection<AccessLog>)q.execute());
 	}
 	
-	private void insert(){
-		PersistenceManager pm=JdoUtil.getPersistenceManager();
+	private void insert(PersistenceManager pm){
 		Transaction tx=pm.currentTransaction();
 		if(tx.isActive()){
 			tx.rollback();
@@ -188,12 +188,22 @@ public class AccessLog extends PoolBase implements BufferGetter{
 			tx.begin();
 			pm.makePersistent(this);
 			tx.commit();
+			if(peer!=null){
+				JSONObject json=toJson();
+				peer.message(json);
+				setPeer(null);
+			}
 			pm.makeTransient(this);//再利用するために必要?
 		}finally{
 			if(tx.isActive()){
 				tx.rollback();
 			}
 		}
+	}
+	
+	/* jsonフィールドに追加してブラウザでaccessLogオブジェクトであることの判定に使う */
+	public String getKind(){
+		return "accessLog";
 	}
 	
 	/* dbに保存するか否か */
@@ -206,17 +216,33 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	}
 	
 	public void persist(){
+		PersistenceManager pm=JdoUtil.getPersistenceManager();
+		persist(pm);
+	}
+	
+	public void persist(PersistenceManager pm){
 		if(isPersist){
-			insert();
+			insert(pm);
 		}
 	}
 	/* 保存時に通知するQueueのchannelId */
+	/*
 	private String chId;
 	public void setChId(String chId){
 		this.chId=chId;
 	}
 	public String getChId(){
 		return chId;
+	}
+	*/
+	public void setPeer(PaPeer peer){
+		if(peer!=null){
+			peer.ref();
+		}
+		if(this.peer!=null){
+			this.peer.unref();
+		}
+		this.peer=peer;
 	}
 	
 	public void delete(){
@@ -225,9 +251,8 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		JdoUtil.commit();
 	}
 	
-	public String toJson(){
-		JSON json=JSONSerializer.toJSON(this,jsonConfig);
-		return json.toString();
+	public JSONObject toJson(){
+		return (JSONObject)JSONSerializer.toJSON(this,jsonConfig);
 	}
 	
 	@Persistent(primaryKey="true",valueStrategy = IdGeneratorStrategy.IDENTITY)
@@ -475,7 +500,8 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		resolveOrigin=null;
 		resolveDigest=null;
 		traceCount=1;//ReqestContextからの参照分
-		chId=null;
+		//chId=null;
+		setPeer(null);
 		isSkipPhlog=isShortFormat=false;
 		thinkingTime=0;
 		rawRead=rawWrite=0;
@@ -495,8 +521,14 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	@NotPersistent
 	private WebClientLog webClientLog;
 	
+	@NotPersistent
+	private PaPeer peer;
+	
+	@NotPersistent
+	private int traceCount=1;
+	
 	public void log(boolean debug){
-		if(!debug&&isSkipPhlog){//'/queue'のように大量に出力されるlogは出力を抑止する
+		if(!debug&&isSkipPhlog){//'/pa'のように大量に出力されるlogは出力を抑止する
 			return;
 		}
 		StringBuffer sb=new StringBuffer(256);
@@ -907,8 +939,6 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	4)responseHeaderTraceが終了する
 	5)responseBodyTraceが終了する
 	*/
-	@NotPersistent
-	private int traceCount=1;
 	public synchronized void incTrace(){
 		traceCount++;
 	}

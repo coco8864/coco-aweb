@@ -1,8 +1,12 @@
 package naru.aweb.pa;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Date;
+
+import org.apache.log4j.Logger;
 
 import naru.async.AsyncBuffer;
 import naru.async.BufferGetter;
@@ -11,6 +15,8 @@ import naru.async.cache.FileInfo;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
+import naru.aweb.http.HeaderParser;
+import naru.aweb.http.WebServerHandler;
 import net.sf.json.JSONObject;
 
 /**
@@ -30,6 +36,7 @@ import net.sf.json.JSONObject;
  * @author Naru
  */
 public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
+	private static Logger logger = Logger.getLogger(Blob.class);
 	private CacheBuffer buffer;
 	private long offset;
 	private long size;
@@ -37,10 +44,15 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 	private Date lastModifiedDate;
 	private String type;
 	private String jsType;
+	private File deleteFile;
 	
-	public static Blob create(File file){
+	public static Blob create(File file,boolean deleteOnFinish){
 		CacheBuffer buffer=CacheBuffer.open(file);
-		return create(buffer);
+		Blob blob=create(buffer);
+		if(deleteOnFinish){
+			blob.deleteFile=file;
+		}
+		return blob;
 	}
 	
 	public static Blob create(ByteBuffer[] byteBuffer){
@@ -122,16 +134,26 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 	@Override
 	public void recycle() {
 		if(buffer!=null){
+			buffer.close();
 			buffer.unref();
 			buffer=null;
 		}
 		size=offset=0;
+		if(deleteFile!=null){
+			try {
+				deleteFile.delete();
+			} catch (Throwable e) {
+				logger.warn("Blob fail to file delete.");
+			}
+			deleteFile=null;
+		}
 	}
 
 	public boolean asyncBuffer(BufferGetter bufferGetter, Object userContext) {
 		throw new UnsupportedOperationException("asyncBuffer(BufferGetter bufferGetter, Object userContext)");
 	}
 
+	/* àÍâÒÇÃåƒÇ—èoÇµÇ≈ÇPâÒÇÃcallback */
 	public boolean asyncBuffer(BufferGetter bufferGetter, long offset,Object userContext) {
 		long maxLength=size-offset;
 		Object[] ctx={bufferGetter,userContext,maxLength};
@@ -168,4 +190,54 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 		Object orgUserContext=ctx[1];
 		bufferGetter.onBufferFailure(orgUserContext,failure);
 	}
+	
+	private static class DownloadGetter implements BufferGetter{
+		private Blob blob;
+		private long offset=0;
+		
+		DownloadGetter(Blob blob){
+			this.blob=blob;
+			this.offset=0;
+		}
+		
+		@Override
+		public boolean onBuffer(Object h, ByteBuffer[] buffers) {
+			WebServerHandler handler=(WebServerHandler)h;
+			offset+=BuffersUtil.remaining(buffers);
+			handler.responseBody(buffers);
+			blob.asyncBuffer(this,offset,handler);
+			return true;
+		}
+
+		@Override
+		public void onBufferEnd(Object h) {
+			WebServerHandler handler=(WebServerHandler)h;
+			handler.responseEnd();
+			blob.unref();
+		}
+
+		@Override
+		public void onBufferFailure(Object h, Throwable arg1) {
+			WebServerHandler handler=(WebServerHandler)h;
+			handler.responseEnd();
+			blob.unref();
+		}
+	}
+	
+	/* downloadÇ™äÆóπÇ∑ÇÍÇŒìñäYBlobÇÕâï˙Ç≥ÇÍÇÈ */
+	public void download(WebServerHandler handler){
+		if(name!=null){
+			handler.setHeader(HeaderParser.CONTENT_DISPOSITION_HEADER, "attachment; filename=\"" + getName()+"\"");
+		}
+		if(type!=null){
+			handler.setHeader(HeaderParser.CONTENT_TYPE_HEADER, getType());
+		}else{
+			handler.setHeader(HeaderParser.CONTENT_TYPE_HEADER, "application/octet-stream");
+		}
+		handler.setNoCacheResponseHeaders();
+		handler.setStatusCode("200");
+		DownloadGetter downloadGetter=new DownloadGetter(this);
+		asyncBuffer(downloadGetter,0,handler);
+	}
+	
 }

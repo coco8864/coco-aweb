@@ -537,9 +537,17 @@ public class Authorizer implements Timer{
 		this.isAuthSsl=isAuthSsl;
 		this.authPath=authPath;
 		if(isAuthSsl){
-			authUrl="https://" + host + ":" + port +authPath;
+			if(port==443){
+				authUrl="https://" + host + authPath;
+			}else{
+				authUrl="https://" + host + ":" + port +authPath;
+			}
 		}else{
-			authUrl="http://" + host + ":" + port +authPath;
+			if(port==80){
+				authUrl="http://" + host + authPath;
+			}else{
+				authUrl="http://" + host + ":" + port +authPath;
+			}
 		}
 		delCookieString=SessionId.delCookieString(getAuthPath(), isAuthSsl());
 		logger.info("authUrl:"+authUrl);

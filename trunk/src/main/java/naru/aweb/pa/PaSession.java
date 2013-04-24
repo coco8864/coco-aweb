@@ -22,9 +22,11 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	/* req/res共通のkey */
 	public static final String KEY_TYPE="type";
 	public static final String KEY_BID="bid";
+	public static final String KEY_TOKEN="token";
 	public static final String KEY_QNAME="qname";
 	public static final String KEY_SUBNAME="subname";
 	public static final String KEY_PALET_CLASS_NAME="paletClassName";
+	public static final String KEY_KEY="key";
 	
 	/* request type */
 	public static final String TYPE_NEGOTIATE="negotiate";
@@ -40,19 +42,22 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	public static final String KEY_RESULT="result";
 	public static final String KEY_REQUEST_TYPE="requestType";
 	public static final String KEY_MESSAGE="message";
+	public static final String KEY_SESSION_TIME_LIMIT="sessionTimeLimit";
+	public static final String KEY_OFFLINE_PASS_HASH="offlinePassHash";
 	
 	/* response type */
 	public static final String TYPE_RESPONSE="response";
 	public static final String TYPE_MESSAGE="message";
-	public static final String RESULT_OK="ok";
+	public static final String TYPE_DOWNLOAD="download";
+	public static final String RESULT_SUCCESS="success";
 	public static final String RESULT_ERROR="error";
 	
 	private static Logger logger=Logger.getLogger(PaSession.class);
-	private static PaManager paManager=PaManager.getInstance();
 	
 	static PaSession create(String path,Integer bid,boolean isWs,AuthSession authSession){
 		PaSession paSession=(PaSession)PoolManager.getInstance(PaSession.class);
 		paSession.path=path;
+		paSession.paManager=PaManager.getInstance(path);
 		paSession.bid=bid;
 		paSession.isWs=isWs;
 		
@@ -76,6 +81,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		isWs=false;
 		super.recycle();
 	}
+	private PaManager paManager;
 	
 	private String path;//接続path
 	
@@ -105,8 +111,10 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	
 	private void xhrSend(PaHandler handler,List<Object> qdata){
 		if(qdata.size()==0){
-			handler.completeResponse("205");
+			handler.completeResponse("204");
 		}else{
+			/*レスポンスに有為なコンテンツがあればアクセスログに記録する*/
+			handler.getAccessLog().setSkipPhlog(false);
 			handler.responseJson(qdata);
 		}
 		handler.setDoneXhr();
@@ -152,7 +160,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	}
 	
 	/* レスポンスするオブジェクトがなかったとしても一定時間後にはレスポンスする */
-	public synchronized void xhrTerminal(PaHandler handler){
+	public synchronized void xhrResponse(PaHandler handler){
 		if(handler.doneXhr()){
 			return;
 		}
@@ -179,8 +187,15 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		sendJson(makeResponseJson(RESULT_ERROR,requestType,qname, subname,  message));
 	}
 	
-	public void sendOK(String requestType,String qname,String subname,Object message){
-		sendJson(makeResponseJson(RESULT_OK,requestType,qname, subname, message));
+	public void sendSuccess(String requestType,String qname,String subname,Object message){
+		sendJson(makeResponseJson(RESULT_SUCCESS,requestType,qname, subname, message));
+	}
+	
+	private Map<String,Blob>downloadBlobs=Collections.synchronizedMap(new HashMap<String,Blob>());
+	
+	public synchronized void download(JSONObject message,Blob blob){
+		downloadBlobs.put(message.getString(KEY_KEY),blob);
+		sendJson(message);
 	}
 	
 	public synchronized void sendJson(JSONObject data){
@@ -212,8 +227,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 			sendError(TYPE_SUBSCRIBE,qname, subname,null);
 			return;
 		}
-		PaPeer keyPeer=PaPeer.create(this, qname, subname);
-		
+		PaPeer keyPeer=PaPeer.create(paManager,this, qname, subname);
 		synchronized(peers){
 			PaPeer peer=peers.get(keyPeer);
 			if(peer!=null){//すでにsubscribe済み処理はない
@@ -228,26 +242,17 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	public void unsubscribe(JSONObject msg){
 		String qname=msg.getString(KEY_QNAME);
 		String subname=msg.optString(KEY_SUBNAME,null);
-		PaPeer keyPeer=PaPeer.create(this, qname, subname);
-		/*
-		PaPeer peer=null;
-		synchronized(peers){
-			peer=peers.remove(keyPeer);
+		PaPeer keyPeer=PaPeer.create(paManager,this, qname, subname);
+		if( !unsubscribeFromWrapper(keyPeer) ){
+			sendError(TYPE_UNSUBSCRIBE,qname, subname,"not found peer");
 			keyPeer.unref(true);
-			if(peer==null){//すでにunsubscribe済み処理はない
-				sendError(TYPE_UNSUBSCRIBE,qname, subname,"not found");
-				return;
-			}
+			return;
 		}
-		*/
-		if( !unsubscribeByPeer(keyPeer) ){
-			sendError(TYPE_UNSUBSCRIBE,qname, subname,"not found");
-		}
+		unsubscribeByPeer(keyPeer);
 		keyPeer.unref(true);
 	}
 	
-	/* API経由でunsubscribeされる場合, */
-	/* clientにunsubscribe(subscribe失敗)を通知する */
+	/* API経由でのunsubscribe, clientにunsubscribe(subscribe失敗)を通知する */
 	public boolean unsubscribeByPeer(PaPeer peer){
 		String qname=peer.getQname();
 		synchronized(peers){
@@ -255,18 +260,21 @@ public class PaSession extends PoolBase implements LogoutEvent{
 			if(peer==null){//すでにunsubscribe済み処理はない
 				return false;
 			}
+			peer.releaseSession();
 		}
 		//unsubscribeは過去に発行されたsubscribeが成功したとして通知する
-		sendOK(TYPE_SUBSCRIBE,qname,peer.getSubname(),"unsubscribed by api");
+		sendSuccess(TYPE_SUBSCRIBE,qname,peer.getSubname(),"unsubscribed by api");
+		peer.unref();
 		return true;
 	}
 	
-	public void publish(Map msg){
-		String qname=(String)msg.get(KEY_QNAME);
-		String subname=(String)msg.get(KEY_SUBNAME);
-		Object message=msg.get(KEY_MESSAGE);
-		PaPeer keyPeer=PaPeer.create(this, qname, subname);
-		
+	public void publish(PaMsg msg){
+		String qname=msg.getString(KEY_QNAME);
+		String subname=msg.getString(KEY_SUBNAME);
+		PaMsg message=msg.getMap(KEY_MESSAGE);
+		message.ref();
+		msg.unref();
+		PaPeer keyPeer=PaPeer.create(paManager,this, qname, subname);
 		PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
 		if(subname==null){//送信元がないPublish 便宜的なPeer
 			paletWrapper.onPublish(keyPeer, message);
@@ -285,14 +293,15 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		paletWrapper.onPublish(peer, message);
 	}
 	
-	private boolean unsubscribePeer(PaPeer peer){
+	/* PaletWrapperからのunsubcribe */
+	private boolean unsubscribeFromWrapper(PaPeer peer){
 		PaletWrapper paletWrapper=paManager.getPaletWrapper(peer.getQname());
 		if(paletWrapper==null){
 			return false;
 		}
 		paletWrapper.onUnubscribe(peer,"client");
 		//正常にsubscribeを完了したという意味でsubscribe完了を復帰
-		sendOK(TYPE_SUBSCRIBE,peer.getQname(), peer.getSubname(),"client");
+		sendSuccess(TYPE_SUBSCRIBE,peer.getQname(), peer.getSubname(),"client");
 		return true;
 	}
 	
@@ -313,27 +322,28 @@ public class PaSession extends PoolBase implements LogoutEvent{
 			if(peer==null){
 				break;
 			}
-			if(unsubscribePeer(peer)){
+			if(unsubscribeFromWrapper(peer)){
 				count++;
 			}
+			peer.releaseSession();
 		}
-		sendOK(TYPE_CLOSE,null,null,"client:"+count);
+		sendSuccess(TYPE_CLOSE,null,null,"client:"+count);
 	}
 	
 	public void qname(JSONObject req){
 		Set<String> qnames=paManager.qnames();
-		sendOK(TYPE_QNAMES,null, null,JSONSerializer.toJSON(qnames));
+		sendSuccess(TYPE_QNAMES,null, null,JSONSerializer.toJSON(qnames));
 	}
 	
 	public void deploy(JSONObject req){
 		if(!roles.contains("admin")){
-			sendOK(TYPE_DEPLOY,null, null, "forbidden role");
+			sendSuccess(TYPE_DEPLOY,null, null, "forbidden role");
 			return;
 		}
 		String qname=req.getString(KEY_QNAME);
 		String paletClassName=req.getString(KEY_PALET_CLASS_NAME);
 		if(paManager.deploy(qname, paletClassName)!=null){
-			sendOK(TYPE_DEPLOY,qname, null, null);
+			sendSuccess(TYPE_DEPLOY,qname, null, null);
 		}else{
 			sendError(TYPE_DEPLOY,qname, null,"aleady deployed");
 		}
@@ -341,12 +351,12 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	
 	public void undeploy(JSONObject req){
 		if(!roles.contains("admin")){
-			sendOK(TYPE_DEPLOY,null, null, "forbidden role");
+			sendSuccess(TYPE_DEPLOY,null, null, "forbidden role");
 			return;
 		}
 		String qname=req.getString(KEY_QNAME);
 		if( paManager.undeploy(qname)!=null){
-			sendOK(TYPE_UNDEPLOY,qname, null,null);
+			sendSuccess(TYPE_UNDEPLOY,qname, null,null);
 		}else{
 			sendError(TYPE_UNDEPLOY,qname, null,"not found");
 		}
@@ -361,7 +371,12 @@ public class PaSession extends PoolBase implements LogoutEvent{
 				break;
 			}
 			for(Object peer:reqs){
-				((PaPeer)peer).unsubscribe();
+				if( ((PaPeer)peer).unsubscribe()==false){
+					//TODO 意味不明だが停止時にループした
+					logger.error("fail to onLogout for unsubscribe",new Exception());
+					unref();//セションが終わったらPaSessionも必要なし
+					return;
+				}
 			}
 		}
 		unref();//セションが終わったらPaSessionも必要なし
@@ -391,4 +406,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		return isWs;
 	}
 	
+	public Blob popDownloadBlob(String key){
+		return downloadBlobs.remove(key);
+	}
 }

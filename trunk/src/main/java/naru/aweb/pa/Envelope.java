@@ -160,7 +160,7 @@ public class Envelope extends PoolBase{
 	
 	public Object deserialize(Object obj){
 		if(obj instanceof JSONObject){
-			Map clone=new HashMap();
+			PaMsg clone=PaMsg.create();
 			JSONObject json=(JSONObject)obj;
 			for(Object key:json.keySet()){
 				clone.put((String)key, deserialize(json.get(key)));
@@ -182,7 +182,7 @@ public class Envelope extends PoolBase{
 				return blob;
 			}else if(((String)obj).startsWith(DATE_VALUE_NAME_PREFIX)){
 				int idx=Integer.parseInt(((String)obj).substring(DATE_VALUE_NAME_PREFIX_LEN));
-				return dates.get(idx);
+				return new Date(dates.get(idx));
 			}
 		}
 		return obj;
@@ -215,7 +215,7 @@ public class Envelope extends PoolBase{
 	
 	/* protocol data -> user obj
 	 */
-	public static Map unpack(CacheBuffer prot){
+	public static PaMsg unpack(CacheBuffer prot){
 		if(!prot.isInTopBuffer()){
 			prot.unref();
 			throw new UnsupportedOperationException("Envelope parse");
@@ -235,15 +235,10 @@ public class Envelope extends PoolBase{
 		String headerString=getStringFromBuffer(topBuf,headerLength);
 		offset+=headerLength;
 		JSONObject header=JSONObject.fromObject(headerString);
-		Envelope envelop=(Envelope)PoolManager.getInstance(Envelope.class);
 		JSONObject meta=header.getJSONObject("meta");
-		JSONArray dates=meta.getJSONArray("dates");
-		int size=dates.size();
-		for(int i=0;i<size;i++){
-			envelop.dates.add(dates.getLong(i));
-		}
 		JSONArray blobs=meta.getJSONArray("blobs");
-		size=blobs.size();
+		int size=blobs.size();
+		List<Blob> blobsList=new ArrayList<Blob>();		
 		for(int i=0;i<size;i++){
 			JSONObject blobMeta=blobs.getJSONObject(i);
 			long length=blobMeta.getLong("size");
@@ -256,11 +251,30 @@ public class Envelope extends PoolBase{
 			if(lastModifiedDate>0){
 				blob.setLastModifiedDate(lastModifiedDate);
 			}
-			envelop.blobs.add(blob);
+			blobsList.add(blob);
 		}
-		Map result=(Map)envelop.deserialize(header);
+		PoolManager.poolBufferInstance(topBufs);
 		prot.unref();//Blobに必要な参照は、Blob.create時に加算されている
+		return unpack(header,blobsList);
+	}
+	
+	public static PaMsg unpack(JSONObject header,List<Blob> blobs){
+		JSONObject meta=header.getJSONObject("meta");
+		JSONArray dates=meta.getJSONArray("dates");
+		if(blobs==null && dates.size()==0){
+			return PaMsg.wrap(header);
+		}
+		Envelope envelop=(Envelope)PoolManager.getInstance(Envelope.class);
+		if(blobs!=null){
+			envelop.blobs.addAll(blobs);
+		}
+		int size=dates.size();
+		for(int i=0;i<size;i++){
+			envelop.dates.add(dates.getLong(i));
+		}
+		PaMsg result=(PaMsg)envelop.deserialize(header);
 		envelop.unref();
 		return result;
 	}
+	
 }

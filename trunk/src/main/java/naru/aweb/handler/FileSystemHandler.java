@@ -89,8 +89,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		if (path == null) {
 			return false;
 		}
-		String velocityUse = (String) mapping
-				.getOption(MappingResult.PARAMETER_VELOCITY_USE);
+		String velocityUse = (String) mapping.getOption(MappingResult.PARAMETER_VELOCITY_USE);
 		if ("false".equalsIgnoreCase(velocityUse)) {
 			return false;
 		}
@@ -99,8 +98,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 					"application/javascript");
 			return true;
 		}
-		String velocityExtentionsParam = (String) mapping
-				.getOption(MappingResult.PARAMETER_VELOCITY_EXTENTIONS);
+		String velocityExtentionsParam = (String) mapping.getOption(MappingResult.PARAMETER_VELOCITY_EXTENTIONS);
 		String[] velocityExtentions = defaultVelocityExtentions;
 		if (velocityExtentionsParam != null) {
 			velocityExtentions = velocityExtentionsParam.split(",");

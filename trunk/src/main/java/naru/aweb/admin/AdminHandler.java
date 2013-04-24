@@ -2,7 +2,6 @@ package naru.aweb.admin;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -24,11 +23,8 @@ import naru.aweb.core.Main;
 import naru.aweb.handler.ws.WsProtocol;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.ParameterParser;
-import naru.aweb.http.RequestContext;
 import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.MappingResult;
-import naru.aweb.queue.QueueManager;
-import naru.aweb.robot.Browser;
 import naru.aweb.spdy.SpdyConfig;
 import naru.aweb.spdy.SpdyFrame;
 import naru.aweb.util.ServerParser;
@@ -99,162 +95,7 @@ public class AdminHandler extends WebServerHandler{
 		redirectAdmin();
 	}
 	
-	private byte[] bytes(String text,String encode) throws UnsupportedEncodingException{
-		if(encode==null||"".equals(encode)){
-			encode="utf8";
-		}
-		return text.getBytes(encode);
-	}
-	
-	private static final String HEX_0A =new String(new byte[]{(byte)0x0a});
-	private static final String HEX_0D0A =new String(new byte[]{(byte)0x0d,(byte)0x0a});
 	private static final byte[] HEADER_END_BYTE =new byte[]{(byte)0x0d,(byte)0x0a,(byte)0x0d,(byte)0x0a};
-	
-	private HeaderParser createHeader(ByteBuffer[] buffers){
-		if(buffers==null){
-			return null;
-		}
-		HeaderParser header=(HeaderParser)PoolManager.getInstance(HeaderParser.class);
-		for(int i=0;i<buffers.length;i++){
-			header.parse(buffers[i]);
-		}
-		PoolManager.poolArrayInstance(buffers);
-		if(!header.isParseEnd()){
-			header.parse(ByteBuffer.wrap(HEADER_END_BYTE));
-		}
-		return header;
-	}
-	
-	private HeaderParser getPartHeader(ParameterParser parameter,String part,String digest) throws UnsupportedEncodingException{
-		String text=parameter.getParameter(part);
-		String encode=parameter.getParameter(part+"Encode");
-		if(text!=null){
-			text=text.replaceAll(HEX_0A,HEX_0D0A);
-		}
-		ByteBuffer[] buffers;
-		if(text==null){
-			if(digest==null){
-				return null;
-			}
-			buffers=DataUtil.toByteBuffers(digest);;
-		}else{
-			byte[] data=null;
-			data=bytes(text,encode);//TODO content-typeのcharset=の右なので、javaのencodeとして齟齬がある
-			buffers=BuffersUtil.toByteBufferArray(ByteBuffer.wrap(data));
-		}
-		return  createHeader(buffers);
-	}
-	
-	private String digest(ByteBuffer[] data){
-		Store store=Store.open(true);
-		store.putBuffer(data);
-		store.close();
-		return store.getDigest();
-	}
-	
-	private ByteBuffer[] getPartBuffer(ParameterParser parameter,String part,String digest) throws UnsupportedEncodingException{
-		String body=parameter.getParameter(part);
-		String bodyEncode=parameter.getParameter(part+"Encode");
-		if(body==null){
-			if(digest==null){
-				return null;
-			}
-			return DataUtil.toByteBuffers(digest);
-		}
-		byte[] data=bytes(body,bodyEncode);//TODO content-typeのcharset=の右なので、javaのencodeとして齟齬がある
-		return BuffersUtil.toByteBufferArray(ByteBuffer.wrap(data));
-	}
-	
-	private void updateResolveDigest(AccessLog accessLog,HeaderParser requestHeader){
-		//bodyが存在しない場合resolveDigestは計算しない
-		if(accessLog.getResponseBodyDigest()==null||accessLog.getResponseHeaderDigest()==null){
-			return; 
-		}
-		boolean isHttps=(accessLog.getDestinationType()==AccessLog.DESTINATION_TYPE_HTTPS);
-		String resolveDigest=AccessLog.calcResolveDigest(requestHeader.getMethod(),
-				isHttps,
-				accessLog.getResolveOrigin(),
-				requestHeader.getPath(),requestHeader.getQuery());
-		accessLog.setResolveDigest(resolveDigest);
-	}
-	
-	/*　編集されていないstoreの参照カウンタをアップする */
-	private void storeRef(String digest){
-		StoreManager.ref(digest);
-	}
-	
-	private AccessLog getEditedAccessLog(ParameterParser parameter) throws UnsupportedEncodingException{
-		String accessLogId=parameter.getParameter("accessLogId");
-		String requestHeader=parameter.getParameter("requestHeader");
-		String requestBody=parameter.getParameter("requestBody");
-		String responseHeader=parameter.getParameter("responseHeader");
-		String responseBody=parameter.getParameter("responseBody");
-
-		AccessLog accessLog=AccessLog.getById(Long.parseLong(accessLogId));
-		accessLog.setSourceType(AccessLog.SOURCE_TYPE_EDIT);
-		
-		HeaderParser requestHeaderParser=null;
-		ByteBuffer[] requestBodyBuffer=null;
-		if(requestBody!=null){
-			requestHeaderParser=getPartHeader(parameter,"requestHeader",accessLog.getRequestHeaderDigest());
-			requestBodyBuffer=getPartBuffer(parameter,"requestBody",accessLog.getRequestBodyDigest());
-			//通知されたbodyは、chunkもされていないとする
-			requestHeaderParser.removeHeader(HeaderParser.TRANSFER_ENCODING_HEADER);
-			requestHeaderParser.setContentLength(BuffersUtil.remaining(requestBodyBuffer));
-		}else if(requestHeader!=null){
-			requestHeaderParser=getPartHeader(parameter,"requestHeader",accessLog.getRequestHeaderDigest());
-		}
-		if(requestHeaderParser!=null){
-			//HOSTヘッダを適切に修正
-			requestHeaderParser.setHost(accessLog.getResolveOrigin());
-			//headerをいじった場合は、resolveDigestも更新する
-			updateResolveDigest(accessLog,requestHeaderParser);
-			accessLog.setRequestLine(requestHeaderParser.getRequestLine());
-			String requestHeaderDigest=digest(requestHeaderParser.getHeaderBuffer());
-			accessLog.setRequestHeaderDigest(requestHeaderDigest);//xx
-		}else{
-			storeRef(accessLog.getRequestHeaderDigest());
-		}
-		if(requestBodyBuffer!=null){
-			String requestBodyDigest=digest(requestBodyBuffer);
-			accessLog.setRequestBodyDigest(requestBodyDigest);//xx
-		}else{
-			storeRef(accessLog.getRequestBodyDigest());
-		}
-		HeaderParser responseHeaderParser=null;
-		ByteBuffer[] responseBodyBuffer=null;
-		if(responseBody!=null){
-			responseHeaderParser=getPartHeader(parameter,"responseHeader",accessLog.getResponseHeaderDigest());
-			responseBodyBuffer=getPartBuffer(parameter,"responseBody",accessLog.getResponseBodyDigest());
-			//通知されたbodyは、zgipもchunkもされていないとする
-			accessLog.setTransferEncoding(null);
-			accessLog.setContentEncoding(null);
-			responseHeaderParser.removeHeader(HeaderParser.TRANSFER_ENCODING_HEADER);
-			responseHeaderParser.removeHeader(HeaderParser.CONTENT_ENCODING_HEADER);
-			long contentLength=BuffersUtil.remaining(responseBodyBuffer);
-			responseHeaderParser.setContentLength(contentLength);
-			accessLog.setResponseLength(contentLength);
-		}else if(responseHeader!=null){
-			responseHeaderParser=getPartHeader(parameter,"responseHeader",accessLog.getResponseHeaderDigest());
-		}
-		if(responseHeaderParser!=null){
-			accessLog.setTransferEncoding(responseHeaderParser.getHeader(HeaderParser.TRANSFER_ENCODING_HEADER));
-			accessLog.setContentEncoding(responseHeaderParser.getHeader(HeaderParser.CONTENT_ENCODING_HEADER));
-			accessLog.setContentType(responseHeaderParser.getContentType());
-			String responseHeaderDigest=digest(responseHeaderParser.getHeaderBuffer());
-			accessLog.setResponseHeaderDigest(responseHeaderDigest);//xx
-			responseHeaderParser.unref(true);//getPartHeaderメソッドで獲得したオブジェクトを開放
-		}else{
-			storeRef(accessLog.getResponseHeaderDigest());
-		}
-		if(responseBodyBuffer!=null){
-			String responseBodyDigest=digest(responseBodyBuffer);
-			accessLog.setResponseBodyDigest(responseBodyDigest);//xx
-		}else{
-			storeRef(accessLog.getResponseBodyDigest());
-		}
-		return accessLog;
-	}
 	
 	/* レスポンスの内容をそのままレスポンスする */
 	private void viewAccessLog(ParameterParser parameter){
@@ -291,50 +132,9 @@ public class AdminHandler extends WebServerHandler{
 		forwardHandler(Mapping.STORE_HANDLER);
 	}
 	
-	
-	private String runAccessLog(ParameterParser parameter) throws UnsupportedEncodingException{
-		String accessLogId=parameter.getParameter("accessLogId");
-		String requestBody=parameter.getParameter("requestBody");
-
-		AccessLog accessLog=AccessLog.getById(Long.parseLong(accessLogId));
-		if(accessLog.getDestinationType()!=AccessLog.DESTINATION_TYPE_HTTP&&accessLog.getDestinationType()!=AccessLog.DESTINATION_TYPE_HTTPS){
-			return null;
-		}
-		HeaderParser requestHeaderParser=getPartHeader(parameter,"requestHeader",accessLog.getRequestHeaderDigest());
-		if(requestHeaderParser==null){
-			return null;
-		}
-		if(HeaderParser.CONNECT_METHOD.equalsIgnoreCase(requestHeaderParser.getMethod())){
-			//CONNECTメソッドの場合は、真のヘッダがbody部分に格納されている
-			ByteBuffer[] realHeader=requestHeaderParser.getBodyBuffer();
-			requestHeaderParser.recycle();
-			for(ByteBuffer buffer:realHeader){
-				requestHeaderParser.parse(buffer);
-			}
-			PoolManager.poolArrayInstance(realHeader);
-			if(!requestHeaderParser.isParseEnd()){
-				return null;
-			}
-		}
-		ByteBuffer[] requestBodyBuffer=getPartBuffer(parameter,"requestBody",accessLog.getRequestBodyDigest());
-		if(requestBody!=null){
-			//通知されたbodyは、chunkもされていないとする
-			requestHeaderParser.removeHeader(HeaderParser.TRANSFER_ENCODING_HEADER);
-			requestHeaderParser.setContentLength(BuffersUtil.remaining(requestBodyBuffer));
-		}
-		requestHeaderParser.setHost(accessLog.getResolveOrigin());
-		boolean isHttps=(accessLog.getDestinationType()==AccessLog.DESTINATION_TYPE_HTTPS);
-		Browser browser=Browser.create("run:"+accessLogId,isHttps, requestHeaderParser, requestBodyBuffer);
-		QueueManager queueManager=QueueManager.getInstance();
-		String chId=queueManager.createQueue();
-		browser.start(chId);
-		return chId;
-	}
-	
 	//phamtomProxyの設定はここに集中する
 	private void doCommand(ParameterParser parameter){
 		String cmd=parameter.getParameter("command");
-		String callback=parameter.getParameter("callback");
 		if("setTimeouts".equals(cmd)){
 			String connectTimeout=parameter.getParameter("connectTimeout");
 			String acceptTimeout=parameter.getParameter("acceptTimeout");
@@ -362,12 +162,6 @@ public class AdminHandler extends WebServerHandler{
 			if("".equals(exceptProxyDomains)){
 				exceptProxyDomains=null;
 			}
-			/*
-			config.setProperty("pacUrl", pacUrl);
-			config.setProperty("proxyServer", proxyServer);
-			config.setProperty("sslProxyServer", sslProxyServer);
-			config.setProperty("exceptProxyDomains", exceptProxyDomains);
-			*/
 			boolean result=config.updateProxyFinder(pacUrl,proxyServer,sslProxyServer,exceptProxyDomains);
 			JSONObject json=new JSONObject();
 			json.put("pacUrl", config.getProperty("pacUrl"));
@@ -434,15 +228,11 @@ public class AdminHandler extends WebServerHandler{
 			responseJson(true);
 		}else if("setAuth".equals(cmd)){
 			String scheme=parameter.getParameter("scheme");
-			//String logoutUrl=parameter.getParameter("logoutUrl");
 			Authenticator authenticator=config.getAuthenticator();
 			authenticator.setScheme(scheme);
-			//authenticator.setLogoutUrl(logoutUrl);
 			String sessionTimeout=parameter.getParameter("sessionTimeout");
 			Authorizer authorizer=config.getAuthorizer();
 			authorizer.setSessionTimeout(Long.parseLong(sessionTimeout));
-//			JSONObject res=new JSONObject();
-//			res.accumulate("scheme", authenticator.getScheme());
 			responseJson(true);
 		}else if("setBroadcaster".equals(cmd)){
 			String interval=parameter.getParameter("interval");
@@ -451,8 +241,8 @@ public class AdminHandler extends WebServerHandler{
 		}else if("setSelfDomain".equals(cmd)){
 			String domain=parameter.getParameter("domain");
 			config.setProperty(Config.SELF_DOMAIN, domain);
-			String port=config.getString(Config.SELF_PORT);
-			config.setProperty(Config.SELF_URL, "http://" + domain +":"+port);
+//			String port=config.getString(Config.SELF_PORT);
+//			config.setProperty(Config.SELF_URL, "http://" + domain +":"+port);
 			responseJson(true);
 		}else if("getStastics".equals(cmd)){
 			responseJson(JSONObject.fromObject(config.getStasticsObject()));
@@ -460,30 +250,6 @@ public class AdminHandler extends WebServerHandler{
 			String debugTrace=parameter.getParameter("debugTrace");
 			config.setDebugTrace("true".equalsIgnoreCase(debugTrace));
 			responseJson(config.isDebugTrace());
-		}else if("runAccessLog".equals(cmd)){
-			try {
-				String chId=runAccessLog(parameter);
-				responseJson(chId,callback);
-			} catch (Exception e) {
-				logger.error("runAccessLog error.",e);
-				completeResponse("500");
-			}
-		}else if("saveAccessLog".equals(cmd)){
-			try {
-				AccessLog accessLog=getEditedAccessLog(parameter);
-				accessLog.setOriginalLogId(accessLog.getId());
-				accessLog.setId(null);
-				accessLog.setPersist(true);
-				accessLog.persist();
-				responseJson(accessLog.getId(),callback);
-			} catch (Exception e) {
-				logger.error("getEditedAccessLog error.",e);
-				completeResponse("500");
-			}
-//		}else if("notify".equals(cmd)){
-//			QueueManager queueManager=QueueManager.getInstance();
-//			String chId=queueManager.createQueue();
-//			responseJson(chId,callback);
 		}else if("logdownload".equals(cmd)){
 			//ph.log,accesslogダウンロード
 			String logType=parameter.getParameter("logType");
@@ -509,20 +275,11 @@ public class AdminHandler extends WebServerHandler{
 			System.gc();
 			ChannelContext.dumpChannelContexts();
 			PoolManager.dump();
-			completeResponse("205");
+			completeResponse("204");
 		}else if("terminate".equals(cmd)){
 			String isRestartValue=parameter.getParameter("isRestart");
 			String isCleanupValue=parameter.getParameter("isCleanup");
 			String javaHeapSizeValue=parameter.getParameter("javaHeapSize");
-			/*
-			if(!"true".equals(isRestartValue)){
-				Main.terminate();
-			}else{
-				boolean isCleanup="true".equals(isCleanupValue);
-				int javaHeapSize=Integer.parseInt(javaHeapSizeValue);
-				Main.terminate(true,isCleanup,javaHeapSize);
-			}
-			*/
 			/* logout時にrestartするように設定する.すぐにterminateすると画面が崩れる場合がある */
 			boolean isRestart="true".equals(isRestartValue);
 			boolean isCleanup="true".equals(isCleanupValue);
@@ -550,15 +307,15 @@ public class AdminHandler extends WebServerHandler{
 						Main.terminate(true,isCleanup,javaHeapSize);
 					}
 				}}.init(isRestart, isCleanup, javaHeapSize);
-			boolean addEvent=getRequestContext().getAuthSession().addLogoutEvent(logoutEvent);
+			boolean addEvent=getAuthSession().addLogoutEvent(logoutEvent);
 			responseJson(addEvent);
 		}else if("replayDelete".equals(cmd)){
 			replayDelete();
-			completeResponse("205");
+			completeResponse("204");
 		}else if("dumpStore".equals(cmd)){
 			try {
 				StoreManager.dumpStore();
-				completeResponse("205");
+				completeResponse("204");
 			} catch (IOException e) {
 				logger.warn("fail to dumpStore",e);
 				completeResponse("500");
@@ -603,9 +360,7 @@ public class AdminHandler extends WebServerHandler{
 	}
 	
 	private boolean checkToken(ParameterParser parameter){
-		RequestContext requestContext=getRequestContext();
-//		KeepAliveContext keepAliveContext=getKeepAliveContext();
-		String token=requestContext.getAuthSession().getToken();
+		String token=getAuthSession().getToken();
 		String paramToken=parameter.getParameter("token");
 		if(paramToken!=null){
 			if(token.equals(paramToken)){
@@ -673,16 +428,8 @@ public class AdminHandler extends WebServerHandler{
 			}
 			return;
 		}
-//		if(doCommand(parameter)==false){
-//			return;
-//		}
-		//'/' および queryを含まないfile名
-//		String file=requestHeader.getFile();
 		if( "/admin".equals(path)){
 			doCommand(parameter);
-			return;
-		}else if( "/accessLog".equals(path)){
-			forwardHandler(AdminAccessLogHandler.class);
 			return;
 		}else if( REPLAY_UPLOAD_PATH.equals(path)){
 			replayUpload(parameter);

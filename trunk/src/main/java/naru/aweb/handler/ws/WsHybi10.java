@@ -67,7 +67,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 		
 		String key=requestHeader.getHeader(SEC_WEBSOCKET_KEY);
 		String accept=DataUtil.digestBase64Sha1((key+GUID).getBytes());
-		handler.setHttpVersion("HTTP/1.1");
+		handler.setHttpVersion(HeaderParser.HTTP_VESION_11);
 		handler.setStatusCode("101","Switching Protocols");
 		handler.setHeader("Upgrade", "WebSocket");
 		handler.setHeader("Connection", "Upgrade");

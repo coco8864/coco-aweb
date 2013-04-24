@@ -7,13 +7,13 @@
 	<meta http-equiv="Pragma" content="no-cache"> 
 	<meta http-equiv="Cache-Control" content="no-cache"> 
 	<meta http-equiv="Expires" content="0"> 
-	<title>Phatom Proxy Console</title>
+	<title>Phatom Server Console</title>
 
-	<link type="text/css" href="/pub/css/jquery-ui-1.10.1.custom.css" rel="stylesheet" />
-	<script type="text/javascript" src="/pub/js/ph-loader.js?include=ph-queue.js"></script>
+	<link type="text/css" href="/pub/css/jquery-ui-1.10.2.custom.css" rel="stylesheet" />
+	<script type="text/javascript" src="/pub/js/ph-loader.js?include=ph-pa.js"></script>
 	<script type="text/javascript" src="/pub/js/dateformat.js"></script>
-	<script type="text/javascript" src="/pub/js/jquery-1.9.1.min.js"></script>
-	<script type="text/javascript" src="/pub/js/jquery-ui-1.10.1.custom.min.js"></script>
+	<script type="text/javascript" src="/pub/js/jquery-1.8.3.min.js"></script>
+	<script type="text/javascript" src="/pub/js/jquery-ui-1.10.2.custom.min.js"></script>
 	<link type="text/css" href="/pub/css/ph.css" rel="stylesheet" /> 
 <style type="text/css"><!--
 td,th {border:1px solid #000;text-align:left;font-size:x-small}
@@ -32,6 +32,7 @@ var tabIndexs = {'#statusTab' : 0, '#settingTab' : 1, '#mappingTab' : 2, '#acces
 var userTabHashKey='userTabHash.$!esc.html($loginUser.loginId)';
 window.onhashchange = function(){
 	//現在のhashからインデックスの値を取得
+	jQuery('html,body').scrollTop(0);
 	var hash=window.location.hash;
 	if(!hash){
 		//hash from session strage
@@ -49,12 +50,34 @@ window.onhashchange = function(){
 };
 ph.jQuery(function() {
 	ph.setShowDebug(ph.showDebug);
-	ph.queue.start('/queue',function(){
-	ph.log('disconnect ph.queue');
-/*location=ph.publicWebUrl*/});
+##	ph.queue.start('/queue',function(){
+##	ph.log('disconnect ph.queue');
+##/*location=ph.publicWebUrl*/});
 	jQuery("#textEditTextArea").resizable({
 		handles: "se"
 	});
+	ph.admin.cd=ph.pa.connect('/admin');
+	ph.admin.cd.done(function(){ph.admin.cd=null});
+	ph.admin.accessLogSd=ph.admin.cd.subscribe('admin','accessLog',
+		function(res){
+			if(!res){
+				ph.log('res is null');
+				searchPage();
+			}else if(res.command==='list'){
+				if(typeof refreshTable!=='undefined')refreshTable(res.data);
+			}else if(res.kind==='accessLog'){
+				if(typeof updateEntry!=='undefined')updateEntry(res);
+			}else{
+				if(typeof searchPage!=='undefined')searchPage();
+			}
+		});
+	var logId=sessionStorage['logId'];
+	if(logId){
+		changeEntry(parseInt(logId));
+	}
+	ph.admin.perfSd=ph.admin.cd.subscribe('admin','perf');
+	ph.admin.perfSd.onMessage(perfCheckServer);
+
 	jQuery("#stress").dialog({title:'stressオプション入力'});
 	jQuery("#stress").dialog('close');
 	jQuery("#textEdit").dialog({width: 800,title:'text'});
@@ -75,7 +98,16 @@ ph.jQuery(function() {
 	jQuery("#commonOutputDialog").dialog('close');
 
 	jQuery("#tabs").tabs({
-		cache:true,
+//		cache:true,
+		beforeLoad: function( event, ui ) {
+		if ( ui.tab.data( "loaded" ) ) {
+			event.preventDefault();
+			return;
+		}
+		ui.jqXHR.success(function() {
+			ui.tab.data( "loaded", true );
+			});
+		},
 		ajaxOptions: {
 			error: function(xhr, status, index, anchor) {
 ph.log("tabs ajaxOptions error");
@@ -95,7 +127,7 @@ ph.log("tabs ajaxOptions success.index:"+index +":anchor:"+anchor);
 	</script> 
 </head> 
 <body> 
-<H1 class="mainTitle" style="float: left;">Phantom Proxy Console</H1>
+<H1 class="mainTitle" style="float: left;">Phantom Server Console</H1>
 <div style="float: right;" class="welcom">$!esc.html($loginUser.loginId)さんようこそ
 <img src="/pub/images/home.gif" title="home" onclick='location=ph.publicWebUrl'/>
 <img src="/pub/images/logout.gif" title="logout" onclick='location=(ph.authUrl+"/logout")'/>

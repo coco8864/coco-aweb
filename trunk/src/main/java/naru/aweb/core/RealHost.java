@@ -1,5 +1,6 @@
 package naru.aweb.core;
 
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
@@ -155,6 +156,7 @@ public class RealHost {
 			servers.add(new ServerParser(bindHost, bindPort));
 			servers.add(new ServerParser(inetAdder.getHostAddress(), bindPort));
 			logger.info(name + " bind ip:"+inetAdder.getHostAddress());
+			selfIp4Host=bindHost;
 		}else{
 			//ref http://www.itmedia.co.jp/enterprise/articles/0407/27/news031.html
 			java.util.Enumeration enuIfs = NetworkInterface.getNetworkInterfaces();
@@ -166,6 +168,14 @@ public class RealHost {
 						InetAddress inAdder = (InetAddress) enuAddrs.nextElement();
 						servers.add(new ServerParser(inAdder.getHostAddress(), bindPort));
 						logger.info(name + " bind ip:"+inAdder.getHostAddress());
+						if(inAdder instanceof Inet4Address){
+							if(inAdder.isLoopbackAddress()){
+								selfLoopbackIp4Host=inAdder.getHostAddress();
+							}else{
+								selfIp4Host=inAdder.getHostAddress();
+							}
+						}
+						
 					}
 				}
 			}else{
@@ -246,7 +256,20 @@ public class RealHost {
 			int port=realHost.getBindPort();
 			config.setProperty(Config.SELF_PORT,port);
 			String selfDomain=config.getString(Config.SELF_DOMAIN);
+			if(selfDomain==null||"".equals(selfDomain)){
+				if(realHost.getSelfIp4Host()!=null){
+					selfDomain=realHost.getSelfIp4Host();
+				}else if(realHost.getSelfLoopbackIp4Host()!=null){
+					selfDomain=realHost.getSelfLoopbackIp4Host();
+				}else{
+					//ÇΩÇ‘ÇÒÇ±ÇÍÇ≈ã~ÇÌÇÍÇÈÇ±Ç∆ÇÕÇ»Ç¢
+					selfDomain="localhost";
+				}
+				config.setProperty(Config.SELF_DOMAIN,selfDomain);
+			}
+			System.out.println("selfDomain:"+selfDomain);
 			config.setProperty(Config.SELF_URL, "http://" + selfDomain +":"+port);
+			
 			selfOrigins.add("http://"+selfDomain+":"+port+"/");
 			selfOrigins.add("https://"+selfDomain+":"+port+"/");
 			if(port==80){
@@ -258,6 +281,14 @@ public class RealHost {
 		return true;
 	}
 	
+	public String getSelfLoopbackIp4Host() {
+		return selfLoopbackIp4Host;
+	}
+
+	public String getSelfIp4Host() {
+		return selfIp4Host;
+	}
+
 	public static synchronized boolean unbind(String name){
 		ChannelHandler handler=handlers.remove(name);
 		if(handler==null){
@@ -306,6 +337,10 @@ public class RealHost {
 	private boolean isBinding;//åªç›bindingíÜÇ©î€Ç©
 	private boolean isInitBind;//ãNìÆéûÇ…bindÇ∑ÇÈÇ©î€Ç©
 	private String bindHost;
+	//bindHostÇ™"*"ÇæÇ¡ÇΩèÍçá,é¿ç€Ç…bindÇµÇΩipv4ÇÃhost
+	private String selfLoopbackIp4Host=null;
+	private String selfIp4Host=null;
+	
 	private int bindPort;
 	private int backlog;
 //	private InetSocketAddress inetSocketAddress;

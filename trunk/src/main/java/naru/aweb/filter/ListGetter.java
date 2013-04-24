@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -17,11 +16,9 @@ import naru.aweb.http.HeaderParser;
 import naru.aweb.http.WebClient;
 import naru.aweb.http.WebClientConnection;
 import naru.aweb.http.WebClientHandler;
-import naru.aweb.queue.QueueManager;
 
 public class ListGetter implements WebClient,Timer {
 	private static Config config=Config.getConfig();
-	private static QueueManager queueManger=QueueManager.getInstance();
 	private String source;
 	private String chId;
 	private File listFile;

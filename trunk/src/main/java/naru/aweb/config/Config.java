@@ -29,6 +29,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
 import naru.async.cache.FileCache;
+import naru.aweb.admin.PaAdmin;
 import naru.aweb.auth.Authenticator;
 import naru.aweb.auth.Authorizer;
 import naru.aweb.core.Main;
@@ -37,16 +38,16 @@ import naru.aweb.handler.FilterHelper;
 import naru.aweb.handler.InjectionHelper;
 import naru.aweb.handler.ReplayHelper;
 import naru.aweb.mapping.Mapper;
-import naru.aweb.queue.QueueManager;
+import naru.aweb.pa.PaManager;
 import naru.aweb.secure.SslContextPool;
 import naru.aweb.spdy.SpdyConfig;
 import naru.aweb.util.JdoUtil;
 import naru.aweb.util.JsonUtil;
 import naru.aweb.util.ServerParser;
-import naru.aweb.wsq.WsqManager;
 import naru.queuelet.QueueletContext;
 import net.sf.json.JSON;
 import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
 
 import org.apache.commons.configuration.Configuration;
@@ -89,7 +90,6 @@ public class Config {
 	private static final String PATH_SETTING = "path.setting";
 	private static final String PATH_INJECTION_DIR = "path.injectionDir";
 	private static Config config = new Config();
-	private static QueueManager queueManager = QueueManager.getInstance();
 	public static String CONF_FILENAME = "phantom.properties";
 	private static final String DEBUG_TRACE="debugTrace";
 	public static final String SELF_DOMAIN = "selfDomain";
@@ -116,16 +116,13 @@ public class Config {
 	private FilterHelper filterHelper;
 	private InjectionHelper injectionHelper;
 	private Configuration configuration = null;
-//	private QueueletContext queueletContext = null;
+	private PaManager paManager =null;
 	private Object stasticsObject;
-//	private String[] spdyProtocols;
 	private File tmpDir;
 	private DiskFileItemFactory uploadItemFactory;
 	private File settingDir;
 	
 	private String selfDomain;
-	
-	private WsqManager wsqManager;
 	
 	/* コンテンツエンコードに何を許すか?実際zgip or not */
 	// private String contentEncoding;
@@ -483,21 +480,14 @@ public class Config {
 	private boolean isAleadyTerm = false;
 
 	public void term() {
+		paManager.undeploy(PaAdmin.QNAME);
 		if (isAleadyTerm) {
 			return;
 		}
 		isAleadyTerm = true;
-		if(wsqManager!=null){
-			wsqManager.term();
-			wsqManager=null;
-		}
 		if(broadcaster!=null){//initの途中で例外した場合broadcasterの可能性がある。
 			broadcaster.term();
 			broadcaster=null;
-		}
-		if(queueManager!=null){
-			queueManager.term();
-			queueManager=null;
 		}
 		if(logPersister!=null ){
 			logPersister.term();
@@ -697,8 +687,6 @@ public class Config {
 			}
 			RealHost.addRealHost(realHost);
 		}
-		// Mapper作成には、realHostsが必要、realHostsの初期化の後に呼び出す。
-		authorizer=new Authorizer(configuration);
 		try {
 			String dir = configuration.getString(PATH_PUBLIC_DOCROOT);
 			publicDocumentRoot = new File(dir).getCanonicalFile();
@@ -709,30 +697,9 @@ public class Config {
 			injectionHelper = new InjectionHelper(this);
 			dir = configuration.getString(PATH_APPS_DOCROOT);
 			appsDocumentRoot = new File(dir).getCanonicalFile();
-			
-			//adminDocumentRoot = new File(appsDocumentRoot,"admin").getCanonicalFile();
-			//authDocumentRoot = new File(appsDocumentRoot,"auth").getCanonicalFile();
-			
 		} catch (IOException e) {
 			logger.error("getCanonicalFile error.",e);
 			return false;
-		}
-		mapper = new Mapper(this);
-		String pacUrl = configuration.getString("pacUrl");
-		if("".equals(pacUrl)){
-			pacUrl=null;
-		}
-		String proxyServer = configuration.getString("proxyServer");
-		if("".equals(proxyServer)){
-			proxyServer=null;
-		}
-		String sslProxyServer = configuration.getString("sslProxyServer");
-		if("".equals(sslProxyServer)){
-			sslProxyServer=null;
-		}
-		String exceptProxyDomains = configuration.getString("exceptProxyDomains");
-		if("".equals(exceptProxyDomains)){
-			exceptProxyDomains=null;
 		}
 		isAllowChunked=getBoolean("allowChunked",false);
 		isDebugTrace=getBoolean(DEBUG_TRACE,false);
@@ -749,14 +716,47 @@ public class Config {
 		acceptTimeout=getLong(ACCEPT_TIMEOUT, ACCEPT_TIMEOUT_DEFAULT);
 		
 		serverHeader=config.getString(PHANTOM_SERVER_HEADER, null);
-		// proxy除外リストの初期化
-		updateProxyFinder(pacUrl,proxyServer,sslProxyServer,exceptProxyDomains);
-		broadcaster=new Broadcaster(this);
-		wsqManager=WsqManager.getInstance();
 		
 		boolean useCache=getBoolean(USE_FILE_CACHE);
 		getFileCache().setUseCache(useCache);
 		return true;
+	}
+	
+	//bind完了後のinit
+	public void initAfterBind(){
+		// Mapper作成には、realHostsが必要、realHostsの初期化の後に呼び出す。
+		authorizer=new Authorizer(configuration);
+		mapper = new Mapper(this);
+		// proxy除外リストの初期化
+		String pacUrl = configuration.getString("pacUrl");
+		if("".equals(pacUrl)){
+			pacUrl=null;
+		}
+		String proxyServer = configuration.getString("proxyServer");
+		if("".equals(proxyServer)){
+			proxyServer=null;
+		}
+		String sslProxyServer = configuration.getString("sslProxyServer");
+		if("".equals(sslProxyServer)){
+			sslProxyServer=null;
+		}
+		String exceptProxyDomains = configuration.getString("exceptProxyDomains");
+		if("".equals(exceptProxyDomains)){
+			exceptProxyDomains=null;
+		}
+		updateProxyFinder(pacUrl,proxyServer,sslProxyServer,exceptProxyDomains);
+		
+		//adminハンドラーの設定
+		//TODO 動的に設定できるようにする
+		paManager = PaManager.getInstance("/admin");
+		JSONObject subscribers=JSONObject.fromObject(
+				"{accessLog:'naru.aweb.admin.AccessLogPalet'," +
+				"chat:'naru.aweb.admin.ChatPalet'," +
+				"perf:'naru.aweb.admin.PerfPalet'" +
+				"}");
+		paManager.deploy(PaAdmin.QNAME, "naru.aweb.admin.PaAdmin",subscribers);
+		paManager.setNextHandler(Mapping.ADMIN_HANDLER);
+		broadcaster=new Broadcaster(this,paManager);//統計情報監視の開始
 	}
 	
 	private Broadcaster broadcaster;
@@ -1239,6 +1239,10 @@ public class Config {
 	
 	public SpdyConfig getSpsyConfig(){
 		return spdyConfig;
+	}
+	
+	public PaManager getAdminPaManager(){
+		return paManager;
 	}
 	
 	private VelocityEngine velocityEngine = null;

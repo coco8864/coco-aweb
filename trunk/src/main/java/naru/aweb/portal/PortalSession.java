@@ -17,13 +17,11 @@ import naru.aweb.config.Config;
 import naru.aweb.config.User;
 import naru.aweb.core.ServerBaseHandler;
 import naru.aweb.http.WebServerHandler;
-import naru.aweb.queue.QueueManager;
 import naru.aweb.util.ServerParser;
 import net.sf.json.JSON;
 
 public class PortalSession extends PoolBase{
 	private static Logger logger=Logger.getLogger(PortalSession.class);
-	private static QueueManager queueManager=QueueManager.getInstance();
 	private static Config config=Config.getConfig();
 	
 	private static Pattern urlPattern=Pattern.compile("^(http|https)://([^/\\?]*)(/.*)");
@@ -128,7 +126,7 @@ public class PortalSession extends PoolBase{
 	@Override
 	public void recycle() {
 		if(chId!=null){
-			queueManager.unsubscribe(chId);
+//			queueManager.unsubscribe(chId);
 			chId=null;
 		}
 		basicAuths.clear();
@@ -172,7 +170,7 @@ public class PortalSession extends PoolBase{
 		this.user=user;
 		this.chName="PS_"+getPoolId();
 		//タイムアウトしないQueueを作成
-		this.chId=queueManager.createQueueByName(chName, user.getLoginId(), true, null,false);
+//		this.chId=queueManager.createQueueByName(chName, user.getLoginId(), true, null,false);
 		
 		/*Collection<CommissionAuth> */commissionAuths=CommissionAuth.getByUser(user);
 		Iterator<CommissionAuth> itr=commissionAuths.iterator();
