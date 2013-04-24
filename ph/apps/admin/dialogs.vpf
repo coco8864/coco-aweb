@@ -42,61 +42,27 @@ ph.jQuery(function(){
 	}
 });
 
-var doStressCb={
-	update:function(msg,time,isComplete){
-		stressData.appId=ph.queue.getAppId();
-		stressData.msg=msg;
-		stressData.time=time;
-		stressData.isComplete=isComplete;
-		if(isComplete){
-			stressData.chId=null;
-		}
-		if(ph.useSessionStorage){
-			var json=ph.JSON.stringify(stressData);
-			sessionStorage['stressData']=json;
-		}
-		##stressタブを表示しているか否かを判定
-		if(typeof perfProgress!='undefined'){perfProgress();}
-		},
-	onComplete:function(msg){ph.log('doStress onComplete');doStressCb.update(msg.message,msg.time,true);},
-	onError:function(msg){ph.log('doStress onError:');ph.dump(msg);},
-	onMessage:function(msg){ph.log('doStress onMessage');doStressCb.update(msg.message,msg.time,false);}
-};
-var streeCommandCb=function(chId){
-	ph.log("streeCommandCb chId:"+chId);
-	if(stressData.chId){//先行しているstressがあった.cancelする
-		ph.admin.doPramCommand('perf','cancel',{chId:stressData.chId},function(){},function(){});
-	}
-	stressData.chId=chId;
-	ph.queue.subscribeById(chId,doStressCb);
-};
-
 function doStress(){
-//	if(!doStressCb.isComplete){
-//		alert("実行中");
-//	}
 	window.location.hash = "#stressTab";
-//	jQuery("#tabs").tabs("select",5);
-//	if(typeof perfProgress!='undefined'){perfProgress();}
 	if(ph.jQuery('#isStressFile').is(':checked')){
 		ph.jQuery('#fileStressAccessLogList').val( ph.jQuery('#stressAccessLogList').text() );
-		ph.jQuery('#stressFileForm').submit();
+		ph.admin.perfSd.publishForm('stressFileForm');
+##		ph.jQuery('#stressFileForm').submit();
 	}else{
-		ph.admin.doPramCommand('perf','stress',{
+		ph.admin.perfSd.publish({
+			kind:'stress',
 			name:ph.jQuery('#stressName').val(),
 			list:ph.jQuery('#stressAccessLogList').text(),
 			browserCount:ph.jQuery('#stressBrowserCount').val(),
 			loopCount:ph.jQuery('#loopCount').val(),
 			thinkingTime:ph.jQuery('#thinkingTime').val(),
-			time:ph.jQuery('#stressTime').val(),//未使用
+			time:ph.jQuery('#stressTime').val(),##未使用
 			keepAlive:ph.jQuery('#stressKeepAlive').is(':checked'),
 			accessLog:ph.jQuery('#stressAccessLog').is(':checked'),
 			tesponseHeaderTrace:ph.jQuery('#stressTesponseHeaderTrace').is(':checked'),
 			tesponseBodyTrace:ph.jQuery('#stressTesponseBodyTrace').is(':checked')
-			},
-			streeCommandCb,
-			function(x){alert('faild to stress test.'+x.responseText)}//errorCB
-			);
+			}
+		);
 	}
 	ph.jQuery(".logIdCheck").attr("checked",false);
 	jQuery('#stress').dialog('close');
@@ -109,64 +75,54 @@ function updateStressDialog(){
 		ph.jQuery('.stressFile').hide();
 		ph.jQuery('.stressItem').show();
 		if(ph.jQuery('#stressAccessLog').is(':checked')){
-			ph.jQuery('.stressTrace').attr('disabled','')
+			ph.jQuery('.stressTrace').attr('disabled',false)
 		}else{
-			ph.jQuery('.stressTrace').attr('disabled','disabled')
+			ph.jQuery('.stressTrace').attr('disabled',true)
 		}
 	}
 }
 
+function perfCheckServer(res){
+  if(res.kind==='checkServerProgress'){
+    ph.dump(res);
+    ph.jQuery("#checkStatus").text(res.status);
+    ph.jQuery("#checkUrl").text(res.url);
+    ph.jQuery("#checkIsUseProxy").text(res.useProxy);
+    ph.jQuery("#checkProxyServer").text(res.proxyServer);
+    ph.jQuery("#checkStatusLine").text(res.statusLine);
+    ph.jQuery("#checkServer").text(res.serverHeader);
+    ph.jQuery("#checkConnection").text(res.connectionHeader);
+    ph.jQuery("#checkProxyConnection").text(res.proxyConnectionHeader);
+    ph.jQuery("#checkKeepAliveHeader").text(res.keepAliveHeader);
+
+    ph.jQuery("#checkContentType").text(res.contentType);
+    ph.jQuery("#checkContentLength").text(res.contentLength);
+##  ph.jQuery("#checkTransferEncoding").text(res.transferEncoding);
+##  ph.jQuery("#checkContentEncoding").text(res.contentEncoding);
+
+    ph.jQuery("#checkConnectTime").text(res.connectTimes);
+    ph.jQuery("#checkSslProxyTime").text(res.sslProxyTimes);
+    ph.jQuery("#checkHandshakeTime").text(res.handshakeTimes);
+    ph.jQuery("#checkRequestHeaderTime").text(res.requestHeaderTimes);
+    ph.jQuery("#checkResponseHeaderTime").text(res.responseHeaderTimes);
+    ph.jQuery("#checkResponseBodyTime").text(res.responseBodyTimes);
+  }else if(res.kind==='accessLog'){
+    updateEntry(res);
+  }else if(res.kind==='stressProgress'){
+	if(typeof perfProgress!='undefined'){perfProgress(res);}
+  }else if(res.kind==='checkServerResult' && d.result==='fail'){
+    alert('fail to checkServer');
+  }
+}
+
 function checkServer(){
-//	var selectList=logCheckList();
-//	if(selectList.length==0){
-//		alert('選択されていません.');
-//		return;
-//	}
-	var url=ph.jQuery("#checkReqUrl").val();
-	var isKeepAlive=ph.jQuery("#checkKeepAlive").is(':checked');
-	var isTrace=ph.jQuery("#checkTrace").is(':checked');
-	var requestCount=ph.jQuery("#checkRequestCount").val();
-	var checkServerCb={
-		_serverInfo:function(msg){
-			var sv=msg.message;
-			ph.dump(sv);
-			ph.jQuery("#checkStatus").text(sv.status);
-			ph.jQuery("#checkUrl").text(sv.url);
-			ph.jQuery("#checkIsUseProxy").text(sv.useProxy);
-			ph.jQuery("#checkProxyServer").text(sv.proxyServer);
-			ph.jQuery("#checkStatusLine").text(sv.statusLine);
-			ph.jQuery("#checkServer").text(sv.serverHeader);
-			ph.jQuery("#checkConnection").text(sv.connectionHeader);
-			ph.jQuery("#checkProxyConnection").text(sv.proxyConnectionHeader);
-			ph.jQuery("#checkKeepAliveHeader").text(sv.keepAliveHeader);
-
-			ph.jQuery("#checkContentType").text(sv.contentType);
-			ph.jQuery("#checkContentLength").text(sv.contentLength);
-//			ph.jQuery("#checkTransferEncoding").text(sv.transferEncoding);
-//			ph.jQuery("#checkContentEncoding").text(sv.contentEncoding);
-
-
-			ph.jQuery("#checkConnectTime").text(sv.connectTimes);
-			ph.jQuery("#checkSslProxyTime").text(sv.sslProxyTimes);
-			ph.jQuery("#checkHandshakeTime").text(sv.handshakeTimes);
-			ph.jQuery("#checkRequestHeaderTime").text(sv.requestHeaderTimes);
-			ph.jQuery("#checkResponseHeaderTime").text(sv.responseHeaderTimes);
-			ph.jQuery("#checkResponseBodyTime").text(sv.responseBodyTimes);
-			},
-		onComplete:function(msg){this._serverInfo(msg);},
-		onMessage:function(msg){this._serverInfo(msg);},
-		onError:function(msg){
-			ph.log('checkServer onError:');
-			ph.dump(msg);
-			}
-	};
-	ph.admin.doPramCommand(
-		'perf',
-		'checkServer',
-		{url:url,isKeepAlive:isKeepAlive,isTrace:isTrace,requestCount:requestCount},
-		function(chId){ 
-			ph.queue.subscribeById(chId,checkServerCb)}
-	);
+  var url=ph.jQuery("#checkReqUrl").val();
+  var isKeepAlive=ph.jQuery("#checkKeepAlive").is(':checked');
+  var isTrace=ph.jQuery("#checkTrace").is(':checked');
+  var requestCount=parseInt(ph.jQuery("#checkRequestCount").val());
+  ph.admin.perfSd.publish(
+    {kind:'checkServer',url:url,isKeepAlive:isKeepAlive,isTrace:isTrace,requestCount:requestCount}
+  );
 }
 
 function reloadEditDialog(){
@@ -181,7 +137,7 @@ function reloadEditDialog(){
 		
 	}else{
 //		url+="&encode=utf-8";
-		url+="&Content-Type=text/plain;%20charset=utf-8";
+//		url+="&Content-Type=text/plain;%20charset=utf-8";
 	}
 	if(ph.jQuery("#textEditGzip").is(":checked")){
 		url+="&zgip=true"
@@ -189,8 +145,13 @@ function reloadEditDialog(){
 	if(ph.jQuery("#textEditChunk").is(":checked")){
 		url+="&chunk=true"
 	}
-	ph.jQuery.get(url,null, function(text){
+	ph.jQuery.get(url,null, function(text,state,jqXhr){
+		var TEXT_CHARSET='text/plain; charset=';
 		ph.jQuery("#textEditTextArea").val(text);
+		var contentType=jqXhr.getResponseHeader('Content-Type');
+		if(contentType.lastIndexOf(TEXT_CHARSET,0)===0){
+			ph.jQuery("#textEditEncode").val(contentType.substring(TEXT_CHARSET.length));
+		}
 	},"html");
 }
 
@@ -227,12 +188,16 @@ function openEditDialog(digest,id,requestLine,part,readonly,chunk,gzip,charset){
 		if(gzip){
 			url+='&zgip=true'
 		}
-		if(!charset){
-			charset='utf-8';
+		if(charset){
+			url+='&Content-Type=text/plain;%20charset=' + charset;
 		}
-		url+='&Content-Type=text/plain;%20charset=' + charset;
 		ph.jQuery.get(url,null,
-			function(text){
+			function(text,status,jqXhr){
+				var TEXT_CHARSET='text/plain; charset=';
+				var contentType=jqXhr.getResponseHeader('Content-Type');
+				if(contentType.lastIndexOf(TEXT_CHARSET,0)===0){
+					charset=contentType.substring(TEXT_CHARSET.length);
+				}
 				_openEditDialog(digest,id,requestLine,part,readonly,text,charset,chunk,gzip);
 		},"html");
 	}
@@ -285,11 +250,10 @@ headerTrace:<input class="stressTrace" disabled='disabled' id="stressTesponseHea
 bodyTrace:<input class="stressTrace" disabled='disabled' id="stressTesponseBodyTrace" type="checkBox">
 </div>
 <div class="stressFile" style="display:none">
-<form method="post" enctype="multipart/form-data" action="perf" target="uploadFrame" id="stressFileForm">
+<form id="stressFileForm">
 json file:<input type="file" name="stressFile" id="stressFile"/>
 <input type="hidden" name="list" id="fileStressAccessLogList"/>
-<input type="hidden" name="command" value="stressFile"/>
-<input type="hidden" name="token" value="$esc.html($!{session.token})"/>
+<input type="hidden" name="kind" value="stressFile"/>
 </form>
 </div>
 <input type="button" value="ok" onClick='doStress()'>

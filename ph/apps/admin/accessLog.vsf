@@ -3,17 +3,6 @@ var curQuery;
 var curWhere;
 var curQueryCondition;
 
-var exportAccessLogCb={
-	onComplete:function(msg){
-		ph.jQuery("#exportFileId").val(msg.message);
-		ph.jQuery("#exportDownloadForm").submit();},
-	onError:function(msg){ph.log('runTrace onError:');ph.dump(msg);}
-};
-var deleteAccessLogCb={
-	onComplete:function(msg){searchPage();},
-	onError:function(msg){ph.log('runTrace onError:');ph.dump(msg);}
-};
-
 function selectAll(cmd){
 	var checkList=ph.jQuery(".logIdCheck");
 	var checked=checkList.is(":checked");
@@ -32,30 +21,35 @@ function openStress(){
 }
 
 ##AccessLog移出、削除コマンド
-function accessLogIdsCommand(cmd,cb){
+function accessLogIdsCommand(command){
 	var selectList=logCheckList();
 	if(selectList.length==0){
 		alert(cmd+':選択されていません.');
 		return;
 	}
-	ph.admin.doPramCommand('accessLog',cmd,{list:selectList.join()},function(chId){
-			ph.queue.subscribeById(chId,cb);
-		});
+	ph.admin.accessLogSd.publish({command:command,list:selectList.join()});
 }
 
 function accessLogDeleteQuery(query){
-	ph.admin.doPramCommand('accessLog','deleteQuery',{query:query},function(chId){
-			ph.queue.subscribeById(chId,deleteAccessLogCb);
-		});
+	ph.admin.accessLogSd.publish({command:'deleteQuery',query:query});
 }
 
 function accessLogExportQuery(query){
-	ph.admin.doPramCommand('accessLog','exportQuery',{query:query},function(chId){
-			ph.queue.subscribeById(chId,exportAccessLogCb);
-		});
+	ph.admin.accessLogSd.publish({command:'exportQuery',query:query});
 }
 
-function searchPage(){
+function watchPage(){
+ var isWatch;
+ if(ph.jQuery('#accessLogWatch').is(":checked")){
+  isWatch=true;
+ }else{
+  isWatch=false;
+ }
+ ph.jQuery('#accessLogSearch').attr('disabled',isWatch);
+ searchPage(isWatch);
+}
+
+function searchPage(isWatch){
 	var maxResults=ph.jQuery("#maxResults").val();
 ##画面入力条件を更新
 	var orderBy=ph.jQuery("#orderBy").val();
@@ -73,7 +67,7 @@ function searchPage(){
 		topIndex=0;
 		ph.jQuery("#topIndex").val(topIndex)
 	}
-	query(queryString,topIndex,topIndex+maxResults);
+	query(queryString,topIndex,topIndex+maxResults,isWatch);
 	curQueryCondition="最大行:" + maxResults;
 }
 
@@ -105,19 +99,16 @@ function page(direct){
 }
 
 ##queryString)"where responseLength>100 && contentType.indexOf('image')>=0 ORDER BY id DESC"
-function query(queryString,from,to){
-	var queryObj={};
+function query(queryString,from,to,isWatch){
+	var queryObj={command:'list',isWatch:(isWatch===true)};
 	queryObj.from=from-0;
 	queryObj.to=to-0;
-    if(queryString){
-	  queryObj.query=queryString;
-    }else{
-	  delete queryObj.query;
-    }
-	ph.admin.doPramCommand("accessLog","list",queryObj,function(jsonStr){
-		var accessLogList=ph.JSON.parse(jsonStr);
-		refreshTable(accessLogList);
-	});
+	if(queryString){
+		queryObj.query=queryString;
+	}else{
+		delete queryObj.query;
+	}
+	ph.admin.accessLogSd.publish(queryObj);
 	curQuery=queryObj;
 }
 
@@ -132,7 +123,7 @@ function refreshTable(lines){
 	}
 }
 
-##アクセスログの一行(tr)を作成
+##AccessLogの1行を作成
 function tableLine(accessLog){
 	var trTag=document.createElement("tr");
 	var id=accessLog.id;
@@ -235,10 +226,7 @@ function mkIdtag(accessLog){
 	tdTag.appendChild(aTag);
 	ph.jQuery(aTag).bind("click",function(){##AccessLog詳細画面へのジャンプ
 			changeEntry(accessLog.id);
-//alert('b:'+window.location.hash);
-//			window.location.hash = "#traceTab";
-//alert('a:'+window.location.hash);
-			jQuery("#tabs").tabs("option", "active",4);##AccessLog詳細画面は、5(-1)番目のタグ
+			jQuery("#tabs").tabs("option", "active",4);##AccessLog詳細画面は5(-1)番目のタグ
 			return true;
 		});
 
@@ -279,7 +267,7 @@ function mkImageTag(accessLog){
 		var dialog=jQuery("#textEdit");
 		ph.jQuery(imgNode).bind("click",
 			function(){
-				var charset='utf-8';
+				var charset=null;
 				if( accessLog.contentType.match(/charset=(.*)/i) ){
 					charset=RegExp.$1;
 				}
@@ -314,12 +302,12 @@ Order By:<input type="text" value="id DESC" id="orderBy" size="32" />
 <option value="requestLine.indexOf('google')>=0">requestLineに'google'を含む</option>
 <option value="requestLine.startsWith('POST')">POSTメソッドのみ</option>
 <option value="contentType.indexOf('image')>=0">imageのみ</option>
-<option value="statusCode!='200'">statusCode 200以外</option>
+<option value="statusCode!='200'">statusCode 200以上</option>
 <option value="userId.equals('admin')">adminで採取したログのみ</option>
 <option value="contentEncoding.equals('gzip')">gzipコンテンツ</option>
 <option value="transferEncoding.equals('chunked')">chunkedコンテンツ</option>
 <option value="processTime>=5000">処理時間が5秒以上</option>
-<option value="realHost=='sampleHost'">realHostが'sampleHost'</option>
+<option value="realHost=='sampleHost'">realHostがsampleHost'</option>
 <option value="ip.indexOf('test')>=0">clientIpに'test'を含む</option>
 <option value="destinationType=='H'">http</option>
 <option value="destinationType=='S'">https</option>
@@ -328,15 +316,16 @@ Order By:<input type="text" value="id DESC" id="orderBy" size="32" />
 <option value="sourceType=='E'">edit</option>
 </select>
 </div>
-条件入力:<input type="text" id="logQuery" value="" size="100" />
-<input type="button" onclick="searchPage();" value="更新"/>
+条件入力<input type="text" id="logQuery" value="" size="100" />
+<input type="button" onclick="searchPage();" value="更新" id='accessLogSearch'/>
+監視:<input type="checkBox" onclick="watchPage();"id='accessLogWatch'/>
 <div>
 <input type="button" value="全" onClick="selectAll();"/>
-選択Log操作:
-<input type="button" value="削除" onClick="accessLogIdsCommand('deleteIds',deleteAccessLogCb);"/>
-<input type="button" value="移出" onClick="accessLogIdsCommand('exportIds',exportAccessLogCb);"/>
+選択Log操作
+<input type="button" value="削除" onClick="accessLogIdsCommand('deleteIds');"/>
+<input type="button" value="移出" onClick="accessLogIdsCommand('exportIds');"/>
 <input type="button" value="stress" onClick="openStress();"/>
-現在条件 <span id="curQueryCondition"></span>/現在行:<span id="curLinecount"></span>
+現在条件 <span id="curQueryCondition"></span>/現在行<span id="curLinecount"></span>
 <input type="button" onclick="page(false);" value="前ページ"/>
 <input type="button" onclick="page(true);" value="次ページ"/>
 </div>
@@ -348,6 +337,6 @@ Order By:<input type="text" value="id DESC" id="orderBy" size="32" />
 <tbody  id="tableData"></tbody>
 </table>
 </div>
-<script type="text/javascript"> 
+<script type="text/javascript">
 searchPage();
 </script> 

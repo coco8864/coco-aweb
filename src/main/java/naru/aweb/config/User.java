@@ -62,7 +62,7 @@ public class User {
 		DatePropertyFilter dpf=new DatePropertyFilter();
 		jsonConfig.setJavaPropertyFilter(dpf);
 		jsonConfig.setJsonPropertyFilter(dpf);
-		jsonConfig.setExcludes(new String[]{"passHash","digestAuthPassHash","admin","guest","dummyPassword","rolesList"});
+		jsonConfig.setExcludes(new String[]{"passHash","digestAuthPassHash","admin","guest","dummyPassword","rolesList","loginCount"});
 		jsonConfig.setNewBeanInstanceStrategy(new UserInstanceStrategy());
 	}
 	private static final String USER_QUERY="select from " + User.class.getName() + " ";
@@ -73,15 +73,15 @@ public class User {
 			queryString+= whereSection;//whereãÂÇ∆ÇÕå¿ÇÁÇ»Ç¢
 		}
 		PersistenceManager pm=JdoUtil.getPersistenceManager();
-		pm.currentTransaction().begin();
-		Query q=pm.newQuery(queryString);
-		if(from>=0){
-			q.setRange(from, to);
-		}
-		if(ordering!=null){
-			q.setOrdering(ordering);
-		}
 		try{
+			pm.currentTransaction().begin();
+			Query q=pm.newQuery(queryString);
+			if(from>=0){
+				q.setRange(from, to);
+			}
+			if(ordering!=null){
+				q.setOrdering(ordering);
+			}
 			return (Collection<User>)pm.detachCopyAll((Collection<User>)q.execute());
 		}finally{
 			if(pm.currentTransaction().isActive()){
@@ -118,8 +118,8 @@ public class User {
 	
 	public static void deleteById(Long id){
 		PersistenceManager pm=JdoUtil.getPersistenceManager();
-		pm.currentTransaction().begin();
 		try {
+			pm.currentTransaction().begin();
 			User user = pm.getObjectById(User.class, id);
 			if (user == null) {
 				return;
@@ -261,6 +261,10 @@ public class User {
 	@Persistent
 	@Column(name="EXT_STORE_ID")
 	private long extStoreId;
+	
+	@Persistent
+	@Column(name="OFFLINE_PASS_HASH")
+	private String offlinePassHash;
 	
 	@NotPersistent
 	private int errorPassCount;//é∏îsâÒêîÅAÉÅÉÇÉäÇÃÇ›Ç≈ä«óù
@@ -461,5 +465,13 @@ public class User {
 
 	public void setDigestAuthPassHash(String digestAuthPassHash) {
 		this.digestAuthPassHash = digestAuthPassHash;
+	}
+	
+	public String getOfflinePassHash() {
+		return offlinePassHash;
+	}
+
+	public void setOfflinePassHash(String offlinePassHash) {
+		this.offlinePassHash = offlinePassHash;
 	}
 }

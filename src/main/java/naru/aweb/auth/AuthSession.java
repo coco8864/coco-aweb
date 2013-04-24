@@ -17,7 +17,7 @@ public class AuthSession extends PoolBase{
 	private static Config config=Config.getConfig();
 	public static AuthSession UNAUTH_SESSION=new AuthSession(new User(),"");
 	private static Logger logger = Logger.getLogger(AuthSession.class);
-	private static String serverId=DataUtil.digestHex(config.getAuthUrl().getBytes())+System.currentTimeMillis()+".";
+	private static String serverId=DataUtil.digestHex(config.getString("serverIdEntropy","serverIdEntropy").getBytes())+System.currentTimeMillis()+".";
 	private static long appIdSeq=0;
 	
 	private User user;
@@ -168,6 +168,10 @@ public class AuthSession extends PoolBase{
 		this.sessionId = sessionId;
 	}
 
+	public long getLastAccessTime() {
+		return sessionId.getLastAccessTime();
+	}
+	
 	/*
 	public AuthSession getPrimarySession() {
 		return primarySession;

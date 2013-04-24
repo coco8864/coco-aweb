@@ -12,7 +12,6 @@ import naru.aweb.config.Performance;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.ParameterParser;
 import naru.aweb.http.WebServerHandler;
-import naru.aweb.queue.QueueManager;
 import naru.aweb.robot.ConnectChecker;
 import naru.aweb.robot.Scenario;
 import naru.aweb.robot.ServerChecker;
@@ -29,18 +28,19 @@ public class AdminPerfHandler extends WebServerHandler{
 	private String doStress(AccessLog[] accessLogs,String name,int browserCount,int callCount,
 			boolean isCallerKeepAlive,long thinkingTime,
 			boolean isAccessLog,boolean isResponseHeaderTrace,boolean isResponseBodyTrace){
-		QueueManager queueManager=QueueManager.getInstance();
-		String chId=queueManager.createQueue(true);
-		if( Scenario.run(accessLogs, name, browserCount, callCount, isCallerKeepAlive, thinkingTime, isAccessLog, isResponseHeaderTrace, isResponseBodyTrace,chId)){
-			return chId;
-		}
+//		QueueManager queueManager=QueueManager.getInstance();
+//		String chId=queueManager.createQueue(true);
+		//if( Scenario.run(accessLogs, name, browserCount, callCount, isCallerKeepAlive, thinkingTime, isAccessLog, isResponseHeaderTrace, isResponseBodyTrace,null)){
+		//	return chId;
+		//}
 		return null;
 	}
 
 	private String doStressFile(AccessLog[] accessLogs,JSONArray stressJson){
-		QueueManager queueManager=QueueManager.getInstance();
-		String chId=queueManager.createQueue(true);
-		if( Scenario.run(accessLogs, stressJson,chId)){
+//		QueueManager queueManager=QueueManager.getInstance();
+//		String chId=queueManager.createQueue(true);
+		String chId=null;
+		if( Scenario.run(accessLogs, stressJson,null)!=null){
 			return chId;
 		}
 		return null;
@@ -58,17 +58,18 @@ public class AdminPerfHandler extends WebServerHandler{
 	
 	//maxClients,listenBacklog,connection性能,handshake性能,Serverヘッダ
 	private String checkServer(URL url,boolean isKeepAlive,int requestCount,boolean isTrace){
-		QueueManager queueManager=QueueManager.getInstance();
-		String chId=queueManager.createQueue(true);
-		ServerChecker.start(url,isKeepAlive,requestCount,isTrace,"check",chId);
+//		QueueManager queueManager=QueueManager.getInstance();
+//		String chId=queueManager.createQueue(true);
+//		ServerChecker.start(url,isKeepAlive,requestCount,isTrace,"check",chId);
+		String chId=null;
 		return chId;
 	}
 	
 	private String checkConnection(int count,int maxFailCount,long timeout){
-		QueueManager queueManager=QueueManager.getInstance();
-		String chId=queueManager.createQueue(true);
-		ConnectChecker.start(count,maxFailCount,timeout,chId);
-		return chId;
+//		QueueManager queueManager=QueueManager.getInstance();
+//		String chId=queueManager.createQueue(true);
+		ConnectChecker.start(count,maxFailCount,timeout,null);
+		return "0";
 	}
 	
 	void doCommand(String command,ParameterParser parameter){

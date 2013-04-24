@@ -50,6 +50,7 @@ function setHtml5(){
    websocketSpecs:specs,
    webSocketMessageLimit:ph.jQuery("#webSocketMessageLimit").val(),
    webSocketPingInterval:ph.jQuery("#webSocketPingInterval").val(),
+   isWebSocketLog:ph.jQuery("#webSocketLog").is(':checked'),
    isUseSessionStorage:true,
 ##ph.jQuery("#isUseSessionStorage").is(':checked'),
    isUseCrossDomain:true
@@ -57,7 +58,7 @@ function setHtml5(){
   },
   function(x){
 ##setHtml5完了
-    alert('HTML5設定完了');
+    alert('websocket設定完了');
   });
 }
 
@@ -106,26 +107,23 @@ function setAuth(){
 }
 
 function accessLogDeleteQuery(query){
-	var deleteAccessLogCb={
-		onComplete:function(msg){searchPage();},
-		onError:function(msg){ph.log('runTrace onError:');ph.dump(msg);}
-	};
-	ph.admin.doPramCommand('accessLog','deleteQuery',{query:query},function(chId){
-			ph.queue.subscribeById(chId,deleteAccessLogCb);
-		});
+	ph.admin.accessLogSd.publish({command:'deleteQuery',query:query});
 }
 
 function accessLogExportQuery(query){
-	var exportAccessLogCb={
-		onComplete:function(msg){
-			ph.jQuery("#exportFileId").val(msg.message);
-			ph.jQuery("#exportDownloadForm").submit();},
-		onError:function(msg){ph.log('runTrace onError:');ph.dump(msg);}
-	};
-	ph.admin.doPramCommand('accessLog','exportQuery',{query:query},function(chId){
-			ph.queue.subscribeById(chId,exportAccessLogCb);
-		});
+	ph.admin.accessLogSd.publish({command:'exportQuery',query:query});
 }
+
+function accessLogImort(){
+	var files=ph.jQuery('#importsFile').prop('files');
+	if(files.length<=0){
+		alert('fileが選択されていません');
+		return;
+	}
+	ph.admin.accessLogSd.publishForm('importsForm');
+##	ph.jQuery('#importsForm')[0].reset();
+}
+
 
 ##realHostの一行(tr)を作成
 function realHostLine(realHost){
@@ -262,7 +260,7 @@ ph.jQuery(function(){
 <H2 onclick="ph.jQuery('#realHostDiv').toggle();">+RealHost設定</H2>
 <div class="settingItem" id="realHostDiv">
 <p>サービスするサーバ情報を設定します</p>
-selfDomain:<input type="text" id="selfDomain" size="64" value="$!esc.html($!{config.selfDomain})"/><input type="button" value="設定" onClick="ph.admin.doCommand('setSelfDomain',{domain:ph.jQuery('#selfDomain').val()},function(){alert('変更を有効にするにはPhantomProxyの再起動が必要です.')});"><br>
+selfDomain:<input type="text" id="selfDomain" size="64" value="$!esc.html($!{config.selfDomain})"/><input type="button" value="設定" onClick="ph.admin.doCommand('setSelfDomain',{domain:ph.jQuery('#selfDomain').val()},function(){alert('変更を有効にするにはPhantomServerの再起動が必要です.')});"><br>
 <input type="button" value="real host作成" onClick="realHostDialog({name:'',realHostInitBind:false,bindHost:'*',bindPort:'',backlog:'100',binding:false});">
 <table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
 <thead>
@@ -303,11 +301,10 @@ sessionTimeout:<input type="text" id="authSessionTimeout" size="12" value="$!esc
 <H2 onclick="ph.jQuery('#accesslogDiv').toggle();">+AccessLogs操作</H2>
 <div class="settingItem" id="accesslogDiv">
 <p>ログ、トレースデータを移出、移入することで別環境で採取した資料を取り扱うことができます</p>
-<form method="post" enctype="multipart/form-data" action="accessLog" target="uploadFrame">
+<form id="importsForm">
 <input type="hidden" name="command" value="import" />
-<input type="hidden" name="token" value="$esc.html(${session.token})"/>
 移入ファイル指定:<input type="file" name="importsFile" id="importsFile" />
-<input type="submit" value="移入"/><br/>
+<input type="button" value="移入" onclick="accessLogImort();"/><br/>
 </form>
 全AccessLog削除:<input type="button" onclick="accessLogDeleteQuery('');" value="削除" /><br/>
 全AccessLog移出:<input type="button" onclick="accessLogExportQuery('');" value="移出" /><br/>
@@ -370,12 +367,8 @@ checked="checked"
 </div>
 
 <Hr/>
-<H2 onclick="ph.jQuery('#html5Div').toggle();">+HTML5設定</H2>
+<H2 onclick="ph.jQuery('#html5Div').toggle();">+Websocket</H2>
 <div class="settingItem" id="html5Div">
-<p>利用可能なブラウザでHTML5機能を使用するか否かを設定してください</p>
-Web Storage sessionStorage:必須</br>
-Cross-document messaging:必須</br>
-
 WebSocket spec:hixie75:<input type="checkBox" name="isUseHixie75" id="isUseHixie75"
 #if(${config.getString('websocketSpecs').indexOf('hixie75')}>=0)
 checked="checked"
@@ -398,6 +391,11 @@ value="${config.getInt('webSocketMessageLimit',2048000)}"
 WebSocketPingInterval:<input type="text" name="webSocketPingInterval" id="webSocketPingInterval"
 value="${config.getInt('webSocketPingInterval',0)}"
 >ms<br/>
+isWebSocketLog:<input type="checkBox" name="webSocketLog" id="webSocketLog"
+#if(${config.getBoolean('isWebSocketLog',false)})
+checked="checked"
+#end
+><br/>
 
 ##Web Storage sessionStorage:<input type="checkBox" name="isUseSessionStorage" id="isUseSessionStorage"
 ###if(${config.getBoolean('useSessionStorage',true)})

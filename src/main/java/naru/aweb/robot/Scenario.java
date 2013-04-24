@@ -12,14 +12,16 @@ import org.apache.log4j.Logger;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.aweb.config.AccessLog;
+import naru.aweb.config.Config;
 import naru.aweb.config.Performance;
-import naru.aweb.queue.QueueManager;
+import naru.aweb.pa.PaPeer;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 public class Scenario extends PoolBase{
 	private static Logger logger = Logger.getLogger(Scenario.class);
-	private static Map<String,Scenario> chIdScenarioMap=new HashMap<String,Scenario>();//現状走行中のScenarioを保持　cancel対応
+	private static Config config=Config.getConfig();
+//	private static Map<String,Scenario> chIdScenarioMap=new HashMap<String,Scenario>();//現状走行中のScenarioを保持　cancel対応
 	
 	private String name;
 	private boolean isProcessing;
@@ -46,13 +48,14 @@ public class Scenario extends PoolBase{
 	
 	private Performance masterPerformance;
 	private Map<String,Performance> requestPerformances=new HashMap<String,Performance>();
-//	private Map<String,Performance> requestStatusCodePerformances;
 	private JSONObject stat=new JSONObject();
+	private PaPeer peer;
 	
 	private Random random=new Random();
 	
 	public static String cancelScenario(String chId){
 		String name=null;
+		/*
 		synchronized(chIdScenarioMap){
 			Scenario scenario=chIdScenarioMap.get(chId);
 			if(scenario!=null){
@@ -63,6 +66,7 @@ public class Scenario extends PoolBase{
 				logger.info("cancelScenario notFound Scenario.chId:"+chId);
 			}
 		}
+		*/
 		return name;
 	}
 	
@@ -76,10 +80,7 @@ public class Scenario extends PoolBase{
 	}
 	
 	//chidに通知,100単位 or 時間単位 ,scenarioIndex/scenarioCount,loop/loopCount,runnningBrowserCount/browserCount,メモリ使用量,
-	private void broadcast(String chId,boolean isComplete){
-		if(chId==null){
-			return;
-		}
+	private void broadcast(boolean isComplete){
 		if(loop!=0 && loop!=loopCount && (loop%loopUnit)!=0 && !isComplete){
 			return;
 		}
@@ -91,13 +92,22 @@ public class Scenario extends PoolBase{
 		stat.element("maxMemory", runtime.maxMemory());
 		stat.element("loop", loop);
 		stat.element("runnningBrowserCount", runnningBrowserCount);
+		stat.element("kind", "stressProgress");
+		stat.element("currentTime", System.currentTimeMillis());
+		stat.element("isComplete", isComplete);
+		peer.message(stat);
+		/*
+		PaManager paManager=config.getAdminPaManager();
+		paManager.publish(PaAdmin.QNAME, PaAdmin.SUBNAME_PERF,stat);
 		
 		QueueManager queueManager=QueueManager.getInstance();
 		if(isComplete){
+			stat
 			queueManager.complete(chId, stat);
 		}else{
 			queueManager.publish(chId, stat);
 		}
+		*/
 	}
 	
 	/**
@@ -107,7 +117,7 @@ public class Scenario extends PoolBase{
 	 * @param chId
 	 * @return
 	 */
-	public static boolean run(AccessLog[] accessLogs,JSONArray stresses,String chId){
+	public static Scenario run(AccessLog[] accessLogs,JSONArray stresses,PaPeer peer){
 		int n=stresses.size();
 		Scenario topScenario=null;
 		Scenario lastScenario=null;
@@ -129,7 +139,7 @@ public class Scenario extends PoolBase{
 			boolean isAccessLog=stress.optBoolean("isAccessLog",false);
 			boolean isResponseHeaderTrace=stress.optBoolean("isResponseHeaderTrace",false);
 			boolean isResponseBodyTrace=stress.optBoolean("isResponseBodyTrace",false);
-			if(scenario.setup(accessLogs,name,browserCount,loopCount,isCallerKeepAlive,thinkingTime,isAccessLog,isResponseHeaderTrace,isResponseBodyTrace)==false){
+			if(scenario.setup(accessLogs,name,browserCount,loopCount,isCallerKeepAlive,thinkingTime,isAccessLog,isResponseHeaderTrace,isResponseBodyTrace,peer)==false){
 				//rollback処理
 				scenario=topScenario;
 				while(scenario!=null){
@@ -137,26 +147,26 @@ public class Scenario extends PoolBase{
 					scenario.unref(true);
 					scenario=lastScenario;
 				}
-				return false;
+				return null;
 			}
 			lastScenario=scenario;
 		}
-		topScenario.start(chId);
-		return true;
+		topScenario.start();
+		return topScenario;
 	}
 	
-	public static boolean run(AccessLog[] accessLogs,String name,int browserCount,int loopCount,
-			boolean isCallerKeepAlive,
-			long thinkingTime,
+	public static Scenario run(
+			AccessLog[] accessLogs,String name,int browserCount,int loopCount,
+			boolean isCallerKeepAlive,long thinkingTime,
 			boolean isAccessLog,boolean isResponseHeaderTrace,boolean isResponseBodyTrace,
-			String chId){
+			PaPeer peer){
 		Scenario scenario=(Scenario)PoolManager.getInstance(Scenario.class);
-		if(scenario.setup(accessLogs,name,browserCount,loopCount,isCallerKeepAlive,thinkingTime,isAccessLog,isResponseHeaderTrace,isResponseBodyTrace)){
-			scenario.start(chId);
-			return true;
+		if(scenario.setup(accessLogs,name,browserCount,loopCount,isCallerKeepAlive,thinkingTime,isAccessLog,isResponseHeaderTrace,isResponseBodyTrace,peer)){
+			scenario.start();
+			return scenario;
 		}
 		scenario.unref(true);
-		return false;
+		return null;
 	}
 	
 	/**
@@ -165,10 +175,12 @@ public class Scenario extends PoolBase{
 	 * @param loopCount
 	 * @param requests リクエストAccessLog
 	 */
-	public boolean setup(AccessLog[] accessLogs,String name,int browserCount,int loopCount,
-			boolean isCallerkeepAlive,
-			long thinkingTime,
-			boolean isAccessLog,boolean isResponseHeaderTrace,boolean isResponseBodyTrace){
+	public boolean setup(
+			AccessLog[] accessLogs,String name,int browserCount,int loopCount,
+			boolean isCallerkeepAlive,long thinkingTime,boolean isAccessLog,
+			boolean isResponseHeaderTrace,boolean isResponseBodyTrace,PaPeer peer){
+		peer.ref();
+		this.peer=peer;
 		this.name=name;
 		this.browserCount=browserCount;
 		this.requestCount=accessLogs.length;
@@ -226,11 +238,11 @@ public class Scenario extends PoolBase{
 	
 	private synchronized boolean startBrowserIfNeed(Browser browser){
 		if(!isReceiveStop && loopCount>loop){
-			broadcast(chId,false);
+			broadcast(false);
 			//TODO browser行方不明問題あり,"...favicon.ico HTTP/1.1" null 0 125#123,-,H,null,null,15,15,0,0,-1"こんな感じに記録される
 			loop++;
 			if(thinkingTime==0){
-				browser.start();
+				browser.start(null);
 			}else{
 				long delay=calcThinkingtime();
 				browser.startDelay(delay);
@@ -253,32 +265,21 @@ public class Scenario extends PoolBase{
 				performance.insert();
 			}
 			if(!isReceiveStop && nextScenario!=null){//次のSceinarioを実行
-				broadcast(chId,false);
-				nextScenario.start(chId);
+				broadcast(false);
+				nextScenario.start();
 			}else{
-				broadcast(chId,true);
-				synchronized(chIdScenarioMap){
-					chIdScenarioMap.remove(chId);
-				}
+				broadcast(true);
 			}
-			unref();//このSceinarioは終了
+//			unref();//このSceinarioは終了
 		}else{
-			broadcast(chId,false);
+			broadcast(false);
 		}
 		return false;
 	}
-	public synchronized void start(){
-		start(null);
-	}
-	private String chId;
 	
-	public synchronized void start(String chId){
+	public synchronized void start(){
 		System.gc();
-		synchronized(chIdScenarioMap){
-			chIdScenarioMap.put(chId,this);
-		}
 		loop=0;
-		this.chId=chId;
 		startTime=System.currentTimeMillis();
 		stat.element("name", name);
 		stat.element("startTime", startTime);
@@ -286,11 +287,12 @@ public class Scenario extends PoolBase{
 		stat.element("scenarioIndex", scenarioIndex);
 		stat.element("loopCount", loopCount);
 		stat.element("browserCount", browserCount);
+		stat.element("currentTime", startTime);
 		isProcessing=true;
 		runnningBrowserCount=browsers.size();
 		
 		logger.info("###Scenario start.name:" +name);
-		broadcast(chId,false);//開始時のbroadcast
+		broadcast(false);//開始時のbroadcast
 		Object[] browserArray=browsers.toArray();//ConcurrentModificationException対策
 		for(Object browser:browserArray){
 			startBrowserIfNeed((Browser)browser);
@@ -302,6 +304,9 @@ public class Scenario extends PoolBase{
 		Object[] objs=browsers.toArray();
 		for(Object browser:objs){
 			((Browser)browser).asyncStop();
+		}
+		if(nextScenario!=null){
+			nextScenario.stop();
 		}
 	}
 	
@@ -347,7 +352,14 @@ public class Scenario extends PoolBase{
 
 	@Override
 	public void recycle() {
-		nextScenario=null;
+		if(peer!=null){
+			peer.unref();
+			peer=null;
+		}
+		if(nextScenario!=null){
+			nextScenario.unref();
+			nextScenario=null;
+		}
 		isReceiveStop=false;
 		isProcessing=false;
 		scenarioCount=1;

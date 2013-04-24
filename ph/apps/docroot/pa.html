@@ -11,7 +11,7 @@
   <link type="text/css" href="/pub/css/jquery-ui-1.8.2.custom.css" rel="stylesheet" />
   <script type="text/javascript" src="/pub/js/ph-loader.js?include=ph-pa.js"></script>
   <script type="text/javascript" src="/pub/js/dateformat.js"></script>
-  <script type="text/javascript" src="/pub/js/jquery-1.5.1.min.js"></script>
+  <script type="text/javascript" src="/pub/js/jquery-1.8.1.min.js"></script>
   <script type="text/javascript" src="/pub/js/jquery-ui-1.8.2.custom.min.js"></script>
   <script type="text/javascript">
 var cd;
@@ -42,27 +42,51 @@ var sd;
 <input type="button" value="publish string" onclick="sd.publish('testAAA');"/>
 <input type="button" value="publish object" onclick="sd.publish({aaa:'testBBB'});"/>
 <input type="button" value="publish bin" onclick="sd.publish({aaa:'testCCC',blobData:[{data:'aaaa'},{data:ph.stringToArrayBuffer('bbbbb')}]});"/>
+<input type="button" value="publishForm" onclick="sd.publishForm('testForm');"/>
 <input type="button" value="use xhr" onclick="ph.useWebSocket=false;"/>
 <input type="button" value="onMessage dorp files" onclick="onDropFiles();"/>
 
 </ul>
-<div><pre>
+<div>cd.deploy('admin','naru.aweb.admin.PaAdmin');<pre>
 </pre></div>
+<form id='testForm'>
+<input type='file' name='file' />
+<input type='hidden' name='from' value='form'/>
+<input type='text' name='test' value='hello'/>
+</form>
+
 <div id='target'><p>dorag and dromp file upload</p></div>
 <div>
 <ul>
 <li><a id='bookmarklet'>WsqBookmarklet</a></li>
 </ul>
 </div>
-
+<a id='test' target='_blank'>test</a>
 <script type="text/javascript"><!--
 function onDropFiles(){
-  sd.onMessage(function(x){
+  sd.onMessage(function(data){
   var fr=new FileReader();
-  fr.onload=function(e){ ph.log(e.target.result);}
-    fr.readAsText(x[0].data,'utf-8');
+  fr.onload=function(e){
+/*
+  var evt = document.createEvent("HTMLEvents");
+  evt.initEvent("click",false,false);
+  ph.jQuery("<a>", {
+    download: "test.txt",
+    href: e.target.result
+  }).get(0).dispatchEvent(evt);
+*/
+//   ph.jQuery("#test").attr("href",e.target.result);
+    ph.log('fr.onload:'+e.target.result);
+    };
+
+//    data[0].type=
+  ph.log('onMessage:type:'+data.file.type);
+//   var file=ph.blobSlice(data[0].file,0,data[0].file.size,'application/octet-stream;content-disposition=attachment;filename=test.txt');
+    file=data.file;
+    fr.readAsDataURL(file,'utf-8');
   });
 }
+
 function connect(){
   cd=ph.pa.connect('/pa');
   cd.done(
@@ -83,11 +107,11 @@ function connect(){
       ph.dump(data);
       ph.log('--cd error cb--');
     });
-  cd.on('ok',
+  cd.on('success',
     function(data){
-      ph.log('++cd ok cb++ message:'+data);
+      ph.log('++cd success cb++ message:'+data);
       ph.dump(data);
-      ph.log('--cd ok cb--');
+      ph.log('--cd success cb--');
     });
   cd.on('test',
     function(data){
@@ -117,11 +141,11 @@ function subscribe(){
       ph.dump(data);
       ph.log('--sd message sd--');
     });
-  sd.on('ok',
+  sd.on('success',
     function(data){
-      ph.log('++sd ok sd++ message:'+data);
+      ph.log('++sd success sd++ message:'+data);
       ph.dump(data);
-      ph.log('--sd ok sd--');
+      ph.log('--sd success sd--');
     });
   sd.on('error',
     function(data){
@@ -130,6 +154,7 @@ function subscribe(){
       ph.log('--sd error sd--');
     });
 
+onDropFiles();
 }
 ph.jQuery(function(){
   var href="javascript:(function(){var%20url='" + ph.scriptBase + "ph-loader.js?bm=bm&include=ph-pa.js,bm.js?c=' + (new Date()).valueOf();var%20d=document;var%20e=d.createElement('script');e.src=url;d.getElementsByTagName('head')[0].appendChild(e);})();"
@@ -138,12 +163,9 @@ ph.jQuery(function(){
   $("body").bind("drop", function (e) {
   // ドラッグされたファイル情報を取得
     var files = e.originalEvent.dataTransfer.files;
-	var blobData=[];
-    for (var i = 0; i < files.length; i++) {
-      blobData.push({data:files[i],test:'test'+i});
-    }
+    var data={file:files[0],from:'drop'};
     try{
-    sd.publish(blobData);
+    sd.publish(data);
     }catch(e){
     ph.log(e);
     alert(e);

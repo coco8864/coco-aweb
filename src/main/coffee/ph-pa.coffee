@@ -23,17 +23,23 @@ window.ph.pa={
 #response type
   TYPE_RESPONSE:'response'
   TYPE_MESSAGE:'message'
+  TYPE_DOWNLOAD:'download'
   RESULT_ERROR:'error'
-  RESULT_OK:'ok'
+  RESULT_SUCCESS:'success'
 #  _INTERVAL:1000
   _SEND_DATA_MAX:(1024*1024*2)
   _WS_RETRY_MAX:3
+  _KEEP_MSG_BEFORE_SUBSCRIBE:true
+  _KEEP_MSG_MAX:64
   _DEFAULT_SUB_ID:'@'
-  _XHR_FRAME_NAME_PREFIX:'__pa_'
-  _XHR_FRAME_URL:'/xhrPaFrame.vsp'
+  _DOWNLOAD_FRAME_NAME_PREFIX:'__pa_dl_'
+  _XHR_FRAME_NAME_PREFIX:'__pa_xhr_' #xhrPaFrame.vspに同じ定義あり
+  _XHR_FRAME_URL:'/!xhrPaFrame'
   _connections:{} #key:url value:{deferred:dfd,promise:prm}
   connect:(url)->
+    httpUrl=null
     if url.lastIndexOf('ws://',0)==0||url.lastIndexOf('wss://',0)==0
+      httpUrl='http' + url.substring(2)
       if !ph.useWebSocket
         #webSocketが使えなくてurlがws://だったらhttp://に変更
         url='http' + url.substring(2)
@@ -48,13 +54,19 @@ window.ph.pa={
           scm='https://'
         else
           scm='http://'
+      if ph.isSsl
+        httpUrl='https://' + ph.domain+url
+      else
+        httpUrl='http://' + ph.domain+url
       url=scm+ph.domain+url
-    ph.log('url:' + url)
+    else
+      httpUrl=url
+    ph.log('url:' + url+':httpUrl:'+httpUrl)
     if @_connections[url]
       prm=@_connections[url].promise
     else
       dfd=ph.jQuery.Deferred()
-      prm=dfd.promise(new CD(url,dfd))
+      prm=dfd.promise(new CD(url,httpUrl,dfd))
       @_connections[url]={deferred:dfd,promise:prm}
     prm._openCount++
     prm
@@ -107,7 +119,7 @@ class EventModule
 #-------------------Connection Deferred-------------------
 class CD extends EventModule
   _BROWSERID_PREFIX:'bid.'
-  constructor: (@url,@deferred) ->
+  constructor: (@url,@httpUrl,@deferred) ->
     super
     @_subscribes={}
     @isWs=(url.lastIndexOf('ws',0)==0)
@@ -115,6 +127,7 @@ class CD extends EventModule
     @_errorCount=0
     @stat=ph.pa.STAT_AUTH
     @_sendMsgs=[]
+    @_reciveMsgs=[] #未subcriveで配信できなったmessage todo:溜まりすぎ
     con=@
     ph.auth.auth(url,con._doneAuth)
   _doneAuth:(auth)=>
@@ -122,13 +135,21 @@ class CD extends EventModule
       ph.pa._connections[@url]=null
       @trigger(ph.pa.RESULT_ERROR,'auth',@)#fail to auth
       return
-    @trigger(ph.pa.RESULT_OK,'auth',@)#success to auth
+    @trigger(ph.pa.RESULT_SUCCESS,'auth',@)#success to auth
     @_appId=auth.appId
+    @_token=auth.token
     @stat=ph.pa.STAT_IDLE
     if @isWs
       @_openWebSocket()
     else
       @_openXhr()
+    @_downloadFrameName=ph.pa._DOWNLOAD_FRAME_NAME_PREFIX + @url
+    @_downloadFrame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' +
+      @_downloadFrameName + 
+      '"></iframe>')
+#    con=@
+#    @_xhrFrame.load(->con._onXhrLoad())
+    ph.jQuery('body').append(@_downloadFrame)
   _flushMsg:->
     if @stat!=ph.pa.STAT_CONNECT
       return
@@ -178,16 +199,9 @@ class CD extends EventModule
     else
       @_openWebSocket()
   _onWsMessage:(msg)=>
-    if typeof msg.data=='string'
-      ph.log('Pa _onWsMessage text:'+msg.data)
-      obj=ph.JSON.parse(msg.data)
-      @_onMessage(obj)
-    else if msg.data instanceof Blob
-      ph.log('Pa _onWsMessage blob:'+msg.data)
-      Envelope envelope=new Envelope()
-      envelope.unpack(msg.data,@_onMessage)
-    else
-      ph.log('_onWsMessage type error')
+    ph.log('Pa _onWsMessage:'+msg.data)
+    envelope=new Envelope()
+    envelope.unpack(msg.data,@_onMessage)
   _openWebSocket:=>
     ph.log('Pa WebSocket start')
     @stat=ph.pa.STAT_OPEN
@@ -221,7 +235,9 @@ class CD extends EventModule
       ph.log('_onXhrOpened error.'+ph.JSON.stringify(res))
   _onXhrMessage:(obj)->
     ph.log('Pa _onXhrMessage')
-    @_onMessage(obj)
+    envelope=new Envelope()
+    envelope.unpack(obj,@_onMessage)
+#   @_onMessage(obj)
   _getBid:->
     str=sessionStorage[@_BROWSERID_PREFIX + @_appId] ? '{}'
     bids=ph.JSON.parse(str)
@@ -236,11 +252,11 @@ class CD extends EventModule
     sessionStorage[@_BROWSERID_PREFIX + @_appId]=ph.JSON.stringify(bids)
   _onOpen:->
     @stat=ph.pa.STAT_CONNECT
-    @_send({type:ph.pa.TYPE_NEGOTIATE,bid:@_getBid()})
+    @_send({type:ph.pa.TYPE_NEGOTIATE,bid:@_getBid(),token:@_token})
   __onMsgNego:(msg)->
     if msg.bid!=@_getBid()
       @_setBid(msg.bid)
-      @_send({type:ph.pa.TYPE_NEGOTIATE,bid:msg.bid})
+      @_send({type:ph.pa.TYPE_NEGOTIATE,bid:msg.bid,token:@_token})
   __onClose:(msg)->
     if @deferred.state()!='pending'
       ph.log('aleady closed')
@@ -266,7 +282,7 @@ class CD extends EventModule
     sd.deferred.resolve(msg,sd.promise)
     delete @_subscribes[key]
     true
-  __onOk:(msg)->
+  __onSuccess:(msg)->
     if msg.requestType==ph.pa.TYPE_SUBSCRIBE
       @__endOfSubscribe(msg)
     else if msg.requestType==ph.pa.TYPE_CLOSE
@@ -276,9 +292,9 @@ class CD extends EventModule
     else
       sd=@__getSd(msg)
       if sd
-        sd.promise.trigger(ph.pa.RESULT_OK,msg.requestType,msg)
+        sd.promise.trigger(ph.pa.RESULT_SUCCESS,msg.requestType,msg)
       else
-        @trigger(ph.pa.RESULT_OK,msg.requestType,msg)
+        @trigger(ph.pa.RESULT_SUCCESS,msg.requestType,msg)
   __onError:(msg)->
     if msg.requestType==ph.pa.TYPE_SUBSCRIBE
       @__endOfSubscribe(msg)
@@ -293,20 +309,46 @@ class CD extends EventModule
       @__onMsgNego(msg)
     else if msg.type==ph.pa.TYPE_CLOSE
       @__onClose(msg)
+    else if msg.type==ph.pa.TYPE_DOWNLOAD
+      ph.log('download.msg.key:'+msg.key)
+      form=ph.jQuery("<form method='POST' target='#{@_downloadFrameName}' action='#{@httpUrl}/!paDownload'>" +
+         "<input type='hidden' name='bid' value='#{@_getBid()}'/>" +
+         "<input type='hidden' name='token' value='#{@_token}'/>" +
+         "<input type='hidden' name='key' value='#{msg.key}'/>" +
+         "</form>")
+#      frame=ph.jQuery('<iframe width="0" height="0" frameborder="no"' +
+#        ' src="' + 
+#        @downloadUrl + '?bid=' + @_getBid() + '&token=' + @_token + '&key=' + msg.key +
+#        '"></iframe>')
+#      frame.load(->alert('load'))
+      ph.jQuery('body').append(form)
+      form.submit()
+      form.remove()
     else if msg.type==ph.pa.TYPE_MESSAGE
-      sd=@__getSd(msg)
+      key="#{msg.qname}@#{msg.subname}"
+      sd=@_subscribes[key]
       if !sd
-        ph.log('error not subscribe message')
+        ph.log('before subscribe message')
+        if !ph.pa._KEEP_MSG_BEFORE_SUBSCRIBE
+          return
+        reciveMsgs=@_reciveMsgs[key]
+        if !reciveMsgs
+          reciveMsgs=@_reciveMsgs[key]=[]
+        if reciveMsgs.length>=ph.pa._KEEP_MSG_MAX
+          x=reciveMsgs.shift()
+          ph.log('drop msg:'+x)
+        reciveMsgs.push(msg)
         return
       promise=sd.promise
       sd.promise.trigger(ph.pa.TYPE_MESSAGE,msg.message,promise)
       @trigger(promise.qname,msg.message,promise)
       @trigger(promise.subname,msg.message,promise)
       @trigger("#{promise.qname}@#{promise.subname}",msg.message,promise)
-    else if msg.type==ph.pa.TYPE_RESPONSE && msg.result==ph.pa.RESULT_OK
-      @__onOk(msg)
-    else if msg.type==ph.pa.TYPE_RESPONSE && msg.result==ph.pa.RESULT_ERROR
-      @__onError(msg)
+    else if msg.type==ph.pa.TYPE_RESPONSE
+      if msg.result==ph.pa.RESULT_SUCCESS
+        @__onSuccess(msg)
+      else
+        @__onError(msg)
 #----------CD outer api----------
   close:->
     @checkState()
@@ -329,6 +371,13 @@ class CD extends EventModule
     @_subscribes[key]={deferred:dfd,promise:prm}
     if onMessage
       prm.onMessage(onMessage)
+    #aleady recive message check
+    reciveMsgs=@_reciveMsgs[key]
+    if reciveMsgs && reciveMsgs.length>0
+      setTimeout(=>
+        for msg in reciveMsgs
+          @_onMessage(msg)
+      ,0)
     prm
   publish:(qname,msg)->
     @checkState()
@@ -356,6 +405,29 @@ class SD extends EventModule
   publish:(msg)->
     @checkState()
     @_cd._send({type:ph.pa.TYPE_PUBLISH,qname:@qname,subname:@subname,message:msg})
+  publishForm:(formId)->
+    @checkState()
+    form=ph.jQuery('#'+formId)
+    if form.length==0 || form[0].tagName!='FORM'
+      throw 'not form tag id'
+    form.attr("method","POST")
+    form.attr("enctype","multipart/form-data")
+    form.attr("action","#{@_cd.httpUrl}/!paUpload")
+    form.attr("target","#{@_cd._downloadFrameName}")
+    bidInput=ph.jQuery("<input type='hidden' name='bid' value='#{@_cd._getBid()}'/>")
+    tokenInput=ph.jQuery("<input type='hidden' name='token' value='#{@_cd._token}'/>")
+    qnameInput=ph.jQuery("<input type='hidden' name='qname' value='#{@qname}'/>")
+    subnameInput=ph.jQuery("<input type='hidden' name='subname' value='#{@subname}'/>")
+    form.append(bidInput)
+    form.append(tokenInput)
+    form.append(qnameInput)
+    form.append(subnameInput)
+    form.submit()
+    form[0].reset()
+    bidInput.remove()
+    tokenInput.remove()
+    qnameInput.remove()
+    subnameInput.remove()
   onMessage:(cb)->
     @on(ph.pa.TYPE_MESSAGE,cb)
 
@@ -375,7 +447,9 @@ class Envelope
     if ph.jQuery.isArray(obj)
       result=[]
       size=obj.length
-      for i in [0..size-1]
+      if size<=0
+        return result
+      for i in [0..(size-1)]
         result[i]=@serialize(obj[i])
       return result
     else if ph.useBlob && obj instanceof Uint8Array
@@ -425,6 +499,8 @@ class Envelope
     if ph.jQuery.isArray(obj)
       result=[]
       size=obj.length
+      if size<=0
+        return result
       for i in [0..(size-1)]
         result[i]=@deserialize(obj[i])
       return result
@@ -470,7 +546,15 @@ class Envelope
     else
       @blobDfd=ph.jQuery.Deferred()
       @blobDfd.done(=>@onDoneBinPtc(onPacked))
-  unpack:(blob,cb)->
+  unpack:(data,cb)->
+    if !ph.useBlob || !(data instanceof Blob)
+      if typeof data == 'string'
+        data=ph.JSON.parse(data)
+      @dates=data.meta?.dates ? []
+      obj=@deserialize(data)
+      cb(obj)
+      return
+    blob=data
     fr=new FileReader()
     mode='headerLen'
     fr.onload=(e)=>
@@ -486,11 +570,10 @@ class Envelope
         ph.log('header:'+e.target.result)
         header=ph.JSON.parse(e.target.result)
         meta=header.meta
-        for date in meta.dates
-          @dates.push(date)
+        @dates=meta?.dates ? []
         for blobMeta in meta.blobs
           size=blobMeta.size
-          blob=ph.blobSlice(blob,offset,offset+size)
+          blob=ph.blobSlice(blob,offset,offset+size,blobMeta.type)
           offset+=size
           blob.type=blobMeta.type
           if blobMeta.name

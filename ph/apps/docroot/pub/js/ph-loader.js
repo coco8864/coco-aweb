@@ -10,8 +10,8 @@ if(window.ph){
  return;
 }
 ## spdyInfoの取得
-#set( $spdySession=${handler.getSpdySession()} )
-#if( ${spdySession} )
+#set( $spdySession='$!{handler.getSpdySession()}' )
+#if( ${spdySession}=='' )
 #set( $spdyInfo="'${spdySession.spdyInfo()}'" )
 #else
 #set( $spdyInfo=false )
@@ -27,7 +27,7 @@ window.ph={
  publicWebUrl:'$esc.javascript(${config.publicWebUrl})',
  spdyInfo:${spdyInfo},
  scriptBase:'',
- scripts:['jquery-1.9.1.min.js','ph-jqnoconflict.js','ph-json2.js'],
+ scripts:['jquery-1.8.3.min.js','ph-jqnoconflict.js','ph-json2.js'],
  appScripts:['ph-auth.js'],
  useWebSocket:false,## WebSocketを使うか否か?
  useSessionStorage:false,## SessionStorageを使うか否か?
@@ -46,13 +46,13 @@ window.ph={
   }
   return null;
  },
- blobSlice:function(blob,startingByte,endindByte){
+ blobSlice:function(blob,startingByte,endindByte,type){
   if(blob.webkitSlice) {
-   return blob.webkitSlice(startingByte, endindByte);
+   return blob.webkitSlice(startingByte, endindByte,type);
   }else if (blob.mozSlice) {
-   return blob.mozSlice(startingByte, endindByte);
+   return blob.mozSlice(startingByte, endindByte,type);
   }
-  return blob.slice(startingByte, endindByte);
+  return blob.slice(startingByte, endindByte,type);
  },
  //https://github.com/ukyo/jsziptools/blob/master/src/utils.js
  stringToArrayBuffer:function(str){

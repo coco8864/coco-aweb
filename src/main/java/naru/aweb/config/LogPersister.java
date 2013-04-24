@@ -1,19 +1,18 @@
 package naru.aweb.config;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -25,25 +24,26 @@ import javax.jdo.Query;
 
 import org.apache.log4j.Logger;
 
+import naru.async.BufferGetter;
 import naru.async.Timer;
+import naru.async.pool.PoolManager;
 import naru.async.store.Store;
 import naru.async.store.StoreManager;
 import naru.async.store.StoreStream;
 import naru.async.timer.TimerManager;
-import naru.aweb.queue.QueueManager;
+import naru.aweb.pa.Blob;
+import naru.aweb.pa.PaPeer;
 import naru.aweb.util.JdoUtil;
+import naru.aweb.util.UnzipConverter;
+import net.sf.json.JSONObject;
 
 public class LogPersister implements Timer {
 	private static Logger logger = Logger.getLogger(LogPersister.class);
-	private static QueueManager queueManager = QueueManager.getInstance();
 
 	private long intervalTimeout = 1000;
-//	private long timerId = -1;
 	private Object interval=null;
 
 	private List requestQueue = new LinkedList();
-	// private List<AccessLog> insertQueue=new LinkedList<AccessLog>();
-	// private List<AccessLog> deleteQueue=new LinkedList<AccessLog>();
 	private boolean isTerm = false;
 	private Config config;
 
@@ -54,10 +54,10 @@ public class LogPersister implements Timer {
 
 	public void term() {
 		TimerManager.clearInterval(interval);
-		synchronized(queueManager){
+//		synchronized(queueManager){
 			doJobs();//残っているjobを処理
 			isTerm=true;
-		}
+//		}
 	}
 
 	private AccessLog getAccessLog(List<AccessLog> list) {
@@ -74,19 +74,116 @@ public class LogPersister implements Timer {
 			return;
 		}
 		// ログに出力
-//		logger.info("###"+accessLog,new Exception());
 		accessLog.log(false);
-		String chId = accessLog.getChId();
-		if (accessLog.isPersist()) {
-			pm.currentTransaction().begin();
-			pm.makePersistent(accessLog);
-			pm.currentTransaction().commit();
-			pm.makeTransient(accessLog);// オブジェクトを再利用するために必要
-		}
-		if (chId != null) {
-			queueManager.complete(chId, accessLog.getId());
-		}
+		accessLog.persist(pm);
 		accessLog.unref();
+	}
+	
+	private static class ImportGetter implements BufferGetter {
+		private PaPeer peer;
+//		private PersistenceManager pm;
+		private LogPersister logPersister;
+		private ZipEntry currentZe=null;
+		private Store store=null;//Store.open(true);
+		private CharsetDecoder charsetDecoder=null;
+		private CharBuffer charBuffer=null;
+		private Set<String> addDigests = new HashSet<String>();
+		private List<String> refDigests = new ArrayList<String>();
+		
+		private ImportGetter(LogPersister logPersister,PaPeer peer){
+			this.logPersister=logPersister;
+	//		this.pm=pm;
+			this.peer=peer;
+		}
+		
+		private void endBuffer(ZipEntry ze){
+			if(ze==null){
+				return;
+			}
+			if(store!=null){
+				store.close();//終了処理は別スレッドで実行中
+				String digest=store.getDigest();
+				logPersister.addDigest(addDigests, digest);
+				store=null;
+			}else if(charsetDecoder!=null){
+				charBuffer.flip();
+				charBuffer.array();
+				String accessLogJson=new String(charBuffer.array(),charBuffer.position(),charBuffer.limit());
+				charsetDecoder=null;
+				charBuffer=null;
+				AccessLog accessLog = AccessLog.fromJson(accessLogJson);
+				if (accessLog == null) {
+					return;
+				}
+				logPersister.addDigest(refDigests, accessLog.getRequestHeaderDigest());
+				logPersister.addDigest(refDigests, accessLog.getRequestBodyDigest());
+				logPersister.addDigest(refDigests, accessLog.getResponseHeaderDigest());
+				logPersister.addDigest(refDigests, accessLog.getResponseBodyDigest());
+				accessLog.setId(null);
+				accessLog.setPersist(true);
+				
+				PersistenceManager pm = JdoUtil.getPersistenceManager();
+				logPersister.executeInsert(pm, accessLog);
+				if(pm.currentTransaction().isActive()){
+					pm.currentTransaction().rollback();
+				}
+			}
+		}
+		
+		private void startBuffer(ZipEntry ze){
+			String name=ze.getName();
+			if(name.startsWith("/store")){
+				store=Store.open(true);
+			}else if(name.startsWith("/accessLog")){
+				Charset c=Charset.forName("utf-8");
+				charsetDecoder=c.newDecoder();
+				//accessLogをjson化したものなので無制限に大きくならない
+				charBuffer=CharBuffer.allocate(4096);
+			}
+		}
+
+		@Override
+		public boolean onBuffer(Object userContext, ByteBuffer[] buffers) {
+			if(currentZe!=userContext){
+				endBuffer(currentZe);
+				currentZe=(ZipEntry)userContext;
+				startBuffer(currentZe);
+			}
+			if(store!=null){
+				store.putBuffer(buffers);
+			}else if(charsetDecoder!=null){
+				for(ByteBuffer buffer:buffers){
+					charsetDecoder.decode(buffer, charBuffer, false);
+				}
+				PoolManager.poolBufferInstance(buffers);
+			}
+			return true;
+		}
+
+		@Override
+		public void onBufferEnd(Object userContext) {
+			endBuffer(currentZe);
+			Iterator<String> itr = refDigests.iterator();
+			while (itr.hasNext()) {
+				StoreManager.ref(itr.next());
+			}
+			itr = addDigests.iterator();
+			while (itr.hasNext()) {
+				StoreManager.unref(itr.next());
+			}
+			JSONObject response=new JSONObject();
+			response.element("command", "import");
+			response.element("result", "success");
+			peer.message(response);
+		}
+
+		@Override
+		public void onBufferFailure(Object userContext, Throwable failure) {
+			if(store!=null){
+				store.close(false);
+				store=null;
+			}
+		}
 	}
 
 	/**
@@ -96,74 +193,16 @@ public class LogPersister implements Timer {
 	 * @throws IOException
 	 */
 	// TODO非同期
-	public void executeImport(PersistenceManager pm, File importFile)
+	public void executeImport(Blob importBlob,PaPeer peer)
 			throws IOException {
-		ZipInputStream zis = null;
-		InputStream fis=new FileInputStream(importFile);
-		zis = new ZipInputStream(fis);
-		Set<String> addDigests = new HashSet<String>();
-		List<String> refDigests = new ArrayList<String>();
-		// byte[] accessLogBytes=new byte[4096];
-		while (true) {
-			ZipEntry ze = zis.getNextEntry();
-			if (ze == null) {
-				break;
-			}
-			int size = (int) ze.getSize();
-			String fileName = ze.getName();
-			if (fileName.startsWith("/store")) {
-				String digest = StoreStream.streamToStore(zis);
-				addDigest(addDigests, digest);
-
-			} else if (fileName.startsWith("/accessLog")) {
-				InputStreamReader reader = new InputStreamReader(zis, "utf-8");
-				StringBuilder sb = new StringBuilder();
-				char[] buf = new char[1024];
-				while (true) {
-					int len = reader.read(buf);
-					if (len <= 0) {
-						break;
-					}
-					sb.append(buf, 0, len);
-				}
-				AccessLog accessLog = AccessLog.fromJson(sb.toString());
-				if (accessLog == null) {
-					continue;
-				}
-				addDigest(refDigests, accessLog.getRequestHeaderDigest());
-				addDigest(refDigests, accessLog.getRequestBodyDigest());
-				addDigest(refDigests, accessLog.getResponseHeaderDigest());
-				addDigest(refDigests, accessLog.getResponseBodyDigest());
-
-				accessLog.setId(null);
-				accessLog.setPersist(true);
-				executeInsert(pm, accessLog);
-			}
-		}
-
-		Iterator<String> itr = refDigests.iterator();
-		while (itr.hasNext()) {
-			StoreManager.ref(itr.next());
-		}
-		itr = addDigests.iterator();
-		while (itr.hasNext()) {
-			StoreManager.unref(itr.next());
-		}
-		if(fis!=null){
-			fis.close();
-		}
+		UnzipConverter converter=UnzipConverter.create(new ImportGetter(this,peer));
+		converter.parse(importBlob);
 	}
 
 	private void addDigest(Collection<String> digests, String digest) {
 		if (digest != null) {
 			digests.add(digest);
 		}
-	}
-	
-	private static Map<String,File>exportFiles=new HashMap<String,File>();
-	
-	public File popExportFile(String cid){
-		return exportFiles.remove(cid);
 	}
 
 	// TODO非同期
@@ -185,7 +224,7 @@ public class LogPersister implements Timer {
 			addDigest(traceDigests, accessLog.getRequestBodyDigest());
 			addDigest(traceDigests, accessLog.getResponseHeaderDigest());
 			addDigest(traceDigests, accessLog.getResponseBodyDigest());
-			String json = accessLog.toJson();
+			String json = accessLog.toJson().toString();
 			byte[] jsonBytes = json.getBytes("utf-8");
 			int length = jsonBytes.length;
 			ze.setSize(length);
@@ -240,18 +279,20 @@ public class LogPersister implements Timer {
 		}
 	}
 
-	private void doJob(PersistenceManager pm, Object req) {
+	private PersistenceManager doJob(PersistenceManager pm, Object req) {
+		JSONObject response=null;
 		if (req instanceof AccessLog) {
 			executeInsert(pm, (AccessLog) req);
-			return;
+			return pm;
 		}
 		RequestInfo requestInfo = (RequestInfo) req;
-		String message = null;
 		switch (requestInfo.type) {
 		case TYPE_QUERY_DELTE:
 			requestInfo.ids=queryAccessLog(pm,requestInfo.query);
 		case TYPE_LIST_DELTE:
-			message = "delete count:" + requestInfo.ids.size();
+			response=new JSONObject();
+			response.element("command", "listDelete");
+			response.element("result", "success");
 			executeDelete(pm, requestInfo.ids);
 			break;
 		case TYPE_QUERY_EXPORT:
@@ -259,35 +300,40 @@ public class LogPersister implements Timer {
 		case TYPE_LIST_EXPORT:
 			try {
 				File exportFile=executeExport(pm, requestInfo.ids);
-				exportFile.deleteOnExit();
-				synchronized(exportFiles){
-					exportFiles.put(requestInfo.chId, exportFile);
-					message=requestInfo.chId;
-				}
+				Blob exportBlob=Blob.create(exportFile,true);
+				requestInfo.peer.download(exportBlob);
 			} catch (IOException e) {
+				response=new JSONObject();
+				response.element("command", "listExport");
+				response.element("result", "fail");
 				logger.warn("failt to export", e);
-				message = "fail to export";
+			} catch (Throwable t){
+				response=new JSONObject();
+				response.element("command", "listExport");
+				response.element("result", "fail");
+				logger.error("failt to export", t);
 			}
 			break;
 		case TYPE_IMPORT:
 			try {
-				executeImport(pm, requestInfo.importFile);
+				pm=null;
+				executeImport(requestInfo.importBlob,requestInfo.peer);
 			} catch (IOException e) {
 				logger.warn("failt to import", e);
-				message = "fail to import";
+				response=new JSONObject();
+				response.element("command", "import");
+				response.element("result", "fail");
 			}
 			break;
 		}
-		if (requestInfo.chId != null) {
-			queueManager.complete(requestInfo.chId, message);
+		if (requestInfo.peer != null && response!=null) {
+			requestInfo.peer.message(response);
 		}
-
+		return pm;
 	}
 
 	private void doJobs() {
 		PersistenceManager pm = JdoUtil.getPersistenceManager();
-		// pm.currentTransaction().begin();
-		// try {
 		while (true) {
 			Object req = null;
 			synchronized (requestQueue) {
@@ -297,9 +343,9 @@ public class LogPersister implements Timer {
 				req = requestQueue.remove(0);
 			}
 			try{
-				doJob(pm, req);
+				pm=doJob(pm, req);
 			} finally {
-				if(pm.currentTransaction().isActive()){
+				if(pm!=null && pm.currentTransaction().isActive()){
 					pm.currentTransaction().rollback();
 				}
 			}
@@ -331,52 +377,53 @@ public class LogPersister implements Timer {
 	private static final int TYPE_IMPORT = 5;
 
 	private static class RequestInfo {
-		RequestInfo(int type, String query, String chId) {
+		RequestInfo(int type, String query, PaPeer peer) {
 			this.type = type;
 			this.query = query;
-			this.chId = chId;
+			this.peer = peer;
 		}
 
-		RequestInfo(int type, Collection<Long> ids, String chId) {
+		RequestInfo(int type, Collection<Long> ids, PaPeer peer) {
 			this.type = type;
 			this.ids = ids;
-			this.chId = chId;
+			this.peer = peer;
 		}
 
-		RequestInfo(int type, File importFile, String chId) {
+		RequestInfo(int type, Blob importBlob, PaPeer peer) {
 			this.type = type;
-			this.importFile = importFile;
-			this.chId = chId;
+			this.importBlob = importBlob;
+			this.peer = peer;
 		}
 
 		int type;
 		String query;
-		String chId;
+//		String chId;
+		PaPeer peer;
 		Collection<Long> ids;
-		File importFile;
+		Blob importBlob;
 	}
 
 	// 条件に一致したaccessLogを削除
-	public void deleteAccessLog(String query,String chId) {
-		queue(new RequestInfo(TYPE_QUERY_DELTE, query, chId));
+	public void deleteAccessLog(String query,PaPeer peer) {
+		queue(new RequestInfo(TYPE_QUERY_DELTE, query, peer));
 	}
 
 	// id列挙されたaccessLogを削除
-	public void deleteAccessLog(Collection<Long> ids,String chId) {
-		queue(new RequestInfo(TYPE_LIST_DELTE, ids, chId));
+	public void deleteAccessLog(Collection<Long> ids,PaPeer peer) {
+		queue(new RequestInfo(TYPE_LIST_DELTE, ids, peer));
 	}
 
 	// 条件に一致したaccessLogを移出
-	public void exportAccessLog(String query, String chId) {
-		queue(new RequestInfo(TYPE_QUERY_EXPORT, query, chId));
+	public void exportAccessLog(String query, PaPeer peer) {
+		queue(new RequestInfo(TYPE_QUERY_EXPORT, query, peer));
 	}
 
 	// id列挙されたaccessLogを移出
-	public void exportAccessLog(Collection<Long> ids, String chId) {
-		queue(new RequestInfo(TYPE_LIST_EXPORT, ids, chId));
+	public void exportAccessLog(Collection<Long> ids, PaPeer peer) {
+		queue(new RequestInfo(TYPE_LIST_EXPORT, ids, peer));
 	}
 
-	public void importAccessLog(File importFile, String chId) {
-		queue(new RequestInfo(TYPE_IMPORT, importFile, chId));
+	public void importAccessLog(Blob importFile, PaPeer peer) {
+		queue(new RequestInfo(TYPE_IMPORT, importFile, peer));
 	}
 }

@@ -9,8 +9,8 @@ function setBroadcaster(){
   });
 }
 
-function updateStastics(msg){
-	var stcs=msg.message;
+function updateStastics(stcs){
+	ph.dump(stcs);
 	ph.jQuery("#broadcasterTime").text(ph.admin.formatYmdhms(stcs.time)+"("+ stcs.counter +")");
 	var memory=stcs.memory;
 	var useRate=(memory.max-memory.free)*100.0/memory.max;
@@ -34,7 +34,6 @@ function updateStastics(msg){
 	ph.jQuery("#broadcasterSelector").text(
 				selectText
 				);
-//ph.dump(selectorStasticses[0]);
 	var storeStack=stcs.storeStack;
 	ph.jQuery("#broadcasterStore").text(storeStack.join(":"));
 
@@ -47,28 +46,21 @@ function updateStastics(msg){
 	var authSession=stcs.authSession;
 	cur=(authSession.total-authSession.poolBack-authSession.gc);
 	ph.jQuery("#broadcasterSession").text(cur+"("+authSession.total +"-"+authSession.instance+")");
-
-	if(!isWatchCheck()){
-		unwatchStastics();
-	}
 }
 
 function watchStastics(){
-	ph.queue.subscribeByName("PhStastics","$esc.javascript($loginUser.loginId)",{
-		onMessage:updateStastics,
-		onError:function(msg){ph.log("subscribeByName error.PhStastics")}
-	},false,null);
+ ph.admin.stticsSd=ph.admin.cd.subscribe('admin','stastics',updateStastics);
 }
 
 function unwatchStastics(){
-	ph.queue.unsubscribe("PhStastics");
+ if(ph.admin.stticsSd){
+  ph.admin.stticsSd.unsubscribe();
+  ph.admin.stticsSd=null;
+ }
 }
-
 
 function isWatchCheck(){
 	return ph.jQuery('#broardcastWatchCheck').attr('checked');
-}
-function setWatchCheck(checked){
 }
 
 function onWatchCheck(){
@@ -78,6 +70,7 @@ function onWatchCheck(){
 			sessionStorage['broardcastWatch']='true';
 		}
 	}else{
+		unwatchStastics();
 		if(ph.useSessionStorage){
 			sessionStorage['broardcastWatch']='false';
 		}
@@ -85,12 +78,12 @@ function onWatchCheck(){
 }
 
 ph.jQuery(function() {
-//	watchStastics();//起動後一回は必ず取得する
-	updateStastics({message:${config.config.stasticsObject}});
-	if(ph.useSessionStorage && sessionStorage['broardcastWatch']=='true'){
-		ph.jQuery('#broardcastWatchCheck').attr('checked','checked');
+	updateStastics(${config.config.stasticsObject});
+	if(ph.useSessionStorage && sessionStorage['broardcastWatch']==='true'){
+		ph.jQuery('#broardcastWatchCheck').attr('checked',true);
+		watchStastics();
 	}else{
-		ph.jQuery('#broardcastWatchCheck').attr('checked','');
+		ph.jQuery('#broardcastWatchCheck').attr('checked',false);
 	}
 });
 

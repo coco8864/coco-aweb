@@ -26,17 +26,12 @@ var trace={
 	}
 };
 
-var runTraceCb={
-	onComplete:function(msg){changeEntry(msg.message);},
-	onError:function(msg){ph.log('runTrace onError:');ph.dump(msg);},
-	onMessage:function(msg){ph.log('runTrace onMessage:');ph.dump(msg);}
-};
 function runTrace(){
 	if(trace.accessLogId<0){
 		alert("対象がありません");
 		return;
 	}
-	var param={accessLogId:trace.accessLogId};
+	var param={command:'runAccessLog',accessLogId:trace.accessLogId};
 	for(var i=0;i<PARTS.length;i++){
 		var part=PARTS[i];
 		if(trace[part]!=null){
@@ -44,7 +39,7 @@ function runTrace(){
 			param[part]=trace[part];
 		}
 	}
-	ph.admin.doCommand("runAccessLog",param,function(chId){ph.queue.subscribeById(chId,runTraceCb)});
+	ph.admin.accessLogSd.publish(param);
 }
 
 function saveTrace(){
@@ -52,7 +47,7 @@ function saveTrace(){
 		alert('not change');
 		return;
 	}
-	var param={accessLogId:trace.accessLogId};
+	var param={command:'saveAccessLog',accessLogId:trace.accessLogId};
 	for(var i=0;i<PARTS.length;i++){
 		var part=PARTS[i];
 		if(trace[part]!=null){
@@ -60,7 +55,7 @@ function saveTrace(){
 			param[part]=trace[part];
 		}
 	}
-	ph.admin.doCommand("saveAccessLog",param,function(accessLogId){changeEntry(accessLogId);});
+	ph.admin.accessLogSd.publish(param);
 }
 
 function requestHeaderEdit(){
@@ -125,7 +120,8 @@ function responseBodyEdit(){
 ##trace.accessLog.transferEncoding ...?'chunked'
 ##trace.accessLog.contentEncoding ...?'gzip'
 ##/charset=(.*)/i
-		var charset='utf-8';
+//		var charset='utf-8';
+		var charset=null;
 		if( trace.accessLog.contentType.match(/charset=(.*)/i) ){
 			charset=RegExp.$1;
 		}
@@ -148,22 +144,18 @@ function changeEntry(newLogId){
 		alert("無効なIDです");
 		return;
 	}
-	ph.jQuery("#traceSaveButton").attr("disabled","disabed");
 	trace.clear();
 	trace.accessLogId=newLogId;
+	sessionStorage['logId']=newLogId;
 	entryTable();
 }
 
 function entryTable(){
-	var queryJsonObj={query:"WHERE id=="+trace.accessLogId,from:-1};
-	ph.admin.doPramCommand('accessLog','list',queryJsonObj, function(jsonStr){
-		var accessLogs=ph.JSON.parse(jsonStr);
-		updateEntry(accessLogs);
-	});
+	ph.admin.accessLogSd.publish({command:'entry',id:trace.accessLogId});
 }
 
 function jumpTrace(){
-	changeEntry(ph.jQuery("#inputLogId").val());
+	changeEntry(parseInt(ph.jQuery("#inputLogId").val()));
 }
 function jumpParent(){
 	if(trace.accessLog.originalLogId<0){
@@ -176,17 +168,16 @@ function jumpParent(){
 var sourceTypeDef={w:'PLAIN_WEB',W:'SSL_WEB',p:'PLAIN_PROXY',P:'SSL_PROXY',s:'SIMULATE',E:'EDIT'};
 var destinationTypeDef={H:'HTTP',S:'HTTPS',F:'FILE',A:'HANDLER',R:'REPLAY',E:'EDIT'};
 
-function updateEntry(accessLogs){
-	if(accessLogs.length==0){
+function updateEntry(accessLog){
+	if(!accessLog){
 		alert("無効なIDです");
 		return;
 	}
-
-
+	ph.jQuery("#traceSaveButton").attr("disabled",true);
+	trace.accessLogId=accessLog.id
 	ph.jQuery("#logId").text(trace.accessLogId);
 	ph.jQuery("#inputLogId").val(trace.accessLogId);
 	ph.jQuery("#viewAccessLogId").val(trace.accessLogId);
-	var accessLog=accessLogs[0];
 	trace.accessLog=accessLog;
 	if(accessLog.originalLogId>=0){
 		ph.jQuery("#traceParentButton").attr("disabled","");
@@ -306,7 +297,6 @@ ID:<input type="text" name="logId" id="inputLogId" size="8"/>
 <input type="button" onclick="changeEntry(trace.accessLogId+1);" value="next"/>
 </div>
 
-<!--div style="margin: 0.8em 0.0em; padding: 0.5em 1.0em;background: #fff none; border: solid 0pt #000"-->
 <div style="margin: 0.4em 0.0em; padding: 0.0em 0.0em;background: #fff none; border: solid 0pt #000;">
 <table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
 <thead>

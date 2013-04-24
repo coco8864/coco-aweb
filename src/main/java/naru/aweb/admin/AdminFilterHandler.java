@@ -15,7 +15,6 @@ import naru.aweb.config.FilterRole;
 import naru.aweb.filter.ListGetter;
 import naru.aweb.http.ParameterParser;
 import naru.aweb.http.WebServerHandler;
-import naru.aweb.queue.QueueManager;
 import naru.aweb.util.JdoUtil;
 import net.sf.json.JSON;
 import net.sf.json.JSONArray;
@@ -25,7 +24,7 @@ import org.apache.log4j.Logger;
 
 public class AdminFilterHandler extends WebServerHandler{
 	private static Logger logger = Logger.getLogger(AdminFilterHandler.class);
-	private static QueueManager queueManger=QueueManager.getInstance();
+//	private static QueueManager queueManger=QueueManager.getInstance();
 	
 	void doCommand(String command,ParameterParser parameter){
 		if("listCategory".equals(command)){
@@ -104,7 +103,8 @@ public class AdminFilterHandler extends WebServerHandler{
 			responseJson(categoryIds);
 			return;
 		}else if("listUpdate".equals(command)){//categoryList‚ðnet‚©‚çŽæ“¾‚·‚é
-			String chId=queueManger.createQueue();
+//			String chId=queueManger.createQueue();
+			String chId=null;
 			String source=parameter.getParameter("source");
 			try {
 				ListGetter listGetter=new ListGetter();
@@ -116,7 +116,7 @@ public class AdminFilterHandler extends WebServerHandler{
 			} catch (IOException e) {
 				logger.error("fail to listGetter.source:"+source,e);
 			}
-			queueManger.complete(chId, "fail to listGetter");
+//			queueManger.complete(chId, "fail to listGetter");
 			return;
 		}
 		completeResponse("404");
