@@ -42,6 +42,8 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	public static final String KEY_RESULT="result";
 	public static final String KEY_REQUEST_TYPE="requestType";
 	public static final String KEY_MESSAGE="message";
+	public static final String KEY_SESSION_TIME_LIMIT="sessionTimeLimit";
+	public static final String KEY_OFFLINE_PASS_HASH="offlinePassHash";
 	
 	/* response type */
 	public static final String TYPE_RESPONSE="response";
