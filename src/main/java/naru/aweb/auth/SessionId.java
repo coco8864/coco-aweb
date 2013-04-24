@@ -418,11 +418,19 @@ public class SessionId extends PoolBase{
 	}
 
 	public void setLastAccessTime() {
-		this.lastAccessTime=System.currentTimeMillis();
+		if(type==type.SECONDARY){
+			primaryId.getLastAccessTime();
+		}else{
+			this.lastAccessTime=System.currentTimeMillis();
+		}
 	}
 
 	public long getLastAccessTime() {
-		return lastAccessTime;
+		if(type==type.SECONDARY){
+			return primaryId.getLastAccessTime();
+		}else{
+			return lastAccessTime;
+		}
 	}
 
 	public Type getType() {
