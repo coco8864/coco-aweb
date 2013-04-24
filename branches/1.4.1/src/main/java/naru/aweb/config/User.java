@@ -262,6 +262,10 @@ public class User {
 	@Column(name="EXT_STORE_ID")
 	private long extStoreId;
 	
+	@Persistent
+	@Column(name="OFFLINE_PASS_HASH")
+	private String offlinePassHash;
+	
 	@NotPersistent
 	private int errorPassCount;//¸”s‰ñ”Aƒƒ‚ƒŠ‚Ì‚İ‚ÅŠÇ—
 	@NotPersistent
@@ -461,5 +465,13 @@ public class User {
 
 	public void setDigestAuthPassHash(String digestAuthPassHash) {
 		this.digestAuthPassHash = digestAuthPassHash;
+	}
+	
+	public String getOfflinePassHash() {
+		return offlinePassHash;
+	}
+
+	public void setOfflinePassHash(String offlinePassHash) {
+		this.offlinePassHash = offlinePassHash;
 	}
 }

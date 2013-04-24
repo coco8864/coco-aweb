@@ -168,6 +168,10 @@ public class AuthSession extends PoolBase{
 		this.sessionId = sessionId;
 	}
 
+	public long getLastAccessTime() {
+		return sessionId.getLastAccessTime();
+	}
+	
 	/*
 	public AuthSession getPrimarySession() {
 		return primarySession;

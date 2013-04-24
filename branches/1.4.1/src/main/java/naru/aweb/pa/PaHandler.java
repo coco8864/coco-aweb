@@ -17,6 +17,7 @@ import naru.async.timer.TimerManager;
 import naru.aweb.auth.AuthSession;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
+import naru.aweb.config.User;
 import naru.aweb.handler.WebSocketHandler;
 import naru.aweb.http.ParameterParser;
 import naru.aweb.mapping.MappingResult;
@@ -211,6 +212,13 @@ public class PaHandler extends WebSocketHandler implements Timer{
 			paSession=PaSession.create(path,bid, isWs, authSession);
 			paSessions.sessions.put(bid, paSession);
 			negoreq.put(PaSession.KEY_BID,bid);
+			
+			long lastAccess=authSession.getLastAccessTime();
+			long now=System.currentTimeMillis();
+			long timeout=config.getAuthorizer().getSessionTimeout();
+			negoreq.put("sessionTimeLimit", ((lastAccess+timeout)-now));
+			User user=authSession.getUser();
+			negoreq.put("offlinePassHash",user.getOfflinePassHash());
 			paSession.sendJson(negoreq);
 		}
 		authSession.addLogoutEvent(paSession);//ログアウト時に通知を受ける
