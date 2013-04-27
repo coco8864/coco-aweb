@@ -214,9 +214,11 @@ function updateEntry(accessLog){
 	if(lines.length>2){
 		var statusLinePath=lines[1].replace( /http:\/\/[^/]*(.*)/, "$1");
 		if(accessLog.destinationType=='S'){
-			checkReqUrl='https://' + accessLog.resolveOrigin + statusLinePath;
+			var hostName=accessLog.resolveOrigin.replace(':443','');
+			checkReqUrl='https://' + hostName + statusLinePath;
 		}else if(accessLog.destinationType=='H'){
-			checkReqUrl='http://' + accessLog.resolveOrigin + statusLinePath;
+			var hostName=accessLog.resolveOrigin.replace(':80','');
+			checkReqUrl='http://' + hostName + statusLinePath;
 		}else{
 			checkReqUrl=ph.adminUrl;
 		}
