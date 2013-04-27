@@ -14,7 +14,7 @@ import naru.async.pool.PoolManager;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.config.Performance;
-import naru.aweb.pa.PaPeer;
+import naru.aweb.pa.api.PaPeer;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 

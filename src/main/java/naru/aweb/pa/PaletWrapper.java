@@ -11,6 +11,11 @@ import org.apache.log4j.Logger;
 
 import naru.async.Timer;
 import naru.async.timer.TimerManager;
+import naru.aweb.pa.api.Blob;
+import naru.aweb.pa.api.PaMsg;
+import naru.aweb.pa.api.PaPeer;
+import naru.aweb.pa.api.Palet;
+import naru.aweb.pa.api.PaletCtx;
 
 public class PaletWrapper implements PaletCtx,Timer{
 	private static Logger logger=Logger.getLogger(PaSession.class);

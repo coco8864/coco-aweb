@@ -8,6 +8,7 @@ import naru.async.BufferGetter;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
+import naru.aweb.pa.api.Blob;
 
 /*
  * ƒŒƒXƒ|ƒ“ƒX–ˆ‚É‚P‚Â‚Ã‚Âì¬‚·‚é

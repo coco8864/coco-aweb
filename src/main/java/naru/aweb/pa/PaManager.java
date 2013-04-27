@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.Set;
 
 import naru.aweb.config.Mapping;
+import naru.aweb.pa.api.PaPeer;
+import naru.aweb.pa.api.Palet;
 
 public class PaManager {
 	

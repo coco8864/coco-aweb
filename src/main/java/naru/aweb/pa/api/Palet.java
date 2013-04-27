@@ -1,4 +1,4 @@
-package naru.aweb.pa;
+package naru.aweb.pa.api;
 
 public interface Palet {
 	/**

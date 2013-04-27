@@ -11,7 +11,7 @@ import naru.aweb.config.Config;
 import naru.aweb.config.WebClientLog;
 import naru.aweb.http.WebClientConnection;
 import naru.aweb.http.WebClientHandler;
-import naru.aweb.pa.PaPeer;
+import naru.aweb.pa.api.PaPeer;
 import net.sf.json.JSONObject;
 
 public class ServerChecker extends PoolBase implements Timer{

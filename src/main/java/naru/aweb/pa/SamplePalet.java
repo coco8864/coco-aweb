@@ -1,5 +1,10 @@
 package naru.aweb.pa;
 
+import naru.aweb.pa.api.PaMsg;
+import naru.aweb.pa.api.PaPeer;
+import naru.aweb.pa.api.Palet;
+import naru.aweb.pa.api.PaletCtx;
+
 import org.apache.log4j.Logger;
 
 public class SamplePalet implements Palet{

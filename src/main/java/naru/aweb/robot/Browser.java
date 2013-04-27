@@ -20,7 +20,7 @@ import naru.aweb.config.AccessLog;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.WebClientConnection;
 import naru.aweb.http.WebClientHandler;
-import naru.aweb.pa.PaPeer;
+import naru.aweb.pa.api.PaPeer;
 //import naru.aweb.queue.QueueManager;
 import naru.aweb.util.ServerParser;
 

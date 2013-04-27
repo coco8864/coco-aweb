@@ -14,7 +14,7 @@ import naru.aweb.config.Config;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.WsClient;
 import naru.aweb.http.WsClientHandler;
-import naru.aweb.pa.PaPeer;
+import naru.aweb.pa.api.PaPeer;
 import net.sf.json.JSONObject;
 
 /* そのサーバでいくつconnectionが張れるかをチェックする */

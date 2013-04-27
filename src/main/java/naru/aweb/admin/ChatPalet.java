@@ -8,10 +8,10 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import naru.aweb.config.Config;
-import naru.aweb.pa.PaMsg;
-import naru.aweb.pa.PaPeer;
-import naru.aweb.pa.Palet;
-import naru.aweb.pa.PaletCtx;
+import naru.aweb.pa.api.PaMsg;
+import naru.aweb.pa.api.PaPeer;
+import naru.aweb.pa.api.Palet;
+import naru.aweb.pa.api.PaletCtx;
 import net.sf.json.JSONObject;
 
 public class ChatPalet implements Palet {
