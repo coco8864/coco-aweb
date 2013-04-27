@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="jp">
+<head>
+	<script type="text/javascript" src="/pub/js/jquery-1.8.3.min.js"></script>
+	<script type="text/javascript" src="/pub/js/sha1.js"></script>
+	<!--script type="text/javascript" src="/pub/js/md5.js"></script-->
+	<title>Phatom Proxy Login</title>
+	<script type="text/javascript"> 
+function login(){
+	var username=jQuery("#username").val();
+	var password=jQuery("#password").val();
+	var loginForm=jQuery("#loginForm")[0];
+	var nonce=loginForm.ph_nonce.value;
+	var cnonce=Math.random();
+
+//	var a1=MD5_hexhash(username+":"+password);
+//	var text=a1+":"+nonce+":"+cnonce;
+//	var response=MD5_hexhash(text);
+	var a1=SHA1(username+":"+password);
+	var text=a1+":"+nonce+":"+cnonce;
+	var response=SHA1(text);
+
+	loginForm.ph_username.value=username;
+	loginForm.ph_cnonce.value=cnonce;
+	loginForm.ph_response.value=response;
+	loginForm.submit();
+	return false;
+}
+	</script> 
+</head>
+<body>
+<h1>Phatom Proxy Login(digest)</h1>
+<p>Please input username and password</p>
+<form id='dummyForm' method='post' onsubmit='return login();'>
+<div>username:<input type='text' id='username' value='' size="32"/></div>
+<div>password:<input type='password' id='password' value='' size="32"/></div>
+<div><input type='submit' value='login'/></div>
+</form>
+
+<form id='loginForm' action='$esc.html(${config.authUrl})/digestForm' method='post'>
+<input type='hidden' name='authId' value='$esc.html(${authId})'/>
+<input type='hidden' name='ph_nonce' value='$esc.html(${nonce})'/>
+
+<input type='hidden' name='ph_cnonce' value=''/>
+<input type='hidden' name='ph_response' value=''/>
+<input type='hidden' name='ph_username' value=''/>
+
+<!--input type='hidden' name='ph_algorithm' value=''/>
+<input type='hidden' name='ph_realm' value=''/>
+<input type='hidden' name='ph_uri' value=''/>
+<input type='hidden' name='ph_qop' value=''/>
+<input type='hidden' name='ph_nc' value=''/-->
+</form>
+</body>
+</html>

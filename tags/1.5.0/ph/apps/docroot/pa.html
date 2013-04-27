@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="jp">
+<head> 
+  <meta charset="UTF-8" /> 
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Pragma" content="no-cache"> 
+  <meta http-equiv="Cache-Control" content="no-cache"> 
+  <meta http-equiv="Expires" content="0"> 
+  <title>paテスト</title>
+
+  <link type="text/css" href="/pub/css/jquery-ui-1.8.2.custom.css" rel="stylesheet" />
+  <script type="text/javascript" src="/pub/js/ph-loader.js?include=ph-pa.js"></script>
+  <script type="text/javascript" src="/pub/js/dateformat.js"></script>
+  <script type="text/javascript" src="/pub/js/jquery-1.8.1.min.js"></script>
+  <script type="text/javascript" src="/pub/js/jquery-ui-1.8.2.custom.min.js"></script>
+  <script type="text/javascript">
+var cd;
+var sd;
+  </script>
+  <link type="text/css" href="/pub/css/ph.css" rel="stylesheet" /> 
+</head>
+<body>
+<H1>paテスト</H1>
+<hr/>
+<form id="scriptForm" name="scriptForm">
+<textarea name="script" rows="10" cols="80">
+</textarea><br>
+<input type="button" value="実行" onclick="doScript();"/>
+<input type="reset" value="クリア"/>
+</form>
+<input type="button" value="出力クリア" onclick="ph.jQuery('#phDebugArea').text('');"/>
+<h3>使用例</h3>
+<ul>
+<input type="button" value="connect" onclick="connect();"/>
+<input type="button" value="close" onclick="cd.close();"/>
+<input type="button" value="deploy" onclick="cd.deploy('test','naru.aweb.pa.SamplePalet');"/>
+<input type="button" value="undeploy" onclick="cd.undeploy('test');"/>
+<input type="button" value="subscribe" onclick="subscribe();"/>
+<input type="button" value="unsubscribe" onclick="sd.unsubscribe();"/>
+<input type="button" value="qnames" onclick="cd.qnames(function(qnames){ph.log('qnames cb');ph.dump(qnames);});"/>
+
+<input type="button" value="publish string" onclick="sd.publish('testAAA');"/>
+<input type="button" value="publish object" onclick="sd.publish({aaa:'testBBB'});"/>
+<input type="button" value="publish bin" onclick="sd.publish({aaa:'testCCC',blobData:[{data:'aaaa'},{data:ph.stringToArrayBuffer('bbbbb')}]});"/>
+<input type="button" value="publishForm" onclick="sd.publishForm('testForm');"/>
+<input type="button" value="use xhr" onclick="ph.useWebSocket=false;"/>
+<input type="button" value="onMessage dorp files" onclick="onDropFiles();"/>
+
+</ul>
+<div>cd.deploy('admin','naru.aweb.admin.PaAdmin');<pre>
+</pre></div>
+<form id='testForm'>
+<input type='file' name='file' />
+<input type='hidden' name='from' value='form'/>
+<input type='text' name='test' value='hello'/>
+</form>
+
+<div id='target'><p>dorag and dromp file upload</p></div>
+<div>
+<ul>
+<li><a id='bookmarklet'>WsqBookmarklet</a></li>
+</ul>
+</div>
+<a id='test' target='_blank'>test</a>
+<script type="text/javascript"><!--
+function onDropFiles(){
+  sd.onMessage(function(data){
+  var fr=new FileReader();
+  fr.onload=function(e){
+/*
+  var evt = document.createEvent("HTMLEvents");
+  evt.initEvent("click",false,false);
+  ph.jQuery("<a>", {
+    download: "test.txt",
+    href: e.target.result
+  }).get(0).dispatchEvent(evt);
+*/
+//   ph.jQuery("#test").attr("href",e.target.result);
+    ph.log('fr.onload:'+e.target.result);
+    };
+
+//    data[0].type=
+  ph.log('onMessage:type:'+data.file.type);
+//   var file=ph.blobSlice(data[0].file,0,data[0].file.size,'application/octet-stream;content-disposition=attachment;filename=test.txt');
+    file=data.file;
+    fr.readAsDataURL(file,'utf-8');
+  });
+}
+
+function connect(){
+  cd=ph.pa.connect('/pa');
+  cd.done(
+    function(con){
+      ph.log('++cd done cb++ message:'+con);
+      ph.dump(con);
+      ph.log('--cd done cb--');
+    });
+  cd.on('qnames',
+    function(qnames){
+      ph.log('++cd qnames cb++ message:'+qnames);
+      ph.dump(qnames);
+      ph.log('--cd qnames cb--');
+    });
+  cd.on('error',
+    function(data){
+      ph.log('++cd error cb++ message:'+data);
+      ph.dump(data);
+      ph.log('--cd error cb--');
+    });
+  cd.on('success',
+    function(data){
+      ph.log('++cd success cb++ message:'+data);
+      ph.dump(data);
+      ph.log('--cd success cb--');
+    });
+  cd.on('test',
+    function(data){
+      ph.log('++cd test cb++ message:'+data);
+      ph.dump(data);
+      ph.log('--cd test cb--');
+    });
+  cd.on('@',
+    function(data){
+      ph.log('++cd @ cb++ message:'+data);
+      ph.dump(data);
+      ph.log('--cd @ cb--');
+    });
+}
+
+function subscribe(){
+  sd=cd.subscribe('test');
+  sd.done(
+    function(con){
+      ph.log('++sd done sd++ message:'+con);
+      ph.dump(con);
+      ph.log('--sd done sd--');
+    });
+  sd.onMessage(
+    function(data){
+      ph.log('++sd message sd++ message:'+data);
+      ph.dump(data);
+      ph.log('--sd message sd--');
+    });
+  sd.on('success',
+    function(data){
+      ph.log('++sd success sd++ message:'+data);
+      ph.dump(data);
+      ph.log('--sd success sd--');
+    });
+  sd.on('error',
+    function(data){
+      ph.log('++sd error sd++ message:'+data);
+      ph.dump(data);
+      ph.log('--sd error sd--');
+    });
+
+onDropFiles();
+}
+ph.jQuery(function(){
+  var href="javascript:(function(){var%20url='" + ph.scriptBase + "ph-loader.js?bm=bm&include=ph-pa.js,bm.js?c=' + (new Date()).valueOf();var%20d=document;var%20e=d.createElement('script');e.src=url;d.getElementsByTagName('head')[0].appendChild(e);})();"
+  $("#bookmarklet").attr('href',href);
+// ドラッグドロップからの入力
+  $("body").bind("drop", function (e) {
+  // ドラッグされたファイル情報を取得
+    var files = e.originalEvent.dataTransfer.files;
+    var data={file:files[0],from:'drop'};
+    try{
+    sd.publish(data);
+    }catch(e){
+    ph.log(e);
+    alert(e);
+    }
+    return false;
+// アップロード処理
+  })
+  .bind("dragenter", function () {
+    // false を返してデフォルトの処理を実行しないようにする
+    return false;
+  })
+  .bind("dragover", function () {
+    // false を返してデフォルトの処理を実行しないようにする
+    return false;
+  });
+  ph.setDebug(true);
+  if(window.addEventListener){
+    window.addEventListener('message',messageRcv, false);
+  }else if(window.attachEvent){
+    window.attachEvent('onmessage',messageRcv);
+  }
+});
+
+function messageRcv(ev){
+  ph.log('>>>onMessageFunc');
+  ph.dump(ev.data);
+  ph.log('<<<onMessageFunc');
+}
+
+function doScript(){
+  var form = document.getElementById("scriptForm");
+  window.eval(form.script.value);
+}
+// --></script>
+
+<div id="debug">
+<p>デバッグ情報</p>
+<Hr/>
+<pre id="phDebugArea"></pre>
+</div>
+<!--iframe name="_phAuthFrameChildxxxxx" onload="ph.log('_phAuthFrameChild onload')";></iframe-->
+</body> 
+</html>
