@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja" dir="ltr">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Pragma" content="no-cache"> 
+<meta http-equiv="Cache-Control" content="no-cache"> 
+<meta http-equiv="Expires" content="0"> 
+<script type="text/javascript" src="/pub/js/ph-loader.js"></script>
+<script  type="text/javascript"><!--
+function response(resText){
+  if(parent===window){
+//    alert("top");
+    return;
+  }
+  parent.postMessage(resText,"*");
+//  var now = new Date();
+//  window.location="$esc.javascript(${config.publicWebUrl})" +"check.html?" +now.getTime();
+}
+
+function onMessageFunc(ev){
+  if(!ev.data){
+    return;
+  }
+  response(ev.data);
+}
+
+function crossDomainRequest(url){
+  if(window.addEventListener){
+    window.addEventListener('message',onMessageFunc, false);
+  }else if(window.attachEvent){
+    window.attachEvent('onmessage',onMessageFunc);
+  }
+  window._phAuthFrameChild.location.href=url;
+}
+
+function checkSessionCb(res){
+  if(res.result=='secondary'){//secondaryがあった場合
+    res.result=true;
+    resText=ph.JSON.stringify(res);
+    response(resText);
+  }else if(res.result=='primary'){//primaryは、あったがsecondaryがなかった場合
+    crossDomainRequest(res.authEncUrl);
+  }else if(res.result=='redirectAuth'){//primaryがなかったため、認証が必要な場合
+    res={result:'redirect',location:ph.authUrl+"?authId="+res.authId};
+    resText=ph.JSON.stringify(res);
+    response(resText);
+  }else{//urlの問題等でerror
+    resText=ph.JSON.stringify(res);
+    response(resText);
+  }
+}
+ph.jQuery(function(){
+  checkSessionCb(${response});
+});
+// --></script>
+</head>
+<body>
+<iframe name="_phAuthFrameChild"></iframe>
+認証処理用フレームコンテンツ
+</body>
+</html>

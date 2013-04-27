@@ -1,0 +1,113 @@
+var ent=function(){
+ alert('ent');
+}
+ph.jQuery("body").append('<iframe name="aaa" id="aaa" src="https://49.212.107.199/" onload="ent()" ></iframe>');
+ph.jQuery("#aaa").remove();
+
+
+
+	if(window.addEventListener){
+		window.addEventListener('message',messageRcv, false);
+	}else if(window.attachEvent){
+		window.attachEvent('onmessage',messageRcv);
+	}
+
+
+window.aaa.attachEvent('onload',function(){alert('xonload');});
+
+
+function messagexxxxxxx(ev){
+	ph.log('>>>messagexxxxxxx' + ev.source.location.href);
+	ph.dump1(ev);
+	ph.log('<<<messagexxxxxxx');
+}
+ph.jQuery("body").append('<iframe name="aaa" id="aaa" ></iframe>');
+if(window.addEventListener){
+  window.addEventListener('message',messagexxxxxxx, false);
+}else if(window.attachEvent){
+  window.attachEvent('onmessage',messagexxxxxxx);
+}
+window.aaa.location.href='http://127.0.0.1:1280/auth/checkSession?sourceType=web&originUrl=ws://127.0.0.1:1280/admin/&protocol=http:&authPath=/queue';
+window.aaa.location.href='http://127.0.0.1:1280/queue?PH_AUTH=check'
+
+
+
+ph.auth._reqestUrl('http://127.0.0.1:1280/queue?PH_AUTH=check',function(x){alert(ph.JSON.stringify(x))});
+
+ph.auth._reqestUrl('http://127.0.0.1:1280/queue?PH_AUTH=check',function(x){alert(ph.JSON.stringify(x))});
+
+ph.auth._reqestUrl('http://127.0.0.1:1280/auth/checkSession?sourceType=web&originUrl=ws://127.0.0.1:1280/admin/&protocol=http:&authPath=/queue',function(x){alert(ph.JSON.stringify(x))});
+
+ph.auth.auth('http://127.0.0.1:1280/queue',function(x){alert(ph.JSON.stringify(x))});
+ph.auth.user(null,function(x){alert(ph.JSON.stringify(x))});
+
+ph.wsq.open('ws://127.0.0.1:1280/wsq',function(x){ph.log('['+ x.cbType +']');window.wsq=x});
+wsq.subscribe('aaa',function(){},'aaa');
+wsq.close();
+ph.dump1(wsq)
+
+ph.auth.auth('http://127.0.0.1:1280/wsq',function(x){ph.log(x);});
+
+ph.auth.info(null,function(x){ph.dump(x)});
+
+ph.wsq.open('ws://127.0.0.1:1280/wsq',function(x){ph.dump1(x);window.wsq=x});
+wsq.subscribe('test',function(x){ph.log('subscribeCb');ph.dump1(x);})
+
+wsq.publish('test','aaaa');
+
+wsq.unsubscribe('test');
+wsq.getQnames();
+
+unsubscribe
+
+ph.jQuery("body").append('<iframe width="0" height="0" frameborder="no" name="wsq_http://127.0.0.1:1280/wsq" onerror=\'ph.log("onerror");ph.log(this.name);\' onload=\'ph.log("onload");ph.dump1(this);\' src="http://127.0.0.1:1280/wsqx/xhrFrame.html"></iframe>');
+
+ph.wsq.open('http://127.0.0.1:1280/wsq',function(x){ph.dump1(x);window.wsq=x});
+wsq.subscribe('test',function(x){ph.log('subscribeCb');ph.log(x);})
+
+wsq.deploy('test','naru.aweb.wsq.SampleWsqlet');
+wsq.close();
+
+var a=ph.jQuery('#__wsq_http://127.0.0.1:1280/wsq');
+ph.dump1(a);
+a.remove();
+
+var b = jz.zip.compress([
+  {name: "foo", children: [ //folder
+    {name: "hello.txt", str: "Hello World!"} //string
+  ]}
+]);
+
+var fr=new FileReader();
+fr.onload=function(x){ph.dump1(x.target)};
+fr.readAsArrayBuffer(b);
+ph.dump1(b);
+ph.log('-------------');
+
+ph.wsq.open('ws://127.0.0.1:1280/wsq',function(x){ph.dump1(x);window.wsq=x});
+wsq.deploy('test','naru.aweb.wsq.SampleWsqlet');
+wsq.publishBinary('test','message',['data1','data2']);
+
+ph.wsq.open('ws://127.0.0.1:1280/wsq',function(x){ph.dump1(x);x.deploy('test','naru.aweb.wsq.SampleWsqlet')});
+
+ph.wsq.open('ws://127.0.0.1:1280/wsq',function(x){ph.dump1(x);x.publishBinary('test','aaaa');});
+
+var fr=new FileReader();
+fr.onload=function(x){ph.dump1(x.target)};
+fr.readAsArrayBuffer(b);
+
+    var jsonText=ph.JSON.stringify(sendData);
+    var blob = jz.zip.compress([
+      {name: 'meta', str: jsonText}
+    ]);
+    var ab=new ArrayBuffer(blob.size+8);
+    var uinta=new Uint32Array(ab,0,8);
+    uinta[0]=1234;
+    uinta[1]=1111;
+    var fr=new FileReader();
+    fr.onload=function(x){
+      ab.put(8,x.target.result);
+      this._ws.send(ab);
+    };
+    fr.readAsArrayBuffer(b);
+
