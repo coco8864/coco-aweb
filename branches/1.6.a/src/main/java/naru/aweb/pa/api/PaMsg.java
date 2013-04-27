@@ -1,4 +1,4 @@
-package naru.aweb.pa;
+package naru.aweb.pa.api;
 
 import java.util.Collection;
 import java.util.Date;

@@ -21,6 +21,8 @@ import naru.aweb.config.User;
 import naru.aweb.handler.WebSocketHandler;
 import naru.aweb.http.ParameterParser;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.pa.api.Blob;
+import naru.aweb.pa.api.PaMsg;
 import net.sf.json.JSON;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;

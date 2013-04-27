@@ -13,6 +13,9 @@ import naru.async.pool.PoolManager;
 import naru.aweb.auth.AuthSession;
 import naru.aweb.auth.LogoutEvent;
 import naru.aweb.config.User;
+import naru.aweb.pa.api.Blob;
+import naru.aweb.pa.api.PaMsg;
+import naru.aweb.pa.api.PaPeer;
 import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
 

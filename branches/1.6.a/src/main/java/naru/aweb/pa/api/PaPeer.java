@@ -1,10 +1,14 @@
-package naru.aweb.pa;
+package naru.aweb.pa.api;
 
 import java.util.List;
 
 import naru.async.AsyncBuffer;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
+import naru.aweb.pa.Envelope;
+import naru.aweb.pa.PaManager;
+import naru.aweb.pa.PaSession;
+import naru.aweb.pa.PaletWrapper;
 import net.sf.json.JSONObject;
 
 /*

@@ -24,7 +24,7 @@ import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
 import naru.async.store.Store;
 import naru.aweb.http.HeaderParser;
-import naru.aweb.pa.PaPeer;
+import naru.aweb.pa.api.PaPeer;
 import naru.aweb.util.DatePropertyFilter;
 import naru.aweb.util.JdoUtil;
 import net.sf.json.JSON;
