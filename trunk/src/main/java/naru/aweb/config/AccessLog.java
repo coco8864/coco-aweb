@@ -54,7 +54,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		DatePropertyFilter dpf=new DatePropertyFilter();
 		jsonConfig.setJavaPropertyFilter(dpf);
 		jsonConfig.setJsonPropertyFilter(dpf);
-		jsonConfig.setExcludes(new String[]{"poolId","chId","persist","timeCheckPint","life","shortFormat","skipPhlog","peer"});
+		jsonConfig.setExcludes(new String[]{"poolId","chId","persist","timeCheckPint","life","shortFormat","skipPhlog","peer","webClientLog"});
 	}
 	private static SimpleDateFormat logDateFormat=null; 
 	static{

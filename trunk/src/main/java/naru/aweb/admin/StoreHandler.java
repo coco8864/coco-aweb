@@ -354,10 +354,9 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 		}
 		if(isClose){
 			store.close(this,store);
-		}else{
-			store=null;
-			unref();
 		}
+		store=null;
+		unref();
 	}
 
 	public void onBufferEnd(Object userContext) {
