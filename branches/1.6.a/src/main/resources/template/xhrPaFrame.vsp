@@ -73,7 +73,7 @@ function xhrRequest(){
     return;
   }
   if(msgs.length===0||msgs[0].type!=='negotiate'){
-    msgs.unshift({type:'negotiate',bid:bid,token:token});
+    msgs.unshift({type:'negotiate',bid:bid,token:token,needRes:false});
   }
   var jsonText=ph.JSON.stringify(msgs);
 ##alert('xhrRequest:'+jsonText);
