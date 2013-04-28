@@ -104,6 +104,8 @@ public class Authenticator {
 		user.setLoginId(loginId);
 		
 		user.changePassword(password, realm);
+		//–{•¨‚Ìpassowrd‚ª˜R‚ê‚È‚¢‚æ‚¤‚Éoffline password‚Íˆê—¥"password"‚Å‰Šú‰»
+		user.setOfflinePassHash(User.calcPassHashSha1(loginId,"password"));
 		user.setRoles(roles);
 		Date now=new Date();
 		user.setCreateDate(now);
