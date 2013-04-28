@@ -148,6 +148,7 @@ public class PaHandler extends WebSocketHandler implements Timer{
 				return;
 			}
 			paSession.setupWsHandler(null,this);
+			return;
 		}
 		dispatchMessage(req);
 	}
@@ -184,6 +185,20 @@ public class PaHandler extends WebSocketHandler implements Timer{
 		}
 	}
 	
+	private void sendNegotiation(){
+		JSONObject negores=new JSONObject();
+		AuthSession authSession=getAuthSession();
+		negores.put(PaSession.KEY_TYPE,PaSession.TYPE_NEGOTIATE);
+		negores.put(PaSession.KEY_BID,bid);
+		long lastAccess=authSession.getLastAccessTime();
+		long now=System.currentTimeMillis();
+		long timeout=config.getAuthorizer().getSessionTimeout();
+		negores.put(PaSession.KEY_SESSION_TIME_LIMIT, ((lastAccess+timeout)-now));
+		User user=authSession.getUser();
+		negores.put(PaSession.KEY_OFFLINE_PASS_HASH,user.getOfflinePassHash());
+		paSession.sendJson(negores);
+	}
+	
 	/**
 	 * negotiationの時は、新規採番
 	 * @param bid
@@ -200,11 +215,19 @@ public class PaHandler extends WebSocketHandler implements Timer{
 			return false;
 		}
 		
-		isNegotiated=true;
 		bid=negoreq.getInt(PaSession.KEY_BID);
+		boolean needRes=negoreq.getBoolean("needRes");
 		PaSessions paSessions=getPaSessions(authSession);
 		paSession=paSessions.sessions.get(bid);
+		if(paSession==null && needRes==false){
+			bid=-1;
+			return false;
+		}
+		isNegotiated=true;
 		if(paSession!=null){
+			if(needRes){
+				sendNegotiation();
+			}
 			return true;
 		}
 		String path=getRequestMapping().getSourcePath();
@@ -213,15 +236,7 @@ public class PaHandler extends WebSocketHandler implements Timer{
 			bid=paSessions.bidSeq;
 			paSession=PaSession.create(path,bid, isWs, authSession);
 			paSessions.sessions.put(bid, paSession);
-			negoreq.put(PaSession.KEY_BID,bid);
-			
-			long lastAccess=authSession.getLastAccessTime();
-			long now=System.currentTimeMillis();
-			long timeout=config.getAuthorizer().getSessionTimeout();
-			negoreq.put(PaSession.KEY_SESSION_TIME_LIMIT, ((lastAccess+timeout)-now));
-			User user=authSession.getUser();
-			negoreq.put(PaSession.KEY_OFFLINE_PASS_HASH,user.getOfflinePassHash());
-			paSession.sendJson(negoreq);
+			sendNegotiation();
 		}
 		authSession.addLogoutEvent(paSession);//ログアウト時に通知を受ける
 		return true;
