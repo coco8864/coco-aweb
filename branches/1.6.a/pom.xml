@@ -4,7 +4,7 @@
 	<groupId>naru.aweb</groupId>
 	<artifactId>aweb</artifactId>
 	<name>aweb</name>
-	<version>1.5.0</version>
+	<version>1.6.0</version>
 	<url>https://code.google.com/p/coco-aweb</url>
 
   <properties>
@@ -31,7 +31,7 @@
     <plugin>
       <groupId>com.theoryinpractise</groupId>
       <artifactId>coffee-maven-plugin</artifactId>
-      <version>1.4.0</version>
+      <version>1.4.7</version>
 
       <configuration>
          <bare>false</bare>
@@ -45,14 +45,17 @@
 
          <!--coffeeOutputDirectory>${project.build.directory}/coffee</coffeeOutputDirectory-->
          <coffeeOutputDirectory>${basedir}/ph/apps/docroot/pub/js</coffeeOutputDirectory>
-         <compileIndividualFiles>true</compileIndividualFiles>
+         <compileIndividualFiles>false</compileIndividualFiles>
          <coffeeJoinSets>
             <joinSet>
                 <id>ph-pa</id>
                 <fileSet>
                     <directory>${basedir}/src/main/coffee</directory>
                     <includes>
-                        <include>ph-pa.coffee</include>
+                        <include>ph-pa-0main.coffee</include>
+                        <include>ph-pa-connection.coffee</include>
+                        <include>ph-pa-subscription.coffee</include>
+                        <include>ph-pa-envelope.coffee</include>
                     </includes>
                 </fileSet>
             </joinSet>
