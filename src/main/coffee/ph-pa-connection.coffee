@@ -70,7 +70,8 @@ class CD extends EventModule
     ph.log('Pa _onWsOpen')
     @_onOpen()
   _onWsClose: (event)=>
-    ph.log('Pa _onWsClose.code:'+event.code+':reason:'+event.reason)
+    ph.log('Pa _onWsClose.code:'+event.code+':reason:'+event.reason+':wasClean:'+event.wasClean)
+    @__onClose(event.reason)
     if @stat!=ph.pa.STAT_CONNECT
       @stat=ph.pa.INIT
       return
