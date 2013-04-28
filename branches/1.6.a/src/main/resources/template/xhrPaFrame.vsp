@@ -52,7 +52,12 @@ function xhrSuccess(text){
   }
 }
 
-function xhrError(){
+function xhrError(jqXhr,status,errorThrown){
+  if(jqXhr.status===403){
+    sendObjToParent([{type:'close'}]);
+    sendObjToParent({load:false});
+    return;
+  }
   errorCount++;
   timer=setTimeout(xhrRequest,INTERVAL);
 }
