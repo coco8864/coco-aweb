@@ -139,7 +139,7 @@ public class PaPeer extends PoolBase{
 		return unsubscribe("api");
 	}
 	
-	boolean unsubscribe(String reason){
+	public boolean unsubscribe(String reason){
 		/* client‚Éunsubscribe(subscribeŽ¸”s)‚ð’Ê’m‚·‚é */
 		if( paSession!=null && paSession.unsubscribeByPeer(this) ){
 			/* palet‚ÉonUnsubscribe‚ð’Ê’m‚·‚é */
