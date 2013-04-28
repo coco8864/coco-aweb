@@ -76,7 +76,7 @@ public class PaletWrapper implements PaletCtx,Timer{
 		palet.onSubscribe(peer);
 	}
 	
-	boolean onUnubscribe(PaPeer peer,String reason){
+	public boolean onUnubscribe(PaPeer peer,String reason){
 		boolean exist=false;
 		String subname=peer.getSubname();
 		synchronized(peers){
