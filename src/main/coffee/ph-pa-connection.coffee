@@ -20,7 +20,7 @@ class CD extends EventModule
     @trigger(ph.pa.RESULT_SUCCESS,'auth',@)#success to auth
     @_appId=auth.appId
     @_token=auth.token
-    @stat=ph.pa.STAT_IDLE
+#    @stat=ph.pa.STAT_IDLE
     if @isWs
       @_openWebSocket()
     else
@@ -59,6 +59,13 @@ class CD extends EventModule
         ptcMsgs.push(env.pack(msg,null))
       jsonText=ph.JSON.stringify(ptcMsgs)
       ph.log('xhr send:'+jsonText)
+      @_xhrFrame[0].contentWindow.postMessage(jsonText,"*")#TODO origin
+  _sendNego:(msg)->
+    if @isWs
+      jsonText=ph.JSON.stringify(msg)
+      @_ws.send(jsonText)
+    else
+      jsonText=ph.JSON.stringify([msg])
       @_xhrFrame[0].contentWindow.postMessage(jsonText,"*")#TODO origin
   _send:(msg)->
     if msg.type==ph.pa.TYPE_NEGOTIATE
@@ -134,12 +141,14 @@ class CD extends EventModule
       delete bids[@url]
     sessionStorage[@_BROWSERID_PREFIX + @_appId]=ph.JSON.stringify(bids)
   _onOpen:->
-    @stat=ph.pa.STAT_CONNECT
-    @_send({type:ph.pa.TYPE_NEGOTIATE,bid:@_getBid(),token:@_token})
+    @stat=ph.pa.STAT_NEGOTIATION
+    @_sendNego({type:ph.pa.TYPE_NEGOTIATE,bid:@_getBid(),token:@_token,needRes:true})
   __onMsgNego:(msg)->
+    @stat=ph.pa.STAT_CONNECT
     if msg.bid!=@_getBid()
       @_setBid(msg.bid)
-      @_send({type:ph.pa.TYPE_NEGOTIATE,bid:msg.bid,token:@_token})
+      @_send({type:ph.pa.TYPE_NEGOTIATE,bid:msg.bid,token:@_token,needRes:false})
+    @offlinePassHash=msg.offlinePassHash
   __onClose:(msg)->
     if @deferred.state()!='pending'
       ph.log('aleady closed')
