@@ -67,10 +67,15 @@ window.ph.pa={
       prm=@_connections[url].promise
     else
       dfd=ph.jQuery.Deferred()
-      prm=dfd.promise(new CD(url,httpUrl,dfd))
+      prm=dfd.promise(new Connection(url,httpUrl,dfd))
       @_connections[url]={deferred:dfd,promise:prm}
     prm._openCount++
     prm
+  _onUnload:->
+    ph.log('onUnload')
+    for url,con of ph.pa._connections
+      pms=con.promise
+      pms.trigger('unload')
   _xhrOnMessage:(event)->
     for url,con of ph.pa._connections
       tmpCd=con.promise
@@ -97,6 +102,8 @@ if window.addEventListener
   window.addEventListener('message',ph.pa._xhrOnMessage, false)
 else if window.attachEvent
   window.attachEvent('onmessage',ph.pa._xhrOnMessage)
+ph.jQuery(window).unload(ph.pa._onUnload)
+
 #setTimeout(ph.pa._onTimer,ph.pa._INTERVAL)
 
 #-------------------EventModule-------------------

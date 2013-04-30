@@ -1,14 +1,14 @@
-#-------------------Subscribe Deferred-------------------
-class SD extends EventModule
-  constructor: (@_cd,@deferred,@qname,@subname)->
+#-------------------Subscription-------------------
+class Subscription extends EventModule
+  constructor: (@_con,@deferred,@qname,@subname)->
     super
-    @_cd._send({type:ph.pa.TYPE_SUBSCRIBE,qname:@qname,subname:@subname})
+    @_con._send({type:ph.pa.TYPE_SUBSCRIBE,qname:@qname,subname:@subname})
   unsubscribe:->
     @checkState()
-    @_cd._send({type:ph.pa.TYPE_UNSUBSCRIBE,qname:@qname,subname:@subname})
+    @_con._send({type:ph.pa.TYPE_UNSUBSCRIBE,qname:@qname,subname:@subname})
   publish:(msg)->
     @checkState()
-    @_cd._send({type:ph.pa.TYPE_PUBLISH,qname:@qname,subname:@subname,message:msg})
+    @_con._send({type:ph.pa.TYPE_PUBLISH,qname:@qname,subname:@subname,message:msg})
   publishForm:(formId)->
     @checkState()
     form=ph.jQuery('#'+formId)
@@ -16,10 +16,10 @@ class SD extends EventModule
       throw 'not form tag id'
     form.attr("method","POST")
     form.attr("enctype","multipart/form-data")
-    form.attr("action","#{@_cd.httpUrl}/!paUpload")
-    form.attr("target","#{@_cd._downloadFrameName}")
-    bidInput=ph.jQuery("<input type='hidden' name='bid' value='#{@_cd._getBid()}'/>")
-    tokenInput=ph.jQuery("<input type='hidden' name='token' value='#{@_cd._token}'/>")
+    form.attr("action","#{@_con.httpUrl}/!paUpload")
+    form.attr("target","#{@_con._downloadFrameName}")
+    bidInput=ph.jQuery("<input type='hidden' name='bid' value='#{@_con._getBid()}'/>")
+    tokenInput=ph.jQuery("<input type='hidden' name='token' value='#{@_con._token}'/>")
     qnameInput=ph.jQuery("<input type='hidden' name='qname' value='#{@qname}'/>")
     subnameInput=ph.jQuery("<input type='hidden' name='subname' value='#{@subname}'/>")
     form.append(bidInput)

@@ -1,5 +1,5 @@
-#-------------------Connection Deferred-------------------
-class CD extends EventModule
+#-------------------Connection-------------------
+class Connection extends EventModule
   _BROWSERID_PREFIX:'bid.'
   constructor: (@url,@httpUrl,@deferred) ->
     super
@@ -22,8 +22,16 @@ class CD extends EventModule
     @SsKey='_paSs:'+@_loginId+':'+@url+':'+@_appSid
     str=sessionStorage.getItem(@SsKey) ? '{"bid":0}'
     @paSsObj=ph.JSON.parse(str)
+##unloadŽž‚ÉsessionStrage‚É•Û‘¶
+    @on('unload',->
+      if !@paSsObj
+        return
+      str=ph.JSON.stringify(@paSsObj)
+      sessionStorage.setItem(@SsKey,str)
+      )
     @_token=auth.token
-#    @stat=ph.pa.STAT_IDLE
+    @trigger(ph.pa.RESULT_SUCCESS,'auth',@)#success to auth
+    @trigger('auth',@)#success to auth
     if @isWs
       @_openWebSocket()
     else
@@ -35,8 +43,6 @@ class CD extends EventModule
 #    con=@
 #    @_xhrFrame.load(->con._onXhrLoad())
     ph.jQuery('body').append(@_downloadFrame)
-    @trigger(ph.pa.RESULT_SUCCESS,'auth',@)#success to auth
-    @trigger('auth',@)#success to auth
   _flushMsg:->
     if @stat!=ph.pa.STAT_CONNECT
       return
@@ -139,10 +145,11 @@ class CD extends EventModule
     if bid
       @paSsObj.bid=bid
 ##todo unloadŽž‚Ésave‚·‚é
-      str=ph.JSON.stringify(@paSsObj)
-      sessionStorage.setItem(@SsKey,str)
+##      str=ph.JSON.stringify(@paSsObj)
+##      sessionStorage.setItem(@SsKey,str)
     else
       sessionStorage.removeItem(@SsKey)
+      @paSsObj=null
   _onOpen:->
     @stat=ph.pa.STAT_NEGOTIATION
     @_sendNego({type:ph.pa.TYPE_NEGOTIATE,bid:@_getBid(),token:@_token,needRes:true})
@@ -152,6 +159,7 @@ class CD extends EventModule
       @_setBid(msg.bid)
       @_send({type:ph.pa.TYPE_NEGOTIATE,bid:msg.bid,token:@_token,needRes:false})
     @offlinePassHash=msg.offlinePassHash
+    @trigger('connected',@)#success to connect
   __onClose:(msg)->
     if @deferred.state()!='pending'
       ph.log('aleady closed')
@@ -244,7 +252,7 @@ class CD extends EventModule
         @__onSuccess(msg)
       else
         @__onError(msg)
-#----------CD outer api----------
+#----------Connection outer api----------
   close:->
     @checkState()
     @_openCount--
@@ -262,7 +270,7 @@ class CD extends EventModule
     if @_subscribes[key]
       return @_subscribes[key].promise
     dfd=ph.jQuery.Deferred()
-    prm=dfd.promise(new SD(@,dfd,qname,subname))
+    prm=dfd.promise(new Subscription(@,dfd,qname,subname))
     @_subscribes[key]={deferred:dfd,promise:prm}
     if onMessage
       prm.onMessage(onMessage)
