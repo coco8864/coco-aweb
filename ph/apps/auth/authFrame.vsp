@@ -87,7 +87,7 @@ function _checkSessionCb(resText){
 	}
 }
 
-function getAppId(req){
+function getAppSid(req){
     req.isAjax=true;
 	ph.jQuery.post(ph.authUrl+"/checkSession",req/*{authUrl:req.authUrl,originUrl:req.originUrl}*/,_checkSessionCb,"html");
 }
@@ -114,8 +114,8 @@ function onMessageFunc(ev){
 		orderInfo.req=req;
 		if(req.type=="getUser"){
 			getUser(req);
-		}else if(req.type=="getAppId"){
-			getAppId(req);
+		}else if(req.type=="getAppSid"){
+			getAppSid(req);
 		}
   	}
 }
