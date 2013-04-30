@@ -45,8 +45,8 @@ public class PaPeer extends PoolBase{
 		return paSession.getPath();
 	}
 
-	public String getAppId() {
-		return paSession.getAppId();
+	public String getAppSid() {
+		return paSession.getAppSid();
 	}
 
 	public String getLoginId() {

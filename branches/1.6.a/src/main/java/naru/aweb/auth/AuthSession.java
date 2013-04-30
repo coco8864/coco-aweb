@@ -18,19 +18,19 @@ public class AuthSession extends PoolBase{
 	public static AuthSession UNAUTH_SESSION=new AuthSession(new User(),"");
 	private static Logger logger = Logger.getLogger(AuthSession.class);
 	private static String serverId=DataUtil.digestHex(config.getString("serverIdEntropy","serverIdEntropy").getBytes())+System.currentTimeMillis()+".";
-	private static long appIdSeq=0;
+	private static long appSidSeq=0;
 	
 	private User user;
 	private String token;//CSRF対策
-	private String appId;//クライアントでこのセションを識別するID,他サーバを含めて一意が理想
+	private String appSid;//クライアントでこのセションを識別するID,他サーバを含めて一意が理想
 	private Map<String,Object> attribute=new HashMap<String,Object>();//sessionに付随する属性
 	private boolean isLogout=false;
 	private SessionId sessionId;
 	private Set<LogoutEvent> logoutEvents=new HashSet<LogoutEvent>();
 	private Set<AuthSession> secandarySessions=new HashSet<AuthSession>();
 	
-	private synchronized static long getAppIdSeq(){
-		return appIdSeq++;
+	private synchronized static long getAppSidSeq(){
+		return appSidSeq++;
 	}
 	
 	public void recycle() {
@@ -56,7 +56,7 @@ public class AuthSession extends PoolBase{
 	void init(User user,String token){
 		this.user=user;
 		this.token=token;
-		this.appId=DataUtil.digestHex((serverId+getAppIdSeq()).getBytes());
+		this.appSid=DataUtil.digestHex((serverId+getAppSidSeq()).getBytes());
 	}
 	
 	public AuthSession createSecondarySession(){
@@ -156,8 +156,8 @@ public class AuthSession extends PoolBase{
 		return token;
 	}
 	
-	public String getAppId() {
-		return appId;
+	public String getAppSid() {
+		return appSid;
 	}
 
 	public SessionId getSessionId() {

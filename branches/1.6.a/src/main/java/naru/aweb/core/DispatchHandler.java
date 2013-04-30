@@ -515,12 +515,14 @@ public class DispatchHandler extends ServerBaseHandler {
 			switch(stat){
 			case SUCCESS:
 				response.element("result", true);
-				response.element(AuthHandler.APP_ID, authSession.getAppId());
+				response.element(AuthHandler.APP_SID, authSession.getAppSid());
+				response.element(AuthHandler.LOGIN_ID, authSession.getUser().getLoginId());
 				response.element("token", authSession.getToken());
 				break;
 			case PUBLIC:
 				response.element("result", true);
-				response.element(AuthHandler.APP_ID, "public");
+				response.element(AuthHandler.APP_SID, "public");
+				response.element(AuthHandler.LOGIN_ID, "public");
 				break;
 			case FAIL:
 				response.element("result", false);
