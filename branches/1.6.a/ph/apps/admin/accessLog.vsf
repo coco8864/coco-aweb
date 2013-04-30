@@ -27,15 +27,15 @@ function accessLogIdsCommand(command){
 		alert(cmd+':選択されていません.');
 		return;
 	}
-	ph.admin.accessLogSd.publish({command:command,list:selectList.join()});
+	ph.admin.accessLogSub.publish({command:command,list:selectList.join()});
 }
 
 function accessLogDeleteQuery(query){
-	ph.admin.accessLogSd.publish({command:'deleteQuery',query:query});
+	ph.admin.accessLogSub.publish({command:'deleteQuery',query:query});
 }
 
 function accessLogExportQuery(query){
-	ph.admin.accessLogSd.publish({command:'exportQuery',query:query});
+	ph.admin.accessLogSub.publish({command:'exportQuery',query:query});
 }
 
 function watchPage(){
@@ -108,7 +108,7 @@ function query(queryString,from,to,isWatch){
 	}else{
 		delete queryObj.query;
 	}
-	ph.admin.accessLogSd.publish(queryObj);
+	ph.admin.accessLogSub.publish(queryObj);
 	curQuery=queryObj;
 }
 

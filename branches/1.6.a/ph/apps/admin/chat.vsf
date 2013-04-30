@@ -53,7 +53,7 @@ inputArea.keydown(function(e){
   return true;
 });
 
-var chatSd=ph.admin.cd.subscribe('admin','chat');
+var chatSd=ph.admin.con.subscribe('admin','chat');
 chatSd.onMessage(
  function(msg){
  ##chat画面を表示していない可能性がある

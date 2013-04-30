@@ -39,7 +39,7 @@ function runTrace(){
 			param[part]=trace[part];
 		}
 	}
-	ph.admin.accessLogSd.publish(param);
+	ph.admin.accessLogSub.publish(param);
 }
 
 function saveTrace(){
@@ -55,7 +55,7 @@ function saveTrace(){
 			param[part]=trace[part];
 		}
 	}
-	ph.admin.accessLogSd.publish(param);
+	ph.admin.accessLogSub.publish(param);
 }
 
 function requestHeaderEdit(){
@@ -151,7 +151,7 @@ function changeEntry(newLogId){
 }
 
 function entryTable(){
-	ph.admin.accessLogSd.publish({command:'entry',id:trace.accessLogId});
+	ph.admin.accessLogSub.publish({command:'entry',id:trace.accessLogId});
 }
 
 function jumpTrace(){
