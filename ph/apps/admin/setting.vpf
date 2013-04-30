@@ -107,11 +107,11 @@ function setAuth(){
 }
 
 function accessLogDeleteQuery(query){
-	ph.admin.accessLogSd.publish({command:'deleteQuery',query:query});
+	ph.admin.accessLogSub.publish({command:'deleteQuery',query:query});
 }
 
 function accessLogExportQuery(query){
-	ph.admin.accessLogSd.publish({command:'exportQuery',query:query});
+	ph.admin.accessLogSub.publish({command:'exportQuery',query:query});
 }
 
 function accessLogImort(){
@@ -120,7 +120,7 @@ function accessLogImort(){
 		alert('fileが選択されていません');
 		return;
 	}
-	ph.admin.accessLogSd.publishForm('importsForm');
+	ph.admin.accessLogSub.publishForm('importsForm');
 ##	ph.jQuery('#importsForm')[0].reset();
 }
 

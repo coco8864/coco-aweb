@@ -198,7 +198,7 @@ function perfProgress(msg){
 perfTableRefresh();
 perfProgress();
 
-ph.admin.perfSd.onMessage(perfCheckConnect);
+ph.admin.perfSub.onMessage(perfCheckConnect);
 function perfCheckConnect(res){
   if(res.kind==='checkConnectProgress'){
     outputCommonArea(res.connectCount+"\t"+res.time+"\t"+res.failCount+"\t"+res.useMemory+"\n",true);
@@ -210,7 +210,7 @@ function perfCheckConnect(res){
 function checkConnect(){
   var connectCount=ph.jQuery('#connectCount').val();
   if(connectCount){
-    ph.admin.perfSd.publish({kind:'checkConnect',count:parseInt(connectCount),maxFailCount:10});
+    ph.admin.perfSub.publish({kind:'checkConnect',count:parseInt(connectCount),maxFailCount:10});
     outputCommonArea("count\ttime\tfailcount\tmemory\n")
   }
   var dialog=jQuery("#commonOutputDialog");
@@ -220,7 +220,7 @@ function checkConnect(){
 
 <h1>Performance list</h1>
 <hr/>
-<div>stress進捗:<span id="stTestStatus"></span><input type="button" value="stop" onclick="ph.admin.perfSd.publish({kind:'stopStress'});" id="stCancelBtn" style="display: none">
+<div>stress進捗:<span id="stTestStatus"></span><input type="button" value="stop" onclick="ph.admin.perfSub.publish({kind:'stopStress'});" id="stCancelBtn" style="display: none">
 scenario:<span id="stTestScenario"></span>
 name:<span id="stTestName"></span>
 start:<span id="stTestStartTime"></span>
