@@ -289,7 +289,7 @@ public class Authorizer implements Timer{
 	public static final int CHECK_PRIMARY_ONLY=2;
 	public static final int CHECK_SECONDARY_OK=3;
 	
-	public int checkSecondarySessionByPrimaryId(String id,String authUrl,StringBuffer appId){
+	public int checkSecondarySessionByPrimaryId(String id,String authUrl,StringBuffer appSid){
 		if(id==null){
 			return CHECK_NO_PRIMARY;
 		}
@@ -309,9 +309,9 @@ public class Authorizer implements Timer{
 			if(secondarySession==null){
 				return CHECK_PRIMARY_ONLY;
 			}
-			if(appId!=null){
+			if(appSid!=null){
 				String secondaryId=secondarySession.getSessionId().getId();
-				appId.append(DataUtil.digestHex(secondaryId.getBytes()));
+				appSid.append(DataUtil.digestHex(secondaryId.getBytes()));
 			}
 		}
 		return CHECK_SECONDARY_OK;
@@ -337,13 +337,13 @@ public class Authorizer implements Timer{
 		}
 	}
 	
-	public boolean isSecondaryId(String id,StringBuffer appId){
+	public boolean isSecondaryId(String id,StringBuffer appSid){
 		SessionId secondaryId = getSessionId(Type.SECONDARY,id);
 		if (secondaryId == null) {
 			return false;
 		}
-		if(appId!=null){
-			appId.append(DataUtil.digestHex(secondaryId.getId().getBytes()));
+		if(appSid!=null){
+			appSid.append(DataUtil.digestHex(secondaryId.getId().getBytes()));
 		}
 		return true;
 	}
@@ -461,7 +461,7 @@ public class Authorizer implements Timer{
 	 * @return pathOnceIdからPrimaryIdの可能性がある、SessionIdを返却する。(ロックをはずすため、開放される可能性あり）
 	 */
 	public SessionId createSecondarySetCookieStringFromPathOnceId(String pathId,String url,Mapping mapping,
-			boolean isCookieSecure,String cookieDomain,String cookiePath,StringBuffer appId) {			
+			boolean isCookieSecure,String cookieDomain,String cookiePath,StringBuffer appSid) {			
 		SessionId pathOnceId = getSessionId(Type.PATH_ONCE,pathId);
 		if (pathOnceId == null) {
 			return null;
@@ -475,8 +475,8 @@ public class Authorizer implements Timer{
 		SessionId secondaryId = SessionId.createSecondaryId(isCookieSecure,cookieDomain,cookiePath);//1回目
 //		String cookieString=secondaryId.getSetCookieString(cookiePath, isSecure);
 		if( setupSecondaryId(secondaryId, primaryId, pathId, pathOnceId, url, mapping) ){//2回目
-			if(appId!=null){
-				appId.append(DataUtil.digestHex(secondaryId.getId().getBytes()));
+			if(appSid!=null){
+				appSid.append(DataUtil.digestHex(secondaryId.getId().getBytes()));
 			}
 			return secondaryId;
 		}

@@ -32,7 +32,8 @@ public class AuthHandler extends WebServerHandler {
 	private static Config config = Config.getConfig();
 	private static Authenticator authenticator = config.getAuthenticator();
 	private static Authorizer authorizer=config.getAuthorizer();
-	public static String APP_ID="appId";//javascript側でセションを識別するID,setAuthメソッド復帰情報、jsonのキーとして使用
+	public static String LOGIN_ID="loginId";
+	public static String APP_SID="appSid";//javascript側でアプリケーションセションを識別するID,setAuthメソッド復帰情報、jsonのキーとして使用
 	public static String TOKEN="token";
 	public static String AUTHORIZE_MARK="ahthorizeMark";//authorize目的で呼び出された場合に付加される。
 	public static String AUTHENTICATE_PATH="/authenticate";//必要があれば認証処理も行うパス
@@ -256,7 +257,7 @@ public class AuthHandler extends WebServerHandler {
 			return;
 		}
 		response.element("result", true);
-		response.element(AUTH_ID, secondaryId.getAuthSession().getAppId());
+		response.element(AUTH_ID, secondaryId.getAuthSession().getAppSid());
 		response.element(TOKEN, secondaryId.getAuthSession().getToken());
 		crossDomainResponse(response,secondaryId.getSetCookieString());
 	}
@@ -271,8 +272,8 @@ public class AuthHandler extends WebServerHandler {
 			return;
 		}
 		String url=temporaryId.getUrl();
-		StringBuffer appId=new StringBuffer();
-		int rc=authorizer.checkSecondarySessionByPrimaryId(cookieId,url,appId);
+		StringBuffer appSid=new StringBuffer();
+		int rc=authorizer.checkSecondarySessionByPrimaryId(cookieId,url,appSid);
 		switch(rc){
 		case Authorizer.CHECK_SECONDARY_OK://これはないはず
 			response.element("result", false);

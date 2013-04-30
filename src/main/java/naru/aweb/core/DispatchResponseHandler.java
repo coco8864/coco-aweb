@@ -72,11 +72,6 @@ public class DispatchResponseHandler extends WebServerHandler {
 		return mapping;
 	}
 	
-	public static MappingResult ajaxAleadyAuth(String appId) {
-		MappingResult mapping = createDispatchMapping(Type.AJAX_ALEADY_AUTH);
-		mapping.setAttribute(AuthHandler.APP_ID, appId);
-		return mapping;
-	}
 
 	public static MappingResult redirectOrgPath(String location,String setCookieString) {
 		MappingResult mapping=createDispatchMapping(Type.REDIRECT);
@@ -125,7 +120,8 @@ public class DispatchResponseHandler extends WebServerHandler {
 		case AJAX_ALEADY_AUTH:
 			JSONObject json=new JSONObject();
 			json.put("result", true);
-			json.put(AuthHandler.APP_ID, mapping.getAttribute(AuthHandler.APP_ID));
+			json.put(AuthHandler.APP_SID, mapping.getAttribute(AuthHandler.APP_SID));
+			json.put(AuthHandler.LOGIN_ID, mapping.getAttribute(AuthHandler.LOGIN_ID));
 			responseJson(json);
 			break;
 		case AUTHENTICATE:

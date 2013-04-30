@@ -17,8 +17,11 @@ class CD extends EventModule
       ph.pa._connections[@url]=null
       @trigger(ph.pa.RESULT_ERROR,'auth',@)#fail to auth
       return
-    @trigger(ph.pa.RESULT_SUCCESS,'auth',@)#success to auth
-    @_appId=auth.appId
+    @_loginId=auth.loginId
+    @_appSid=auth.appSid
+    @SsKey='_paSs:'+@_loginId+':'+@url+':'+@_appSid
+    str=sessionStorage.getItem(@SsKey) ? '{"bid":0}'
+    @paSsObj=ph.JSON.parse(str)
     @_token=auth.token
 #    @stat=ph.pa.STAT_IDLE
     if @isWs
@@ -32,6 +35,8 @@ class CD extends EventModule
 #    con=@
 #    @_xhrFrame.load(->con._onXhrLoad())
     ph.jQuery('body').append(@_downloadFrame)
+    @trigger(ph.pa.RESULT_SUCCESS,'auth',@)#success to auth
+    @trigger('auth',@)#success to auth
   _flushMsg:->
     if @stat!=ph.pa.STAT_CONNECT
       return
@@ -129,17 +134,15 @@ class CD extends EventModule
     envelope.unpack(obj,@_onMessage)
 #   @_onMessage(obj)
   _getBid:->
-    str=sessionStorage[@_BROWSERID_PREFIX + @_appId] ? '{}'
-    bids=ph.JSON.parse(str)
-    bids[@url] ? 0
+    @paSsObj.bid
   _setBid:(bid)->
-    str=sessionStorage[@_BROWSERID_PREFIX + @_appId] ? '{}'
-    bids=ph.JSON.parse(str)
     if bid
-      bids[@url]=bid
+      @paSsObj.bid=bid
+##todo unloadŽž‚Ésave‚·‚é
+      str=ph.JSON.stringify(@paSsObj)
+      sessionStorage.setItem(@SsKey,str)
     else
-      delete bids[@url]
-    sessionStorage[@_BROWSERID_PREFIX + @_appId]=ph.JSON.stringify(bids)
+      sessionStorage.removeItem(@SsKey)
   _onOpen:->
     @stat=ph.pa.STAT_NEGOTIATION
     @_sendNego({type:ph.pa.TYPE_NEGOTIATE,bid:@_getBid(),token:@_token,needRes:true})

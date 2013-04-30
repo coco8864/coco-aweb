@@ -64,7 +64,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		paSession.bid=bid;
 		paSession.isWs=isWs;
 		
-		paSession.appId=authSession.getAppId();
+		paSession.appSid=authSession.getAppSid();
 		User user=authSession.getUser();
 		paSession.loginId=user.getLoginId();
 		paSession.roles=Collections.unmodifiableList(user.getRolesList());
@@ -78,7 +78,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		qbin.clear();
 		wsHandler=null;
 		xhrHandler=null;
-		appId=loginId=null;
+		appSid=loginId=null;
 		roles=null;
 		bid=null;
 		isWs=false;
@@ -89,7 +89,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	private String path;//接続path
 	
 	//authSession由来
-	private String appId;//認証id当該セションのid
+	private String appSid;//認証id当該セションのid
 	private String loginId;
 	private List<String> roles;
 	
@@ -389,8 +389,8 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		return path;
 	}
 
-	public String getAppId() {
-		return appId;
+	public String getAppSid() {
+		return appSid;
 	}
 
 	public String getLoginId() {
