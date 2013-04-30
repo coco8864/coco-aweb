@@ -56,8 +56,9 @@ ph.jQuery(function() {
 	jQuery("#textEditTextArea").resizable({
 		handles: "se"
 	});
+##ph.useWebSocket=false;
 	ph.admin.cd=ph.pa.connect('/admin');
-	ph.admin.cd.done(function(){ph.admin.cd=null});
+	ph.admin.cd.done(function(){location=ph.publicWebUrl;});
 	ph.admin.accessLogSd=ph.admin.cd.subscribe('admin','accessLog',
 		function(res){
 			if(!res){
@@ -71,10 +72,12 @@ ph.jQuery(function() {
 				if(typeof searchPage!=='undefined')searchPage();
 			}
 		});
+	ph.admin.cd.on('auth',function(){
 	var logId=sessionStorage['logId'];
-	if(logId){
-		changeEntry(parseInt(logId));
-	}
+		if(logId){
+			changeEntry(parseInt(logId));
+		}
+	});
 	ph.admin.perfSd=ph.admin.cd.subscribe('admin','perf');
 	ph.admin.perfSd.onMessage(perfCheckServer);
 

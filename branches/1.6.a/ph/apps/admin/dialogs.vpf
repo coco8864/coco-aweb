@@ -25,23 +25,6 @@ function editSave(){
 	jQuery('#textEdit').dialog('close');
 }
 
-##stressダイアログから呼ばれる
-var stressData={
-	appId:null,
-	chId:null,
-	isComplete:true,
-	time:0,
-	msg:null
-};
-ph.jQuery(function(){
-	if(ph.useSessionStorage){
-		var json=sessionStorage['stressData'];
-		if(json!=null){
-			stressData=ph.JSON.parse(json);
-		}
-	}
-});
-
 function doStress(){
 	window.location.hash = "#stressTab";
 	if(ph.jQuery('#isStressFile').is(':checked')){
