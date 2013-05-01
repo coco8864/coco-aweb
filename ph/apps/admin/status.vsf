@@ -75,11 +75,7 @@ function onWatchCheck(){
 	ph.admin.storage.setItem('broardcastWatch',flg);
 }
 
-ph.jQuery(function() {
-	updateStastics(${config.config.stasticsObject});
-	if(!ph.admin.storage){
-		return;
-	}
+function broardcastWatch(){
 	var broardcastWatch=ph.admin.storage.getItem('broardcastWatch');
 	var watchCheck=ph.jQuery('#broardcastWatchCheck');
 	if(broardcastWatch){
@@ -87,6 +83,15 @@ ph.jQuery(function() {
 		watchStastics();
 	}else{
 		watchCheck.attr('checked',false);
+	}
+}
+
+ph.jQuery(function() {
+	updateStastics(${config.config.stasticsObject});
+	if(ph.admin.storage){
+		broardcastWatch();
+	}else{
+		ph.admin.con.on('connected',broardcastWatch);
 	}
 });
 

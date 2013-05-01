@@ -63,14 +63,6 @@ ph.jQuery(function() {
 		if(typeof watchStastics === "undefined"){
 			return;
 		}
-		var broardcastWatch=stor.getItem('broardcastWatch');
-		var watchCheck=ph.jQuery('#broardcastWatchCheck');
-		if(broardcastWatch){
-			watchCheck.attr('checked',true);
-			watchStastics();
-		}else{
-			watchCheck.attr('checked',false);
-		}
 	});
 	ph.admin.con.done(function(){location=ph.publicWebUrl;});
 	ph.admin.accessLogSub=ph.admin.con.subscribe('admin','accessLog',
