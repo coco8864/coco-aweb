@@ -19,13 +19,13 @@ class Connection extends EventModule
       return
     @_loginId=auth.loginId
     @_appSid=auth.appSid
-    ssKey='_paSs:'+@_loginId+':'+@url+':'+@_appSid
-    @paSsStorage=new Storage(ssKey)
+    @ppKey="_paPp:#{@url}:#{@_loginId}:#{@_appSid}"
+    @ppStorage=new PagePrivateStorage(@ppKey)
 ##unloadŽž‚ÉsessionStrage‚É•Û‘¶
     @on('unload',->
-      if !@paSsStorage
+      if !@ppStorage
         return
-      @paSsStorage._unload()
+      @ppStorage._unload()
       )
     @_token=auth.token
     @trigger(ph.pa.RESULT_SUCCESS,'auth',@)#success to auth
@@ -138,13 +138,13 @@ class Connection extends EventModule
     envelope.unpack(obj,@_onMessage)
 #   @_onMessage(obj)
   _getBid:->
-    @paSsStorage.getItem('bid')
+    @ppStorage.getItem('bid') ? 0
   _setBid:(bid)->
     if bid
-      @paSsStorage.setItem('bid',bid)
+      @ppStorage.setItem('bid',bid)
     else
-      @paSsStorage._remove()
-      @paSsStorage=null
+      @ppStorage._remove()
+      @ppStorage=null
   _onOpen:->
     @stat=ph.pa.STAT_NEGOTIATION
     @_sendNego({type:ph.pa.TYPE_NEGOTIATE,bid:@_getBid(),token:@_token,needRes:true})
@@ -292,7 +292,9 @@ class Connection extends EventModule
     @checkState()
     @_send({type:ph.pa.TYPE_UNDEPLOY,qname:qname})
   storage:(scope)->
-##    if(scope==ph.pa.SCOPE_USER_PAGE){
-    @paSsStorage
-##    }
+    if !scope || scope==ph.pa.SCOPE_PAGE_PRIVATE
+      return @ppStorage
+#    else if scope==ph.pa.SCOPE_SESSION_PRIVATE
+#    else if scope==ph.pa.SCOPE_APL_PRIVATE
+#    else if scope==ph.pa.SCOPE_APL_LOCAL
 

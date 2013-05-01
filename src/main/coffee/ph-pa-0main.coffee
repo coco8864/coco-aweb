@@ -28,9 +28,14 @@ window.ph.pa={
   RESULT_ERROR:'error'
   RESULT_SUCCESS:'success'
 #strage scope
-  SCOPE_USER_PAGE:'userPage'
-  SCOPE_USER_SESSION:'userSession'
-  SCOPE_USER_APL:'userApl'
+  SCOPE_PAGE_PRIVATE:'pagePrivate'
+  SCOPE_SESSION_PRIVATE:'sessionPrivate'
+  SCOPE_APL_PRIVATE:'aplPrivate'
+  SCOPE_APL_LOCAL:'aplLocal'
+  SCOPE_APL:'apl'
+  SCOPE_QNAME:'qname'
+  SCOPE_SUBNAME:'subname'
+  SCOPE_USER:'user'
 
 #  _INTERVAL:1000
   _SEND_DATA_MAX:(1024*1024*2)
@@ -42,7 +47,7 @@ window.ph.pa={
   _XHR_FRAME_NAME_PREFIX:'__pa_xhr_' #xhrPaFrame.vsp‚É“¯‚¶’è‹`‚ ‚è
   _XHR_FRAME_URL:'/!xhrPaFrame'
   _connections:{} #key:url value:{deferred:dfd,promise:prm}
-  connect:(url)->
+  connect:(url,conCb)->
     httpUrl=null
     if url.lastIndexOf('ws://',0)==0||url.lastIndexOf('wss://',0)==0
       httpUrl='http' + url.substring(2)
@@ -75,12 +80,19 @@ window.ph.pa={
       prm=dfd.promise(new Connection(url,httpUrl,dfd))
       @_connections[url]={deferred:dfd,promise:prm}
     prm._openCount++
+    if conCb
+      prm.on('connected',conCb)
     prm
   _onUnload:->
     ph.log('onUnload')
     for url,con of ph.pa._connections
       pms=con.promise
       pms.trigger('unload')
+  _onStorage:(event)->
+    ph.log('onStorage.key:'+event.key)
+    for url,con of ph.pa._connections
+      pms=con.promise
+      pms.trigger('storage',event)
   _xhrOnMessage:(event)->
     for url,con of ph.pa._connections
       tmpCd=con.promise
@@ -108,6 +120,7 @@ if window.addEventListener
 else if window.attachEvent
   window.attachEvent('onmessage',ph.pa._xhrOnMessage)
 ph.jQuery(window).unload(ph.pa._onUnload)
+ph.jQuery(window).bind("storage",ph.pa._onStorage)
 
 #setTimeout(ph.pa._onTimer,ph.pa._INTERVAL)
 
