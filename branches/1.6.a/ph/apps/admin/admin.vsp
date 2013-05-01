@@ -51,17 +51,13 @@ ph.jQuery(function() {
 		handles: "se"
 	});
 ##ph.useWebSocket=false;
-	ph.admin.con=ph.pa.connect('/admin');
 	ph.jQuery('#dialogs').hide();
-	ph.admin.con.on('connected',function(){
+	ph.admin.con=ph.pa.connect('/admin',function(){
 		ph.jQuery('#dialogs').show();
-		var stor=ph.admin.storage=ph.admin.con.storage('page');
+		var stor=ph.admin.storage=ph.admin.con.storage();
 		var logId=stor.getItem('logId');
 		if(logId){
 			changeEntry(logId);
-		}
-		if(typeof watchStastics === "undefined"){
-			return;
 		}
 	});
 	ph.admin.con.done(function(){location=ph.publicWebUrl;});
