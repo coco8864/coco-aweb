@@ -91,7 +91,10 @@ public class User {
 	}
 	
 	public static User getByLoginId(String loginId) {
-		Collection<User>users=query("WHERE loginId=='"+loginId+"'",-1,0,null);
+		PersistenceManager pm=JdoUtil.getPersistenceManager();
+		Query query=pm.newQuery(User.class);
+		query.setFilter("loginId==:loginId && revoked==false");
+		Collection<User>users=pm.detachCopyAll((Collection<User>)query.execute(loginId));
 		if(users==null){
 			return null;
 		}
