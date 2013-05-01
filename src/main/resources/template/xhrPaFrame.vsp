@@ -35,7 +35,9 @@ function objFromParent(msg){
   if(msg.type==='negotiate'){
     bid=msg.bid;
     token=msg.token;
-    return;
+    if(!msg.needRes){
+      return;
+    }
   }
   msgs.push(msg);
 }
