@@ -53,6 +53,7 @@
                     <directory>${basedir}/src/main/coffee</directory>
                     <includes>
                         <include>ph-pa-0main.coffee</include>
+                        <include>ph-pa-storage.coffee</include>
                         <include>ph-pa-connection.coffee</include>
                         <include>ph-pa-subscription.coffee</include>
                         <include>ph-pa-envelope.coffee</include>
