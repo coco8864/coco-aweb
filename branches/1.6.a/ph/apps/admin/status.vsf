@@ -64,26 +64,29 @@ function isWatchCheck(){
 }
 
 function onWatchCheck(){
+	var flg;
 	if(isWatchCheck()){
 		watchStastics();
-		if(ph.useSessionStorage){
-			sessionStorage['broardcastWatch']='true';
-		}
+		flg=true;
 	}else{
 		unwatchStastics();
-		if(ph.useSessionStorage){
-			sessionStorage['broardcastWatch']='false';
-		}
+		flg=false;
 	}
+	ph.admin.storage.setItem('broardcastWatch',flg);
 }
 
 ph.jQuery(function() {
 	updateStastics(${config.config.stasticsObject});
-	if(ph.useSessionStorage && sessionStorage['broardcastWatch']==='true'){
-		ph.jQuery('#broardcastWatchCheck').attr('checked',true);
+	if(!ph.admin.storage){
+		return;
+	}
+	var broardcastWatch=ph.admin.storage.getItem('broardcastWatch');
+	var watchCheck=ph.jQuery('#broardcastWatchCheck');
+	if(broardcastWatch){
+		watchCheck.attr('checked',true);
 		watchStastics();
 	}else{
-		ph.jQuery('#broardcastWatchCheck').attr('checked',false);
+		watchCheck.attr('checked',false);
 	}
 });
 
