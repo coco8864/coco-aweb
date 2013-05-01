@@ -19,15 +19,13 @@ class Connection extends EventModule
       return
     @_loginId=auth.loginId
     @_appSid=auth.appSid
-    @SsKey='_paSs:'+@_loginId+':'+@url+':'+@_appSid
-    str=sessionStorage.getItem(@SsKey) ? '{"bid":0}'
-    @paSsObj=ph.JSON.parse(str)
+    ssKey='_paSs:'+@_loginId+':'+@url+':'+@_appSid
+    @paSsStorage=new Storage(ssKey)
 ##unloadŽž‚ÉsessionStrage‚É•Û‘¶
     @on('unload',->
-      if !@paSsObj
+      if !@paSsStorage
         return
-      str=ph.JSON.stringify(@paSsObj)
-      sessionStorage.setItem(@SsKey,str)
+      @paSsStorage._unload()
       )
     @_token=auth.token
     @trigger(ph.pa.RESULT_SUCCESS,'auth',@)#success to auth
@@ -129,7 +127,7 @@ class Connection extends EventModule
     ph.log('Pa _onXhrLoad')
 #    @stat=ph.pa.STAT_LOADING
   _onXhrOpen:(res)->
-    ph.log('Pa _onXhrOpened')
+    ph.log('Pa _onXhrOpen')
     if res.load
       @_onOpen()
     else
@@ -140,16 +138,13 @@ class Connection extends EventModule
     envelope.unpack(obj,@_onMessage)
 #   @_onMessage(obj)
   _getBid:->
-    @paSsObj.bid
+    @paSsStorage.getItem('bid')
   _setBid:(bid)->
     if bid
-      @paSsObj.bid=bid
-##todo unloadŽž‚Ésave‚·‚é
-##      str=ph.JSON.stringify(@paSsObj)
-##      sessionStorage.setItem(@SsKey,str)
+      @paSsStorage.setItem('bid',bid)
     else
-      sessionStorage.removeItem(@SsKey)
-      @paSsObj=null
+      @paSsStorage._remove()
+      @paSsStorage=null
   _onOpen:->
     @stat=ph.pa.STAT_NEGOTIATION
     @_sendNego({type:ph.pa.TYPE_NEGOTIATE,bid:@_getBid(),token:@_token,needRes:true})
@@ -296,3 +291,8 @@ class Connection extends EventModule
   undeploy:(qname)->
     @checkState()
     @_send({type:ph.pa.TYPE_UNDEPLOY,qname:qname})
+  storage:(scope)->
+##    if(scope==ph.pa.SCOPE_USER_PAGE){
+    @paSsStorage
+##    }
+

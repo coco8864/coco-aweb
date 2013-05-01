@@ -27,6 +27,11 @@ window.ph.pa={
   TYPE_DOWNLOAD:'download'
   RESULT_ERROR:'error'
   RESULT_SUCCESS:'success'
+#strage scope
+  SCOPE_USER_PAGE:'userPage'
+  SCOPE_USER_SESSION:'userSession'
+  SCOPE_USER_APL:'userApl'
+
 #  _INTERVAL:1000
   _SEND_DATA_MAX:(1024*1024*2)
   _WS_RETRY_MAX:3
