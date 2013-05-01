@@ -29,17 +29,14 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 <script type="text/javascript">
 //hashとインデックスの組み合わせ
 var tabIndexs = {'#statusTab' : 0, '#settingTab' : 1, '#mappingTab' : 2, '#accessLogTab' : 3, '#traceTab' : 4, '#stressTab' : 5, '#userTab' : 6, '#chatTab' : 7, '#debugTab' : 8};
-var userTabHashKey='userTabHash.$!esc.html($loginUser.loginId)';
 window.onhashchange = function(){
 	//現在のhashからインデックスの値を取得
 	jQuery('html,body').scrollTop(0);
 	var hash=window.location.hash;
-	if(!hash){
-		//hash from session strage
-		hash=sessionStorage[userTabHashKey];
+	var index=0
+	if(hash){
+		index = tabIndexs[hash];
 	}
-	sessionStorage[userTabHashKey]=hash;
-	var index = tabIndexs[hash];
 	//hashが無い場合は最初のタブを選択
 	index = index ? index : 0;
 	if(index===8){//#debug
@@ -55,6 +52,26 @@ ph.jQuery(function() {
 	});
 ##ph.useWebSocket=false;
 	ph.admin.con=ph.pa.connect('/admin');
+	ph.jQuery('#dialogs').hide();
+	ph.admin.con.on('connected',function(){
+		ph.jQuery('#dialogs').show();
+		var stor=ph.admin.storage=ph.admin.con.storage('page');
+		var logId=stor.getItem('logId');
+		if(logId){
+			changeEntry(logId);
+		}
+		if(typeof watchStastics === "undefined"){
+			return;
+		}
+		var broardcastWatch=stor.getItem('broardcastWatch');
+		var watchCheck=ph.jQuery('#broardcastWatchCheck');
+		if(broardcastWatch){
+			watchCheck.attr('checked',true);
+			watchStastics();
+		}else{
+			watchCheck.attr('checked',false);
+		}
+	});
 	ph.admin.con.done(function(){location=ph.publicWebUrl;});
 	ph.admin.accessLogSub=ph.admin.con.subscribe('admin','accessLog',
 		function(res){
@@ -69,12 +86,6 @@ ph.jQuery(function() {
 				if(typeof searchPage!=='undefined')searchPage();
 			}
 		});
-	ph.admin.con.on('connected',function(){
-	var logId=sessionStorage['logId'];
-		if(logId){
-			changeEntry(parseInt(logId));
-		}
-	});
 	ph.admin.perfSub=ph.admin.con.subscribe('admin','perf');
 	ph.admin.perfSub.onMessage(perfCheckServer);
 
@@ -169,7 +180,9 @@ ph.log("tabs ajaxOptions success.index:"+index +":anchor:"+anchor);
 </div>
 
 ##ダイアログの宣言
+<div id="dialogs">
 #parse("dialogs.vpf")
+</div>
 <form id="exportDownloadForm" action="accessLog" style="display:none" target="uploadFrame" method="post">
 <input type="hidden" name="command" value="downloadExportFile"/>
 <input type="hidden" name="token" value="$esc.html(${session.token})"/>

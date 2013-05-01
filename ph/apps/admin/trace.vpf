@@ -146,7 +146,7 @@ function changeEntry(newLogId){
 	}
 	trace.clear();
 	trace.accessLogId=newLogId;
-	sessionStorage['logId']=newLogId;
+	ph.admin.storage.setItem('logId',newLogId);
 	entryTable();
 }
 
