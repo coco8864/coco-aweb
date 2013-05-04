@@ -93,7 +93,6 @@ public class AdminUserHandler extends WebServerHandler{
 			String pass2=jsonUser.optString("pass2");
 			if(pass1!=null && pass1.equals(pass2)){
 				user.changePassword(pass1, authenticator.getRealm());
-				user.setChangePass(new Date());
 			}
 			user.setRoles(jsonUser.getString("roles"));
 			user.setFirstName(jsonUser.getString("firstName"));

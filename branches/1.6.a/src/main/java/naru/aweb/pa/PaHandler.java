@@ -194,8 +194,8 @@ public class PaHandler extends WebSocketHandler implements Timer{
 		long now=System.currentTimeMillis();
 		long timeout=config.getAuthorizer().getSessionTimeout();
 		negores.put(PaSession.KEY_SESSION_TIME_LIMIT, ((lastAccess+timeout)-now));
-		User user=authSession.getUser();
-		negores.put(PaSession.KEY_OFFLINE_PASS_HASH,user.getOfflinePassHash());
+//		User user=authSession.getUser();
+//		negores.put(PaSession.KEY_OFFLINE_PASS_HASH,user.getOfflinePassHash());
 		paSession.sendJson(negores);
 	}
 	
