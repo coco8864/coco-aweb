@@ -109,7 +109,6 @@ public class Authenticator {
 		user.setRoles(roles);
 		Date now=new Date();
 		user.setCreateDate(now);
-//		user.setChangePass(now);
 		synchronized(loginIdUserMap){
 			User regUser=getUserByLoginId(loginId);
 			if(regUser!=null){
