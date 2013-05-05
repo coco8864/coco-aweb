@@ -62,7 +62,7 @@ public class User {
 		DatePropertyFilter dpf=new DatePropertyFilter();
 		jsonConfig.setJavaPropertyFilter(dpf);
 		jsonConfig.setJsonPropertyFilter(dpf);
-		jsonConfig.setExcludes(new String[]{"passHash","digestAuthPassHash","admin","guest","dummyPassword","rolesList","loginCount"});
+		jsonConfig.setExcludes(new String[]{"passHash","digestAuthPassHash","offlinePassHash","certificateStoreId","extStoreId","admin","guest","dummyPassword","rolesList","loginCount"});
 		jsonConfig.setNewBeanInstanceStrategy(new UserInstanceStrategy());
 	}
 	private static final String USER_QUERY="select from " + User.class.getName() + " ";
