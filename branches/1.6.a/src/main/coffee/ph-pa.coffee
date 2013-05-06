@@ -115,29 +115,9 @@ window.ph.pa={
 #  _onTimer:->
 }
 #xhr’ÊM—p‚ÌƒCƒxƒ“ƒg“o˜^
-if window.addEventListener
-  window.addEventListener('message',ph.pa._xhrOnMessage, false)
-else if window.attachEvent
-  window.attachEvent('onmessage',ph.pa._xhrOnMessage)
-ph.jQuery(window).unload(ph.pa._onUnload)
-ph.jQuery(window).bind("storage",ph.pa._onStorage)
-
+ph.jQuery(->
+  ph.event.on('message',ph.pa._xhrOnMessage)
+  ph.event.on('unload',ph.pa._onUnload)
+  ph.event.on('storage',ph.pa._onStorage)
+)
 #setTimeout(ph.pa._onTimer,ph.pa._INTERVAL)
-
-#-------------------EventModule-------------------
-class EventModule
-  constructor:->
-    @_callback ={}
-  on: (name, callback) ->
-    if !@_callback[name]? then @_callback[name]=[]
-    @_callback[name].push(callback)
-    @
-  trigger: (name,args...) ->
-    list = @_callback[name]
-    return @ unless list
-    for callback in list
-      callback.apply(@,args)
-    @
-  checkState:->
-    if @deferred.state()!='pending'
-      throw 'state error:'+@deferred.state()

@@ -6,31 +6,31 @@ window.ph.auth2={
   _checkAplQuery:'?__PH_AUTH__=__CD_CHECK__'
   _checkWsAplQuery:'?__PH_AUTH__=__CD_WS_CHECK__'
   _urlPtn:/^(?:([^:\/]+:))?(?:\/\/([^\/]*))?(.*)/
-  _aplAuths:{}
   _auths:{}
 ##/* 呼び出しをqueueして順次処理する仕組み */
   _callQueue:[]
-  _aplAuth:null
+  _auth:null
   _reqUrl:null
   _reqCb:null
   _timerId:null
   _finAuth:(res)->
-    aplAuth=@_aplAuth
+    auth=@_auth
     if res.result
-      aplAuth._setup(res)
+      auth._setup(res)
     else
-      aplAuth.trigger('auth',res)
-      @_aplAuth=null
+      auth.reject('fail to auth')
+      auth.trigger('auth',res)
+      @_auth=null
       @_call()
-  _callRequest:(url,urlCb,aplAuth)->
-    req={url:url,urlCb:urlCb,aplAuth:aplAuth}
+  _callRequest:(url,urlCb,auth)->
+    req={url:url,urlCb:urlCb,auth:auth}
     @_callQueue.push(req)
     @_call()
   _call:->
-    if @_aplAuth!=null||@_callQueue.length==0
+    if @_auth!=null||@_callQueue.length==0
       return
     req=@_callQueue.pop()
-    @_aplAuth=req.aplAuth
+    @_auth=req.auth
     @_reqestUrl(req.url,req.urlCb)
   _reqestUrl:(url,cb)->
 ##//ph.log("_reqestUrl:"+url +":"+(new Date()).getTime())
@@ -44,7 +44,8 @@ window.ph.auth2={
     @_reqCb=null
     @_res=null
     reqestCb(res)
-  _frameLoad:(x)=> #必要ない
+  _frameLoad:(x)=>
+##//alert('ph-auth _frameLoad res:' + ph.auth2._res +' cb:' + ph.auth2._reqCb +' url:' +ph.auth2._reqUrl)
     ph.log('_frameLoad:'+(new Date()).getTime())
     if ph.auth2._res
       @_reqestCallback()
@@ -52,7 +53,8 @@ window.ph.auth2={
     if !ph.auth2._reqCb
       return
     @_timerId=setTimeout(@_frameLoad2,1000)
-  _frameLoad2:=> #必要ない
+  _frameLoad2:=>
+##//ph.log("_frameLoad2:"+(new Date()).getTime());
     if ph.auth2._res
       @_timerId=null
       @_reqestCallback()
@@ -65,7 +67,7 @@ window.ph.auth2={
       reqestCb({result:false,reason:'url error'})
   _init:->
     ph.auth2._frame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' + ph.auth2._authFrameName + '" ></iframe>')
-##    ph.auth2._frame.load(ph.auth2._frameLoad)
+    ph.auth2._frame.load(ph.auth2._frameLoad)
     ph.jQuery("body").append(ph.auth2._frame)
   _onMessage:(ev)->
     if !ph.auth2._frame || ev.source!=ph.auth2._frame[0].contentWindow
@@ -112,22 +114,25 @@ window.ph.auth2={
       checkAplUrl=window.location.protocol+'//'+window.location.host+authPath+this._checkWsAplQuery
     else #http or https
       checkAplUrl=aplUrl+this._checkAplQuery
-    aplAuth=@_aplAuths[checkAplUrl]
-    if aplAuth
-      return aplAuth
-    aplAuth=new AplAuth(checkAplUrl)
+    authObj=@_auths[checkAplUrl]
+    if authObj
+      return authObj.promise
+    dfd=ph.jQuery.Deferred()
+    prm=dfd.promise(new Auth(checkAplUrl,dfd))
+    prm.checkAplUrl=checkAplUrl
     if cb
-      aplAuth.on('auth',cb)
-    @_aplAuths[checkAplUrl]=aplAuth
-    @_callRequest(checkAplUrl,@_aplCheckCb,aplAuth)
+      prm.on('auth',cb)
+    @_auths[checkAplUrl]={deferred:dfd,promise:prm}
+    @_callRequest(checkAplUrl,@_aplCheckCb,prm)
     prm
 }
 
-#authドメインとの通信用
+#xhr通信用のイベント登録
 if window.addEventListener
   window.addEventListener('message',ph.auth2._onMessage, false)
 else if window.attachEvent
   window.attachEvent('onmessage',ph.auth2._onMessage)
+
 ph.jQuery(ph.auth2._init);
 
 #-------------------EventModule-------------------
@@ -144,49 +149,28 @@ class EventModule
     for callback in list
       callback.apply(@,args)
     @
-
-#-------------------Apl Auth-------------------
-class AplAuth extends EventModule
-  _auth:null
-  constructor: (@checkAplUrl) ->
-    super
-  _setup:(res)->
-    @_auth=ph.auth2._auths[res.authUrl]
-    if @_auth
-      @trigger('auth',@)
-      return
-    @_auth=new Auth(res.authUrl)
-    @_auth._setup(res)
-  info:->
-    @_auth.info(@)
-  encrypt:(loginid,plainText)->
-    @_auth.encrypt(loginid,plainText,@)
-  decrypt:(loginid,encryptText)->
-    @_auth.decrypt(loginid,encryptText,@)
+  checkState:->
+    if @deferred.state()!='pending'
+      throw 'state error:'+@deferred.state()
 
 #-------------------Auth-------------------
-class Auth
-  constructor: (@authUrl) ->
+class Auth extends EventModule
+  constructor: (@checkAplUrl,@deferred) ->
     super
-  _setup:(res,@_aplAuth)->
+  _setup:(res)->
     @loginId=res.loginId
     @authUrl=res.authUrl
     @appSid=res.appSid
     @token=res.token
-    @_frame=ph.jQuery(
-      "<iframe width='0' height='0' frameborder='no' " +
-      "name='#{ph.auth2._authEachFrameName}#{@authUrl}'" +
-      "src='#{@authUrl}/info' ></iframe>")
+    @_frame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' + ph.auth2._authEachFrameName + @authUrl + '" ></iframe>')
     @_frame.load(@_frameLoad)
+    @trigger('setupAuth',res)
     ph.jQuery("body").append(@_frame)
   _frameLoad:=>
-    ph.auth2._aplAuth=null
+    ph.auth2._auth=null
     ph.auth2._call()
-    @authUrl.trigger('auth',@)
-    @authUrl=null
-    ph.auth2._auths[@authUrl]=@
+    @trigger('auth',@)
   _onMessage:->
-  info:(@_aplAuth)->
-  encrypt:(loginid,plainText,@_aplAuth)->
-  decrypt:(loginid,encryptText,@_aplAuth)->
-
+  info:->
+  encrypt:(loginid,plainText)->
+  decrypt:(loginid,encryptText)->
