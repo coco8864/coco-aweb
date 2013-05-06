@@ -9,9 +9,9 @@
   <title>paテスト</title>
 
   <link type="text/css" href="/pub/css/jquery-ui-1.8.2.custom.css" rel="stylesheet" />
-  <script type="text/javascript" src="/pub/js/ph-loader.js?include=ph-pa.js"></script>
+  <script type="text/javascript" src="/pub/js/ph-loader.js?include=ph-auth2.js,ph-pa.js"></script>
   <script type="text/javascript" src="/pub/js/dateformat.js"></script>
-  <script type="text/javascript" src="/pub/js/jquery-1.8.1.min.js"></script>
+  <script type="text/javascript" src="/pub/js/jquery-1.8.3.min.js"></script>
   <script type="text/javascript" src="/pub/js/jquery-ui-1.8.2.custom.min.js"></script>
   <script type="text/javascript">
 var cd;
@@ -31,6 +31,7 @@ var sd;
 <input type="button" value="出力クリア" onclick="ph.jQuery('#phDebugArea').text('');"/>
 <h3>使用例</h3>
 <ul>
+<input type="button" value="auth" onclick="auth();"/>
 <input type="button" value="connect" onclick="connect();"/>
 <input type="button" value="close" onclick="cd.close();"/>
 <input type="button" value="deploy" onclick="cd.deploy('test','naru.aweb.pa.SamplePalet');"/>
@@ -63,6 +64,12 @@ var sd;
 </div>
 <a id='test' target='_blank'>test</a>
 <script type="text/javascript"><!--
+function auth(){
+  var auth=ph.auth2.auth('/admin');
+  ph.dump1(auth);
+}
+
+
 function onDropFiles(){
   sd.onMessage(function(data){
   var fr=new FileReader();
