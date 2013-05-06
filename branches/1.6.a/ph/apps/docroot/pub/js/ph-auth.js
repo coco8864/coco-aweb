@@ -50,9 +50,9 @@ window.ph.auth={
     if(res.result=='redirect'){
       /* authUrlにsessionを問い合わせ */
       ph.auth._authCheck(res.location+'&originUrl='+encodeURIComponent(window.location.href));
-      return;
+    }else{
+      ph.auth._callback(res);
     }
-    ph.auth._callback(res);
   },
   /*authUrl固有のappIdを取得する、以下のパターンがある
   1)secondary既に認可されている
@@ -61,10 +61,6 @@ window.ph.auth={
   */
   auth:function(aplUrl,cb){
     ph.auth._initIfNecessary();
-//    if(this._cb){
-//      cb({result:false,reason:'duplicate call error'});
-//      return;
-//    }
     aplUrl.match(this._urlPtn);
     var protocol=RegExp.$1;
     var authDomain=RegExp.$2;
@@ -80,8 +76,6 @@ window.ph.auth={
       checkAplUrl=aplUrl+this._checkAplQuery;
     }
     /* aplUrlにsessionを問い合わせ */
-//    this._cb=cb;
-//    this._reqestUrl(checkAplUrl,this._aplCheckCb);
     this._callRequest(checkAplUrl,this._aplCheckCb,cb);
   },
   _infoCb:function(res){
@@ -94,6 +88,10 @@ window.ph.auth={
     }
     var url=authUrl+this._infoPath;
     this._callRequest(url,this._infoCb,cb);
+  },
+  encrypt:function(url,loginid,prainText,cb){
+  },
+  decrypt:function(url,loginid,encryptText,cb){
   },
   _reqestCb:null,
   _url:null,
@@ -171,7 +169,6 @@ window.ph.auth={
     }else if(window.attachEvent){
       window.attachEvent('onmessage',ph.auth._onMessage);
     }
-//  ph.auth._frame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' + ph.auth._authFrameName + '" onload=\'ph.auth._frameLoad(this);\'></iframe>');
     ph.auth._frame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' + ph.auth._authFrameName + '" ></iframe>');
     ph.auth._frame.load(function(x){ph.auth._frameLoad(x);});
     ph.jQuery("body").append(ph.auth._frame);
