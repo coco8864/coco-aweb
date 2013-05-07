@@ -9,7 +9,7 @@
   <title>paテスト</title>
 
   <link type="text/css" href="/pub/css/jquery-ui-1.8.2.custom.css" rel="stylesheet" />
-  <script type="text/javascript" src="/pub/js/ph-loader.js?include=ph-auth2.js,ph-pa.js"></script>
+  <script type="text/javascript" src="/pub/js/ph-loader.js?include=ph-pa.js"></script>
   <script type="text/javascript" src="/pub/js/dateformat.js"></script>
   <script type="text/javascript" src="/pub/js/jquery-1.8.3.min.js"></script>
   <script type="text/javascript" src="/pub/js/jquery-ui-1.8.2.custom.min.js"></script>
@@ -65,8 +65,11 @@ var sd;
 <a id='test' target='_blank'>test</a>
 <script type="text/javascript"><!--
 function auth(){
-  var auth=ph.auth2.auth('/admin');
+  var auth=ph.auth.auth('/admin',function(a){alert('cb:'+a.result);ph.dump1(a);});
+//  var auth=ph.auth2.auth('/auth');
   ph.dump1(auth);
+  auth.done(function(){alert('done')});
+  auth.fail(function(){alert('fail')});
 }
 
 
