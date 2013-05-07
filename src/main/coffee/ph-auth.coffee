@@ -1,75 +1,60 @@
-if window.ph.auth2
+if window.ph.auth
   return
 
 class PhAuth
-  _authFrameName:'__phAuthFrame2'
+  _authFrameName:'__phAuthFrame'
   _authEachFrameName:'__phEachAuthFrame_'
+  _infoPath:'/info'
   _checkAplQuery:'?__PH_AUTH__=__CD_CHECK__'
   _checkWsAplQuery:'?__PH_AUTH__=__CD_WS_CHECK__'
   _urlPtn:/^(?:([^:\/]+:))?(?:\/\/([^\/]*))?(.*)/
   _auths:{}
 ##/* 呼び出しをqueueして順次処理する仕組み */
-  _callQueue:[]
-  _auth:null
+  _authQueue:[]
+  _processAuth:null #認証処理中か否か
   _reqUrl:null
   _reqCb:null
-  _timerId:null
   _finAuth:(res)->
-    auth=@_auth
+    auth=@_processAuth
+    auth.result=res.result
     if res.result
       auth._setup(res)
     else
-      auth.reject('fail to auth')
-      auth.trigger('auth',res)
-      @_auth=null
-      @_call()
-  _callRequest:(url,urlCb,auth)->
-    req={url:url,urlCb:urlCb,auth:auth}
-    @_callQueue.push(req)
+      auth._deferred.reject(auth)
+    return
+  _alwaysAsyncAuth:(auth)=>
+    if auth._authCb
+      auth._authCb(auth)
+    @_processAuth=null
     @_call()
+    return
+  _callAsyncAuth:(auth)->
+    @_authQueue.push(auth)
+    @_call()
+    return
   _call:->
-    if @_auth!=null||@_callQueue.length==0
+    if @_processAuth!=null || @_authQueue.length==0
       return
-    req=@_callQueue.pop()
-    @_auth=req.auth
-    @_reqestUrl(req.url,req.urlCb)
+    auth=@_authQueue.pop()
+    @_processAuth=auth
+    @_reqestUrl(auth._checkAplUrl,@_aplCheckCb)
   _reqestUrl:(url,cb)->
 ##//ph.log("_reqestUrl:"+url +":"+(new Date()).getTime())
     @_reqUrl=url
     @_reqCb=cb
     @_frame[0].src=url
-  _reqestCallback:->
+    return
+  _reqestCallback:(res)->
     reqestCb=@_reqCb
-    res=@_res
     @_reqUrl=null
     @_reqCb=null
-    @_res=null
     reqestCb(res)
-  _frameLoad:(x)=>
-##//alert('ph-auth _frameLoad res:' + ph.auth2._res +' cb:' + ph.auth2._reqCb +' url:' +ph.auth2._reqUrl)
-    ph.log('_frameLoad:'+(new Date()).getTime())
-    if @_res
-      @_reqestCallback()
-      return
-    if !@_reqCb
-      return
-    @_timerId=setTimeout(@_frameLoad2,1000)
-  _frameLoad2:=>
-##//ph.log("_frameLoad2:"+(new Date()).getTime());
-    if @_res
-      @_timerId=null
-      @_reqestCallback()
-      return
-    reqestCb=@_reqCb
-    if reqestCb!=null ##frameにloadされたがmessageが来ない
-      ph.log("_frameLoad timeout:"+this._reqUrl)
-      @_reqCb=null
-      @_reqUrl=null
-      reqestCb({result:false,reason:'url error'})
+    return
   _init:->
     @_frame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' + @_authFrameName + '" ></iframe>')
-    @_frame.load(@_frameLoad)
+##    @_frame.load(@_frameLoad)
     ph.jQuery("body").append(@_frame)
+    return
   _onMessage:(ev)=>
     if !@_frame || ev.source!=@_frame[0].contentWindow
       return
@@ -78,8 +63,9 @@ class PhAuth
       return
     if url.lastIndexOf(ev.origin, 0)!=0
       return
-    @_res=ph.JSON.parse(ev.data)
-    @_reqestCallback()
+    res=ph.JSON.parse(ev.data)
+    @_reqestCallback(res)
+    return
   _authCheckCb:(res)=>
     if res.result=='redirect'
 ##      /* authUrlにsessionを問い合わせ */
@@ -88,6 +74,7 @@ class PhAuth
       window.location.href=res.location
     else
       @_finAuth(res)
+    return
   _aplCheckCb:(res)=>
     if res.result=='redirect'
 ##    /* authUrlにsessionを問い合わせ */
@@ -95,6 +82,8 @@ class PhAuth
       @_reqestUrl(redirectUrl,@_authCheckCb);
     else
       @_finAuth(res)
+    return
+
 #----------auth outer api----------
 #  /*authUrl固有のappSidを取得する、以下のパターンがある
 #  1)secondary既に認可されている
@@ -119,39 +108,41 @@ class PhAuth
     if authObj
       return authObj.promise
     dfd=ph.jQuery.Deferred()
-    prm=dfd.promise(new Auth(checkAplUrl,dfd))
-    prm.checkAplUrl=checkAplUrl
-    if cb
-      prm.on('auth',cb)
-    @_auths[checkAplUrl]={deferred:dfd,promise:prm}
-    @_callRequest(checkAplUrl,@_aplCheckCb,prm)
-    prm
+    auth=dfd.promise(new Auth(checkAplUrl,dfd))
+    auth._checkAplUrl=checkAplUrl
+    auth._authCb=cb
+    auth.always(@_alwaysAsyncAuth)
+    @_auths[checkAplUrl]={deferred:dfd,promise:auth}
+    @_callAsyncAuth(auth)
+    auth
+  info:(authUrl,cb)->
+    if !authUrl #指定がなければ自分をダウンロードしたauthUrl
+      authUrl=ph.authUrl
+    url=authUrl+@_infoPath;
+    @_reqestUrl(url,cb);
 
-window.ph.auth2=new PhAuth()
+window.ph.auth=new PhAuth()
 
 #xhr通信用のイベント登録
 ph.jQuery(->
-  ph.auth2._init()
-  ph.event.on('message',ph.auth2._onMessage)
+  ph.auth._init()
+  ph.event.on('message',ph.auth._onMessage)
 )
 
 #-------------------Auth-------------------
 class Auth extends ph.EventModule
-  constructor: (@checkAplUrl,@deferred) ->
+  constructor: (@_checkAplUrl,@_deferred) ->
     super
   _setup:(res)->
     @loginId=res.loginId
     @authUrl=res.authUrl
     @appSid=res.appSid
     @token=res.token
-    @_frame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' + ph.auth2._authEachFrameName + @checkAplUrl + '" ></iframe>')
+    @_frame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' + ph.auth._authEachFrameName + @_checkAplUrl + '" ></iframe>')
     @_frame.load(@_frameLoad)
-    @trigger('setupAuth',res)
     ph.jQuery("body").append(@_frame)
   _frameLoad:=>
-    ph.auth2._auth=null
-    ph.auth2._call()
-    @trigger('auth',@)
+    @_deferred.resolve(@)
   _onMessage:->
   info:(cb)->
   encrypt:(loginid,plainText,cb)->
