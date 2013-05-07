@@ -23,8 +23,7 @@ class PhAuth
       auth._deferred.reject(auth)
     return
   _alwaysAsyncAuth:(auth)=>
-    if auth._authCb
-      auth._authCb(auth)
+    auth.trigger('done',auth)
     @_processAuth=null
     @_call()
     return
@@ -106,11 +105,16 @@ class PhAuth
       checkAplUrl=aplUrl+this._checkAplQuery
     authObj=@_auths[checkAplUrl]
     if authObj
-      return authObj.promise
+      auth=authObj.promise
+      if cb && auth.state()=='pending'
+        auth.on('done',cb)
+      else if cb
+        cb(auth)
+      return auth
     dfd=ph.jQuery.Deferred()
     auth=dfd.promise(new Auth(checkAplUrl,dfd))
     auth._checkAplUrl=checkAplUrl
-    auth._authCb=cb
+    auth.on('done',cb)
     auth.always(@_alwaysAsyncAuth)
     @_auths[checkAplUrl]={deferred:dfd,promise:auth}
     @_callAsyncAuth(auth)
