@@ -256,6 +256,17 @@ public class AuthHandler extends WebServerHandler {
 			crossDomainResponse(response,null);
 			return;
 		}
+		
+		//role‚ªˆê’v‚µ‚Ä‚¢‚é‚Æ‚ÍŒÀ‚ç‚È‚¢
+		AuthSession authSession=secondaryId.getAuthSession();
+		if(!authorizer.authorize(m,authSession)){
+			secondaryId.remove();
+			response.element("result", false);
+			response.element("reason", "lack of right");
+			crossDomainResponse(response,null);
+			return;
+		}
+		
 		response.element("result", true);
 		response.element(AUTH_ID, secondaryId.getAuthSession().getAppSid());
 		response.element(TOKEN, secondaryId.getAuthSession().getToken());

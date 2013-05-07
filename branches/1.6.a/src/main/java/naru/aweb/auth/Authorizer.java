@@ -415,6 +415,7 @@ public class Authorizer implements Timer{
 				}
 				pathOnceId.remove();
 			}
+			//roleが一致しているとは限らないが後からチェックする
 			AuthSession primarySession=primaryId.getAuthSession();
 			AuthSession secondarySession=primarySession.createSecondarySession();
 			secondarySession.setSessionId(secondaryId);

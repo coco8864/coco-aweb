@@ -9,7 +9,7 @@ class Connection extends window.ph.EventModule
     @stat=ph.pa.STAT_AUTH
     @_sendMsgs=[]
     @_reciveMsgs=[] #–¢subcrive‚Å”zM‚Å‚«‚È‚Á‚½message todo:—­‚Ü‚è‚·‚¬
-    @_auth=ph.auth.auth(url,@._doneAuth)
+    @_auth=ph.auth.auth(url,@_doneAuth)
   _doneAuth:(auth)=>
     if !auth.result
       ph.pa._connections[@url]=null
