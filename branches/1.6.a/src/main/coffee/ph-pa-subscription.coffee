@@ -1,5 +1,5 @@
 #-------------------Subscription-------------------
-class Subscription extends window.ph.EventModule
+class Subscription extends ph.EventModule
   constructor: (@_con,@deferred,@qname,@subname)->
     super
     @_con._send({type:ph.pa.TYPE_SUBSCRIBE,qname:@qname,subname:@subname})

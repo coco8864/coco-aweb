@@ -1,5 +1,5 @@
 #-------------------Connection-------------------
-class Connection extends window.ph.EventModule
+class Connection extends ph.EventModule
   constructor: (@url,@httpUrl,@deferred) ->
     super
     @_subscribes={}
