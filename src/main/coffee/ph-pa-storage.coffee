@@ -1,5 +1,5 @@
 #-------------------PagePrivateStorage-------------------
-class PagePrivateStorage extends window.ph.EventModule
+class PagePrivateStorage extends ph.EventModule
   constructor:(@ssKey)->
     super
     str=sessionStorage.getItem(@ssKey) ? '{}'
@@ -24,7 +24,7 @@ class PagePrivateStorage extends window.ph.EventModule
     @trigger('remove',@)
 
 #-------------------Session,Apl PrivateStorage-------------------
-class PrivateStorage extends window.ph.EventModule
+class PrivateStorage extends ph.EventModule
   constructor:(@lsKey)->
     super
     str=localStorage.getItem(@lsKey) ? '{}'
@@ -52,7 +52,7 @@ class PrivateStorage extends window.ph.EventModule
     @trigger('remove',@)
 
 #-------------------AplLocaleStorage-------------------
-class AplLocalStorage extends window.ph.EventModule
+class AplLocalStorage extends ph.EventModule
   constructor:(@lsKey)->
     super
   getItem:(key)->

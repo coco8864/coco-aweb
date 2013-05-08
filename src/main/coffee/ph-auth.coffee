@@ -3,7 +3,7 @@ if window.ph.auth
 
 class PhAuth
   _authFrameName:'__phAuthFrame'
-  _authEachFrameName:'__phEachAuthFrame_'
+  _authEachFrameName:'__phAuthEachFrame_'
   _infoPath:'/info'
   _checkAplQuery:'?__PH_AUTH__=__CD_CHECK__'
   _checkWsAplQuery:'?__PH_AUTH__=__CD_WS_CHECK__'
@@ -12,8 +12,8 @@ class PhAuth
 ##/* 呼び出しをqueueして順次処理する仕組み */
   _authQueue:[]
   _processAuth:null #認証処理中か否か
-  _reqUrl:null
-  _reqCb:null
+  _reqQueue:[]
+  _processReq:null
   _finAuth:(res)->
     auth=@_processAuth
     auth.result=res.result
@@ -37,30 +37,37 @@ class PhAuth
     auth=@_authQueue.pop()
     @_processAuth=auth
     @_reqestUrl(auth._checkAplUrl,@_aplCheckCb)
+    return
   _reqestUrl:(url,cb)->
-##//ph.log("_reqestUrl:"+url +":"+(new Date()).getTime())
-    @_reqUrl=url
-    @_reqCb=cb
-    @_frame[0].src=url
+    req={url:url,cb:cb}
+    @_reqQueue.push(req)
+    @_reqest()
+    return
+  _reqest:->
+    if @_processReq!=null || @_reqQueue.length==0
+      return
+    req=@_reqQueue.pop()
+    @_processReq=req
+    @_frame[0].src=req.url
     return
   _reqestCallback:(res)->
-    reqestCb=@_reqCb
-    @_reqUrl=null
-    @_reqCb=null
+    reqestCb=@_processReq.cb
+    @_processReq=null
     reqestCb(res)
+    @_reqest()
     return
   _init:->
-    @_frame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' + @_authFrameName + '" ></iframe>')
-##    @_frame.load(@_frameLoad)
+    @_frame=ph.jQuery("<iframe width='0' height='0' frameborder='no' name='#{@_authFrameName}' ></iframe>")
     ph.jQuery("body").append(@_frame)
     return
   _onMessage:(ev)=>
     if !@_frame || ev.source!=@_frame[0].contentWindow
       return
-    url=@_reqUrl
-    if !url
+    @_frame[0].src='about:blank'
+    req=@_processReq
+    if !req
       return
-    if url.lastIndexOf(ev.origin, 0)!=0
+    if req.url.lastIndexOf(ev.origin, 0)!=0
       return
     res=ph.JSON.parse(ev.data)
     @_reqestCallback(res)
@@ -94,16 +101,20 @@ class PhAuth
     protocol=RegExp.$1
     authDomain=RegExp.$2
     authPath=RegExp.$3
-    checkAplUrl=null
+    keyUrl=checkAplUrl=null
     if protocol=='ws:'
-      checkAplUrl='http://'+authDomain+authPath+@_checkWsAplQuery
+      keyUrl="http://#{authDomain}#{authPath}"
+      checkAplUrl=keyUrl+@_checkWsAplQuery
     else if protocol=='wss:'
-      checkAplUrl='https://'+authDomain+authPath+@_checkWsAplQuery
+      keyUrl="https://#{authDomain}#{authPath}"
+      checkAplUrl=keyUrl+@_checkWsAplQuery
     else if protocol==null || protocol==''
-      checkAplUrl=window.location.protocol+'//'+window.location.host+authPath+this._checkWsAplQuery
+      keyUrl="#{window.location.protocol}//#{window.location.host}#{authPath}"
+      checkAplUrl=keyUrl+@_checkAplQuery
     else #http or https
-      checkAplUrl=aplUrl+this._checkAplQuery
-    authObj=@_auths[checkAplUrl]
+      keyUrl=aplUrl;
+      checkAplUrl=aplUrl+@_checkAplQuery
+    authObj=@_auths[keyUrl]
     if authObj
       auth=authObj.promise
       if cb && auth.state()=='pending'
@@ -112,11 +123,11 @@ class PhAuth
         cb(auth)
       return auth
     dfd=ph.jQuery.Deferred()
-    auth=dfd.promise(new Auth(checkAplUrl,dfd))
+    auth=dfd.promise(new Auth(keyUrl,checkAplUrl,dfd))
     auth._checkAplUrl=checkAplUrl
     auth.on('done',cb)
     auth.always(@_alwaysAsyncAuth)
-    @_auths[checkAplUrl]={deferred:dfd,promise:auth}
+    @_auths[keyUrl]={deferred:dfd,promise:auth}
     @_callAsyncAuth(auth)
     auth
   info:(authUrl,cb)->
@@ -124,6 +135,7 @@ class PhAuth
       authUrl=ph.authUrl
     url=authUrl+@_infoPath;
     @_reqestUrl(url,cb);
+    return
 
 window.ph.auth=new PhAuth()
 
@@ -135,19 +147,52 @@ ph.jQuery(->
 
 #-------------------Auth-------------------
 class Auth extends ph.EventModule
-  constructor: (@_checkAplUrl,@_deferred) ->
+  _reqQueue:[]
+  _processReq:null
+  constructor: (@_keyUrl,@_checkAplUrl,@_deferred) ->
     super
+    ph.event.on('message',@_onMessage)
   _setup:(res)->
     @loginId=res.loginId
     @authUrl=res.authUrl
     @appSid=res.appSid
     @token=res.token
-    @_frame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' + ph.auth._authEachFrameName + @_checkAplUrl + '" ></iframe>')
+    @_frame=ph.jQuery("<iframe width='0' height='0' frameborder='no' name='#{ph.auth._authEachFrameName}#{@_keyUrl}' ></iframe>")
     @_frame.load(@_frameLoad)
     ph.jQuery("body").append(@_frame)
   _frameLoad:=>
     @_deferred.resolve(@)
+  _reqestUrl:(url,cb)->
+    req={url:url,cb:cb}
+    @_reqQueue.push(req)
+    @_reqest()
+    return
+  _reqest:->
+    if @_processReq!=null || @_reqQueue.length==0
+      return
+    req=@_reqQueue.pop()
+    @_processReq=req
+    @_frame[0].src=req.url
+    return
+  _reqestCallback:(res)->
+    reqestCb=@_processReq.cb
+    @_processReq=null
+    reqestCb(res)
+    @_reqest()
+    return
   _onMessage:->
+    if !@_frame || ev.source!=@_frame[0].contentWindow
+      return
+    @_frame[0].src='about:blank'
+    req=@_processReq
+    if !req
+      return
+    if req.url.lastIndexOf(ev.origin, 0)!=0
+      return
+    res=ph.JSON.parse(ev.data)
+    @_reqestCallback(res)
+    return
+  logout:(url)->
   info:(cb)->
   encrypt:(loginid,plainText,cb)->
   decrypt:(loginid,encryptText,cb)->
