@@ -68,7 +68,7 @@ function auth(){
   var auth=ph.auth.auth('/admin',function(a){alert('cb:'+a.result);ph.dump1(a);});
 //  var auth=ph.auth2.auth('/auth');
   ph.dump1(auth);
-  auth.done(function(){alert('done')});
+  auth.done(function(){alert('done');auth.info(function(){alert('info');})});
   auth.fail(function(){alert('fail')});
 }
 
