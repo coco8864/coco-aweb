@@ -278,9 +278,10 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 	 * <?xml version="1.0" encoding="EUC-JP"?>
 	 * <meta http-equiv="content-type" content="text/html; charset=EUC-JP" />
 	 * <meta charset=utf-8>
+	 * <meta charset="utf-8">
 	 * 
 	 */
-	private static Pattern CHARSET_PATTERN = Pattern.compile("(?:encoding=\"([^\"\\s]*)\")|(?:charset=([^\"'>\\s]*))");
+	private static Pattern CHARSET_PATTERN = Pattern.compile("(?:encoding=\"([^\"\\s]*)\")|(?:charset=[\"]?([^\"'>\\s]*))");
 	private String guessCharset(String text){
 		Matcher matcher=null;
 		synchronized(CHARSET_PATTERN){
@@ -290,7 +291,7 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 		if(matcher.find()){
 			for(int i=1;i<=matcher.groupCount();i++){
 				String c=matcher.group(i);
-				if(c!=null){
+				if(c!=null&&!"".equals(c)){
 					charset=c;
 					break;
 				}
