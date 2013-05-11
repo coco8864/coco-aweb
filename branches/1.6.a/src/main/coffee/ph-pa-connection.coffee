@@ -12,7 +12,7 @@ class Connection extends ph.EventModule
     @_auth=ph.auth.auth(url,@_doneAuth)
   _doneAuth:(auth)=>
     if !auth.result
-      ph.pa._connections[@url]=null
+      delete ph.pa._connections[@url]
       @trigger(ph.pa.RESULT_ERROR,'auth',@)#fail to auth
       return
     @_loginId=auth.loginId
