@@ -95,6 +95,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	
 	private Integer bid;//brawserId
 	private boolean isWs;
+	//アプリに通知する同じPaPeerのインスタンスを一意にするための浄水器
 	private Map<PaPeer,PaPeer> peers=new HashMap<PaPeer,PaPeer>();
 	private PaHandler wsHandler;
 	private PaHandler xhrHandler;
