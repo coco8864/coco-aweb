@@ -12,7 +12,7 @@
 ##親frameのlocation.href
 var parentOrigin;
 var offlinePassHash='$esc.javascript(${offlinePassHash})';
-var info=ph.JSON.parse('$esc.javascript(${info})');
+var authInfo=ph.JSON.parse('$esc.javascript(${info})');
 
 ##crossDomainRequest情報
 var cdr={isIn:false,req:null};
@@ -65,8 +65,19 @@ ph.jQuery(function(){
     parentOrigin='*';
   }
   ph.event.on('message',onRequest);
+
+  //XX {loginId1:{passCheckText:'',onlineLoginCount:99,offlineLoginCount:99},loginId2:... }
+  //localStrageから既存のXXを取得
+  //logidIdでXXを複合かしてloginIdになることをチェック
+  //yesなら
+  //noなら
+
+  //login回数をインクリメント
+
+  //localStrageに設定
+
   response(info);
-##  postMessageToParent({load:true},parentOrigin);
+
 });
 // --></script>
 </head>
