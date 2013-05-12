@@ -35,8 +35,10 @@ public class AuthHandler extends WebServerHandler {
 	public static String AUTHORIZE_MARK="ahthorizeMark";//authorize目的で呼び出された場合に付加される。
 	public static String AUTHENTICATE_PATH="/authenticate";//必要があれば認証処理も行うパス
 	public static String INFO_PATH="/info";//ユーザ情報,利用可能サービスの問い合わせAPI
+	public static String AUTH_FRAME_PATH="/authFrame";//ユーザ情報,利用可能サービスの問い合わせAPI
 	private static String CLEANUP_AUTH_HEADER_PATH="/cleanupAuthHeader";//auth header削除用path
 	private static String LOGOUT_PATH="/logout";//logout用
+	private static String AJAX_LOGOUT_PATH="/ajaxLogout";//ajax Logout用
 	private static String AUTH_ID="authId";//...temporaryIdの別名
 	
 	public static String AUTH_MARK="authMark";
@@ -414,9 +416,7 @@ public class AuthHandler extends WebServerHandler {
 		}
 	}
 	
-	//info
-	private void info(String cookieId){
-		User user=authorizer.getUserByPrimaryId(cookieId);
+	private JSONObject infoObject(User user){
 		JSONObject response=new JSONObject();
 		response.element("result", true);
 		List<String> userRoles=null;
@@ -446,6 +446,31 @@ public class AuthHandler extends WebServerHandler {
 			allowUrls.add(urlJson);
 		}
 		response.element("allowUrls", allowUrls);
+		return response;
+	}
+	
+	//authFrame
+	private void authFrame(String cookieId){
+		User user=authorizer.getUserByPrimaryId(cookieId);
+		JSONObject response=infoObject(user);
+		setRequestAttribute("info", response.toString());
+		setRequestAttribute("offlinePassHash", user.getOfflinePassHash());
+		forwardAuthPage("/authFrame.vsp");
+	}
+	
+	//info
+	private void info(String cookieId){
+		User user=authorizer.getUserByPrimaryId(cookieId);
+		JSONObject response=infoObject(user);
+		setRequestAttribute("response", response.toString());
+		forwardAuthPage("/crossDomainFrame.vsp");
+	}
+	
+	//ajaxLogout
+	private void ajaxLogout(String cookieId){
+		boolean result=authorizer.logout(cookieId);
+		JSONObject response=new JSONObject();
+		response.element("result", result);
 		setRequestAttribute("response", response.toString());
 		forwardAuthPage("/crossDomainFrame.vsp");
 	}
@@ -529,11 +554,15 @@ public class AuthHandler extends WebServerHandler {
 //		}else if(CHECK_SESSION_PATH.equals(path)){
 //			checkSession(cookieId);
 //			return;
+		}else if(AUTH_FRAME_PATH.equals(path)){
+			authFrame(cookieId);
+			return;
 		}else if(INFO_PATH.equals(path)){
 			info(cookieId);
 			return;
-		}else if(AUTHENTICATE_PATH.equals(path)){
-			
+		}else if(AJAX_LOGOUT_PATH.equals(path)){
+			ajaxLogout(cookieId);
+			return;
 		}else if(LOGOUT_PATH.equals(path)){
 			authorizer.logout(cookieId);
 			redirectLogout();

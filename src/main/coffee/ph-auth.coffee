@@ -170,12 +170,12 @@ class Auth extends ph.EventModule
     @authUrl=res.authUrl
     @appSid=res.appSid
     @token=res.token
+    @_loadFrame=true
     @_frame=ph.jQuery(
       "<iframe width='0' height='0' frameborder='no' " +
       "name='#{ph.auth._authEachFrameName}#{@_keyUrl}'" +
-      "src='#{@authUrl}/authFrame.vsp?origin=#{location.protocol}//#{location.host}' >" + 
+      "src='#{@authUrl}/authFrame?origin=#{location.protocol}//#{location.host}' >" + 
       "</iframe>")
-    @_frame.load(@_frameLoad)
     ph.jQuery("body").append(@_frame)
   _frameLoad:=>
     @_deferred.resolve(@)
@@ -201,6 +201,11 @@ class Auth extends ph.EventModule
   _onMessage:(ev)=>
     if !@_frame || ev.source!=@_frame[0].contentWindow
       return
+    if @_loadFrame
+      @_loadFrame=false
+      @_info=ph.JSON.parse(ev.data)
+      @_deferred.resolve(@)
+      return
     req=@_processReq
     if !req
       return
@@ -214,8 +219,8 @@ class Auth extends ph.EventModule
     @_requestQ({type:'info'},cb)
     @
   encrypt:(cb,loginid,plainText)->
-    @_requestQ({type:'encrypt',plainText:plainText},cb)
+    @_requestQ({type:'encrypt',plainText:plainText},(res)->cb(res.encryptText))
     @
   decrypt:(cb,loginid,encryptText)->
-    @_requestQ({type:'decrypt',encryptText:encryptText},cb)
+    @_requestQ({type:'decrypt',encryptText:encryptText},(res)->cb(res.plainText))
     @
