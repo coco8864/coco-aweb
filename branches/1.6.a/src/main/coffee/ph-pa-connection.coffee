@@ -9,12 +9,14 @@ class Connection extends ph.EventModule
     @stat=ph.pa.STAT_AUTH
     @_sendMsgs=[]
     @_reciveMsgs=[] #–¢subcrive‚Å”zM‚Å‚«‚È‚Á‚½message todo:—­‚Ü‚è‚·‚¬
-    @_auth=ph.auth.auth(url,@_doneAuth)
+    auth=ph.auth.auth(url)
+    auth.done(@_doneAuth)
+    auth.fail(@_failAuth)
+  _failAuth:(auth)=>
+    delete ph.pa._connections[@url]
+    @trigger(ph.pa.RESULT_ERROR,'auth',@)#fail to auth
   _doneAuth:(auth)=>
-    if !auth.result
-      delete ph.pa._connections[@url]
-      @trigger(ph.pa.RESULT_ERROR,'auth',@)#fail to auth
-      return
+    @_auth=auth
     @_loginId=auth.loginId
     @_appSid=auth.appSid
     @ppKey="_paPp:#{@url}:#{@_loginId}:#{@_appSid}"
