@@ -471,8 +471,7 @@ public class AuthHandler extends WebServerHandler {
 		boolean result=authorizer.logout(cookieId);
 		JSONObject response=new JSONObject();
 		response.element("result", result);
-		setRequestAttribute("response", response.toString());
-		forwardAuthPage("/crossDomainFrame.vsp");
+		responseJson(response);
 	}
 	
 	public void startResponseReqBody() {

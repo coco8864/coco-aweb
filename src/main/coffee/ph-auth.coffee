@@ -138,7 +138,8 @@ class PhAuth
     dfd=ph.jQuery.Deferred()
     auth=dfd.promise(new Auth(keyUrl,checkAplUrl,dfd))
     auth._checkAplUrl=checkAplUrl
-    auth.on('done',cb)
+    if cb
+      auth.on('done',cb)
     auth.always(@_alwaysAsyncAuth)
     @_auths[keyUrl]={deferred:dfd,promise:auth}
     @_callAsyncAuth(auth)
@@ -213,14 +214,17 @@ class Auth extends ph.EventModule
     @_requestCallback(res)
     return
   logout:(cb)->
-    @_requestQ({type:'logount'},cb)
+    @_requestQ({type:'logout'},(res)=>
+      cb(res)
+      @_frame[0].remove()
+      delete ph.auth._auths[@_keyUrl])
     @
   info:(cb)->
     @_requestQ({type:'info'},cb)
     @
-  encrypt:(cb,loginid,plainText)->
-    @_requestQ({type:'encrypt',plainText:plainText},(res)->cb(res.encryptText))
+  encrypt:(cb,loginId,plainText)->
+    @_requestQ({type:'encrypt',loginId:loginId,plainText:plainText},(res)->cb(res.encryptText))
     @
-  decrypt:(cb,loginid,encryptText)->
-    @_requestQ({type:'decrypt',encryptText:encryptText},(res)->cb(res.plainText))
+  decrypt:(cb,loginId,encryptText)->
+    @_requestQ({type:'decrypt',loginId:loginId,encryptText:encryptText},(res)->cb(res.plainText))
     @
