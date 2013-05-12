@@ -70,7 +70,7 @@
                 </fileSet>
             </joinSet>
             <joinSet>
-                <id>ph-auth2</id>
+                <id>ph-auth</id>
                 <fileSet>
                     <directory>${basedir}/src/main/coffee</directory>
                     <includes>
