@@ -34,7 +34,7 @@ var sd;
 <input type="button" value="auth" onclick="auth();"/>
 <input type="button" value="logout" onclick="aAuth.logout(function(x){alert('logout:'+x.result);});"/>
 <input type="button" value="encrypt" onclick="aAuth.encrypt(function(x){alert('encrypt:'+x);window.encryptText=x;},'admin','1234567890');"/>
-<input type="button" value="decrypt" onclick="aAuth.decrypt(function(x){alert('decrypt:'+x)},'admin',window.encryptText);/>
+<input type="button" value="decrypt" onclick="aAuth.decrypt(function(x){alert('decrypt:'+x);},'admin',window.encryptText);"/>
 
 <input type="button" value="connect" onclick="connect();"/>
 <input type="button" value="close" onclick="cd.close();"/>
