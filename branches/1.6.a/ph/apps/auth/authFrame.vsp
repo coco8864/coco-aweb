@@ -7,11 +7,12 @@
 <meta http-equiv="Cache-Control" content="no-cache"> 
 <meta http-equiv="Expires" content="0"> 
 <script type="text/javascript" src="/pub/js/ph-loader.js"></script>
+<script type="text/javascript" src="/pub/js/aes.js"></script>
 <script  type="text/javascript"><!--
 ##親frameのlocation.href
 var parentOrigin;
-var loginId='${}';
-var offlinePassHash='${}';
+var offlinePassHash='$esc.javascript(${offlinePassHash})';
+var info=ph.JSON.parse('$esc.javascript(${info})');
 
 ##crossDomainRequest情報
 var cdr={isIn:false,req:null};
@@ -31,14 +32,14 @@ function onRequest(ev){
     }
     cdr.isIn=true;
     cdr.req=req;
-    if(req.type=="encrypt"){
+    if(req.type==="encrypt"){
+      req.encryptText=CryptoJS.AES.encrypt(req.plainText, offlinePassHash).toString();
       response(req);
-    }else if(req.type=="decrypt"){
+    }else if(req.type==="decrypt"){
+      req.plainText=CryptoJS.AES.decrypt(req.encryptText, offlinePassHash).toString(CryptoJS.enc.Utf8);
       response(req);
-    }else if(req.type=="logout"){
-      response(req);
-    }else if(req.type=="info"){
-      response(req);
+    }else if(req.type==="info"){
+      response(info);
     }
   }
 }
@@ -56,6 +57,7 @@ ph.jQuery(function(){
     parentOrigin='*';
   }
   ph.event.on('message',onRequest);
+  response(info);
 ##  postMessageToParent({load:true},parentOrigin);
 });
 // --></script>
