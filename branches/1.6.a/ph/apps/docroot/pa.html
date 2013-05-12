@@ -69,13 +69,11 @@ var sd;
 <a id='test' target='_blank'>test</a>
 <script type="text/javascript"><!--
 function auth(){
-  var auth=ph.auth.auth('/admin',function(a){alert('cb:'+a.result);ph.dump1(a);});
+  var auth=ph.auth.auth('/admin',function(a){ph.dump1(a);});
   ph.dump1(auth);
-  auth.done(function(){alert('done');window.aAuth=auth;auth.info(function(){ph.dump(auth._info);})});
-  auth.fail(function(){alert('fail')});
+  auth.done(function(){ph.log('auth:done');window.aAuth=auth;auth.info(function(){ph.dump(auth._info);})});
+  auth.fail(function(){ph.log('auth:fail')});
 }
-
-
 
 
 function onDropFiles(){

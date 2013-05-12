@@ -27,9 +27,11 @@
       };
     }
 
-    PhAuth.prototype._authFrameName = '__phAuthFrame2';
+    PhAuth.prototype._authFrameName = '__phAuthFrame';
 
-    PhAuth.prototype._authEachFrameName = '__phEachAuthFrame_';
+    PhAuth.prototype._authEachFrameName = '__phAuthEachFrame_';
+
+    PhAuth.prototype._infoPath = '/info';
 
     PhAuth.prototype._checkAplQuery = '?__PH_AUTH__=__CD_CHECK__';
 
@@ -43,9 +45,9 @@
 
     PhAuth.prototype._processAuth = null;
 
-    PhAuth.prototype._reqUrl = null;
+    PhAuth.prototype._reqQueue = [];
 
-    PhAuth.prototype._reqCb = null;
+    PhAuth.prototype._processReq = null;
 
     PhAuth.prototype._finAuth = function(res) {
       var auth;
@@ -54,14 +56,13 @@
       if (res.result) {
         auth._setup(res);
       } else {
+        delete this._authQueue[auth._keyUrl];
         auth._deferred.reject(auth);
       }
     };
 
     PhAuth.prototype._alwaysAsyncAuth = function(auth) {
-      if (auth._authCb) {
-        auth._authCb(auth);
-      }
+      auth.trigger('done', auth);
       this._processAuth = null;
       this._call();
     };
@@ -78,49 +79,75 @@
       }
       auth = this._authQueue.pop();
       this._processAuth = auth;
-      return this._reqestUrl(auth._checkAplUrl, this._aplCheckCb);
+      this._requestUrl(auth._checkAplUrl, this._aplCheckCb);
     };
 
-    PhAuth.prototype._reqestUrl = function(url, cb) {
-      this._reqUrl = url;
-      this._reqCb = cb;
-      this._frame[0].src = url;
+    PhAuth.prototype._requestUrl = function(url, cb) {
+      var req;
+      req = {
+        url: url,
+        cb: cb
+      };
+      this._reqQueue.push(req);
+      this._request();
     };
 
-    PhAuth.prototype._reqestCallback = function(res) {
+    PhAuth.prototype._request = function() {
+      var req, t;
+      if (this._processReq !== null || this._reqQueue.length === 0) {
+        return;
+      }
+      req = this._reqQueue.pop();
+      this._processReq = req;
+      this._frame[0].src = req.url;
+      t = this;
+      req.timerId = setTimeout((function() {
+        t._requestCallback({
+          result: false,
+          reason: 'timeout'
+        });
+        t._frame[0].src = 'about:blank';
+        req.timerId = null;
+      }), 1000);
+    };
+
+    PhAuth.prototype._requestCallback = function(res) {
       var reqestCb;
-      reqestCb = this._reqCb;
-      this._reqUrl = null;
-      this._reqCb = null;
+      reqestCb = this._processReq.cb;
+      this._processReq = null;
       reqestCb(res);
+      this._request();
     };
 
     PhAuth.prototype._init = function() {
-      this._frame = ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' + this._authFrameName + '" ></iframe>');
+      this._frame = ph.jQuery("<iframe width='0' height='0' frameborder='no' " + ("name='" + this._authFrameName + "' >") + "</iframe>");
       ph.jQuery("body").append(this._frame);
     };
 
     PhAuth.prototype._onMessage = function(ev) {
-      var res, url;
+      var req, res;
       if (!this._frame || ev.source !== this._frame[0].contentWindow) {
         return;
       }
-      url = this._reqUrl;
-      if (!url) {
+      this._frame[0].src = 'about:blank';
+      req = this._processReq;
+      if (!req) {
         return;
       }
-      if (url.lastIndexOf(ev.origin, 0) !== 0) {
+      clearTimeout(req.timerId);
+      req.timerId = null;
+      if (req.url.lastIndexOf(ev.origin, 0) !== 0) {
         return;
       }
       res = ph.JSON.parse(ev.data);
-      this._reqestCallback(res);
+      this._requestCallback(res);
     };
 
     PhAuth.prototype._authCheckCb = function(res) {
       if (res.result === 'redirect') {
-        this._reqestUrl(res.location, this._authCheckCb);
+        this._requestUrl(res.location, this._authCheckCb);
       } else if (res.result === 'redirectForAuthorizer') {
-        window.location.href = res.location;
+        location.href = res.location;
       } else {
         this._finAuth(res);
       }
@@ -130,43 +157,62 @@
       var redirectUrl;
       if (res.result === 'redirect') {
         redirectUrl = res.location + '&originUrl=' + encodeURIComponent(window.location.href);
-        this._reqestUrl(redirectUrl, this._authCheckCb);
+        this._requestUrl(redirectUrl, this._authCheckCb);
       } else {
         this._finAuth(res);
       }
     };
 
     PhAuth.prototype.auth = function(aplUrl, cb) {
-      var auth, authDomain, authObj, authPath, checkAplUrl, dfd, protocol;
+      var auth, authDomain, authObj, authPath, checkAplUrl, dfd, keyUrl, protocol;
       aplUrl.match(this._urlPtn);
       protocol = RegExp.$1;
       authDomain = RegExp.$2;
       authPath = RegExp.$3;
-      checkAplUrl = null;
+      keyUrl = checkAplUrl = null;
       if (protocol === 'ws:') {
-        checkAplUrl = 'http://' + authDomain + authPath + this._checkWsAplQuery;
+        keyUrl = "http://" + authDomain + authPath;
+        checkAplUrl = keyUrl + this._checkWsAplQuery;
       } else if (protocol === 'wss:') {
-        checkAplUrl = 'https://' + authDomain + authPath + this._checkWsAplQuery;
+        keyUrl = "https://" + authDomain + authPath;
+        checkAplUrl = keyUrl + this._checkWsAplQuery;
       } else if (protocol === null || protocol === '') {
-        checkAplUrl = window.location.protocol + '//' + window.location.host + authPath + this._checkWsAplQuery;
+        keyUrl = "" + location.protocol + "//" + location.host + authPath;
+        checkAplUrl = keyUrl + this._checkAplQuery;
       } else {
+        keyUrl = aplUrl;
         checkAplUrl = aplUrl + this._checkAplQuery;
       }
-      authObj = this._auths[checkAplUrl];
+      authObj = this._auths[keyUrl];
       if (authObj) {
-        return authObj.promise;
+        auth = authObj.promise;
+        if (cb && auth.state() === 'pending') {
+          auth.on('done', cb);
+        } else if (cb) {
+          cb(auth);
+        }
+        return auth;
       }
       dfd = ph.jQuery.Deferred();
-      auth = dfd.promise(new Auth(checkAplUrl, dfd));
+      auth = dfd.promise(new Auth(keyUrl, checkAplUrl, dfd));
       auth._checkAplUrl = checkAplUrl;
-      auth._authCb = cb;
+      auth.on('done', cb);
       auth.always(this._alwaysAsyncAuth);
-      this._auths[checkAplUrl] = {
+      this._auths[keyUrl] = {
         deferred: dfd,
         promise: auth
       };
       this._callAsyncAuth(auth);
       return auth;
+    };
+
+    PhAuth.prototype.info = function(cb, authUrl) {
+      var url;
+      if (!authUrl) {
+        authUrl = ph.authUrl;
+      }
+      url = authUrl + this._infoPath;
+      this._requestUrl(url, cb);
     };
 
     return PhAuth;
@@ -184,14 +230,23 @@
 
     __extends(Auth, _super);
 
-    function Auth(_checkAplUrl, _deferred) {
+    Auth.prototype._reqQueue = [];
+
+    Auth.prototype._processReq = null;
+
+    function Auth(_keyUrl, _checkAplUrl, _deferred) {
       var _this = this;
+      this._keyUrl = _keyUrl;
       this._checkAplUrl = _checkAplUrl;
       this._deferred = _deferred;
+      this._onMessage = function(ev) {
+        return Auth.prototype._onMessage.apply(_this, arguments);
+      };
       this._frameLoad = function() {
         return Auth.prototype._frameLoad.apply(_this, arguments);
       };
       Auth.__super__.constructor.apply(this, arguments);
+      ph.event.on('message', this._onMessage);
     }
 
     Auth.prototype._setup = function(res) {
@@ -199,8 +254,8 @@
       this.authUrl = res.authUrl;
       this.appSid = res.appSid;
       this.token = res.token;
-      this._frame = ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' + ph.auth._authEachFrameName + this._checkAplUrl + '" ></iframe>');
-      this._frame.load(this._frameLoad);
+      this._loadFrame = true;
+      this._frame = ph.jQuery("<iframe width='0' height='0' frameborder='no' " + ("name='" + ph.auth._authEachFrameName + this._keyUrl + "'") + ("src='" + this.authUrl + "/authFrame?origin=" + location.protocol + "//" + location.host + "' >") + "</iframe>");
       return ph.jQuery("body").append(this._frame);
     };
 
@@ -208,13 +263,87 @@
       return this._deferred.resolve(this);
     };
 
-    Auth.prototype._onMessage = function() {};
+    Auth.prototype._requestQ = function(req, cb) {
+      var reqObj;
+      reqObj = {
+        req: req,
+        cb: cb
+      };
+      this._reqQueue.push(reqObj);
+      this._request();
+    };
 
-    Auth.prototype.info = function(cb) {};
+    Auth.prototype._request = function() {
+      var reqObj, reqText;
+      if (this._processReq !== null || this._reqQueue.length === 0) {
+        return;
+      }
+      reqObj = this._reqQueue.pop();
+      this._processReq = reqObj;
+      reqText = ph.JSON.stringify(reqObj.req);
+      this._frame[0].contentWindow.postMessage(reqText, '*');
+    };
 
-    Auth.prototype.encrypt = function(loginid, plainText, cb) {};
+    Auth.prototype._requestCallback = function(res) {
+      var reqestCb;
+      reqestCb = this._processReq.cb;
+      this._processReq = null;
+      reqestCb(res);
+      this._request();
+    };
 
-    Auth.prototype.decrypt = function(loginid, encryptText, cb) {};
+    Auth.prototype._onMessage = function(ev) {
+      var req, res;
+      if (!this._frame || ev.source !== this._frame[0].contentWindow) {
+        return;
+      }
+      if (this._loadFrame) {
+        this._loadFrame = false;
+        this._info = ph.JSON.parse(ev.data);
+        this._deferred.resolve(this);
+        return;
+      }
+      req = this._processReq;
+      if (!req) {
+        return;
+      }
+      res = ph.JSON.parse(ev.data);
+      this._requestCallback(res);
+    };
+
+    Auth.prototype.logout = function(cb) {
+      this._requestQ({
+        type: 'logount'
+      }, cb);
+      return this;
+    };
+
+    Auth.prototype.info = function(cb) {
+      this._requestQ({
+        type: 'info'
+      }, cb);
+      return this;
+    };
+
+    Auth.prototype.encrypt = function(cb, loginid, plainText) {
+      this._requestQ({
+        type: 'encrypt',
+        plainText: plainText
+      }, function(res) {
+        return cb(res.encryptText);
+      });
+      return this;
+    };
+
+    Auth.prototype.decrypt = function(cb, loginid, encryptText) {
+      this._requestQ({
+        type: 'decrypt',
+        encryptText: encryptText
+      }, function(res) {
+        return cb(res.plainText);
+      });
+      return this;
+    };
 
     return Auth;
 
