@@ -1,32 +1,29 @@
 <!DOCTYPE html>
 <html lang="jp">
 <head>
-	<script type="text/javascript" src="/pub/js/jquery-1.8.3.min.js"></script>
-	<script type="text/javascript" src="/pub/js/sha1.js"></script>
-	<!--script type="text/javascript" src="/pub/js/md5.js"></script-->
-	<title>Phatom Proxy Login</title>
-	<script type="text/javascript"> 
+<script type="text/javascript" src="/pub/js/jquery-1.8.3.min.js"></script>
+<script type="text/javascript" src="/pub/js/sha256.js"></script>
+<!--script type="text/javascript" src="/pub/js/md5.js"></script-->
+<title>Phatom Proxy Login</title>
+<script type="text/javascript"> 
 function login(){
-	var username=jQuery("#username").val();
-	var password=jQuery("#password").val();
-	var loginForm=jQuery("#loginForm")[0];
-	var nonce=loginForm.ph_nonce.value;
-	var cnonce=Math.random();
+  var username=jQuery("#username").val();
+  var password=jQuery("#password").val();
+  var loginForm=jQuery("#loginForm")[0];
+  var nonce=loginForm.ph_nonce.value;
+  var cnonce=Math.random();
 
-//	var a1=MD5_hexhash(username+":"+password);
-//	var text=a1+":"+nonce+":"+cnonce;
-//	var response=MD5_hexhash(text);
-	var a1=SHA1(username+":"+password);
-	var text=a1+":"+nonce+":"+cnonce;
-	var response=SHA1(text);
+  var a1=CryptoJS.SHA256("${config.getString('passSalt')}:"+username+":"+password);
+  var text=a1+":"+nonce+":"+cnonce;
+  var response=CryptoJS.SHA256(text);
 
-	loginForm.ph_username.value=username;
-	loginForm.ph_cnonce.value=cnonce;
-	loginForm.ph_response.value=response;
-	loginForm.submit();
-	return false;
+  loginForm.ph_username.value=username;
+  loginForm.ph_cnonce.value=cnonce;
+  loginForm.ph_response.value=response;
+  loginForm.submit();
+  return false;
 }
-	</script> 
+</script> 
 </head>
 <body>
 <h1>Phatom Proxy Login(digest)</h1>
