@@ -47,7 +47,7 @@ function onRequest(ev){
         error:function(x){response({result:false});}
       });
     }else if(req.type==="info"){
-      response(info);
+      response(authInfo);
     }
   }
 }
@@ -76,7 +76,7 @@ ph.jQuery(function(){
 
   //localStrageに設定
 
-  response(info);
+  response(authInfo);
 
 });
 // --></script>
