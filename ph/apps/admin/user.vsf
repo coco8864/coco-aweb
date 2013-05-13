@@ -13,6 +13,12 @@ function doUserSave(){
 			delete user.pass1;//password変更依頼ではないと判断
 			delete user.pass2;
 		}
+		user.offlinePass1=ph.jQuery("#offlinePass1").val();
+		user.offlinePass2=ph.jQuery("#offlinePass2").val();
+		if(!user.offlinePass1||user.offlinePass1!=user.offlinePass2){
+			delete user.offlinePass1;//password変更依頼ではないと判断
+			delete user.offlinePass2;
+		}
 	}else{
 		user={};
 		command='userInsert';
@@ -22,6 +28,13 @@ function doUserSave(){
 		if(!user.pass1||user.pass1!=user.pass2){
 			ph.log(user.pass1 + ":" +user.pass2);
 			alert('password error');
+			return;
+		}
+		user.offlinePass1=ph.jQuery("#offlinePass1").val();
+		user.offlinePass2=ph.jQuery("#offlinePass2").val();
+		if(!user.offlinePass1||user.offlinePass1!=user.offlinePass2){
+			ph.log(user.offlinePass1 + ":" +user.offlinePass2);
+			alert('offline password error');
 			return;
 		}
 	}

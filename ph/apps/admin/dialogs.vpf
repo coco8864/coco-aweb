@@ -374,6 +374,8 @@ loginId:<input id="userLoginIdEdit" type="text" size="64"><br/>
 password1:<input id="userPassword1" type="password" size="64"><br/>
 password2:<input id="userPassword2" type="password" size="64"><br/>
 roles:<input id="userRoles" type="text" size="64"><br/>
+offlinePass1:<input id="offlinePass1" type="password" size="64"><br/>
+offlinePass2:<input id="offlinePass2" type="password" size="64"><br/>
 firstName:<input id="userFirstName" type="text" size="64"><br/>
 lastName:<input id="userLastName" type="text" size="64"><br/>
 footSize:<input id="userfootSize" type="text" size="16"><br/>
