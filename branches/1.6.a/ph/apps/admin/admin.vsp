@@ -83,11 +83,11 @@ ph.jQuery(function() {
 	jQuery("#textEdit").dialog('close');
 	jQuery("#imageBox").dialog({title:'image'});
 	jQuery("#imageBox").dialog('close');
-	jQuery("#mappingDialog").dialog({width: 500,title:'mapping編集'});
+	jQuery("#mappingDialog").dialog({width: 520,title:'mapping編集'});
 	jQuery("#mappingDialog").dialog('close');
 	jQuery("#realHostDialog").dialog({width: 500,title:'realHost編集'});
 	jQuery("#realHostDialog").dialog('close');
-	jQuery("#userDialog").dialog({title:'user編集'});
+	jQuery("#userDialog").dialog({width: 520,title:'user編集'});
 	jQuery("#userDialog").dialog('close');
 	jQuery("#commissionAuthDialog").dialog({title:'代理ログイン情報'});
 	jQuery("#commissionAuthDialog").dialog('close');
