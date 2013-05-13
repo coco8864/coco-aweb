@@ -61,6 +61,9 @@ import org.apache.log4j.Logger;
 import org.apache.velocity.app.VelocityEngine;
 
 public class Config {
+	private static Logger logger = Logger.getLogger(Config.class);
+	private static Config config = new Config();
+	
 	private static final String USE_FILE_CACHE = "useFileCache";
 	private static final String PHANTOM_SERVER_HEADER = "phantomServerHeader";
 	private static final String KEEP_ALIVE_TIMEOUT = "keepAliveTimeout";
@@ -69,7 +72,7 @@ public class Config {
 	private static final String IS_PROXY_KEEP_ALIVE = "isProxyKeepAlive";
 	private static final String CONTENT_ENCODING = "contentEncoding";
 	private static final String CONFIG_MARK_CREATE = "_config_create_";
-	private static Logger logger = Logger.getLogger(Config.class);
+	
 	private static String PROPERTIES_ENCODING = "utf-8";
 	private static final String READ_TIMEOUT = "readTimeout";
 	private static final long READ_TIMEOUT_DEFAULT = 10000;
@@ -86,11 +89,10 @@ public class Config {
 	private static final String PATH_APPS_DOCROOT = "path.appsDocroot";
 	private static final String PATH_PUBLIC_DOCROOT = "path.publicDocroot";
 	private static final String PATH_PORTAL_DOCROOT = "path.portalDocroot";
-	private static final String PATH_ADMIN_DOCROOT = "path.adminDocroot";
 	private static final String PATH_SETTING = "path.setting";
 	private static final String PATH_INJECTION_DIR = "path.injectionDir";
-	private static Config config = new Config();
-	public static String CONF_FILENAME = "phantom.properties";
+
+	public static final String CONF_FILENAME = "phantom.properties";
 	private static final String DEBUG_TRACE="debugTrace";
 	public static final String SELF_DOMAIN = "selfDomain";
 	public static final String SELF_PORT = "selfPort";
@@ -98,6 +100,10 @@ public class Config {
 	private static final String REAL_HOSTS = "realHosts";
 	private static final String REAL_HOST = "realHost";
 
+	public static final String PASS_HASH_ALGORITHM="passHashAlgorithm";
+	public static final String PASS_SALT="passSalt";
+	public static final String OFFLINE_PASS_SALT="offlinePassSalt";
+	
 	private File adminDocumentRoot;// admin‚ÅŒ©‚¦‚é‚Æ‚±‚ë
 	private File authDocumentRoot;// auth‚ÅŒ©‚¦‚é‚Æ‚±‚ë
 	private File portalDocumentRoot;// for portal

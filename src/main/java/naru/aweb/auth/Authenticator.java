@@ -1,5 +1,8 @@
 package naru.aweb.auth;
 
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.Date;
@@ -46,6 +49,8 @@ public class Authenticator {
 	public static final String DIGEST_FORM="DigestForm";//Form認証
 	private static SecureRandom nonceRandom;
 	private static SecureRandom tokenRandom;
+	private static MessageDigest passDigest;
+	private static MessageDigest digestAuthDigest;//digest認証は、MD5
 	
 	//loginidとUserのマップ、最新情報を保持,任意のタイミングでDBに格納すれば忘れてもよい
 	private Map<String,User> loginIdUserMap=Collections.synchronizedMap(new HashMap<String,User>());
@@ -103,9 +108,9 @@ public class Authenticator {
 		User user=new User();
 		user.setLoginId(loginId);
 		
-		user.changePassword(password, realm);
+		user.changePassword(this,password, realm);
 		//本物のpassowrdが漏れないようにoffline passwordは一律"password"で初期化
-		user.setOfflinePassHash(User.calcPassHashSha1(loginId,"password"));
+		//user.setOfflinePassHash(calcPassHash(loginId,"password"));
 		user.setRoles(roles);
 		Date now=new Date();
 		user.setCreateDate(now);
@@ -149,36 +154,82 @@ public class Authenticator {
 	
 	private Config config;
 	private Configuration configuration;
+	private String passSalt;
+	private String offlinePassSalt;
+
+	public String calcOfflinePassHash(String username,String password){
+		return calcPassHash(offlinePassSalt,username,password);
+	}
+
+	public String calcPassHash(String username,String password){
+		return calcPassHash(passSalt,username,password);
+	}
+
+	public String calcPassHash(String salt,String username,String password){
+		StringBuffer sb=new StringBuffer(salt);
+		sb.append(':');
+		sb.append(username);
+		sb.append(':');
+		sb.append(password);
+		try {
+			byte[] digestByte=passDigest.digest(sb.toString().getBytes("iso8859_1"));
+			return DataUtil.byteToString(digestByte);
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public String calcDigestAuthPassHash(String username,String password,String realm){
+		StringBuilder sb=new StringBuilder();
+		sb.append(username);
+		sb.append(":");
+		sb.append(realm);
+		sb.append(":");
+		sb.append(password);
+		try {
+			byte[] digestByte=digestAuthDigest.digest(sb.toString().getBytes("iso8859_1"));
+			return DataUtil.byteToString(digestByte);
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	private String calcSalt(String key){
+		String entropy=configuration.getString(key +"Entropy");
+		if(entropy==null){
+			entropy=key+System.currentTimeMillis();
+		}
+		byte[]digestByte=passDigest.digest(entropy.getBytes());
+		String digest=DataUtil.encodeBase64(digestByte);
+		configuration.setProperty(key, digest);
+		return digest;
+	}
 	
 	public Authenticator(Config config,boolean isCleanup){
 		this.config=config;
 		this.configuration=config.getConfiguration(null);
 		setScheme(configuration.getString(AUTHENTICATE_SCHEME,null));
 		realm=configuration.getString(AUTHENTICATE_REALM,"phantomProxyRealm");
-//		logoutUrl=configuration.getString(AUTHENTICATE_LOGOUT_URL);
-//		Config config = Config.getConfig();
 		nonceRandom=config.getRandom(DIGEST_AUTHENTICATE_RANDOM_ENTOROPY);
 		tokenRandom=config.getRandom(TOKEN_RANDOM_ENTOROPY);
 		
-		/*
-		if(BASIC.equalsIgnoreCase(scheme)){
-			scheme=BASIC;
-		}else if(DIGEST.equalsIgnoreCase(scheme)){
-			scheme=DIGEST;
-		}else if(DIGEST.equalsIgnoreCase(scheme)){
-			scheme=DIGEST;
-		}else{
-			scheme=null;
-			admin=new User();
-			admin.setLoginId(adminId);
-			admin.setRoles("admin");
-			adminSession=new AuthSession(admin,getNextRandom(tokenRandom));
-			return;
+		String algorithm=configuration.getString(Config.PASS_HASH_ALGORITHM);
+		if(algorithm==null){
+			algorithm="SHA-256";
 		}
-		*/
+		try {
+			passDigest=MessageDigest.getInstance(algorithm);
+			digestAuthDigest=MessageDigest.getInstance("MD5");
+		} catch (NoSuchAlgorithmException e) {
+			logger.error("MessageDigest.getInstance error.algorithm:"+algorithm,e);
+			throw new RuntimeException("MessageDigest.getInstance error.algorithm:"+algorithm,e);
+		}
+		
 		//必要な場合、adminユーザを作成
 		String adminId=configuration.getString(ADMIN_ID);
 		if(isCleanup){
+			passSalt=calcSalt(Config.PASS_SALT);
+			offlinePassSalt=calcSalt(Config.OFFLINE_PASS_SALT);
 			String initAdminPass=configuration.getString("initAdminPass");
 			admin=createUser(adminId,initAdminPass,User.ROLE_ADMIN);
 		}
@@ -190,21 +241,8 @@ public class Authenticator {
 				admin.setLoginId(adminId);
 			}
 		}
-		
-//		adminSession=(AuthSession)PoolManager.getInstance(AuthSession.class);
-//		adminSession.init(admin,getNextRandom(tokenRandom));
-//		adminSession.ref();
-		//必要な場合、adminユーザを作成
-		/*
-		dummyUser=null;
-		try{
-			dummyUser=User.getByLoginId(DUMMY_USER_NAME);
-		}catch(Throwable e){
-		}
-		if(dummyUser==null){
-			dummyUser=createUser(DUMMY_USER_NAME,DUMMY_USER_NAME,null);
-		}
-		*/
+		passSalt=config.getString(Config.PASS_SALT);
+		offlinePassSalt=config.getString(Config.OFFLINE_PASS_SALT);
 	}
 	
 	private static Pattern usernamePattern=Pattern.compile("(?:\\s*username\\s*=[\\s\"]*([^,\\s\"]*))",Pattern.CASE_INSENSITIVE);
@@ -517,7 +555,7 @@ public class Authenticator {
 		sb.append(":");
 		sb.append(cnonce);
 		String response=authParam.get(KEY_RESPONSE);
-		String calcRespnse=DataUtil.digestHexSha1(sb.toString().getBytes());
+		String calcRespnse=DataUtil.byteToString(passDigest.digest(sb.toString().getBytes()));
 		if(calcRespnse.equals(response)){
 			return user;
 		}
@@ -538,7 +576,7 @@ public class Authenticator {
 			return null;
 		}
 		String password=authParam.get(KEY_PASSWORD);
-		String calcCredential=User.calcPassHashSha1(username, password);
+		String calcCredential=calcPassHash(username, password);
 		String credential=user.getPassHash();
 		if(calcCredential.equals(credential)){
 			return user;

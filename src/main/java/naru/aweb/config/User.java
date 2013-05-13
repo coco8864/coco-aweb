@@ -17,7 +17,7 @@ import javax.jdo.annotations.PersistenceCapable;
 import javax.jdo.annotations.Persistent;
 import javax.jdo.annotations.Unique;
 
-import naru.async.store.DataUtil;
+import naru.aweb.auth.Authenticator;
 import naru.aweb.util.DatePropertyFilter;
 import naru.aweb.util.JdoUtil;
 import net.sf.json.JSON;
@@ -137,35 +137,11 @@ public class User {
 		}
 	}
 	
-	public static String calcPassHashSha1(String username,String password){
-		StringBuffer sb=new StringBuffer(username);
-		sb.append(':');
-		sb.append(password);
-		try {
-			return DataUtil.digestHexSha1(sb.toString().getBytes("iso8859_1"));
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException(e);
-		}
-	}
-	
-	public static String calcDigestAuthPassHash(String username,String password,String realm){
-		StringBuilder sb=new StringBuilder();
-		sb.append(username);
-		sb.append(":");
-		sb.append(realm);
-		sb.append(":");
-		sb.append(password);
-		try {
-			return DataUtil.digestHex(sb.toString().getBytes("iso8859_1"));
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException(e);
-		}
-	}
-	
 	//確実に誤ったpasswordを返却する
 	public String getDummyPassword(){
 		String dummyPassword=Long.toString(System.currentTimeMillis());
-		String credential=calcPassHashSha1(loginId,dummyPassword);
+		Authenticator authenticator=config.getAuthenticator();
+		String credential=authenticator.calcPassHash(loginId,dummyPassword);
 		if(credential.equals(this.passHash)){
 			return dummyPassword+"#";
 		}
@@ -173,10 +149,16 @@ public class User {
 	}
 	
 	public void changePassword(String newPassword,String realm){
-		setPassHash(calcPassHashSha1(loginId,newPassword));
+		Authenticator authenticator=config.getAuthenticator();
+		changePassword(authenticator, newPassword, realm);
+	}
+	
+	/*　admin作成時は、初期化中なのでAuthenticatorから呼び出される*/
+	public void changePassword(Authenticator authenticator,String newPassword,String realm){
+		setPassHash(authenticator.calcPassHash(loginId,newPassword));
 		//Digest認証は、MD5だから少し脆弱、Digest認証を使わない覚悟をするのであれば、あえてdigestAuthPassHashを設定する必要はない
 		if(!config.getBoolean("isSkipDigestAuth", false)){
-			setDigestAuthPassHash(calcDigestAuthPassHash(loginId, newPassword, realm));
+			setDigestAuthPassHash(authenticator.calcDigestAuthPassHash(loginId, newPassword, realm));
 		}
 		setChangePass(new Date());
 		logger.info("changePassword:"+loginId);
@@ -268,6 +250,14 @@ public class User {
 	@Persistent
 	@Column(name="OFFLINE_PASS_HASH")
 	private String offlinePassHash;
+	
+	@Persistent
+	@Column(name="EMAIL_ADDRESS")
+	private String emailAdress;
+	
+	@Persistent
+	@Column(name="ORIGIN")
+	private String origin;//fbなど他サーバで認証した結果作られた場合
 	
 	@NotPersistent
 	private int errorPassCount;//失敗回数、メモリのみで管理
@@ -477,4 +467,21 @@ public class User {
 	public void setOfflinePassHash(String offlinePassHash) {
 		this.offlinePassHash = offlinePassHash;
 	}
+	
+	public String getEmailAdress() {
+		return emailAdress;
+	}
+
+	public void setEmailAdress(String emailAdress) {
+		this.emailAdress = emailAdress;
+	}
+
+	public String getOrigin() {
+		return origin;
+	}
+
+	public void setOrigin(String origin) {
+		this.origin = origin;
+	}
+
 }
