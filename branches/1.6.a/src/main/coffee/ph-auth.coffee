@@ -216,7 +216,7 @@ class Auth extends ph.EventModule
   logout:(cb)->
     @_requestQ({type:'logout'},(res)=>
       cb(res)
-      @_frame[0].remove()
+      @_frame.remove()
       delete ph.auth._auths[@_keyUrl])
     @
   info:(cb)->
