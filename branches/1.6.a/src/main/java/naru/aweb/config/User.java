@@ -164,6 +164,12 @@ public class User {
 		logger.info("changePassword:"+loginId);
 	}
 	
+	public void changeOfflinePassword(String newPassword){
+		Authenticator authenticator=config.getAuthenticator();
+		setOfflinePassHash(authenticator.calcOfflinePassHash(loginId, newPassword));
+		logger.info("changeOfflinePassword:"+loginId);
+	}
+	
 	public JSON toJson(){
 		JSON json=JSONSerializer.toJSON(this,jsonConfig);
 		return json;

@@ -65,7 +65,16 @@ public class AdminUserHandler extends WebServerHandler{
 				return;
 			}
 			user.changePassword(pass1, authenticator.getRealm());
-//			user.setPass(pass);
+			
+			pass1=jsonUser.optString("offlinePass1");
+			pass2=jsonUser.optString("offlinePass2");
+			if(pass1==null || !pass1.equals(pass2)){
+				logger.error("fail to get offline pass");
+				responseJson("fail to userInsert");
+				return;
+			}
+			user.changeOfflinePassword(pass1);
+			
 			Date now=new Date();
 			user.setCreateDate(now);
 //			user.setChangePass(now);
@@ -93,6 +102,12 @@ public class AdminUserHandler extends WebServerHandler{
 			String pass2=jsonUser.optString("pass2");
 			if(pass1!=null && pass1.equals(pass2)){
 				user.changePassword(pass1, authenticator.getRealm());
+			}
+			//offlinePasswordÇÃê›íË
+			pass1=jsonUser.optString("offlinePass1");
+			pass2=jsonUser.optString("offlinePass2");
+			if(pass1!=null && pass1.equals(pass2)){
+				user.changeOfflinePassword(pass1);
 			}
 			user.setRoles(jsonUser.getString("roles"));
 			user.setFirstName(jsonUser.getString("firstName"));
