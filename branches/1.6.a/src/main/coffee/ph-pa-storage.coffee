@@ -1,23 +1,36 @@
 #-------------------PagePrivateStorage-------------------
 class PagePrivateStorage extends ph.EventModule
-  constructor:(@ssKey)->
+  constructor:(@ssKey,@_auth)->
     super
-    str=sessionStorage.getItem(@ssKey) ? '{}'
-    @data=ph.JSON.parse(str)
+    @encText=sessionStorage.getItem(@ssKey)
+    if @encText
+      s=@
+      @_auth.decrypt(@encText,(decText)->
+        if decText
+          s.data=ph.JSON.parse(decText)
+        else
+          s.data={}
+        )
+    else
+      @data={}
   getItem:(key)->
     @data[key]
   setItem:(key,value)->
     oldValue=@data[key]
     @data[key]=value
-    @trigger(key,{oldValue:oldValue,value:value})
+    @trigger(key,{key:key,oldValue:oldValue,newValue:value})
+    s=@
+    @_auth.encrypt(ph.JSON.stringify(@data),(text)->s.encText=text)
   removeItem:(key)->
     oldValue=@data[key]
     if oldValue
       delete @data[key]
-      @trigger(key,{oldValue:oldValue,value:null})
-  _unload:->
-    str=ph.JSON.stringify(@data)
-    sessionStorage.setItem(@ssKey,str)
+      @trigger(key,{key:key,oldValue:oldValue})
+      s=@
+      @_auth.encrypt(ph.JSON.stringify(@data),(text)->s.encText=text)
+  _unload:=>
+    if @encText
+      sessionStorage.setItem(@ssKey,@encText)
     @trigger('save',@)
   _remove:->
     sessionStorage.removeItem(@ssKey)

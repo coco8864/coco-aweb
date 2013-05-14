@@ -20,7 +20,7 @@ class Connection extends ph.EventModule
     @_loginId=auth.loginId
     @_appSid=auth.appSid
     @ppKey="_paPp:#{@url}:#{@_loginId}:#{@_appSid}"
-    @ppStorage=new PagePrivateStorage(@ppKey)
+    @ppStorage=new PagePrivateStorage(@ppKey,@_auth)
 ##unloadŽž‚ÉsessionStrage‚É•Û‘¶
     @on('unload',->
       if !@ppStorage
