@@ -14,7 +14,7 @@ class EventModule
       return @
     n=list.length
     for i in [n-1..0]
-      if list[i]==callback
+      if list[i]==cd
         list.splice(i,1)
     @
   trigger: (name,args...) ->

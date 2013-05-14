@@ -222,9 +222,9 @@ class Auth extends ph.EventModule
   info:(cb)->
     @_requestQ({type:'info'},cb)
     @
-  encrypt:(cb,loginId,plainText)->
-    @_requestQ({type:'encrypt',loginId:loginId,plainText:plainText},(res)->cb(res.encryptText))
+  encrypt:(plainText,cb)->
+    @_requestQ({type:'encrypt',loginId:@loginId,plainText:plainText},(res)->cb(res.encryptText))
     @
-  decrypt:(cb,loginId,encryptText)->
-    @_requestQ({type:'decrypt',loginId:loginId,encryptText:encryptText},(res)->cb(res.plainText))
+  decrypt:(encryptText,cb)->
+    @_requestQ({type:'decrypt',loginId:@loginId,encryptText:encryptText},(res)->cb(res.plainText))
     @

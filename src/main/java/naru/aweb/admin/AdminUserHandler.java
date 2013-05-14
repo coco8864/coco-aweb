@@ -73,8 +73,9 @@ public class AdminUserHandler extends WebServerHandler{
 				responseJson("fail to userInsert");
 				return;
 			}
-			user.changeOfflinePassword(pass1);
-			
+			if(!"".equals(pass1)&&!"$".equals(pass1)){
+				user.changeOfflinePassword(pass1);
+			}
 			Date now=new Date();
 			user.setCreateDate(now);
 //			user.setChangePass(now);
@@ -100,14 +101,18 @@ public class AdminUserHandler extends WebServerHandler{
 			//password‚Ìİ’è
 			String pass1=jsonUser.optString("pass1");
 			String pass2=jsonUser.optString("pass2");
-			if(pass1!=null && pass1.equals(pass2)){
+			if(pass1!=null &&!"".equals(pass1)&& pass1.equals(pass2)){
 				user.changePassword(pass1, authenticator.getRealm());
 			}
 			//offlinePassword‚Ìİ’è
 			pass1=jsonUser.optString("offlinePass1");
 			pass2=jsonUser.optString("offlinePass2");
-			if(pass1!=null && pass1.equals(pass2)){
-				user.changeOfflinePassword(pass1);
+			if(pass1!=null&&!"".equals(pass1)&& pass1.equals(pass2)){
+				if("$".equals(pass1)){//offfLinePassword‚É"$"‚ğw’è‚·‚é‚Æİ’è‚ğÁ‹
+					user.setOfflinePassHash(null);
+				}else{
+					user.changeOfflinePassword(pass1);
+				}
 			}
 			user.setRoles(jsonUser.getString("roles"));
 			user.setFirstName(jsonUser.getString("firstName"));
