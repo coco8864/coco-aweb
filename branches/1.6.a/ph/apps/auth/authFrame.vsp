@@ -11,7 +11,7 @@
 <script  type="text/javascript"><!--
 ##親frameのlocation.href
 var parentOrigin;
-var offlinePassHash='$esc.javascript(${offlinePassHash})';
+var offlinePassHash='$!esc.javascript(${offlinePassHash})';
 var authInfo=ph.JSON.parse('$esc.javascript(${info})');
 
 ##crossDomainRequest情報
@@ -33,10 +33,18 @@ function onRequest(ev){
     cdr.isIn=true;
     cdr.req=req;
     if(req.type==="encrypt"){
-      req.encryptText=CryptoJS.AES.encrypt(req.plainText, offlinePassHash).toString();
+      if(offlinePassHash){
+        req.encryptText=CryptoJS.AES.encrypt(req.plainText, offlinePassHash).toString();
+      }else{
+        req.encryptText=req.plainText
+      }
       response(req);
     }else if(req.type==="decrypt"){
-      req.plainText=CryptoJS.AES.decrypt(req.encryptText, offlinePassHash).toString(CryptoJS.enc.Utf8);
+      if(offlinePassHash){
+        req.plainText=CryptoJS.AES.decrypt(req.encryptText, offlinePassHash).toString(CryptoJS.enc.Utf8);
+      }else{
+        req.plainText=req.encryptText
+      }
       response(req);
     }else if(req.type==="logout"){
       ph.jQuery.ajax({
