@@ -6,7 +6,7 @@
 <meta http-equiv="Pragma" content="no-cache"> 
 <meta http-equiv="Cache-Control" content="no-cache"> 
 <meta http-equiv="Expires" content="0"> 
-<script type="text/javascript" src="/pub/js/ph-loader.js"></script>
+<script type="text/javascript" src="/pub/js/ph-loader.js?ph=ph"></script>
 <script type="text/javascript" src="/pub/js/aes.js"></script>
 <script  type="text/javascript"><!--
 ##親frameのlocation.href
