@@ -202,8 +202,9 @@ function getContentHeaders(accessLog){
 	if(accessLog.contentEncoding){
 		headers+='&Content-Encoding='+ encodeURIComponent(accessLog.contentEncoding);
 	}
-	if(accessLog.transferEncoding){
-		headers+='&Transfer-Encoding='+ encodeURIComponent(accessLog.transferEncoding);
+	if(accessLog.transferEncoding==='chunked'){
+##		headers+='&Transfer-Encoding='+ encodeURIComponent(accessLog.transferEncoding);
+		headers+='&chunk=true';
 	}
 	return headers;
 }
