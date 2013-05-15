@@ -253,13 +253,13 @@ public class AccessLogPalet implements Palet {
 	 * runした後は、そのプロトコル情報をtrace画面で表示
 	 */
 	private AccessLog getEditedAccessLog(PaMsg parameter) throws UnsupportedEncodingException{
-		String accessLogId=parameter.getString("accessLogId");
+		long accessLogId=parameter.getLong("accessLogId");
 		String requestHeader=parameter.optString("requestHeader",null);
 		String requestBody=parameter.optString("requestBody",null);
 		String responseHeader=parameter.optString("responseHeader",null);
 		String responseBody=parameter.optString("responseBody",null);
 
-		AccessLog accessLog=AccessLog.getById(Long.parseLong(accessLogId));
+		AccessLog accessLog=AccessLog.getById(accessLogId);
 		accessLog.setSourceType(AccessLog.SOURCE_TYPE_EDIT);
 		
 		HeaderParser requestHeaderParser=null;
