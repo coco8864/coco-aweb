@@ -74,7 +74,20 @@ ph.jQuery(function(){
   }
   ph.event.on('message',onRequest);
 
-  //XX {loginId1:{passCheckText:'',onlineLoginCount:99,offlineLoginCount:99},loginId2:... }
+/*
+  var offlineInfo={};
+  var offlineInfoText=localStorage.getItem("offlineInfo");
+  if(offlineLoginInfo){
+    offlineInfo=ph.JSON.parse(offlineLoginInfo);
+  }
+  var loginId=authInfo.user.loginId;
+  var passCheckText=CryptoJS.AES.encrypt(loginId);
+  userOfflineInfo=offlineInfo[loginId];
+  if()
+*/
+
+
+  //XX {loginId1:{passCheckText:'',offlineLoginCount:99},loginId2:... }
   //localStrageから既存のXXを取得
   //logidIdでXXを複合かしてloginIdになることをチェック
   //yesなら
