@@ -81,6 +81,7 @@ class PhAuth
     clearTimeout(req.timerId)
     req.timerId=null
     if req.url.lastIndexOf(ev.origin, 0)!=0
+      @_reqestCallback({result:false,reason:'domain error'})
       return
     res=ph.JSON.parse(ev.data)
     @_requestCallback(res)
@@ -97,7 +98,7 @@ class PhAuth
   _aplCheckCb:(res)=>
     if res.result=='redirect'
 ##    /* authUrl‚Ésession‚ğ–â‚¢‡‚í‚¹ */
-      redirectUrl=res.location+'&originUrl='+encodeURIComponent(window.location.href)
+      redirectUrl=res.location+'&originUrl='+encodeURIComponent(location.href)
       @_requestUrl(redirectUrl,@_authCheckCb);
     else
       @_finAuth(res)

@@ -481,6 +481,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	}
 	
 	public void recycle(){
+		isPersist=false;
 		id=null;
 		startTime=null;
 		userId=localIp=ip=requestLine=statusCode=null;
