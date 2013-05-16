@@ -203,8 +203,8 @@ function getContentHeaders(accessLog){
 		headers+='&Content-Encoding='+ encodeURIComponent(accessLog.contentEncoding);
 	}
 	if(accessLog.transferEncoding==='chunked'){
-##		headers+='&Transfer-Encoding='+ encodeURIComponent(accessLog.transferEncoding);
-		headers+='&chunk=true';
+		headers+='&Transfer-Encoding='+ encodeURIComponent(accessLog.transferEncoding);
+##		headers+='&chunk=true';
 	}
 	return headers;
 }
