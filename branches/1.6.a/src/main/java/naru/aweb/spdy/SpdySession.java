@@ -6,6 +6,7 @@ import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.async.store.Store;
 import naru.aweb.core.ServerBaseHandler;
+import naru.aweb.http.ChunkContext;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.KeepAliveContext;
 import naru.aweb.http.RequestContext;
@@ -82,6 +83,9 @@ public class SpdySession extends PoolBase{
 		endOfSession();
 	}
 	
+	private boolean isChunk=false;
+	private ChunkContext chunkContext=new ChunkContext();
+	
 	//webserverHandlerë§Ç©ÇÁåƒÇ—èoÇ≥ÇÍÇÈ
 	public void responseHeader(boolean isLast,HeaderParser responseHeader){
 		if(isOutputClose){
@@ -89,10 +93,21 @@ public class SpdySession extends PoolBase{
 		}else if(isLast){
 			isOutputClose=true;
 		}
+		//SPDYÇ…TransferEncodingÇÕégÇ¶Ç»Ç¢
+		isChunk=false;
+		String transferEncoding=responseHeader.getHeader(HeaderParser.TRANSFER_ENCODING_HEADER);
+		if(HeaderParser.TRANSFER_ENCODING_CHUNKED.equalsIgnoreCase(transferEncoding)){
+			responseHeader.removeHeader(HeaderParser.TRANSFER_ENCODING_HEADER);
+			isChunk=true;
+			chunkContext.decodeInit(true, -1);
+		}
 		spdyHandler.responseHeader(this, isLast,responseHeader);
 	}
 	
 	public void responseBody(boolean isLast,ByteBuffer[] buffers){
+		if(isChunk){
+			buffers=chunkContext.decodeChunk(buffers);
+		}
 		if(isOutputClose){
 			PoolManager.poolBufferInstance(buffers);
 			return;

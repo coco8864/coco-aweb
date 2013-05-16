@@ -20,6 +20,7 @@ import naru.aweb.http.WebClient;
 import naru.aweb.http.WebClientHandler;
 import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.spdy.SpdySession;
 import naru.aweb.util.ServerParser;
 
 import org.apache.log4j.Logger;
@@ -132,6 +133,7 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 		webClientHandler=getWebClientHandler(keepAliveContext,requestHeader);
 		//”FØƒwƒbƒ_‚âIF_MODIFIED_SINCE_HEADER‚Ì’²®
 		editRequestHeader(requestHeader);
+		
 		long connectTimeout=config.getConnectTimeout();
 		boolean rc=webClientHandler.startRequest(this, null,connectTimeout,requestHeader, isCallerKeepAlive, keepAliveTimeout);
 		if(rc==false){
