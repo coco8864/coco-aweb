@@ -113,6 +113,12 @@ window.ph.pa={
       cd._onXhrMessage(res)
     return
 #  _onTimer:->
+  _storDecrypt:(storage,auth,key,cb)->
+    encText=storage.getItem(key)
+    if encText
+      auth.decrypt(encText,(decText)->cb(decText))
+    else
+      cb(null)
 }
 #xhr通信用のイベント登録
 ph.jQuery(->
