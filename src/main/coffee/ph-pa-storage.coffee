@@ -1,18 +1,15 @@
 #-------------------PagePrivateStorage-------------------
-class PagePrivateStorage extends ph.EventModule
-  constructor:(@ssKey,@_auth)->
+class PrivateSessionStorage extends ph.EventModule
+  constructor:(url,@_auth)->
     super
-    @encText=sessionStorage.getItem(@ssKey)
-    if @encText
-      s=@
-      @_auth.decrypt(@encText,(decText)->
-        if decText
-          s.data=ph.JSON.parse(decText)
-        else
-          s.data={}
-        )
-    else
-      @data={}
+    @_paPss="_paPss:#{url}:#{@_auth.loginId}:#{@_auth.appSid}"
+    s=@
+    ph.pa._storDecrypt(sessionStorage,@_auth,@_paPss,(decText)->
+      if decText
+        s.data=ph.JSON.parse(decText)
+      else
+        s.data={}
+      )
   getItem:(key)->
     @data[key]
   setItem:(key,value)->
@@ -30,17 +27,25 @@ class PagePrivateStorage extends ph.EventModule
       @_auth.encrypt(ph.JSON.stringify(@data),(text)->s.encText=text)
   _unload:=>
     if @encText
-      sessionStorage.setItem(@ssKey,@encText)
+      sessionStorage.setItem(@_paPss,@encText)
     @trigger('save',@)
   _remove:->
-    sessionStorage.removeItem(@ssKey)
+    sessionStorage.removeItem(@_paPss)
     @trigger('remove',@)
 
 #-------------------Session,Apl PrivateStorage-------------------
-class PrivateStorage extends ph.EventModule
-  constructor:(@lsKey)->
+class PrivateLocalStorage extends ph.EventModule
+  constructor:(url,@_auth)->
     super
-    str=localStorage.getItem(@lsKey) ? '{}'
+    @_paPls="_paPls:#{url}:#{@_auth.loginId}:#{@_auth.appSid}"
+    @_paPlsCtl="_paPlsCtl:#{url}:#{@_auth.loginId}:#{@_auth.appSid}"
+    s=@
+    ph.pa._storDecrypt(localStorage,@_auth,@_paPlsCtl,(decText)->
+      if decText
+        s.ctrl=ph.JSON.parse(decText)
+      else
+        s.ctrl={}
+      )
     @data=ph.JSON.parse(str)
   getItem:(key)->
     @data[key]

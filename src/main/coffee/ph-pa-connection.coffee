@@ -19,8 +19,8 @@ class Connection extends ph.EventModule
     @_auth=auth
     @_loginId=auth.loginId
     @_appSid=auth.appSid
-    @ppKey="_paPp:#{@url}:#{@_loginId}:#{@_appSid}"
-    @ppStorage=new PagePrivateStorage(@ppKey,@_auth)
+##    @ppKey="_paPp:#{@url}:#{@_loginId}:#{@_appSid}"
+    @ppStorage=new PrivateSessionStorage(@url,@_auth)
 ##unloadŽž‚ÉsessionStrage‚É•Û‘¶
     @on('unload',->
       if !@ppStorage
@@ -87,7 +87,7 @@ class Connection extends ph.EventModule
     @_onOpen()
   _onWsClose: (event)=>
     ph.log('Pa _onWsClose.code:'+event.code+':reason:'+event.reason+':wasClean:'+event.wasClean)
-    @__onClose(event.reason)
+#    @__onClose(event.reason)
     if @stat!=ph.pa.STAT_CONNECT
       @stat=ph.pa.INIT
       return
