@@ -98,6 +98,7 @@ public class AdminMappingHandler extends WebServerHandler{
 			}else{
 				script=createReverseProxy(mapping,destinationUrl);
 			}
+			config.getMapper().reloadMappings();
 			completeResponse("200",script);
 			return;
 		}else if("reloadMappings".equals(command)){
