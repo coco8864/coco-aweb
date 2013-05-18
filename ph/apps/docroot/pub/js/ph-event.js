@@ -78,7 +78,7 @@
   };
 
   window.ph.strageCb = function(ev) {
-    return window.ph.event.trigger('strage', ev);
+    return window.ph.event.trigger('storage', ev);
   };
 
   if (window.addEventListener) {

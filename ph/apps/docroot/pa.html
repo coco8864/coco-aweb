@@ -44,6 +44,9 @@ var sd;
 <input type="button" value="unsubscribe" onclick="sd.unsubscribe();"/>
 <input type="button" value="qnames" onclick="cd.qnames(function(qnames){ph.log('qnames cb');ph.dump(qnames);});"/>
 
+<input type="button" value="storage" onclick="spStorage=cd.storage(ph.pa.SCOPE_SESSION_PRIVATE);"/>
+
+<!--文字列のpublishはサポートしない-->
 <input type="button" value="publish string" onclick="sd.publish('testAAA');"/>
 <input type="button" value="publish object" onclick="sd.publish({aaa:'testBBB'});"/>
 <input type="button" value="publish bin" onclick="sd.publish({aaa:'testCCC',blobData:[{data:'aaaa'},{data:ph.stringToArrayBuffer('bbbbb')}]});"/>
@@ -101,7 +104,7 @@ function onDropFiles(){
 }
 
 function connect(){
-  cd=ph.pa.connect('/pa');
+  cd=ph.pa.connect('/admin');
   cd.done(
     function(con){
       ph.log('++cd done cb++ message:'+con);
