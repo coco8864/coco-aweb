@@ -31,7 +31,7 @@ window.ph.EventModule=EventModule
 window.ph.event=new ph.EventModule();
 window.ph.messageCb=(ev)->window.ph.event.trigger('message',ev)
 window.ph.unloadCb=(ev)->window.ph.event.trigger('unload',ev)
-window.ph.strageCb=(ev)->window.ph.event.trigger('strage',ev)
+window.ph.strageCb=(ev)->window.ph.event.trigger('storage',ev)
 
 if window.addEventListener
   window.addEventListener('message',window.ph.messageCb, false)
