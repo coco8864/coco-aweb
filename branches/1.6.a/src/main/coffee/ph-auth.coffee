@@ -174,11 +174,13 @@ class Auth extends ph.EventModule
     @token=res.token
     @_loadFrame=true
     @_frame=ph.jQuery(
-      "<iframe width='0' height='0' frameborder='no' " +
-      "name='#{ph.auth._authEachFrameName}#{@_keyUrl}'" +
-      "src='#{@authUrl}/authFrame?origin=#{location.protocol}//#{location.host}' >" + 
+      "<iframe " +
+      "style='frameborder:no;background-color:#CFCFCF;overflow:auto;height:0px;width:0px;position:absolute;top:0%;left:0%;margin-top:-100px;margin-left:-150px;' " +
+      "name='#{ph.auth._authEachFrameName}#{@_keyUrl}' " +
+      "src='#{@authUrl}/authFrame?origin=#{location.protocol}//#{location.host}'>" + 
       "</iframe>")
     ph.jQuery("body").append(@_frame)
+#    @_frame.css({'background-color':'#CFCFCF','overflow':'auto','height':'200px','width':'300px','position':'absolute','top':'50%','left':'50%','margin-top':'-100px','margin-left':'-150px'})
   _frameLoad:=>
     @_deferred.resolve(@)
   _requestQ:(req,cb)->
@@ -207,6 +209,12 @@ class Auth extends ph.EventModule
       @_loadFrame=false
       @_info=ph.JSON.parse(ev.data)
       @_deferred.resolve(@)
+      return
+    if ev.data=='showFrame'
+      @_frame.css({'height':'200px','width':'300px','top':'50%','left':'50%'})
+      return
+    if ev.data=='hideFrame'
+      @_frame.css({'height':'0px','width':'0px','top':'0%','left':'0%'})
       return
     req=@_processReq
     if !req

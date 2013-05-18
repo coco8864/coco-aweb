@@ -5,7 +5,6 @@ class Connection extends ph.EventModule
     @_subscribes={}
     @isWs=(url.lastIndexOf('ws',0)==0)
     @_openCount=0
-    @_errorCount=0
     @stat=ph.pa.STAT_AUTH
     @_sendMsgs=[]
     @_reciveMsgs=[] #–¢subcrive‚Å”zM‚Å‚«‚È‚Á‚½message todo:—­‚Ü‚è‚·‚¬
@@ -89,14 +88,12 @@ class Connection extends ph.EventModule
     ph.log('Pa _onWsClose.code:'+event.code+':reason:'+event.reason+':wasClean:'+event.wasClean)
 #    @__onClose(event.reason)
     if @stat!=ph.pa.STAT_CONNECT
+      @deferred.resolve('out session')
       @stat=ph.pa.INIT
       return
-    @_errorCount++
     @stat=ph.pa.STAT_IDLE
-    if @_errorCount>=ph.pa._WS_RETRY_MAX
-      ph.log('too many error')
-    else
-      @_openWebSocket()
+    @_openWebSocket()
+    return
   _onWsMessage:(msg)=>
     ph.log('Pa _onWsMessage:'+msg.data)
     envelope=new Envelope()

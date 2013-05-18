@@ -95,11 +95,11 @@ window.ph.pa={
       pms.trigger('storage',event)
   _xhrOnMessage:(event)->
     for url,con of ph.pa._connections
-      tmpCd=con.promise
-      if !tmpCd._xhrFrame
+      c=con.promise
+      if !c._xhrFrame
         continue
-      if event.source==tmpCd._xhrFrame[0].contentWindow
-          cd=tmpCd
+      if event.source==c._xhrFrame[0].contentWindow
+          cd=c
           break
     if !cd
       #他のイベント
@@ -119,6 +119,12 @@ window.ph.pa={
       auth.decrypt(encText,(decText)->cb(decText))
     else
       cb(null)
+  _encryptStor:(storage,auth,key,value,cb)->
+    auth.encrypt(value,(encText)->
+      strage.setItem(key,encText)
+      if cb
+        cb(encText)
+      )
 }
 #xhr通信用のイベント登録
 ph.jQuery(->

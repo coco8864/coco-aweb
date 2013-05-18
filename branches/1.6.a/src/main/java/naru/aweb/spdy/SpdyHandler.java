@@ -316,7 +316,12 @@ public class SpdyHandler extends ServerBaseHandler {
 		dispatchHandler.setKeepAliveContext(session.getKeepAliveContext());
 		session.setServerHandler(dispatchHandler);
 		dispatchHandler.getRequestContext().setAttribute(ATTRIBUTE_SPDY_SESSION, session);
-		dispatchHandler.mappingHandler();
+		try{
+			dispatchHandler.mappingHandler();
+		}catch(Throwable t){//apl‚ª—áŠO‚µ‚½ê‡
+			logger.error("spdy dispatch apl error.",t);
+			session.onRst(-1);
+		}
 	}
 	
 	public int getSpdyVersion(){
