@@ -22,9 +22,9 @@ class Connection extends ph.EventModule
     @ppStorage=new PrivateSessionStorage(@url,@_auth)
 ##unloadŽž‚ÉsessionStrage‚É•Û‘¶
     @on('unload',->
-      if !@ppStorage
-        return
-      @ppStorage._unload()
+        @ppStorage?._unload()
+        @spStorage?._unload()
+        @apStorage?._unload()
       )
     @_token=auth.token
     @trigger(ph.pa.RESULT_SUCCESS,'auth',@)#success to auth
@@ -291,7 +291,13 @@ class Connection extends ph.EventModule
   storage:(scope)->
     if !scope || scope==ph.pa.SCOPE_PAGE_PRIVATE
       return @ppStorage
-#    else if scope==ph.pa.SCOPE_SESSION_PRIVATE
-#    else if scope==ph.pa.SCOPE_APL_PRIVATE
+    else if scope==ph.pa.SCOPE_SESSION_PRIVATE
+      if !@spStorage
+        @spStorage=new PrivateLocalStorage(@url,@_auth,@_getBid(),true)
+      return @spStorage
+    else if scope==ph.pa.SCOPE_APL_PRIVATE
+      if !@apStorage
+        @apStorage=new PrivateLocalStorage(@url,@_auth,@_getBid(),false)
+      return @apStorage
 #    else if scope==ph.pa.SCOPE_APL_LOCAL
 
