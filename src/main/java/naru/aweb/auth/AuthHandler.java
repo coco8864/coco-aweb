@@ -454,7 +454,11 @@ public class AuthHandler extends WebServerHandler {
 		User user=authorizer.getUserByPrimaryId(cookieId);
 		JSONObject response=infoObject(user);
 		setRequestAttribute("info", response.toString());
-		setRequestAttribute("offlinePassHash", user.getOfflinePassHash());
+		if(user!=null){
+			setRequestAttribute("offlinePassHash", user.getOfflinePassHash());
+		}else{
+			setRequestAttribute("offlinePassHash", "");
+		}
 		forwardAuthPage("/authFrame.vsp");
 	}
 	

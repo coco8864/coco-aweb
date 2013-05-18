@@ -2,6 +2,8 @@ package naru.aweb.spdy;
 
 import java.nio.ByteBuffer;
 
+import org.apache.log4j.Logger;
+
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.async.store.Store;
@@ -13,6 +15,8 @@ import naru.aweb.http.RequestContext;
 import naru.aweb.http.WebServerHandler;
 
 public class SpdySession extends PoolBase{
+	private static Logger logger=Logger.getLogger(SpdySession.class);
+	
 	private SpdyHandler spdyHandler;
 	private int streamId;
 	private ServerBaseHandler serverHandler;
@@ -57,7 +61,14 @@ public class SpdySession extends PoolBase{
 		}
 		isInputClose=isFin;
 		//readTraceを取得するため、onReadPlainではなくcallbackReadPlainを呼ぶ
-		serverHandler.callbackReadPlain(readContext,buffers);
+		try{
+			serverHandler.callbackReadPlain(readContext,buffers);
+		}catch(Throwable t){//aplが例外した場合
+			logger.error("spdy data dispatch apl error.",t);
+			//アプリが異常したのでセション終了
+			endOfSession();
+			return;
+		}
 		readContext=null;
 		if(isInputClose&&isOutputClose){
 			endOfSession();
