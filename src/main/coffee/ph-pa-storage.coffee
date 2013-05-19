@@ -43,16 +43,21 @@ class PrivateLocalStorage extends ph.EventModule
     super
     @_status=0 #Ç‹ÇæÉfÅ[É^Ç™èÄîıÇ≈Ç´ÇƒÇ»Ç¢ÇÃà”
     if @scope==ph.pa.SCOPE_SESSION_PRIVATE
+      prefix='_paSP'
       uniqueName="#{url}:#{@_auth.loginId}:#{@_auth.appSid}"
-    else
+      @_isAuthEncrypt=true
+    else if @scope==ph.pa.SCOPE_APL_PRIVATE
+      prefix='_paAP'
       uniqueName="#{url}:#{@_auth.loginId}"
-    @_isAuthEncrypt=true
-    if @scope==ph.pa.SCOPE_APL_PRIVATE
+      @_isAuthEncrypt=true
+    else if @scope==ph.pa.SCOPE_APL_LOCAL
+      prefix='_paAL'
+      uniqueName="#{url}:#{@_auth.loginId}"
       @_isAuthEncrypt=false
 
-    @_paPls="_paPls:#{uniqueName}"
-    @_paPlsChannel="_paPlsChannel:#{uniqueName}"
-    @_paPlsCtl="_paPlsCtl:#{uniqueName}"
+    @_paPls="#{prefix}:#{uniqueName}"
+    @_paPlsChannel="#{prefix}Channel:#{uniqueName}"
+    @_paPlsCtl="#{prefix}Ctl:#{uniqueName}"
     ph.event.on('storage',@_onStorage)
 
     ctlText=localStorage.getItem(@_paPlsCtl)
