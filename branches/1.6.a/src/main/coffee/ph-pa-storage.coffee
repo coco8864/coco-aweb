@@ -39,13 +39,17 @@ class PrivateSessionStorage extends ph.EventModule
 
 #-------------------Session,Apl PrivateStorage-------------------
 class PrivateLocalStorage extends ph.EventModule
-  constructor:(url,@_auth,@_bid,@_isSession)->
+  constructor:(url,@_auth,@_bid,@scope)->
     super
     @_status=0 #まだデータが準備できてないの意
-    if @_isSession
+    if @scope==ph.pa.SCOPE_SESSION_PRIVATE
       uniqueName="#{url}:#{@_auth.loginId}:#{@_auth.appSid}"
     else
       uniqueName="#{url}:#{@_auth.loginId}"
+    @_isAuthEncrypt=true
+    if @scope==ph.pa.SCOPE_APL_PRIVATE
+      @_isAuthEncrypt=false
+
     @_paPls="_paPls:#{uniqueName}"
     @_paPlsChannel="_paPlsChannel:#{uniqueName}"
     @_paPlsCtl="_paPlsCtl:#{uniqueName}"
@@ -64,10 +68,6 @@ class PrivateLocalStorage extends ph.EventModule
     @_ctl=ctl
     if ctl.connectBids.length==1
       encDataText=localStorage.getItem(@_paPls)
-      if !encDataText
-        @data={}
-        @_status=1
-        return
       @_decData(encDataText)
     @
   getItem:(key)->
@@ -92,24 +92,25 @@ class PrivateLocalStorage extends ph.EventModule
     if !encText
       @_encDataText='{}'
       @data={}
-      if @_status==0
-        @trigger('dataLoad')
-        @_status=1
+      @_status=1
       return
     @_encDataText=encText
+    if !@_isAuthEncrypt
+      @data=ph.JSON.parse(encText)
+      @_status=1
+      return
     s=@
     @_auth.decrypt(@_encDataText,(decText)->
       if decText
         s.data=ph.JSON.parse(decText)
       else
         s.data={}
-      if s._status==0
-        s.trigger('dataLoad')
-        s._status=1
+      @_status=1
       return
       )
+    return
   _unload:=>
-#    ph.event.off('storage',@_onStorage)
+    ph.event.off('storage',@_onStorage)
     if @_ctl.connectBids.length==1 && @_ctl.connectBids[0]==@_bid
       localStorage.removeItem(@_paPlsCtl)
       if @_encDataText
@@ -131,8 +132,12 @@ class PrivateLocalStorage extends ph.EventModule
     localStorage.removeItem(@_paPlsChannel)
   _encData:->
     dataText=ph.JSON.stringify(@data)
+    if !@_isAuthEncrypt
+      @_encDataText=dataText
+      return
     s=@
     @_auth.encrypt(dataText,(encText)->s._encDataText=encText)
+    return
   ##scope:sessionPrivateの時セション切れの時用
   _remove:->
     localStorage.removeItem(@_paPls)
@@ -143,20 +148,26 @@ class PrivateLocalStorage extends ph.EventModule
     if !ev
       return
     if ev.key==@_paPls
-      @_decData(ev.newValue)
+#     @_decData(ev.newValue)
     else if ev.key==@_paPlsChannel && ev.newValue
-      updateInfo=ph.JSON.parse(ev.newValue)
-      if updateInfo.req=='setItem'
-        @data[updateInfo.key]=updateInfo.newValue
-      else if updateInfo.req=='removeItem'
-        delete @data[updateInfo.key]
+      info=ph.JSON.parse(ev.newValue)
+      if info.req=='setItem'
+        @data[info.key]=info.newValue
+      else if info.req=='removeItem'
+        delete @data[info.key]
+      else if info.req=='allItems' && info.to==@_bid
+        @data=info.data
+        @trigger('dataLoad')
+        @_status=1
       else
         return
       @_encData()
     else if ev.key==@_paPlsCtl && ev.newValue
       @_ctl=ph.JSON.parse(ev.newValue)
       if @_ctl.action=='in' && @_ctl.connectBids[0]==@_bid
-        localStorage.setItem(@_paPls,@_encDataText)
+        allItemsInfo={req:'allItems',data:@data,to:@_ctl.bid}
+        localStorage.setItem(@_paPlsChannel,ph.JSON.stringify(allItemsInfo))
+        localStorage.removeItem(@_paPlsChannel)
 
 #-------------------AplLocaleStorage-------------------
 class AplLocalStorage extends ph.EventModule

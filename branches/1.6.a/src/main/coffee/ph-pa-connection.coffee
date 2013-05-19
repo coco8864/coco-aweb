@@ -25,6 +25,7 @@ class Connection extends ph.EventModule
         @ppStorage?._unload()
         @spStorage?._unload()
         @apStorage?._unload()
+        @alStorage?._unload()
       )
     @_token=auth.token
     @trigger(ph.pa.RESULT_SUCCESS,'auth',@)#success to auth
@@ -293,11 +294,14 @@ class Connection extends ph.EventModule
       return @ppStorage
     else if scope==ph.pa.SCOPE_SESSION_PRIVATE
       if !@spStorage
-        @spStorage=new PrivateLocalStorage(@httpUrl,@_auth,@_getBid(),true)
+        @spStorage=new PrivateLocalStorage(@httpUrl,@_auth,@_getBid(),scope)
       return @spStorage
     else if scope==ph.pa.SCOPE_APL_PRIVATE
       if !@apStorage
-        @apStorage=new PrivateLocalStorage(@httpUrl,@_auth,@_getBid(),false)
+        @apStorage=new PrivateLocalStorage(@httpUrl,@_auth,@_getBid(),scope)
       return @apStorage
-#    else if scope==ph.pa.SCOPE_APL_LOCAL
+    else if scope==ph.pa.SCOPE_APL_LOCAL
+      if !@alStorage
+        @alStorage=new PrivateLocalStorage(@httpUrl,@_auth,@_getBid(),scope)
+      return @alStorage
 
