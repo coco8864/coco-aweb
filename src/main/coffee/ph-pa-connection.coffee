@@ -19,7 +19,7 @@ class Connection extends ph.EventModule
     @_loginId=auth.loginId
     @_appSid=auth.appSid
 ##    @ppKey="_paPp:#{@url}:#{@_loginId}:#{@_appSid}"
-    @ppStorage=new PrivateSessionStorage(@url,@_auth)
+    @ppStorage=new PrivateSessionStorage(@httpUrl,@_auth)
 ##unloadŽž‚ÉsessionStrage‚É•Û‘¶
     @on('unload',->
         @ppStorage?._unload()
@@ -293,11 +293,11 @@ class Connection extends ph.EventModule
       return @ppStorage
     else if scope==ph.pa.SCOPE_SESSION_PRIVATE
       if !@spStorage
-        @spStorage=new PrivateLocalStorage(@url,@_auth,@_getBid(),true)
+        @spStorage=new PrivateLocalStorage(@httpUrl,@_auth,@_getBid(),true)
       return @spStorage
     else if scope==ph.pa.SCOPE_APL_PRIVATE
       if !@apStorage
-        @apStorage=new PrivateLocalStorage(@url,@_auth,@_getBid(),false)
+        @apStorage=new PrivateLocalStorage(@httpUrl,@_auth,@_getBid(),false)
       return @apStorage
 #    else if scope==ph.pa.SCOPE_APL_LOCAL
 
