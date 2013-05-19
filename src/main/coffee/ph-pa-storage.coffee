@@ -89,7 +89,7 @@ class PrivateLocalStorage extends ph.EventModule
     @trigger(key,updateInfo)
     return
   _decData:(encText)->
-    if !envText
+    if !encText
       @_encDataText='{}'
       @data={}
       if @_status==0
@@ -109,15 +109,17 @@ class PrivateLocalStorage extends ph.EventModule
       return
       )
   _unload:=>
-    ph.event.off('storage',@_onStorage)
+#    ph.event.off('storage',@_onStorage)
     if @_ctl.connectBids.length==1 && @_ctl.connectBids[0]==@_bid
       localStorage.removeItem(@_paPlsCtl)
-      localStorage.setItem(@_paPls,@_encDataText) #“¯Žž‚Éclose‚µ‚½ê‡...
+      if @_encDataText
+        localStorage.setItem(@_paPls,@_encDataText) #“¯Žž‚Éclose‚µ‚½ê‡...
       return
     @_ctl.action='out'
     @_ctl.bid=@_bid
-    for i in [@_ctl.connectBids.length-1..0]
-      if @_ctl.connectBids[i]==@_bid
+    list=@_ctl.connectBids
+    for i in [list.length-1..0]
+      if list[i]==@_bid
         list.splice(i,1)
     localStorage.setItem(@_paPlsCtl,ph.JSON.stringify(@_ctl))
   _updateData:(updateInfo)->
@@ -136,7 +138,10 @@ class PrivateLocalStorage extends ph.EventModule
     localStorage.removeItem(@_paPls)
     localStorage.removeItem(@_paPlsCtl)
     @trigger('remove',@)
-  _onStorage:(ev)=>
+  _onStorage:(jqEv)=>
+    ev=jqEv.originalEvent
+    if !ev
+      return
     if ev.key==@_paPls
       @_decData(ev.newValue)
     else if ev.key==@_paPlsChannel && ev.newValue
@@ -150,7 +155,7 @@ class PrivateLocalStorage extends ph.EventModule
       @_encData()
     else if ev.key==@_paPlsCtl && ev.newValue
       @_ctl=ph.JSON.parse(ev.newValue)
-      if @_ctl.action=='connect' && @_ctl.connectBids[0]==@_bid
+      if @_ctl.action=='in' && @_ctl.connectBids[0]==@_bid
         localStorage.setItem(@_paPls,@_encDataText)
 
 #-------------------AplLocaleStorage-------------------
