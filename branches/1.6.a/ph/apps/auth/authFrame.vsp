@@ -10,6 +10,7 @@
 <script type="text/javascript" src="/pub/js/aes.js"></script>
 <script  type="text/javascript"><!--
 ##親frameのlocation.href
+var OFFLINE_KEY='PaOfflineAuth'
 var parentOrigin;
 var offlinePassHash='$!esc.javascript(${offlinePassHash})';
 var authInfo=ph.JSON.parse('$esc.javascript(${info})');
@@ -74,19 +75,40 @@ ph.jQuery(function(){
   }
   ph.event.on('message',onRequest);
 
-/*
   var offlineInfo={};
-  var offlineInfoText=localStorage.getItem("offlineInfo");
-  if(offlineLoginInfo){
-    offlineInfo=ph.JSON.parse(offlineLoginInfo);
+  var offlineInfoText=localStorage.getItem(OFFLINE_KEY);
+  if(offlineInfoText){
+    offlineInfo=ph.JSON.parse(offlineInfoText);
   }
   var loginId=authInfo.user.loginId;
-  var passCheckText=CryptoJS.AES.encrypt(loginId);
-  userOfflineInfo=offlineInfo[loginId];
-  if()
-*/
+  var userInfoEncText=offlineInfo[loginId];
+  var userInfo;
+  if(userInfoEncText){
+    var userInfoText;
+    if(offlinePassHash){
+      userInfoText=CryptoJS.AES.decrypt(userInfoEncText, offlinePassHash).toString(CryptoJS.enc.Utf8);
+    }else{
+      userInfoText=userInfoEncText;
+    }
+    userInfo=ph.JSON.parse(userInfoText);
+  }else{
+    userInfo={onlineAuthCount:0,offlineAuthCount:0};
+  }
+##  userInfo.offlinePassHash=offlinePassHash;
+  userInfo.user=authInfo.user;
+  userInfo.onlineAuthCount++;
 
+  var userInfoText=ph.JSON.stringify(userInfo);
+  if(offlinePassHash){
+    userInfoEncText=CryptoJS.AES.encrypt(userInfoText, offlinePassHash).toString();
+  }else{
+    userInfoEncText=userInfoText;
+  }
+  offlineInfo[loginId]=userInfoEncText;
+  offlineInfoText=ph.JSON.stringify(offlineInfo);
+  localStorage.setItem(OFFLINE_KEY,offlineInfoText)
 
+/*
   //XX {loginId1:{passCheckText:'',offlineLoginCount:99},loginId2:... }
   //localStrageから既存のXXを取得
   //logidIdでXXを複合かしてloginIdになることをチェック
@@ -96,6 +118,7 @@ ph.jQuery(function(){
   //login回数をインクリメント
 
   //localStrageに設定
+*/
 
   response(authInfo);
 
@@ -105,7 +128,7 @@ ph.jQuery(function(){
 <body>
 <h1>PA offline logon</h1>
 <div>user:<input name=userid></div>
-<div>password:<input type='password' name=userid></div>
+<div>offline password:<input type='password' name=userid></div>
 <div><input type='button' value='logon' onclick='parent.postMessage("hideFrame",parentOrigin)'></div>
 </body>
 </html>
