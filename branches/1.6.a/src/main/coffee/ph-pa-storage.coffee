@@ -173,28 +173,3 @@ class PrivateLocalStorage extends ph.EventModule
         allItemsInfo={req:'allItems',data:@data,to:@_ctl.bid}
         localStorage.setItem(@_paPlsChannel,ph.JSON.stringify(allItemsInfo))
         localStorage.removeItem(@_paPlsChannel)
-
-#-------------------AplLocaleStorage-------------------
-class AplLocalStorage extends ph.EventModule
-  constructor:(@lsKey)->
-    super
-  getItem:(key)->
-    realKey="#{@lsKey}:#{key}"
-    localStorage.getItem[realKey]
-  setItem:(key,value)->
-    realKey="#{@lsKey}:#{key}"
-    oldValue=localStorage.getItem[realKey]
-    localStorage.setItem(realKey,value)
-    @trigger('save',@)
-    @trigger(key,{oldValue:oldValue,value:value})
-  removeItem:(key)->
-    realKey="#{@lsKey}:#{key}"
-    oldValue=localStorage.getItem[realKey]
-    if oldValue
-      localStorage.removeItem(realKey)
-      @trigger('save',@)
-      @trigger(key,{oldValue:oldValue,value:null})
-  _unload:->
-  _remove:->
-    @trigger('remove',@)
-#TODO all item
