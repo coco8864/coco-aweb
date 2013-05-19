@@ -267,8 +267,10 @@ public class AuthHandler extends WebServerHandler {
 		}
 		
 		response.element("result", true);
-		response.element(AUTH_ID, secondaryId.getAuthSession().getAppSid());
-		response.element(TOKEN, secondaryId.getAuthSession().getToken());
+		response.element("authUrl",config.getAuthUrl());
+		response.element(APP_SID, authSession.getAppSid());
+		response.element(LOGIN_ID, authSession.getUser().getLoginId());
+		response.element(TOKEN, authSession.getToken());
 		crossDomainResponse(response,secondaryId.getSetCookieString());
 	}
 	
@@ -501,7 +503,7 @@ public class AuthHandler extends WebServerHandler {
 			String cookieDomain=requestHeader.getServer().toString();
 			*/
 			if(authMark.equals(AUTH_CD_CHECK)){
-				//secondaryがないことは判明済み
+				//secondaryがないことは判明済み,DispatchHandler#authMarkResponse
 				//AUTH_AUTHORIZEにリダイレクト
 				crossDomainCheck(false,requestHeader, mapping);
 				return;
