@@ -429,22 +429,29 @@ public class Mapping{
 		case FILE:
 			destinationHandlerClass=FILE_SYSTEM_HANDLER;
 			//fileの場合、pathにベースとなるディレクトリを指定、ブラウザからのpathはベースからの相対とする
-		case HANDLER:
 			try {
 				File destFile=new File(destinationPath);
 				if(destFile.isAbsolute()){
 					this.destinationFile=destFile.getCanonicalFile();
-				}else{
-					this.destinationFile=new File(config.getAppsDocumentRoot(),destinationPath).getCanonicalFile();
+				}else{//fileの場合は、PhantomHomeからの相対パス
+					this.destinationFile=new File(config.getPhantomHome(),destinationPath).getCanonicalFile();
 				}
 				} catch (IOException e1) {
 					logger.error("getCanonicalFile error,",e1);
 					return false;
 				}
-				if("naru.aweb.admin.AdminHandler".equals(destinationServer)){
-					config.setAdminDocumentRoot(destinationFile);
-				}else if("naru.aweb.auth.AuthHandler".equals(destinationServer)){
-					config.setAuthDocumentRoot(destinationFile);
+			break;
+		case HANDLER:
+			try {
+				File destFile=new File(destinationPath);
+				if(destFile.isAbsolute()){
+					this.destinationFile=destFile.getCanonicalFile();
+				}else{//fileの場合は、appsRootからの相対パス
+					this.destinationFile=new File(config.getAppsDocumentRoot(),destinationPath).getCanonicalFile();
+				}
+				} catch (IOException e1) {
+					logger.error("getCanonicalFile error,",e1);
+					return false;
 				}
 			break;
 		case WS:
@@ -474,6 +481,12 @@ public class Mapping{
 			setupAllowOrigins(optionsJson.optString("allowOrigins"));
 			if(optionsJson.optBoolean("publicWeb",false)){
 				config.setPublicDocumentRoot(destinationFile);
+			}
+			if(optionsJson.optBoolean("adminHandler",false)){
+				config.setAdminDocumentRoot(destinationFile);
+			}
+			if(optionsJson.optBoolean("authHandler",false)){
+				config.setAuthDocumentRoot(destinationFile);
 			}
 		}
 		rolesList.clear();

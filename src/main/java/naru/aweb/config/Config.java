@@ -694,11 +694,11 @@ public class Config {
 			RealHost.addRealHost(realHost);
 		}
 		try {
-			String dir = configuration.getString(PATH_PUBLIC_DOCROOT);
-			publicDocumentRoot = new File(dir).getCanonicalFile();
-			dir = configuration.getString(PATH_PORTAL_DOCROOT);
-			portalDocumentRoot = new File(dir).getCanonicalFile();
-			dir = configuration.getString(PATH_INJECTION_DIR);
+//			String dir = configuration.getString(PATH_PUBLIC_DOCROOT);
+//			publicDocumentRoot = new File(dir).getCanonicalFile();
+//			dir = configuration.getString(PATH_PORTAL_DOCROOT);
+//			portalDocumentRoot = new File(dir).getCanonicalFile();
+			String dir = configuration.getString(PATH_INJECTION_DIR);
 			injectionDir = new File(dir).getCanonicalFile();
 			injectionHelper = new InjectionHelper(this);
 			dir = configuration.getString(PATH_APPS_DOCROOT);
