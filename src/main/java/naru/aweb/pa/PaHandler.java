@@ -17,7 +17,6 @@ import naru.async.timer.TimerManager;
 import naru.aweb.auth.AuthSession;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
-import naru.aweb.config.User;
 import naru.aweb.handler.WebSocketHandler;
 import naru.aweb.http.ParameterParser;
 import naru.aweb.mapping.MappingResult;
@@ -44,6 +43,8 @@ public class PaHandler extends WebSocketHandler implements Timer{
 	private static final String XHR_POLLING_PATH="/!xhrPolling";
 	private static final String DOWNLOAD_PATH="/!paDownload";
 	private static final String UPLOAD_PATH="/!paUpload";
+	private static final String OFFLINE_MANIFEST_PATH="/paoffline.appcache";
+	private static final String OFFLINE_MANIFEST_TEMPLATE = "/template/paoffline.appcache";
 	private static int XHR_SLEEP_TIME=1000;
 	private static Config config = Config.getConfig();
 	private static Logger logger=Logger.getLogger(PaHandler.class);
@@ -348,6 +349,12 @@ public class PaHandler extends WebSocketHandler implements Timer{
 			TimerManager.setTimeout(XHR_SLEEP_TIME, this,null);
 		}
 	}
+	private void offlineManifest(ParameterParser parameter){
+		setContentType("text/cache-manifest");
+		setRequestAttribute(ATTRIBUTE_VELOCITY_ENGINE,config.getVelocityEngine());
+		setRequestAttribute(ATTRIBUTE_VELOCITY_TEMPLATE,OFFLINE_MANIFEST_TEMPLATE);
+		forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
+	}
 	
 	/**
 	 * HTTP(s)として動作した場合ここでリクエストを受ける
@@ -370,6 +377,9 @@ public class PaHandler extends WebSocketHandler implements Timer{
 			return;
 		}else if(path.equals(UPLOAD_PATH)){//formからのpublish要求
 			formPublish(parameter);
+			return;
+		}else if(path.equals(OFFLINE_MANIFEST_PATH)){//offline manifest要求
+			offlineManifest(parameter);
 			return;
 		}
 		String srcPath=getRequestMapping().getSourcePath();
