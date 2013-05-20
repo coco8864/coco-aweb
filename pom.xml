@@ -35,7 +35,7 @@
 
       <configuration>
          <bare>false</bare>
-         <!--minifiedFile>${basedir}/ph/apps/docroot/pub/js/admin.js</minifiedFile>
+         <!--minifiedFile>${basedir}/ph/docroot/pub/js/admin.js</minifiedFile>
          <setOfFilesToMinify>
             <directory>${project.build.directory}/coffee</directory>
             <includes>
@@ -44,7 +44,7 @@
          </setOfFilesToMinify-->
 
          <!--coffeeOutputDirectory>${project.build.directory}/coffee</coffeeOutputDirectory-->
-         <coffeeOutputDirectory>${basedir}/ph/apps/docroot/pub/js</coffeeOutputDirectory>
+         <coffeeOutputDirectory>${basedir}/ph/docroot/pub/js</coffeeOutputDirectory>
          <compileIndividualFiles>false</compileIndividualFiles>
          <coffeeJoinSets>
             <joinSet>
@@ -176,11 +176,11 @@
            </replacetokens>
        </filterchain>
 							</copy>
-							<copy todir="pack/phantom/ph/apps/docroot/">
-								<fileset dir="ph/apps/docroot/">
+							<copy todir="pack/phantom/ph/docroot/">
+								<fileset dir="ph/docroot/">
 									<include name="favicon.ico" />
 									<include name="index.html" />
-									<include name="pub/js/ph-queue.js" />
+									<include name="pub/js/ph-event.js" />
 									<include name="pub/js/ph-loader.js" />
 									<include name="pub/js/ph-auth.js" />
 									<include name="pub/js/ph-json2.js" />
