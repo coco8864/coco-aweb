@@ -3,6 +3,13 @@ class PrivateSessionStorage extends ph.EventModule
   constructor:(url,@_auth)->
     super
     @_paPss="_paPss:#{url}:#{@_auth.loginId}:#{@_auth.appSid}"
+    ##不要なsessionStorageの刈り取り
+    sameLoginIdKey="_paPss:#{url}:#{@_auth.loginId}:"
+    i=sessionStorage.length
+    while (i-=1) >=0
+      key=sessionStorage.key(i)
+      if key.lastIndexOf(sameLoginIdKey,0)==0 && key!=@_paPss
+        sessionStorage.removeItem(key)
     s=@
     ph.pa._storDecrypt(sessionStorage,@_auth,@_paPss,(decText)->
       if decText
@@ -58,8 +65,17 @@ class PrivateLocalStorage extends ph.EventModule
     @_paPls="#{prefix}:#{uniqueName}"
     @_paPlsChannel="#{prefix}Channel:#{uniqueName}"
     @_paPlsCtl="#{prefix}Ctl:#{uniqueName}"
-    ph.event.on('storage',@_onStorage)
 
+    ##不要なlocalStorageの刈り取り
+    sameLoginIdKey="_paPls:#{url}:#{@_auth.loginId}:"
+    plsKey="_paPls:#{url}:#{@_auth.loginId}:#{@_auth.appSid}"
+    i=localStorage.length
+    while (i-=1) >=0
+      key=localStorage.key(i)
+      if key.lastIndexOf(sameLoginIdKey,0)==0 && key!=plsKey
+        localStorage.removeItem(key)
+
+    ph.event.on('storage',@_onStorage)
     ctlText=localStorage.getItem(@_paPlsCtl)
     if ctlText
       ctl=ph.JSON.parse(ctlText)
