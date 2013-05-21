@@ -89,6 +89,7 @@ class Connection extends ph.EventModule
     ph.log('Pa _onWsClose.code:'+event.code+':reason:'+event.reason+':wasClean:'+event.wasClean)
 #    @__onClose(event.reason)
     if @stat!=ph.pa.STAT_CONNECT
+      @trigger('unload')
       @deferred.resolve('out session')
       @stat=ph.pa.INIT
       return
@@ -157,6 +158,7 @@ class Connection extends ph.EventModule
     if @deferred.state()!='pending'
       ph.log('aleady closed')
       return
+    @trigger('unload')
     @deferred.resolve(msg,@)
     if @isWs
       @stat=ph.pa.STAT_CLOSE

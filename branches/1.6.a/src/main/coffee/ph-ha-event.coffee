@@ -29,14 +29,14 @@ class EventModule
 
 window.ph.EventModule=EventModule
 window.ph.event=new ph.EventModule();
-window.ph.messageCb=(ev)->window.ph.event.trigger('message',ev)
-window.ph.unloadCb=(ev)->window.ph.event.trigger('unload',ev)
-window.ph.strageCb=(ev)->window.ph.event.trigger('strage',ev)
+#window.ph.messageCb=(ev)->window.ph.event.trigger('message',ev)
+#window.ph.unloadCb=(ev)->window.ph.event.trigger('unload',ev)
+#window.ph.strageCb=(ev)->window.ph.event.trigger('strage',ev)
 
 if window.addEventListener
-  window.addEventListener('message',window.ph.messageCb, false)
+  window.addEventListener('message',(ev)->window.ph.event.trigger('message',ev), false)
 else if window.attachEvent
-  window.attachEvent('onmessage',window.ph.messageCb)
-ph.jQuery(window).unload(window.ph.unloadCb)
-ph.jQuery(window).bind("storage",window.ph.strageCb)
+  window.attachEvent('onmessage',(ev)->window.ph.event.trigger('message',ev))
+ph.jQuery(window).unload((ev)->window.ph.event.trigger('unload',ev))
+ph.jQuery(window).bind("storage",(ev)->window.ph.event.trigger('strage',ev))
 
