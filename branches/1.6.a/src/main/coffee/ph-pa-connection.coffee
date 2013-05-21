@@ -1,6 +1,6 @@
 #-------------------Connection-------------------
 class Connection extends ph.EventModule
-  constructor: (@url,@httpUrl,@deferred) ->
+  constructor: (@url,@httpUrl,@deferred,@_storageScope) ->
     super
     @_subscribes={}
     @isWs=(url.lastIndexOf('ws',0)==0)
@@ -18,8 +18,9 @@ class Connection extends ph.EventModule
     @_auth=auth
     @_loginId=auth.loginId
     @_appSid=auth.appSid
-##    @ppKey="_paPp:#{@url}:#{@_loginId}:#{@_appSid}"
     @ppStorage=new PrivateSessionStorage(@httpUrl,@_auth)
+    if @_storageScope
+      @_initStorage=@storage(@_storageScope)
 ##unloadŽž‚ÉsessionStrage‚É•Û‘¶
     @on('unload',->
         @ppStorage?._unload()
@@ -153,7 +154,12 @@ class Connection extends ph.EventModule
       @_setBid(msg.bid)
       @_send({type:ph.pa.TYPE_NEGOTIATE,bid:msg.bid,token:@_token,needRes:false})
     @offlinePassHash=msg.offlinePassHash
-    @trigger('connected',@)#success to connect
+    if @_initStorage && @_initStorage.status!='load'
+      c=@
+      @_initStorage.on('dataLoad',->c.trigger('connected',c))
+    else
+      @trigger('connected',@) #success to connect
+    return
   __onClose:(msg)->
     if @deferred.state()!='pending'
       ph.log('aleady closed')
