@@ -2,6 +2,7 @@
 class PrivateSessionStorage extends ph.EventModule
   constructor:(url,@_auth)->
     super
+    @status='init'
     @_paPss="_paPss:#{url}:#{@_auth.loginId}:#{@_auth.appSid}"
     ##不要なsessionStorageの刈り取り
     sameLoginIdKey="_paPss:#{url}:#{@_auth.loginId}:"
@@ -16,6 +17,8 @@ class PrivateSessionStorage extends ph.EventModule
         s.data=ph.JSON.parse(decText)
       else
         s.data={}
+      s.status='load'
+      s.trigger('dataLoad')
       )
     @
   getItem:(key)->
@@ -48,7 +51,7 @@ class PrivateSessionStorage extends ph.EventModule
 class PrivateLocalStorage extends ph.EventModule
   constructor:(url,@_auth,@_bid,@scope)->
     super
-    @_status=0 #まだデータが準備できてないの意
+    @status='init' #まだデータが準備できてないの意
     if @scope==ph.pa.SCOPE_SESSION_PRIVATE
       prefix='_paSP'
       uniqueName="#{url}:#{@_auth.loginId}:#{@_auth.appSid}"
@@ -113,12 +116,16 @@ class PrivateLocalStorage extends ph.EventModule
     if !encText
       @_encDataText='{}'
       @data={}
-      @_status=1
+      if @status=='init'
+        @status=='load'
+        @trigger('dataLoad')
       return
     @_encDataText=encText
     if !@_isAuthEncrypt
       @data=ph.JSON.parse(encText)
-      @_status=1
+      if @status=='init'
+        @status=='load'
+        @trigger('dataLoad')
       return
     s=@
     @_auth.decrypt(@_encDataText,(decText)->
@@ -126,7 +133,9 @@ class PrivateLocalStorage extends ph.EventModule
         s.data=ph.JSON.parse(decText)
       else
         s.data={}
-      @_status=1
+      if @status=='init'
+        @status=='load'
+        @trigger('dataLoad')
       return
       )
     return
@@ -178,8 +187,8 @@ class PrivateLocalStorage extends ph.EventModule
         delete @data[info.key]
       else if info.req=='allItems' && info.to==@_bid
         @data=info.data
+        @status=='load'
         @trigger('dataLoad')
-        @_status=1
       else
         return
       @_encData()
