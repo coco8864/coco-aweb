@@ -169,6 +169,10 @@ public class MappingResult extends PoolBase {
 	public void setOption(String key, Object value) {
 		curOption.put(key, value);
 	}
+	
+	public Object getMappingAttribute(String key){
+		return mapping.getAttribute(key);
+	}
 
 	public ServerParser getResolveServer() {
 		return resolveServer;
