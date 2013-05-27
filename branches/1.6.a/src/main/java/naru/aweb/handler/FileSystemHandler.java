@@ -7,7 +7,11 @@ import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import naru.async.BufferGetter;
 import naru.async.cache.CacheBuffer;
@@ -28,6 +32,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 	private static String LISTING_TEMPLATE = "/template/listing.vsp";
 	private static Configuration contentTypeConfig = null;// config.getConfiguration("ContentType");
 	private static Map<String, String> contentTypeMap = new HashMap<String, String>();
+	private static Set<String> templatePaths=null;
 
 	private static Config getConfig() {
 		if (config == null) {
@@ -58,15 +63,12 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 
 	// TODO adminSettingからデフォルト値を取得する
 	private static boolean defaultListing = true;
-	private static String[] defaultWelcomeFiles = new String[] { "index.html",
-			"index.htm", "index.vsp" };
+	private static String[] defaultWelcomeFiles = new String[] { "index.html","index.htm", "index.vsp" };
 	// vsp ... "velocity server page" vsf ... "velocity server flagment"
-	private static String[] defaultVelocityExtentions = new String[] { ".vsp",
-			"vsf" };
+	private static String[] defaultVelocityExtentions = new String[] { ".vsp","vsf" };
 
 	private String[] getWelcomeFiles(MappingResult mapping) {
-		String welcomFiles = (String) mapping
-				.getOption(MappingResult.PARAMETER_FILE_WELCOME_FILES);
+		String welcomFiles = (String) mapping.getOption(MappingResult.PARAMETER_FILE_WELCOME_FILES);
 		if (welcomFiles == null) {
 			return defaultWelcomeFiles;
 		}
@@ -81,6 +83,11 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		return Boolean.TRUE.toString().equalsIgnoreCase(listing.toString());
 	}
 
+	private boolean isTemplateContents(String path) {
+		return false;
+//		return templatePaths.contains(path);
+	}
+	
 	/*
 	 * MappingResultのOptionに従ってVelocityHandlerに処理を任せる 1)"velocityUse"がfalse以外
 	 * 2)"velocityExtentions"と拡張子が一致する TODO mapping.setOption(key, value)を使って最適化
@@ -98,6 +105,19 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 					"application/javascript");
 			return true;
 		}
+		Pattern pattern=(Pattern)mapping.getMappingAttribute(Mapping.OPTION_VELOCITY_PATTERN);
+		if(pattern==null){
+			return false;
+		}
+		Matcher matcher=null;
+		synchronized(pattern){
+			matcher=pattern.matcher(path);
+		}
+		/*
+		 * .*\.vsv$|.*\.vsv$|/ph\.js|/ph\.json
+		 */
+		return matcher.matches();
+		/*
 		String velocityExtentionsParam = (String) mapping.getOption(MappingResult.PARAMETER_VELOCITY_EXTENTIONS);
 		String[] velocityExtentions = defaultVelocityExtentions;
 		if (velocityExtentionsParam != null) {
@@ -109,6 +129,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 			}
 		}
 		return false;
+		*/
 	}
 
 	private String getContentType(File file) {
@@ -171,7 +192,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		}
 		setRequestAttribute("fileList", dir.listFiles());
 
-		setRequestAttribute(ATTRIBUTE_VELOCITY_ENGINE,config.getVelocityEngine());
+		setRequestAttribute(ATTRIBUTE_VELOCITY_ENGINE,getConfig().getVelocityEngine());
 		setRequestAttribute(ATTRIBUTE_VELOCITY_TEMPLATE,LISTING_TEMPLATE);
 		forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
 		return false;// 委譲
@@ -254,8 +275,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 	
 	private boolean response() {
 		HeaderParser requestHeader = getRequestHeader();
-		String ifModifiedSince = requestHeader
-				.getHeader(HeaderParser.IF_MODIFIED_SINCE_HEADER);
+		String ifModifiedSince = requestHeader.getHeader(HeaderParser.IF_MODIFIED_SINCE_HEADER);
 		String selfPath = requestHeader.getRequestUri();
 
 		MappingResult mapping = getRequestMapping();
@@ -289,8 +309,21 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		if (pos >= 0) {
 			path = path.substring(0, pos);
 		}
-
+		if(isTemplateContents(path)){
+			setRequestAttribute(ATTRIBUTE_VELOCITY_ENGINE,getConfig().getVelocityEngine());
+			setRequestAttribute(ATTRIBUTE_VELOCITY_TEMPLATE,"/template" +path);
+			forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
+			return false;
+		}
 		File baseDirectory = mapping.getDestinationFile();
+		if(path.equals(mapping.getOption(Mapping.OPTION_PROXY_PAC_PATH))){
+			String localHost=requestHeader.getHeader(HeaderParser.HOST_HEADER);
+			String pac=getConfig().getProxyPac(localHost);
+			setContentType("text/plain");
+			completeResponse("200", pac);
+			return false;
+		}
+		
 		CacheBuffer asyncFile = CacheBuffer.open(new File(baseDirectory, path));
 		FileInfo info = asyncFile.getFileInfo();
 		if (info.isError()) {

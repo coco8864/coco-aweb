@@ -6,8 +6,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -32,6 +34,7 @@ import naru.aweb.handler.SslProxyHandler;
 import naru.aweb.handler.VelocityPageHandler;
 import naru.aweb.handler.WsProxyHandler;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.pa.PaHandler;
 import naru.aweb.util.JdoUtil;
 import naru.aweb.util.ServerParser;
 import net.sf.json.JSON;
@@ -49,6 +52,9 @@ import org.apache.log4j.Logger;
  */
 @PersistenceCapable(identityType = IdentityType.APPLICATION,table="MAPPING",detachable="true")
 public class Mapping{
+	public static final String OPTION_LOG_TYPE = "logType";
+	public static final String OPTION_VELOCITY_PATTERN = "velocityPattern";
+	public static final String OPTION_PROXY_PAC_PATH = "proxyPacPath";
 	public static Class ADMIN_HANDLER=AdminHandler.class;
 	public static Class SSL_PROXY_HANDLER=SslProxyHandler.class;
 	public static Class VELOCITY_PAGE_HANDLER=VelocityPageHandler.class;
@@ -56,6 +62,7 @@ public class Mapping{
 	public static Class FILE_SYSTEM_HANDLER=FileSystemHandler.class;
 	public static Class STORE_HANDLER=StoreHandler.class;
 	public static Class WS_PROXY_HANDLE=WsProxyHandler.class;
+	public static Class PA_HANDLER=PaHandler.class;
 	
 	private static Logger logger = Logger.getLogger(Mapping.class);
 	private static JsonConfig jsonConfig;
@@ -80,7 +87,7 @@ public class Mapping{
 		jsonConfig=new JsonConfig();
 		jsonConfig.setRootClass(Mapping.class);
 		jsonConfig.setIgnoreTransientFields(true);
-		jsonConfig.setExcludes(new String[]{"admin","auth","destinationFile","logType","userId","sourceServerHost","rolesList","sessionUpdate","mappingAuth"});
+		jsonConfig.setExcludes(new String[]{"admin","auth","destinationFile",OPTION_LOG_TYPE,"userId","sourceServerHost","rolesList","sessionUpdate","mappingAuth"});
 		jsonConfig.setNewBeanInstanceStrategy(new MappingInstanceStrategy());
 	}
 	
@@ -290,6 +297,10 @@ public class Mapping{
 	@NotPersistent
 	private JSONObject optionsJson=new JSONObject();
 	
+	//Mapping毎にruntimeに使う作業オブジェクトを保持する。mappingResultからgetMappingAttributeで参照する
+	@NotPersistent
+	private Map attribute=new HashMap();
+	
 	@NotPersistent
 	private boolean isSourceMatchEntry;//正規表現でマッチさせるまでdestinationが決まらないEntry
 
@@ -471,7 +482,7 @@ public class Mapping{
 				logger.warn("options error.options:"+options);
 				optionsJson=new JSONObject();
 			}
-			setLogType((String)optionsJson.get("logType"));
+			setLogType(optionsJson.optString(OPTION_LOG_TYPE));
 			if(Boolean.FALSE.equals(optionsJson.optBoolean("peek",true))){
 				destinationHandlerClass=SSL_PROXY_HANDLER;
 			}
@@ -488,6 +499,12 @@ public class Mapping{
 			if(optionsJson.optBoolean("authHandler",false)){
 				config.setAuthDocumentRoot(destinationFile);
 			}
+			String velocityPattern=optionsJson.optString(OPTION_VELOCITY_PATTERN,null);
+			if(velocityPattern==null){
+				velocityPattern=".*\\.vsp$|.*\\.vsf$";
+			}
+			attribute.put(OPTION_VELOCITY_PATTERN,Pattern.compile(velocityPattern));
+			
 		}
 		rolesList.clear();
 		if(roles!=null && roles.length()!=0){
@@ -880,6 +897,10 @@ public class Mapping{
 	public void setOption(String key, String value) {
 		optionsJson.put(key, value);
 		setOptions(optionsJson.toString());
+	}
+	
+	public Object getAttribute(String key){
+		return attribute.get(key);
 	}
 	
 	private MappingAuth mappingAuth=null;//mappingベースの認証をする場合
