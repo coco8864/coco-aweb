@@ -16,12 +16,6 @@ import naru.aweb.config.Mapping;
 import naru.aweb.util.ServerParser;
 
 public class MappingResult extends PoolBase {
-	public static String PARAMETER_FILE_WELCOME_FILES = "fileWeblcomeFiles";
-	public static String PARAMETER_FILE_LISTING = "fileListing";
-	public static String PARAMETER_FILE_RESOURCE_PATH = "resoucePath";
-	public static String PARAMETER_VELOCITY_USE = "velocityUse";
-	public static String PARAMETER_VELOCITY_RESOUCE_PATH = "velocityResoucePath";
-	public static String PARAMETER_VELOCITY_EXTENTIONS = "velocityExtentions";
 	private static Config config=Config.getConfig();
 	
 	private Mapping mapping;
@@ -155,6 +149,18 @@ public class MappingResult extends PoolBase {
 	// èàóùÇÃâﬂíˆÇ≈DestinationÇïœçXÇµÇΩÇ¢èÍçáÅAResultëwÇ≈äoÇ¶ÇÈ
 	private Map<String, Object> curOption = new HashMap<String, Object>();
 
+	public boolean getBooleanOption(String key) {
+		return getBooleanOption(key,false);
+	}
+	public boolean getBooleanOption(String key,boolean defvalue) {
+		Object opt=getOption(key);
+		if(opt instanceof Boolean){
+			return (Boolean)opt;
+		}else{
+			return defvalue;
+		}
+	}
+
 	public Object getOption(String key) {
 		Object value = curOption.get(key);
 		if (value != null) {
@@ -168,10 +174,6 @@ public class MappingResult extends PoolBase {
 
 	public void setOption(String key, Object value) {
 		curOption.put(key, value);
-	}
-	
-	public Object getMappingAttribute(String key){
-		return mapping.getAttribute(key);
 	}
 
 	public ServerParser getResolveServer() {

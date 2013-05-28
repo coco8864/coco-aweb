@@ -1278,4 +1278,21 @@ public class Config {
 		return velocityEngine;
 	}
 	
+	private  Configuration contentTypeConfig = null;
+	private Configuration getContentTypeConfig() {
+		if (contentTypeConfig == null) {
+			contentTypeConfig = getConfig().getConfiguration("ContentType");
+		}
+		return contentTypeConfig;
+	}
+	
+	public String getContentType(String fileName){
+		int pos = fileName.lastIndexOf(".");
+		String contentType=null;
+		if (pos > 0) {
+			String ext = fileName.substring(pos + 1);
+			contentType = getContentTypeConfig().getString(ext,null);
+		}
+		return contentType;
+	}
 }
