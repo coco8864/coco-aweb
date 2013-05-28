@@ -28,10 +28,31 @@ public class VelocityPageHandler extends WebServerHandler {
 	private static Logger logger = Logger.getLogger(VelocityPageHandler.class);
 	private static String DEFAULT_CONTENT_TYPE="text/html; charset=utf-8";
 	private static Map<File,VelocityEngine> engineMap=Collections.synchronizedMap(new HashMap<File,VelocityEngine>());
-	private static Config config=Config.getConfig();
+	private static Config config=null;
 	private static ToolManager toolManager=null;
-	
-//	private ParameterParser paremeter;
+	private static Map<String, String> contentTypeMap = new HashMap<String, String>();
+
+	private static Config getConfig() {
+		if (config == null) {
+			config = Config.getConfig();
+		}
+		return config;
+	}
+
+	private static String calcContentType(String fileName) {
+		String contentType = contentTypeMap.get(fileName);
+		if (contentType != null) {
+			return contentType;
+		}
+		contentType = getConfig().getContentType(fileName);
+		if(contentType==null){
+			contentType=DEFAULT_CONTENT_TYPE;
+		}
+		synchronized (contentTypeMap) {
+			contentTypeMap.put(fileName, contentType);
+		}
+		return contentType;
+	}
 	
 	private static ToolManager getToolManager(){
 		if(toolManager==null){
@@ -41,7 +62,7 @@ public class VelocityPageHandler extends WebServerHandler {
 			efConfig.tool("esc", EscapeTool.class);
 			tm.configure(efConfig);
 			*/
-			File settingDir=config.getSettingDir();
+			File settingDir=getConfig().getSettingDir();
 			File configFile=new File(settingDir,"velocityTool.xml");
 			tm.configure(configFile.getAbsolutePath());
 			toolManager=tm;
@@ -70,6 +91,14 @@ public class VelocityPageHandler extends WebServerHandler {
 		logger.info("create VelocityEngine.repository:"+repository);
 		engineMap.put(repository, velocityEngine);
 		return velocityEngine;
+	}
+	
+	private String getContentType(String name) {
+		String contentType = (String) getRequestAttribute(ATTRIBUTE_RESPONSE_CONTENT_TYPE);
+		if (contentType != null) {
+			return contentType;
+		}
+		return calcContentType(name);
 	}
 	
 	public void startResponseReqBody(){
@@ -101,7 +130,7 @@ public class VelocityPageHandler extends WebServerHandler {
 		veloContext.put("parameter", getParameterParser());
 		RequestContext requestContext=getRequestContext();
 		veloContext.put("session", requestContext.getAuthSession());
-		veloContext.put("config", config);
+		veloContext.put("config", getConfig());
 		Iterator<String> itr=getRequestAttributeNames();
 		while(itr.hasNext()){
 			String key=itr.next();
@@ -118,10 +147,7 @@ public class VelocityPageHandler extends WebServerHandler {
 		if( contentDisposition!=null){
 			setHeader(HeaderParser.CONTENT_DISPOSITION_HEADER, contentDisposition);
 		}
-		String contentType=(String)getRequestAttribute(ATTRIBUTE_RESPONSE_CONTENT_TYPE);
-		if(contentType==null){
-			contentType=DEFAULT_CONTENT_TYPE;
-		}
+		String contentType=getContentType(veloPage);
 		setContentType(contentType);
 		String statusCode=(String)getRequestAttribute(ATTRIBUTE_RESPONSE_STATUS_CODE);
 		if(statusCode==null){
@@ -152,33 +178,8 @@ public class VelocityPageHandler extends WebServerHandler {
 			} catch (IOException ignore) {
 			}
 			responseEnd();
-//			paremeter=null;
 		}
 	}
-	
-/*	
-	//velocitymacro‚ÌhandlerŒo—R‚Åparameter‚ªŽæ“¾‚Å‚«‚é‚æ‚¤‚É‚·‚é
-	public String getParameter(String name){
-		if(paremeter==null){
-			return null;
-		}
-		return paremeter.getParameter(name);
-	}
-	
-	public List getParameters(String name){
-		if(paremeter==null){
-			return null;
-		}
-		return paremeter.getParameters(name);
-	}
-	
-	public Iterator getParameterNames(){
-		if(paremeter==null){
-			return null;
-		}
-		return paremeter.getParameterNames();
-	}
-*/
 	
 	public void onFailure(Object userContext, Throwable t) {
 		logger.debug("#failer.cid:" +getChannelId() +":"+t.getMessage());

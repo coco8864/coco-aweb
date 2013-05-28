@@ -16,6 +16,7 @@ import naru.async.pool.PoolManager;
 import naru.async.store.Store;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
+import naru.aweb.config.Mapping;
 import naru.aweb.core.DispatchHandler;
 import naru.aweb.core.ServerBaseHandler;
 import naru.aweb.handler.ws.WsProtocol;
@@ -395,7 +396,7 @@ public class WebServerHandler extends ServerBaseHandler {
 		accessLog.setResponseLength(responseWriteBodyApl);
 		accessLog.setContentEncoding(responseHeader.getHeader(HeaderParser.CONTENT_ENCODING_HEADER));
 		MappingResult mapping=getRequestMapping();
-		if(Boolean.TRUE.equals(mapping.getOption("skipPhlog"))){
+		if(Boolean.TRUE.equals(mapping.getOption(Mapping.OPTION_SKIP_PH_LOG))){
 			accessLog.setSkipPhlog(true);
 		}
 		

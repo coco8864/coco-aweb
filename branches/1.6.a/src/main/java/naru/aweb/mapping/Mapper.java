@@ -33,12 +33,6 @@ import org.apache.log4j.Logger;
  *
  */
 public class Mapper {
-	private static final String OPTION_AUTH = "auth";//mappingベースで認証する場合に設定
-	private static final String OPTION_PAC = "pac";//proxy処理をpacに反映する場合、trueを設定する
-	private static final String OPTION_PEEK = "peek";//ssl proxyの動作をする場合、falseを設定
-	private static final String OPTION_PUBLIC_WEB = "publicWeb";//js等固定のコンテンツをダウンロードするURLを計算するため
-	private static final String OPTION_ADMIN_HANDLER = "adminHandler";//adminへのURLを計算するため
-	private static final String OPTION_AUTH_HANDLER = "authHandler";//authHandlerにtureを設定
 	private static Logger logger = Logger.getLogger(Mapper.class);
 	private Config config;
 	
@@ -128,7 +122,7 @@ public class Mapper {
 		if(!mapping.isEnabled()){
 			return;
 		}
-		if(Boolean.FALSE.equals(mapping.getOption(OPTION_PEEK))){
+		if(Boolean.FALSE.equals(mapping.getOption(Mapping.OPTION_PEEK))){
 			synchronized(activeSslProxyMappings){//ssl proxyは特殊なため別管理
 				activeSslProxyMappings.add(mapping);
 			}
@@ -139,7 +133,7 @@ public class Mapper {
 		}
 		String selfDomain=config.getSelfDomain();
 		RealHost realHost=RealHost.getRealHost(mapping.getRealHostName());
-		if(Boolean.TRUE.equals(mapping.getOption(OPTION_ADMIN_HANDLER))){
+		if(Boolean.TRUE.equals(mapping.getOption(Mapping.OPTION_ADMIN_HANDLER))){
 			StringBuilder sb=new StringBuilder();
 			String sourceServer=mapping.getSourceServer();
 			if(sourceServer==null || "".equals(sourceServer)){
@@ -158,7 +152,7 @@ public class Mapper {
 			System.out.println("adminUrl:"+adminUrl);
 		}
 		
-		Object publicWeb=mapping.getOption(OPTION_PUBLIC_WEB);//publicWebのportとプロトコルを知るため
+		Object publicWeb=mapping.getOption(Mapping.OPTION_PUBLIC_WEB);//publicWebのportとプロトコルを知るため
 		if(Boolean.TRUE.equals(publicWeb)){
 			StringBuilder sb=new StringBuilder();
 			String sourceServer=mapping.getSourceServer();
@@ -183,7 +177,7 @@ public class Mapper {
 		}
 		
 		//mapping auth定義
-		Object auth=mapping.getOption(OPTION_AUTH);
+		Object auth=mapping.getOption(Mapping.OPTION_AUTH);
 		if(auth!=null&&auth instanceof JSONObject){
 			MappingAuth mappingAuth=new MappingAuth(config.getAuthenticator());
 			if( mappingAuth.init((JSONObject)auth, mapping.getSourceType()==SourceType.PROXY) ){
@@ -191,7 +185,7 @@ public class Mapper {
 			}
 		}
 		
-		Object pac=mapping.getOption(OPTION_PAC);//pacに反映するか否か
+		Object pac=mapping.getOption(Mapping.OPTION_PAC);//pacに反映するか否か
 		if(!Boolean.TRUE.equals(pac)){
 			return;
 		}

@@ -35,9 +35,6 @@ import org.apache.log4j.Logger;
 public class ProxyHandler extends  WebServerHandler implements WebClient{
 	private static Logger logger=Logger.getLogger(ProxyHandler.class);
 	private static Config config=Config.getConfig();
-	private static String OPTION_INJECTOR="injector";
-	private static String OPTION_REPLAY="replay";
-	private static String OPTION_FILTER="filter";
 	private boolean isReplay=false;
 	private boolean isTryAgain=false;//レスポンスヘッダを見てもう一度リクエストしなおしたいと判断した場合
 	private boolean isReplace=false;//リクエストヘッダを見てコンテンツを置き換えると判断した場合,置き換えコンテンツは、injectコンテンツとして挿入
@@ -150,7 +147,7 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 	//ブラウザからのリクエストヘッダは受信しきった、さあレスポンしてください...ってメソッド
 	public void startResponse(){
 		MappingResult mapping=getRequestMapping();
-		if(Boolean.TRUE.equals(mapping.getOption(OPTION_FILTER))){
+		if(mapping.getBooleanOption(Mapping.OPTION_FILTER)){
 			FilterHelper helper=config.getFilterHelper();
 			if(helper.doFilter(this)==false){
 				logger.debug("filter blocked");
@@ -159,7 +156,7 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 		}
 		
 		InjectionHelper helper=config.getInjectionHelper();
-		injector=helper.getInjector((String)mapping.getOption(OPTION_INJECTOR));
+		injector=helper.getInjector((String)mapping.getOption(Mapping.OPTION_INJECTOR));
 		if(injector!=null){
 			injector.init(this);
 			injector.onRequestHeader(getRequestHeader());
@@ -168,7 +165,7 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 //			portalSession=PortalSession.getPortalSession(this);
 //			portalSession.onRequestHeader(this);
 //		}
-		if(Boolean.TRUE.equals(mapping.getOption(OPTION_REPLAY))){
+		if(mapping.getBooleanOption(Mapping.OPTION_REPLAY)){
 			isReplay=true;
 		}else{
 			if(doProxy()==false){

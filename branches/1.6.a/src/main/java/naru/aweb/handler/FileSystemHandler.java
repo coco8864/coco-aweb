@@ -7,9 +7,7 @@ import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -23,16 +21,22 @@ import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.util.ServerParser;
 
-import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 
+/**
+ * ファイルからレスポンスを作成する、そのほかにも以下の処理をする
+ * 1)指定ファイルがディレクトリだった場合、その一覧を返却
+ * 2)/proxy.pacへのリクエストだった場合、(optionでproxy_pac_path指定)pacを返却
+ * 3)velocityPage対象パスだった場合、velocityHandlerにforward
+ * 4)phoffline.html,phoffline.appcacheだった場合、offlineコンテンツの返却
+ * @author naru
+ *
+ */
 public class FileSystemHandler extends WebServerHandler implements BufferGetter {
 	private static Logger logger = Logger.getLogger(FileSystemHandler.class);
 	private static Config config = null;// Config.getConfig();
 	private static String LISTING_TEMPLATE = "/template/listing.vsp";
-	private static Configuration contentTypeConfig = null;// config.getConfiguration("ContentType");
 	private static Map<String, String> contentTypeMap = new HashMap<String, String>();
-	private static Set<String> templatePaths=null;
 
 	private static Config getConfig() {
 		if (config == null) {
@@ -41,53 +45,21 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		return config;
 	}
 
-	private static Configuration getContentTypeConfig() {
-		if (contentTypeConfig == null) {
-			contentTypeConfig = getConfig().getConfiguration("ContentType");
-		}
-		return contentTypeConfig;
-	}
-
-	private static String calcContentType(String ext) {
-		String contentType = contentTypeMap.get(ext);
+	private static String calcContentType(String fileName) {
+		String contentType = contentTypeMap.get(fileName);
 		if (contentType != null) {
 			return contentType;
 		}
-		contentType = getContentTypeConfig().getString(ext,
-				"application/octet-stream");
+		contentType = getConfig().getContentType(fileName);
+		if(contentType==null){
+			contentType="application/octet-stream";
+		}
 		synchronized (contentTypeMap) {
-			contentTypeMap.put(ext, contentType);
+			contentTypeMap.put(fileName, contentType);
 		}
 		return contentType;
 	}
 
-	// TODO adminSettingからデフォルト値を取得する
-	private static boolean defaultListing = true;
-	private static String[] defaultWelcomeFiles = new String[] { "index.html","index.htm", "index.vsp" };
-	// vsp ... "velocity server page" vsf ... "velocity server flagment"
-	private static String[] defaultVelocityExtentions = new String[] { ".vsp","vsf" };
-
-	private String[] getWelcomeFiles(MappingResult mapping) {
-		String welcomFiles = (String) mapping.getOption(MappingResult.PARAMETER_FILE_WELCOME_FILES);
-		if (welcomFiles == null) {
-			return defaultWelcomeFiles;
-		}
-		return welcomFiles.split(",");
-	}
-
-	private boolean isListing(MappingResult mapping) {
-		Object listing = mapping.getOption(MappingResult.PARAMETER_FILE_LISTING);
-		if (listing == null) {
-			return defaultListing;
-		}
-		return Boolean.TRUE.toString().equalsIgnoreCase(listing.toString());
-	}
-
-	private boolean isTemplateContents(String path) {
-		return false;
-//		return templatePaths.contains(path);
-	}
-	
 	/*
 	 * MappingResultのOptionに従ってVelocityHandlerに処理を任せる 1)"velocityUse"がfalse以外
 	 * 2)"velocityExtentions"と拡張子が一致する TODO mapping.setOption(key, value)を使って最適化
@@ -96,16 +68,14 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		if (path == null) {
 			return false;
 		}
-		String velocityUse = (String) mapping.getOption(MappingResult.PARAMETER_VELOCITY_USE);
-		if ("false".equalsIgnoreCase(velocityUse)) {
+		if (!mapping.getBooleanOption(Mapping.OPTION_VELOCITY_USE,true)) {
 			return false;
 		}
 		if (path.endsWith("ph-loader.js")) {// 特別扱い
-			setRequestAttribute(ATTRIBUTE_RESPONSE_CONTENT_TYPE,
-					"application/javascript");
+			setRequestAttribute(ATTRIBUTE_RESPONSE_CONTENT_TYPE,"application/javascript");
 			return true;
 		}
-		Pattern pattern=(Pattern)mapping.getMappingAttribute(Mapping.OPTION_VELOCITY_PATTERN);
+		Pattern pattern=(Pattern)mapping.getOption(Mapping.OPTION_VELOCITY_PATTERN);
 		if(pattern==null){
 			return false;
 		}
@@ -117,19 +87,6 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		 * .*\.vsv$|.*\.vsv$|/ph\.js|/ph\.json
 		 */
 		return matcher.matches();
-		/*
-		String velocityExtentionsParam = (String) mapping.getOption(MappingResult.PARAMETER_VELOCITY_EXTENTIONS);
-		String[] velocityExtentions = defaultVelocityExtentions;
-		if (velocityExtentionsParam != null) {
-			velocityExtentions = velocityExtentionsParam.split(",");
-		}
-		for (int i = 0; i < velocityExtentions.length; i++) {
-			if (path.endsWith(velocityExtentions[i])) {
-				return true;
-			}
-		}
-		return false;
-		*/
 	}
 
 	private String getContentType(File file) {
@@ -137,17 +94,8 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		if (contentType != null) {
 			return contentType;
 		}
-		String name = file.getName();
-		int pos = name.lastIndexOf(".");
-		if (pos > 0) {
-			String ext = name.substring(pos + 1);
-			contentType = calcContentType(ext);
-			if (contentType != null) {
-				return contentType;
-			}
-		}
-		// 疑わしきは、OctedStream
-		return "application/octet-stream";
+		String fileName = file.getName();
+		return calcContentType(fileName);
 	}
 
 	private long getContentLength(long fileLength) {
@@ -156,6 +104,32 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 			return length.longValue();
 		}
 		return fileLength;
+	}
+	
+	
+	/**
+	 * 街頭するファイルがなかった、以下を探す
+	 * 1)proxy.pac
+	 * 2)phoffline.html
+	 * 3)phoffline.appcache
+	 * @param path
+	 */
+	private void fileNotFound(MappingResult mapping,HeaderParser requestHeader,String path){
+		/* proxy.pacの場合 */
+		if(path.equals(mapping.getOption(Mapping.OPTION_PROXY_PAC_PATH))){
+			String localHost=requestHeader.getHeader(HeaderParser.HOST_HEADER);
+			String pac=getConfig().getProxyPac(localHost);
+			setContentType("text/plain");
+			completeResponse("200", pac);
+			return;
+		}
+		if(path.equals(mapping.getOption(Mapping.OPTION_APPCACHE_HTML_PATH))){
+		}
+		boolean useOffline=(Boolean)getAuthSession().getAttribute(Mapping.OPTION_USE_APPCACHE);
+		if(useOffline && path.equals(mapping.getOption(Mapping.OPTION_APPCACHE_MANIFEST_PATH))){
+		}
+		logger.debug("Not found." + path);
+		completeResponse("404", "file not exists");
 	}
 
 	private void responseBodyFromFile(CacheBuffer asyncFile) {
@@ -168,7 +142,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 	}
 
 	private boolean fileListIfNessesary(MappingResult mapping,String selfPath,File dir,boolean isBase){
-		boolean listing = isListing(mapping);
+		boolean listing = mapping.getBooleanOption(Mapping.OPTION_FILE_LISTING,true);
 		if (listing && dir.isDirectory()) {// ディレクトリだったら
 			// velocityPageからリスト出力
 			return snedFileList(mapping,selfPath, dir, isBase);
@@ -246,14 +220,12 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 
 	public void startResponseReqBody() {
 		MappingResult mapping=getRequestMapping();
-		if(Boolean.TRUE.equals(mapping.getOption("replay"))){
+		if(mapping.getBooleanOption(Mapping.OPTION_REPLAY)){
 			ReplayHelper helper=Config.getConfig().getReplayHelper();
-//			ByteBuffer[] body=bodyPage.getBuffer();
 			if(helper.doReplay(this,null)){
 				return;//replayできた,bodyは消費されている
 			}
 		}
-		
 		if (response()) {
 			responseEnd();// TODO必要ないと思う
 			return;
@@ -309,21 +281,15 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		if (pos >= 0) {
 			path = path.substring(0, pos);
 		}
+		/*
 		if(isTemplateContents(path)){
 			setRequestAttribute(ATTRIBUTE_VELOCITY_ENGINE,getConfig().getVelocityEngine());
 			setRequestAttribute(ATTRIBUTE_VELOCITY_TEMPLATE,"/template" +path);
 			forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
 			return false;
 		}
+		*/
 		File baseDirectory = mapping.getDestinationFile();
-		if(path.equals(mapping.getOption(Mapping.OPTION_PROXY_PAC_PATH))){
-			String localHost=requestHeader.getHeader(HeaderParser.HOST_HEADER);
-			String pac=getConfig().getProxyPac(localHost);
-			setContentType("text/plain");
-			completeResponse("200", pac);
-			return false;
-		}
-		
 		CacheBuffer asyncFile = CacheBuffer.open(new File(baseDirectory, path));
 		FileInfo info = asyncFile.getFileInfo();
 		if (info.isError()) {
@@ -339,12 +305,11 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 			// return true;
 		} else if (!info.exists() || !info.canRead()) {
 			asyncFile.close();
-			logger.debug("Not found." + info.getCanonicalFile());
-			completeResponse("404", "file not exists");
+			fileNotFound(mapping,requestHeader,path);
 			return true;
 		}
 		// welcomefile処理
-		String[] welcomeFiles = getWelcomeFiles(mapping);
+		String[] welcomeFiles = (String[])mapping.getOption(Mapping.OPTION_FILE_WELCOME_FILES);
 		if (info.isDirectory() && welcomeFiles != null) {
 			File dir=info.getCanonicalFile();
 			asyncFile.close();
@@ -392,17 +357,6 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		asyncClose(userContext);
 		super.onTimeout(userContext);
 	}
-
-	/*
-	public void onFinished() {
-		logger.debug("#finished.cid:" + getChannelId());
-		if (asyncFile != null) {
-			asyncFile.close();
-			asyncFile = null;
-		}
-		super.onFinished();
-	}
-	*/
 
 	/* asyncFileからのダウンロード */
 	private CacheBuffer asyncFile;

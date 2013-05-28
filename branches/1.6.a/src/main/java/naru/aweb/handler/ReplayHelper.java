@@ -72,7 +72,7 @@ public class ReplayHelper {
 			return null;
 		}
 		//a.com/path1/path2/file.js�̏ꍇ
-		String replayDocRoot=(String)mapping.getOption("replayDocroot");
+		String replayDocRoot=(String)mapping.getOption(Mapping.OPTION_REPLAY_DOCROOT);
 		File seachRoot=defaultRootDir;
 		if(replayDocRoot!=null){
 			seachRoot=new File(replayDocRoot);

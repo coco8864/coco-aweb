@@ -19,6 +19,7 @@ import naru.async.pool.PoolManager;
 import naru.async.store.Store;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
+import naru.aweb.config.Mapping;
 import naru.aweb.config.Mapping.LogType;
 import naru.aweb.handler.WebSocketHandler;
 import naru.aweb.http.HeaderParser;
@@ -153,7 +154,7 @@ public abstract class WsProtocol extends PoolBase{
 		Set<String> subprotocolSet=(Set<String>)mappingSubprotocol.get(id);
 		if(subprotocolSet==null){
 //			mapping.getMapping().getId();
-			String subprotocol=(String)mapping.getOption("subprotocol");
+			String subprotocol=(String)mapping.getOption(Mapping.OPTION_SUBPROTOCOL);
 			subprotocolSet=new HashSet<String>();
 			if(subprotocol!=null){
 				String[] subprotocols=subprotocol.split(",");

@@ -55,6 +55,29 @@ public class Mapping{
 	public static final String OPTION_LOG_TYPE = "logType";
 	public static final String OPTION_VELOCITY_PATTERN = "velocityPattern";
 	public static final String OPTION_PROXY_PAC_PATH = "proxyPacPath";
+	public static final String OPTION_FILE_WELCOME_FILES = "fileWeblcomeFiles";
+	public static final String OPTION_FILE_LISTING = "fileListing";
+	public static final String OPTION_FILE_RESOURCE_PATH = "resoucePath";
+	public static final String OPTION_VELOCITY_USE = "velocityUse";
+	public static final String OPTION_VELOCITY_RESOUCE_PATH = "velocityResoucePath";
+	public static final String OPTION_VELOCITY_EXTENTIONS = "velocityExtentions";
+	public static final String OPTION_AUTH = "auth";//mappingベースで認証する場合に設定
+	public static final String OPTION_PAC = "pac";//proxy処理をpacに反映する場合、trueを設定する
+	public static final String OPTION_PEEK = "peek";//ssl proxyの動作をする場合、falseを設定
+	public static final String OPTION_PUBLIC_WEB = "publicWeb";//js等固定のコンテンツをダウンロードするURLを計算するため
+	public static final String OPTION_ADMIN_HANDLER = "adminHandler";//adminへのURLを計算するため
+	public static final String OPTION_AUTH_HANDLER = "authHandler";//authHandlerにtureを設定
+	public static final String OPTION_SUBPROTOCOL="subprotocol";
+	public static final String OPTION_SKIP_PH_LOG="skipPhlog";
+	public static final String OPTION_SHORT_FORMAT_LOG="shortFormatLog";
+	public static final String OPTION_INJECTOR="injector";
+	public static final String OPTION_REPLAY="replay";
+	public static final String OPTION_FILTER="filter";
+	public static final String OPTION_REPLAY_DOCROOT="replayDocroot";
+	public static final String OPTION_USE_APPCACHE="useAppcache";
+	public static final String OPTION_APPCACHE_HTML_PATH="appcacheHtml";
+	public static final String OPTION_APPCACHE_MANIFEST_PATH="appcacheManifest";
+	
 	public static Class ADMIN_HANDLER=AdminHandler.class;
 	public static Class SSL_PROXY_HANDLER=SslProxyHandler.class;
 	public static Class VELOCITY_PAGE_HANDLER=VelocityPageHandler.class;
@@ -297,9 +320,9 @@ public class Mapping{
 	@NotPersistent
 	private JSONObject optionsJson=new JSONObject();
 	
-	//Mapping毎にruntimeに使う作業オブジェクトを保持する。mappingResultからgetMappingAttributeで参照する
+	//Mapping毎にoptionsから変換したruntimeに使う作業オブジェクトを保持する。mappingResultからgetOptionで参照する
 	@NotPersistent
-	private Map attribute=new HashMap();
+	private Map optionsObj=new HashMap();
 	
 	@NotPersistent
 	private boolean isSourceMatchEntry;//正規表現でマッチさせるまでdestinationが決まらないEntry
@@ -490,21 +513,31 @@ public class Mapping{
 				isSessionUpdate=false;
 			}
 			setupAllowOrigins(optionsJson.optString("allowOrigins"));
-			if(optionsJson.optBoolean("publicWeb",false)){
+			if(optionsJson.optBoolean(OPTION_PUBLIC_WEB,false)){
 				config.setPublicDocumentRoot(destinationFile);
 			}
-			if(optionsJson.optBoolean("adminHandler",false)){
+			if(optionsJson.optBoolean(OPTION_ADMIN_HANDLER,false)){
 				config.setAdminDocumentRoot(destinationFile);
 			}
-			if(optionsJson.optBoolean("authHandler",false)){
+			if(optionsJson.optBoolean(OPTION_AUTH_HANDLER,false)){
 				config.setAuthDocumentRoot(destinationFile);
 			}
+			
 			String velocityPattern=optionsJson.optString(OPTION_VELOCITY_PATTERN,null);
 			if(velocityPattern==null){
 				velocityPattern=".*\\.vsp$|.*\\.vsf$";
 			}
-			attribute.put(OPTION_VELOCITY_PATTERN,Pattern.compile(velocityPattern));
+			if(!"".equals(velocityPattern)){//空白だったらvelocity拒否
+				optionsObj.put(OPTION_VELOCITY_PATTERN,Pattern.compile(velocityPattern));
+			}
 			
+			String welcomFiles = optionsJson.optString(OPTION_FILE_WELCOME_FILES,null);
+			if (welcomFiles == null) {
+				welcomFiles="index.html,index.htm,index.vsp";
+			}
+			if(!"".equals(welcomFiles)){//空白だったらwelcomFilesなし
+				optionsObj.put(OPTION_FILE_WELCOME_FILES,welcomFiles.split(","));
+			}
 		}
 		rolesList.clear();
 		if(roles!=null && roles.length()!=0){
@@ -706,7 +739,7 @@ public class Mapping{
 	
 	//https　proxy時に処理対象か否かを判定するために使用
 	public boolean isPeekSslProxyServer(String realHostName,ServerParser targetServer){
-		if(Boolean.FALSE.equals(getOption("peek"))){//sslproxyの動作を行いたい場合
+		if(Boolean.FALSE.equals(getOption(OPTION_PEEK))){//sslproxyの動作を行いたい場合
 			return false;//明示的にpeekする事を拒否している場合
 		}
 		if(!"".equals(this.realHostName)&&this.realHostName!=null && !this.realHostName.equals(realHostName)){
@@ -891,16 +924,16 @@ public class Mapping{
 	}
 
 	public Object getOption(String key) {
+		Object attr=optionsObj.get(key);
+		if(attr!=null){
+			return attr;
+		}
 		return optionsJson.opt(key);
 	}
 
 	public void setOption(String key, String value) {
 		optionsJson.put(key, value);
 		setOptions(optionsJson.toString());
-	}
-	
-	public Object getAttribute(String key){
-		return attribute.get(key);
 	}
 	
 	private MappingAuth mappingAuth=null;//mappingベースの認証をする場合
