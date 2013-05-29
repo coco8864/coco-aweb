@@ -331,6 +331,8 @@ public class ProxyFinder {
 
 	/*
 	 * ブラウザに返却するproxyPacを作成
+	 * proxyを提供するサーバとpacを提供するサーバは同じである必要がある。
+	 * mappingが両者同じrealhostをポイントする事が必須
 	 */
 	public String getProxyPac(String localHost) {
 		String pac = phantomPacCash.get(localHost);

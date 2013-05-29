@@ -8,12 +8,14 @@ import java.nio.ByteBuffer;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import naru.async.BufferGetter;
 import naru.async.cache.CacheBuffer;
 import naru.async.cache.FileInfo;
+import naru.aweb.config.AppcacheOption;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping; //import naru.aweb.config.FileCache.FileCacheInfo;
 import naru.aweb.http.HeaderParser;
@@ -35,7 +37,7 @@ import org.apache.log4j.Logger;
 public class FileSystemHandler extends WebServerHandler implements BufferGetter {
 	private static Logger logger = Logger.getLogger(FileSystemHandler.class);
 	private static Config config = null;// Config.getConfig();
-	private static String LISTING_TEMPLATE = "/template/listing.vsp";
+	private static String LISTING_TEMPLATE = "listing.vsp";
 	private static Map<String, String> contentTypeMap = new HashMap<String, String>();
 
 	private static Config getConfig() {
@@ -106,9 +108,19 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		return fileLength;
 	}
 	
+	private boolean checkPac(MappingResult mapping,HeaderParser requestHeader,String path){
+		if(!path.equals(mapping.getOption(Mapping.OPTION_PROXY_PAC_PATH))){
+			return false;
+		}
+		String localHost=requestHeader.getHeader(HeaderParser.HOST_HEADER);
+		String pac=getConfig().getProxyPac(localHost);
+		setContentType("application/x-ns-proxy-autoconfig");
+		completeResponse("200", pac);
+		return true;
+	}
 	
 	/**
-	 * 街頭するファイルがなかった、以下を探す
+	 * 該当するファイルがなかった、以下を探す
 	 * 1)proxy.pac
 	 * 2)phoffline.html
 	 * 3)phoffline.appcache
@@ -116,17 +128,15 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 	 */
 	private void fileNotFound(MappingResult mapping,HeaderParser requestHeader,String path){
 		/* proxy.pacの場合 */
-		if(path.equals(mapping.getOption(Mapping.OPTION_PROXY_PAC_PATH))){
-			String localHost=requestHeader.getHeader(HeaderParser.HOST_HEADER);
-			String pac=getConfig().getProxyPac(localHost);
-			setContentType("text/plain");
-			completeResponse("200", pac);
+		if( checkPac(mapping, requestHeader, path)){
 			return;
 		}
-		if(path.equals(mapping.getOption(Mapping.OPTION_APPCACHE_HTML_PATH))){
-		}
-		boolean useOffline=(Boolean)getAuthSession().getAttribute(Mapping.OPTION_USE_APPCACHE);
-		if(useOffline && path.equals(mapping.getOption(Mapping.OPTION_APPCACHE_MANIFEST_PATH))){
+		/* appcacheの場合 */
+		AppcacheOption appcacheOption=(AppcacheOption)mapping.getOption(Mapping.OPTION_APPCACHE);
+		if(appcacheOption!=null){
+			if(appcacheOption.check(this,path)){
+				return;
+			}
 		}
 		logger.debug("Not found." + path);
 		completeResponse("404", "file not exists");
@@ -165,10 +175,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 			setRequestAttribute("source", null);
 		}
 		setRequestAttribute("fileList", dir.listFiles());
-
-		setRequestAttribute(ATTRIBUTE_VELOCITY_ENGINE,getConfig().getVelocityEngine());
-		setRequestAttribute(ATTRIBUTE_VELOCITY_TEMPLATE,LISTING_TEMPLATE);
-		forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
+		getConfig().forwardVelocityTemplate(this, LISTING_TEMPLATE);
 		return false;// 委譲
 	}
 

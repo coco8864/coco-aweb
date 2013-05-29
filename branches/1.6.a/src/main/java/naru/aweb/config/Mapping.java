@@ -74,9 +74,14 @@ public class Mapping{
 	public static final String OPTION_REPLAY="replay";
 	public static final String OPTION_FILTER="filter";
 	public static final String OPTION_REPLAY_DOCROOT="replayDocroot";
+	/*
 	public static final String OPTION_USE_APPCACHE="useAppcache";
 	public static final String OPTION_APPCACHE_HTML_PATH="appcacheHtml";
 	public static final String OPTION_APPCACHE_MANIFEST_PATH="appcacheManifest";
+	public static final String OPTION_APPCACHE_PATTERN = "appcachePattern";
+	public static final String OPTION_APPCACHE_PATHS = "appcachePaths";
+	*/
+	public static final String OPTION_APPCACHE = "appcache";
 	
 	public static Class ADMIN_HANDLER=AdminHandler.class;
 	public static Class SSL_PROXY_HANDLER=SslProxyHandler.class;
@@ -452,6 +457,7 @@ public class Mapping{
 				return false;
 			}
 			destinationHandlerClass=PROXY_HANDLER;
+			destinationFile=null;
 			break;
 		case HTTPS:
 			destinationServerParser=ServerParser.parse(new ServerParser(),destinationServer,ServerParser.WILD_PORT_NUMBER);
@@ -459,6 +465,7 @@ public class Mapping{
 				return false;
 			}
 			destinationHandlerClass=PROXY_HANDLER;
+			destinationFile=null;
 			break;
 		case FILE:
 			destinationHandlerClass=FILE_SYSTEM_HANDLER;
@@ -537,6 +544,11 @@ public class Mapping{
 			}
 			if(!"".equals(welcomFiles)){//‹ó”’‚¾‚Á‚½‚çwelcomFiles‚È‚µ
 				optionsObj.put(OPTION_FILE_WELCOME_FILES,welcomFiles.split(","));
+			}
+			JSONObject appcacheObj=optionsJson.optJSONObject(OPTION_APPCACHE);
+			if(destinationFile!=null && appcacheObj!=null){
+				AppcacheOption appcacheOption=new AppcacheOption(destinationFile,sourcePath,appcacheObj);
+				optionsObj.put(OPTION_APPCACHE, appcacheOption);
 			}
 		}
 		rolesList.clear();
