@@ -34,6 +34,7 @@ import naru.aweb.auth.Authenticator;
 import naru.aweb.auth.Authorizer;
 import naru.aweb.core.Main;
 import naru.aweb.core.RealHost;
+import naru.aweb.core.ServerBaseHandler;
 import naru.aweb.handler.FilterHelper;
 import naru.aweb.handler.InjectionHelper;
 import naru.aweb.handler.ReplayHelper;
@@ -1276,6 +1277,21 @@ public class Config {
 			}
 		}
 		return velocityEngine;
+	}
+	
+	public void forwardVelocityTemplate(ServerBaseHandler handler,String template){
+		forwardVelocityTemplate(handler, template, null);
+	}
+	
+	public void forwardVelocityTemplate(ServerBaseHandler handler,String template,Map param){
+		if(param!=null){
+			for(Object key:param.keySet()){
+				handler.setRequestAttribute((String)key,param.get(key));
+			}
+		}
+		handler.setRequestAttribute(ServerBaseHandler.ATTRIBUTE_VELOCITY_ENGINE,getVelocityEngine());
+		handler.setRequestAttribute(ServerBaseHandler.ATTRIBUTE_VELOCITY_TEMPLATE,"/template/" +template);
+		handler.forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
 	}
 	
 	private  Configuration contentTypeConfig = null;

@@ -10,7 +10,6 @@ import java.util.TreeSet;
 import javax.jdo.Extent;
 import javax.jdo.PersistenceManager;
 
-import naru.aweb.admin.AdminHandler;
 import naru.aweb.auth.AuthHandler;
 import naru.aweb.auth.Authorizer;
 import naru.aweb.auth.MappingAuth;
@@ -40,22 +39,16 @@ public class Mapper {
 	private Set<Mapping> entryMappings=new HashSet<Mapping>();
 	private Set<Mapping> activeMappings=new TreeSet<Mapping>(Mapping.mappingComparator);
 	private Set<Mapping> activeSslProxyMappings=new TreeSet<Mapping>(Mapping.mappingComparator);
-//	private Mapping authMapping;
-	
+	/*
 	private Set<Mapping> activeWebMappings=new TreeSet<Mapping>(Mapping.mappingComparator);
 	private Set<Mapping> activeProxyMappings=new TreeSet<Mapping>(Mapping.mappingComparator);
 	private Set<Mapping> activeWsMappings=new TreeSet<Mapping>(Mapping.mappingComparator);
 	private Set<Mapping> activePeekSslProxyMappings=new TreeSet<Mapping>(Mapping.mappingComparator);
+	*/
 	
 	//pacから利用
 	private Set<String> securePhantomDomains=new HashSet<String>();
 	private Set<String> httpPhantomDomains=new HashSet<String>();
-//	private RealHost proxyPacRealHost;//pacに出力する自サーバ情報
-
-//	private RealHost adminRealHost;
-//	private boolean isAdminSsl;
-//	private RealHost publicWebRealHost;
-//	private boolean isPublicWebSsl;
 	private Mapping authMapping=null;//認証用mapping
 	private String publicWebUrl;
 	private String adminUrl;
@@ -202,7 +195,7 @@ public class Mapper {
 				break;
 			}
 			break;
-		case WEB:
+		default:
 		}
 	}
 	

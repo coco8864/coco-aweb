@@ -39,7 +39,7 @@ import org.apache.log4j.Logger;
 public class PaHandler extends WebSocketHandler implements Timer{
 	private static final String PA_SESSIONS_KEY = "PaSessions";
 	private static final String XHR_FRAME_PATH = "/!xhrPaFrame";
-	private static final String XHR_FRAME_TEMPLATE = "/template/xhrPaFrame.vsp";
+	private static final String XHR_FRAME_TEMPLATE = "xhrPaFrame.vsp";
 	private static final String XHR_POLLING_PATH="/!xhrPolling";
 	private static final String DOWNLOAD_PATH="/!paDownload";
 	private static final String UPLOAD_PATH="/!paUpload";
@@ -365,9 +365,7 @@ public class PaHandler extends WebSocketHandler implements Timer{
 		MappingResult mapping=getRequestMapping();
 		String path=mapping.getResolvePath();
 		if(path.equals(XHR_FRAME_PATH)){//xhr frameÇÃóvãÅ
-			setRequestAttribute(ATTRIBUTE_VELOCITY_ENGINE,config.getVelocityEngine());
-			setRequestAttribute(ATTRIBUTE_VELOCITY_TEMPLATE,XHR_FRAME_TEMPLATE);
-			forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
+			config.forwardVelocityTemplate(this, XHR_FRAME_TEMPLATE);
 			return;
 		}else if(path.equals(XHR_POLLING_PATH)){//xhr frameÇ©ÇÁÇÃpolling
 			pooling(parameter);

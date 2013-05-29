@@ -15,6 +15,7 @@ import naru.aweb.http.RequestContext;
 import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.MappingResult;
 
+import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
