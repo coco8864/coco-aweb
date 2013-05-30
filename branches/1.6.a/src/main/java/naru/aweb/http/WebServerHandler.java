@@ -71,6 +71,7 @@ public class WebServerHandler extends ServerBaseHandler {
 	
 
 	public void recycle() {
+		logger.debug("#recycle :"+hashCode());
 		requestContentLength = requestReadBody = 0;
 		responseWriteBody = responseHeaderLength = responseWriteBodyApl = responseContentLengthApl = 0;
 		responseHeader.recycle();
@@ -356,6 +357,7 @@ public class WebServerHandler extends ServerBaseHandler {
 	// TODO keepAliveでfowardした後responseEndが呼び出される事がある。
 	// handlerが初期化されているので、判定する方法がない。
 	public void responseEnd() {
+		logger.debug("#responseEnd isResponseEnd:"+isResponseEnd +":cid:"+getChannelId()+":"+hashCode());
 		SpdySession spdySession=getSpdySession();
 		synchronized (this) {
 			if(isResponseEnd){

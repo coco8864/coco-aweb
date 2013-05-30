@@ -1,7 +1,9 @@
 CACHE MANIFEST
 #comment
 CACHE:
-
+#foreach($file in $cachePaths)
+${file}
+#end
 NETWORK:
 *
 
