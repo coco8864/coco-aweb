@@ -55,5 +55,5 @@ document.write(dateText);
 </tr>
 #end
 </table>
-<HR size="1" noshade="noshade"><h3>Phantom Proxy</h3></body>
+<HR size="1" noshade="noshade"><h3>Phantom Server</h3></body>
 </html>

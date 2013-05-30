@@ -10,6 +10,8 @@ import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 
+import naru.aweb.http.Cookie;
+import naru.aweb.http.HeaderParser;
 import naru.aweb.http.WebServerHandler;
 import net.sf.json.JSONObject;
 
@@ -27,6 +29,7 @@ public class AppcacheOption {
 	
 	private boolean enabled=false;
 	private String manifestPath;
+	private String manifestAbsPath;
 	private String cacheHtmlPath;
 	private File destinationFile;
 	private String sourcePath;
@@ -40,6 +43,12 @@ public class AppcacheOption {
 		this.manifestPath=options.optString("manifestPath",DEFAULT_MANIFEST_PATH);
 		this.cacheHtmlPath=options.optString("cacheHtmlPath",DEFAULT_CACHE_HTML_PATH);
 		this.cacheFilePattern=options.optString("cacheFilePattern",DEFAULT_CACHE_FILE_PATTERN);
+		
+		if("/".equals(sourcePath)){
+			manifestAbsPath=manifestPath;
+		}else{
+			manifestAbsPath=sourcePath+manifestPath;
+		}
 		setup();
 	}
 	
@@ -57,7 +66,12 @@ public class AppcacheOption {
 			if(!filePath.startsWith("/")){
 				filePath="/"+filePath;
 			}
-			String path=sourcePath + filePath;
+			String path=null;
+			if("/".equals(sourcePath)){
+				path=filePath;
+			}else{
+				path=sourcePath + filePath;
+			}
 			cachePaths.add(path);
 		}
 	}
@@ -76,19 +90,19 @@ public class AppcacheOption {
 		}
 	}
 	
-	private void checkAppcacheManifest(WebServerHandler handler){
-		if(Boolean.FALSE.equals(handler.getAuthSession().getAttribute("useAppcache"))){
+	private void checkAppcacheManifest(WebServerHandler handler,boolean useAppcache){
+		if(!useAppcache){
 			handler.completeResponse("404", "file not exists");
 		}else{
-			//TODO
-			handler.setRequestAttribute("cachePaths", cachePaths);
-			config.forwardVelocityTemplate(handler, "phoffline.appcahce");
+			forwardAppcacheTemplate(handler, useAppcache, "phoffline.appcache");
 		}
 	}
 	
-	private void checkAppcacheHtml(WebServerHandler handler){
-		//TODO
-		config.forwardVelocityTemplate(handler, "phoffline.html");
+	private void forwardAppcacheTemplate(WebServerHandler handler,boolean useAppcache,String template){
+		handler.setRequestAttribute("manifest", manifestAbsPath);
+		handler.setRequestAttribute("useAppcache", useAppcache);
+		handler.setRequestAttribute("cachePaths", cachePaths);
+		config.forwardVelocityTemplate(handler,template);
 	}
 	
 	/**
@@ -101,12 +115,15 @@ public class AppcacheOption {
 		if(!enabled){
 			return false;
 		}
+		String cookie=handler.getRequestHeader().getHeader(HeaderParser.COOKIE_HEADER);
+		String phappcache=Cookie.parseHeader(cookie, "phappcache", null);
+		boolean useAppcache=!"off".equals(phappcache);
 		if(path.equals(manifestPath)){
-			checkAppcacheManifest(handler);
+			checkAppcacheManifest(handler,useAppcache);
 			return true;
 		}
 		if(path.equals(cacheHtmlPath)){
-			checkAppcacheHtml(handler);
+			forwardAppcacheTemplate(handler,useAppcache,"phoffline.html");
 			return true;
 		}
 		return false;

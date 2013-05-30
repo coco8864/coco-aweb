@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html #if( $useAppcache )manifest="$esc.html($manifest)"#end>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta charset="UTF-8" /> 
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Pragma" content="no-cache"> 
+<meta http-equiv="Cache-Control" content="no-cache"> 
+<meta http-equiv="Expires" content="0"> 
+<title>appcache controle</title>
+<STYLE><!--H1 {font-family:Tahoma,Arial,sans-serif;color:white;background-color:#525D76;font-size:22px;} H2 {font-family:Tahoma,Arial,sans-serif;color:white;background-color:#525D76;font-size:16px;} H3 {font-family:Tahoma,Arial,sans-serif;color:white;background-color:#525D76;font-size:14px;} BODY {font-family:Tahoma,Arial,sans-serif;color:black;background-color:white;} B {font-family:Tahoma,Arial,sans-serif;color:white;background-color:#525D76;} P {font-family:Tahoma,Arial,sans-serif;background:white;color:black;font-size:12px;}A {color : black;}A.name {color : black;}HR {color : #525D76;}--></STYLE>
+<script>
+function appcache(flg){
+ if(flg){
+  document.cookie='phappcache=on';
+ }else{
+  document.cookie='phappcache=off';
+ }
+ location.reload();
+}
+
+function calcStatus(){
+ var appCache = window.applicationCache;
+ if(!appCache){
+   return "Not supported"
+ }
+ switch (appCache.status) {
+  case appCache.UNCACHED: // UNCACHED == 0
+   return 'UNCACHED';
+ case appCache.IDLE: // IDLE == 1
+  return 'IDLE';
+ case appCache.CHECKING: // CHECKING == 2
+  return 'CHECKING';
+ case appCache.DOWNLOADING: // DOWNLOADING == 3
+  return 'DOWNLOADING';
+ case appCache.UPDATEREADY:  // UPDATEREADY == 4
+  return 'UPDATEREADY';
+ case appCache.OBSOLETE: // OBSOLETE == 5
+  return 'OBSOLETE';
+ default:
+  return 'UKNOWN CACHE STATUS';
+ }
+}
+
+var appCashStatus="Not supported";
+function status(e){
+ appCashStatus=calcStatus();
+ var statusNode=document.getElementById("status");
+ statusNode.innerHTML='status:'+appCashStatus;
+}
+
+if (window.applicationCache) {
+  var appCache = window.applicationCache;
+   appCache.addEventListener('error', status, false);
+   appCache.addEventListener('checking', status, false);
+   appCache.addEventListener('noupdate', status, false);
+   appCache.addEventListener('downloading', status, false);
+   appCache.addEventListener('progress', status, false);
+   appCache.addEventListener('updateready', status, false);
+   appCache.addEventListener('cached', status, false);
+   appCache.addEventListener('obsolete', status, false);
+}
+
+function addLoadEvent(func){
+ var oldonload = window.onload;
+ if(typeof window.onload != 'function'){
+  window.onload = func;
+ }else{
+  window.onload = function(){
+   oldonload();
+   func();
+  }
+ }
+}
+
+addLoadEvent(status);
+</script>
+</head>
+<body><h1>phantom appcache controle</h1><HR size="1" noshade="noshade">
+<ul>
+<li>useAppcache:$!useAppcache</li>
+<li>manifest:$!manifest</li>
+<li id='status'>...</li>
+<li onclick="appcache(true);">on</li>
+<li onclick="appcache(false);">off</li>
+</ul>
+<table width="100%" cellspacing="0" cellpadding="5" align="center">
+<tr>
+<td align="left"><font size="+1"><strong>cache contents</strong></font></td>
+</tr>
+#foreach($file in $cachePaths)
+#if( ($velocityCount%2==1) )
+<tr>
+#else
+<tr bgcolor="#eeeeee">
+#end
+<td align="left">&nbsp;&nbsp;
+<a href="$esc.html(${file})"><tt>$esc.html(${file})</tt></a></td>
+</tr>
+#end
+</table>
+<HR size="1" noshade="noshade"><h3>Phantom Server</h3></body>
+</html>

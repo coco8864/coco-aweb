@@ -8,7 +8,6 @@ import java.nio.ByteBuffer;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -126,23 +125,25 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 	 * 3)phoffline.appcache
 	 * @param path
 	 */
-	private void fileNotFound(MappingResult mapping,HeaderParser requestHeader,String path){
+	private boolean fileNotFound(MappingResult mapping,HeaderParser requestHeader,String path){
 		/* proxy.pacÇÃèÍçá */
 		if( checkPac(mapping, requestHeader, path)){
-			return;
+			return true;
 		}
 		/* appcacheÇÃèÍçá */
 		AppcacheOption appcacheOption=(AppcacheOption)mapping.getOption(Mapping.OPTION_APPCACHE);
 		if(appcacheOption!=null){
 			if(appcacheOption.check(this,path)){
-				return;
+				return false;
 			}
 		}
 		logger.debug("Not found." + path);
 		completeResponse("404", "file not exists");
+		return true;
 	}
 
 	private void responseBodyFromFile(CacheBuffer asyncFile) {
+		logger.debug("FileSystemHandler#responseBodyFromFile cid:"+getChannelId()+":"+asyncFile.getFileInfo().getCanonicalFile().toString());
 		Long offset = (Long) getRequestAttribute(ATTRIBUTE_STORE_OFFSET);
 		if (offset != null) {
 			asyncFile.position(offset);
@@ -253,6 +254,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 	}
 	
 	private boolean response() {
+		logger.debug("FileSystemHandler#response cid:"+getChannelId());
 		HeaderParser requestHeader = getRequestHeader();
 		String ifModifiedSince = requestHeader.getHeader(HeaderParser.IF_MODIFIED_SINCE_HEADER);
 		String selfPath = requestHeader.getRequestUri();
@@ -288,14 +290,6 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		if (pos >= 0) {
 			path = path.substring(0, pos);
 		}
-		/*
-		if(isTemplateContents(path)){
-			setRequestAttribute(ATTRIBUTE_VELOCITY_ENGINE,getConfig().getVelocityEngine());
-			setRequestAttribute(ATTRIBUTE_VELOCITY_TEMPLATE,"/template" +path);
-			forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
-			return false;
-		}
-		*/
 		File baseDirectory = mapping.getDestinationFile();
 		CacheBuffer asyncFile = CacheBuffer.open(new File(baseDirectory, path));
 		FileInfo info = asyncFile.getFileInfo();
@@ -312,8 +306,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 			// return true;
 		} else if (!info.exists() || !info.canRead()) {
 			asyncFile.close();
-			fileNotFound(mapping,requestHeader,path);
-			return true;
+			return fileNotFound(mapping,requestHeader,path);
 		}
 		// welcomefileèàóù
 		String[] welcomeFiles = (String[])mapping.getOption(Mapping.OPTION_FILE_WELCOME_FILES);
@@ -382,6 +375,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 	}
 
 	public void onBufferEnd(Object userContext) {
+		logger.debug("#onBufferEnd.cid:" + getChannelId());
 		responseEnd();
 	}
 
