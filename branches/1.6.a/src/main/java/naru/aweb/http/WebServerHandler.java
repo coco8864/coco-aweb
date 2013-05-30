@@ -372,7 +372,6 @@ public class WebServerHandler extends ServerBaseHandler {
 				return;
 			}
 			logger.debug("responseEnd called.handler:" + toString());
-			isResponseEnd = true;
 			if (isFlushFirstResponse == false) {
 				flushFirstResponse(null);
 				isFlushFirstResponse = true;
