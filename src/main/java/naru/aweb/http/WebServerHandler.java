@@ -592,6 +592,13 @@ public class WebServerHandler extends ServerBaseHandler {
 		}
 		// bodyWriteCount++;
 		long length = BuffersUtil.remaining(buffers);
+/*
+ * IE10でVelocityを経由したときだけ以下のエラーがデバッグコンソールにでる。
+ * HTML1405: 無効な文字: U+0000 NULL。NULL 文字は使用できません。
+ * HTML1507: 予期しない文字: U+0000 NULL。NULL 文字は使用できません。 
+ * リロードした時だけ,表示に問題はなさそう
+ */
+//		BuffersUtil.hexDump("WebServerHandler#internalWriteBody",buffers);
 		if (asyncWrite(writeContext, buffers)) {
 			responseWriteBody += length;
 			return true;

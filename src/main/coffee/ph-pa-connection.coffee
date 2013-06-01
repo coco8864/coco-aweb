@@ -19,6 +19,9 @@ class Connection extends ph.EventModule
     @_loginId=auth.loginId
     @_appSid=auth.appSid
     @ppStorage=new PrivateSessionStorage(@httpUrl,@_auth)
+    @_token=auth.token
+    @trigger(ph.pa.RESULT_SUCCESS,'auth',@)#success to auth
+    @trigger('auth',@)#success to auth
     if @_storageScope
       @_initStorage=@storage(@_storageScope)
 ##unloadŽž‚ÉsessionStrage‚É•Û‘¶
@@ -28,9 +31,11 @@ class Connection extends ph.EventModule
         @apStorage?._unload()
         @alStorage?._unload()
       )
-    @_token=auth.token
-    @trigger(ph.pa.RESULT_SUCCESS,'auth',@)#success to auth
-    @trigger('auth',@)#success to auth
+    if @ppStorage.status!='load'
+      @ppStorage.on('dataLoad',@_loadStorage)
+    else
+      @_loadStorage()
+  _loadStorage:=>
     if @isWs
       @_openWebSocket()
     else
