@@ -6,7 +6,8 @@
 <meta http-equiv="Pragma" content="no-cache"> 
 <meta http-equiv="Cache-Control" content="no-cache"> 
 <meta http-equiv="Expires" content="0"> 
-<script type="text/javascript" src="/pub/js/ph-loader.js?ph=ph"></script>
+<script type="text/javascript" src="/pub/js/jquery-1.8.3.min.js"></script>
+<script type="text/javascript" src="/pub/js/ph-json2.js"></script>
 <script type="text/javascript" src="/pub/js/aes.js"></script>
 <script  type="text/javascript"><!--
 ##親frameのlocation.href
@@ -48,7 +49,7 @@ function onRequest(ev){
       }
       response(req);
     }else if(req.type==="logout"){
-      ph.jQuery.ajax({
+      jQuery.ajax({
         type:'GET',
         url:'ajaxLogout',
         dataType:'json',
@@ -68,12 +69,16 @@ function response(msg){
   parent.postMessage(jsonMsg,parentOrigin);
 }
 
-ph.jQuery(function(){
+jQuery(function(){
   parentOrigin=decodeURIComponent(location.search.substring('?origin='.length));
   if(parentOrigin=='file://'){
     parentOrigin='*';
   }
-  ph.event.on('message',onRequest);
+  if(window.addEventListener){
+    window.addEventListener('message',onRequest, false);
+  }else if(window.attachEvent){
+    window.attachEvent('onmessage',onRequest);
+  }
 
   var offlineInfo={};
   var offlineInfoText=localStorage.getItem(OFFLINE_KEY);
