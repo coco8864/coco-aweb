@@ -234,10 +234,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 				return;//replayできた,bodyは消費されている
 			}
 		}
-		if (response()) {
-			responseEnd();// TODO必要ないと思う
-			return;
-		}
+		response();//復帰値は処理に関係しない
 	}
 
 	private CacheBuffer welcomPage(File dir,String[] welcomlist){
