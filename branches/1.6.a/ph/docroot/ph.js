@@ -11,13 +11,13 @@ window.ph={
  adminUrl:'$esc.javascript(${config.adminUrl})',
  publicWebUrl:'$esc.javascript(${config.publicWebUrl})',
  scriptBase:'',
- scripts:['jquery-1.8.3.min.js','ph-jqnoconflict.js','ph-json2.js'],
- appScripts:['ph-event.js','ph-auth.js','ph-pa.js'],
+ scripts:['jquery-1.8.3.min.js','ph-jqnoconflict.js','ph-json2.js','ph-event.js','ph-auth.js','ph-pa.js'],
  useWebSocket:false,## WebSocketを使うか否か?
  useSessionStorage:false,## SessionStorageを使うか否か?
  useCrossDomain:false,## iframeを使ったクロスドメイン通信を使うか否か?
  useHashChange:false,
  useBlobBuilder:false,
+ useAppCache:false,
  createBlob:function(data){
   if(Blob){
    return new Blob(data);
@@ -182,14 +182,15 @@ if(typeof window.BlobBuilder==='undefined'){
  }
 }
 
+ph.useAppCache=true;
+if(typeof window.applicationCache==='undefined'){
+ ph.useAppCache=false;
+}
+
 if(ph.isSsl){
  ph.scriptBase='https://';
 }else{
  ph.scriptBase='http://';
-}
-
-for(var i=0;i<ph.appScripts.length;i++){
- ph.scripts.push(ph.appScripts[i]);
 }
 
 ph.scriptBase+=ph.hostHeader +'/pub/js/';
@@ -201,6 +202,25 @@ for(var i=0;i<ph.scripts.length;i++){
  }
  document.write(script + '" charset="utf-8"');
  document.write('></' + 'script>');
+}
+
+function phLoad(){
+ ph.jQuery.ajax({
+  type: 'GET',
+  url: '/ph.json',
+  dataType:'json',
+  success: function(json){
+   for(key in json){
+    ph[key]=json[key]
+   }
+  },
+  error: function(xhr){alert('error');}
+ })
+}
+if (window.addEventListener){## W3C standard
+  window.addEventListener('load', phLoad, false); // NB **not** 'onload'
+}else if (window.attachEvent){## Microsoft
+  window.attachEvent('onload', phLoad);
 }
 
 })();

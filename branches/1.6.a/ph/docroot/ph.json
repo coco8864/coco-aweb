@@ -1,0 +1,15 @@
+##設定情報をjson形式で提供
+{
+"version":"$esc.javascript(${config.getString("phantomVersion")})",
+"isSsl":$esc.javascript(${handler.isSsl()}),
+"domain":"$esc.javascript(${handler.getLocalIp()}):$esc.javascript(${handler.getLocalPort()})",
+## hostHeader:'$esc.javascript(${handler.getRequestHeader().getServer()})',
+"authUrl":"$esc.javascript(${config.authUrl})",
+"adminUrl":"$esc.javascript(${config.adminUrl})",
+"publicWebUrl":"$esc.javascript(${config.publicWebUrl})",
+"websocketSpec":"$esc.javascript(${config.getString("websocketSpecs")})",
+"isSpdyAvailable":${config.getSpsyConfig().spdyAvailable},
+"spdyProtocols":"$esc.javascript(${config.getSpsyConfig().spdyProtocols})",
+"spdyInfo":"$esc.javascript(${handler.getSpdySession().spdyInfo()})",
+"cid":${handler.channelId}
+}
