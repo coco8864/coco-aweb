@@ -90,15 +90,23 @@ public class AppcacheOption {
 		}
 	}
 	
-	private void checkAppcacheManifest(WebServerHandler handler,boolean useAppcache){
-		if(!useAppcache){
+	private void checkAppcacheManifest(WebServerHandler handler,String phappcache){
+		if("unused".equals(phappcache)){
 			handler.completeResponse("404", "file not exists");
 		}else{
-			forwardAppcacheTemplate(handler, useAppcache, "phoffline.appcache");
+			forwardAppcacheTemplate(handler, phappcache, "phoffline.appcache");
 		}
 	}
 	
-	private void forwardAppcacheTemplate(WebServerHandler handler,boolean useAppcache,String template){
+	private static List<String> NON_PATHS=new ArrayList<String>();
+	
+	private void forwardAppcacheTemplate(WebServerHandler handler,String phappcache,String template){
+		boolean useAppcache=!"unused".equals(phappcache);
+		boolean off="off".equals(phappcache);
+		List<String> cachePaths=NON_PATHS;
+		if(useAppcache && off==false ){
+			cachePaths=this.cachePaths;
+		}
 		handler.setRequestAttribute("manifest", manifestAbsPath);
 		handler.setRequestAttribute("useAppcache", useAppcache);
 		handler.setRequestAttribute("cachePaths", cachePaths);
@@ -107,6 +115,12 @@ public class AppcacheOption {
 	
 	/**
 	 * パラメタが冗長だが早く計算するため
+	 * モードは、on/off/clean/refreshの4つ
+	 * on:一般コンテンツでofflineを利用
+	 * off:一般コンテンツでは利用しない
+	 * clean:offline機能自身を利用しない（隠し）
+	 * refresh:コンテンツを取り直してonと同じ(admin roleだけに許可)（隠し）TODO roleがとれない
+	 * 
 	 * @param handler
 	 * @param path
 	 * @return
@@ -117,13 +131,13 @@ public class AppcacheOption {
 		}
 		String cookie=handler.getRequestHeader().getHeader(HeaderParser.COOKIE_HEADER);
 		String phappcache=Cookie.parseHeader(cookie, "phappcache", null);
-		boolean useAppcache=!"off".equals(phappcache);
+//		boolean useAppcache=!"clean".equals(phappcache);
 		if(path.equals(manifestPath)){
-			checkAppcacheManifest(handler,useAppcache);
+			checkAppcacheManifest(handler,phappcache);
 			return true;
 		}
 		if(path.equals(cacheHtmlPath)){
-			forwardAppcacheTemplate(handler,useAppcache,"phoffline.html");
+			forwardAppcacheTemplate(handler,phappcache,"phoffline.html");
 			return true;
 		}
 		return false;

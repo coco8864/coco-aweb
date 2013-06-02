@@ -13,7 +13,9 @@ function appcache(flg){
  }else{
   document.cookie='phappcache=off';
  }
- location.reload();
+ var appCache = window.applicationCache;
+ appCache.update();
+//location.reload();
 }
 
 function calcStatus(){
