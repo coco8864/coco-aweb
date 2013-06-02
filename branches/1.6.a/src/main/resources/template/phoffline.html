@@ -4,9 +4,6 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta charset="UTF-8" /> 
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta http-equiv="Pragma" content="no-cache"> 
-<meta http-equiv="Cache-Control" content="no-cache"> 
-<meta http-equiv="Expires" content="0"> 
 <title>appcache controle</title>
 <STYLE><!--H1 {font-family:Tahoma,Arial,sans-serif;color:white;background-color:#525D76;font-size:22px;} H2 {font-family:Tahoma,Arial,sans-serif;color:white;background-color:#525D76;font-size:16px;} H3 {font-family:Tahoma,Arial,sans-serif;color:white;background-color:#525D76;font-size:14px;} BODY {font-family:Tahoma,Arial,sans-serif;color:black;background-color:white;} B {font-family:Tahoma,Arial,sans-serif;color:white;background-color:#525D76;} P {font-family:Tahoma,Arial,sans-serif;background:white;color:black;font-size:12px;}A {color : black;}A.name {color : black;}HR {color : #525D76;}--></STYLE>
 <script>
@@ -25,7 +22,7 @@ function calcStatus(){
    return "Not supported"
  }
  switch (appCache.status) {
-  case appCache.UNCACHED: // UNCACHED == 0
+ case appCache.UNCACHED: // UNCACHED == 0
    return 'UNCACHED';
  case appCache.IDLE: // IDLE == 1
   return 'IDLE';
@@ -42,23 +39,38 @@ function calcStatus(){
  }
 }
 
-var appCashStatus="Not supported";
-function status(e){
+function onError(){
  appCashStatus=calcStatus();
- var statusNode=document.getElementById("status");
- statusNode.innerHTML='status:'+appCashStatus;
+ var statusNode=document.getElementById("cacheStatus");
+ statusNode.innerHTML='error occured.cacheStatus:'+appCashStatus;
 }
+
+var appCashStatus="Not supported";
+function onStatusChange(e){
+ appCashStatus=calcStatus();
+ var statusNode=document.getElementById("cacheStatus");
+ statusNode.innerHTML='cacheStatus:'+appCashStatus;
+}
+
+function onOnlineChange(e){
+ appCashStatus=calcStatus();
+ var statusNode=document.getElementById("onLineStatus");
+ statusNode.innerHTML='onLineStatus:'+window.navigator.onLine;
+}
+
 
 if (window.applicationCache) {
   var appCache = window.applicationCache;
-   appCache.addEventListener('error', status, false);
-   appCache.addEventListener('checking', status, false);
-   appCache.addEventListener('noupdate', status, false);
-   appCache.addEventListener('downloading', status, false);
-   appCache.addEventListener('progress', status, false);
-   appCache.addEventListener('updateready', status, false);
-   appCache.addEventListener('cached', status, false);
-   appCache.addEventListener('obsolete', status, false);
+   appCache.addEventListener('error', onError, false);
+   appCache.addEventListener('checking', onStatusChange, false);
+   appCache.addEventListener('noupdate', onStatusChange, false);
+   appCache.addEventListener('downloading', onStatusChange, false);
+   appCache.addEventListener('progress', onStatusChange, false);
+   appCache.addEventListener('updateready', onStatusChange, false);
+   appCache.addEventListener('cached', onStatusChange, false);
+   appCache.addEventListener('obsolete', onStatusChange, false);
+   window.addEventListener('online', onOnlineChange, false);
+   window.addEventListener('offline', onOnlineChange, false);
 }
 
 function addLoadEvent(func){
@@ -72,15 +84,16 @@ function addLoadEvent(func){
   }
  }
 }
-
-addLoadEvent(status);
+addLoadEvent(onStatusChange);
+addLoadEvent(onOnlineChange);
 </script>
 </head>
 <body><h1>phantom appcache controle</h1><HR size="1" noshade="noshade">
 <ul>
 <li>useAppcache:$!useAppcache</li>
 <li>manifest:$!manifest</li>
-<li id='status'>...</li>
+<li id='cacheStatus'>...</li>
+<li id='onLineStatus'>...</li>
 <li onclick="appcache(true);">on</li>
 <li onclick="appcache(false);">off</li>
 </ul>
