@@ -131,7 +131,7 @@ jQuery(function(){
 // --></script>
 </head>
 <body>
-<h1>PA offline logon</h1>
+<h1>Phantom offline logon</h1>
 <div>user:<input name=userid></div>
 <div>offline password:<input type='password' name=userid></div>
 <div><input type='button' value='logon' onclick='parent.postMessage("hideFrame",parentOrigin)'></div>

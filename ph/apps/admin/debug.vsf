@@ -37,7 +37,7 @@ function updateDebugTrace(debugTrace){
 			}
 		);
 	}else{
-		ph.jQuery("#debugTraceBt").val('停止');
+		ph.jQuery("#debugTraceBt").val('停止中');
 		ph.jQuery("#debugTraceBt").unbind();
 		ph.jQuery("#debugTraceBt").bind('click',function(){
 			ph.admin.doCommand('debugTrace',{debugTrace:true},updateDebugTrace);
