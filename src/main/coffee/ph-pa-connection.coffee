@@ -220,7 +220,7 @@ class Connection extends ph.EventModule
       @__onClose(msg)
     else if msg.type==ph.pa.TYPE_DOWNLOAD
       ph.log('download.msg.key:'+msg.key)
-      form=ph.jQuery("<form method='POST' target='#{@_downloadFrameName}' action='#{@httpUrl}/!paDownload'>" +
+      form=ph.jQuery("<form method='POST' target='#{@_downloadFrameName}' action='#{@httpUrl}/~paDownload'>" +
          "<input type='hidden' name='bid' value='#{@_getBid()}'/>" +
          "<input type='hidden' name='token' value='#{@_token}'/>" +
          "<input type='hidden' name='key' value='#{msg.key}'/>" +
