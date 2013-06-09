@@ -33,7 +33,7 @@ class PhAuth
     @_call()
     return
   _call:->
-    if @_processAuth!=null || @_authQueue.length==0 || @_loading==true
+    if @_processAuth!=null || @_authQueue.length==0
       return
     auth=@_authQueue.pop()
     @_processAuth=auth
@@ -70,11 +70,7 @@ class PhAuth
       "name='#{@_authFrameName}' >"+
       "</iframe>")
     ph.jQuery("body").append(@_frame)
-    @_loading=true
     return
-  _loaded:->
-    @_loading=false
-    @_call()
   _onMessage:(ev)=>
     if !@_frame || ev.source!=@_frame[0].contentWindow
       return
@@ -115,6 +111,9 @@ class PhAuth
 #  3)primaryは認証未=>このメソッドは復帰せず認証画面に遷移
 #  */
   auth:(aplUrl,cb)->
+    if ph.loading
+      ph.event.on('phload',->ph.auth.auth(aplUrl.cb))
+      return
     aplUrl.match(@_urlPtn)
     protocol=RegExp.$1
     authDomain=RegExp.$2
