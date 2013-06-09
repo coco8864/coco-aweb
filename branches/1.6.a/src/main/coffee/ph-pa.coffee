@@ -45,7 +45,7 @@ window.ph.pa={
   _DEFAULT_SUB_ID:'@'
   _DOWNLOAD_FRAME_NAME_PREFIX:'__pa_dl_'
   _XHR_FRAME_NAME_PREFIX:'__pa_xhr_' #xhrPaFrame.vsp‚É“¯‚¶’è‹`‚ ‚è
-  _XHR_FRAME_URL:'/!xhrPaFrame'
+  _XHR_FRAME_URL:'/~xhrPaFrame'
   _connections:{} #key:url value:{deferred:dfd,promise:prm}
   connect:(url,conCb)->
     httpUrl=null

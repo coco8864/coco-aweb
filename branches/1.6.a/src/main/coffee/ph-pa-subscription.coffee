@@ -16,7 +16,7 @@ class Subscription extends ph.EventModule
       throw 'not form tag id'
     form.attr("method","POST")
     form.attr("enctype","multipart/form-data")
-    form.attr("action","#{@_con.httpUrl}/!paUpload")
+    form.attr("action","#{@_con.httpUrl}/~paUpload")
     form.attr("target","#{@_con._downloadFrameName}")
     bidInput=ph.jQuery("<input type='hidden' name='bid' value='#{@_con._getBid()}'/>")
     tokenInput=ph.jQuery("<input type='hidden' name='token' value='#{@_con._token}'/>")

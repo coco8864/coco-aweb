@@ -22,8 +22,8 @@ import net.sf.json.JSONObject;
  */
 public class AppcacheOption {
 	private static final String DEFAULT_CACHE_FILE_PATTERN=".*\\.html$|.*\\.htm$|.*\\.css$|.*\\.js$|.*\\.jpg$|.*\\.png$|.*\\.gif$";
-	private static final String DEFAULT_MANIFEST_PATH="/phoffline.appcache";
-	private static final String DEFAULT_CACHE_HTML_PATH="/phoffline.html";
+	private static final String DEFAULT_MANIFEST_PATH="/~ph.appcache";
+	private static final String DEFAULT_CACHE_HTML_PATH="/~ph.html";
 	private static Logger logger = Logger.getLogger(AppcacheOption.class);
 	private static Config config = Config.getConfig();
 	
@@ -94,7 +94,7 @@ public class AppcacheOption {
 		if("unused".equals(phappcache)){
 			handler.completeResponse("404", "file not exists");
 		}else{
-			forwardAppcacheTemplate(handler, phappcache, "phoffline.appcache");
+			forwardAppcacheTemplate(handler, phappcache, "~ph.appcache");
 		}
 	}
 	
@@ -137,7 +137,7 @@ public class AppcacheOption {
 			return true;
 		}
 		if(path.equals(cacheHtmlPath)){
-			forwardAppcacheTemplate(handler,phappcache,"phoffline.html");
+			forwardAppcacheTemplate(handler,phappcache,"~ph.html");
 			return true;
 		}
 		return false;
