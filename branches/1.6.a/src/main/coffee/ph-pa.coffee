@@ -48,6 +48,9 @@ window.ph.pa={
   _XHR_FRAME_URL:'/~xhrPaFrame'
   _connections:{} #key:url value:{deferred:dfd,promise:prm}
   connect:(url,conCb)->
+    if ph.loading
+      ph.event.on('phload',->ph.pa.connect(url.conCb))
+      return
     httpUrl=null
     if url.lastIndexOf('ws://',0)==0||url.lastIndexOf('wss://',0)==0
       httpUrl='http' + url.substring(2)
