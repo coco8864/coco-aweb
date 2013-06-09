@@ -18,6 +18,7 @@ window.ph={
  useHashChange:false,
  useBlobBuilder:false,
  useAppCache:false,
+ loading:true,
  createBlob:function(data){
   if(Blob){
    return new Blob(data);
@@ -218,7 +219,8 @@ function phLoad(){
    }else{
     ph.useWebSocket=false;
    }
-   ph.auth._loaded();
+   ph.loading=false;
+   ph.event.trigger('phload');
   },
   error: function(xhr){alert('error');}
  })
