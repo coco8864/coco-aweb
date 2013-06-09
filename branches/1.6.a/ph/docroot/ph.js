@@ -213,6 +213,12 @@ function phLoad(){
    for(key in json){
     ph[key]=json[key]
    }
+   if(ph.websocketSpec){
+    ph.useWebSocket=true;
+   }else{
+    ph.useWebSocket=false;
+   }
+   ph.auth._loaded();
   },
   error: function(xhr){alert('error');}
  })
