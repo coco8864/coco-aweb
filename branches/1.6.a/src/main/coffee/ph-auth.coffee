@@ -120,11 +120,8 @@ class PhAuth
   onlineAuth:(aplUrl,cb,prmDfd,prmAuth)->
     state=ph.load.state()
     if state=='pending'
-      ph.load.done(->ph.auth.auth(aplUrl,cb)).fail(->ph.auth.offlineAuth(aplUrl,cb))
-      return
-    else if state=='rejected'
-      ph.auth.offlineAuth(aplUrl,cb)
-      return
+      ph.load.done(->ph.auth.onlineAuth(aplUrl,cb,prmDfd,prmAuth))
+      return prmAuth
     aplUrl.match(@_urlPtn)
     protocol=RegExp.$1
     authDomain=RegExp.$2
