@@ -95,7 +95,7 @@ function frameNameToUrl(frameName){
   if( frameName.lastIndexOf(XHR_FRAME_NAME_PREFIX,0)!=0 ){
     return null;
   }
-  var url=frameName.substring(XHR_FRAME_NAME_PREFIX.length)+'/!xhrPolling';
+  var url=frameName.substring(XHR_FRAME_NAME_PREFIX.length)+'/~xhrPolling';
   return url;
 }
 

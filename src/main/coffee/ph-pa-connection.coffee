@@ -1,16 +1,19 @@
 #-------------------Connection-------------------
 class Connection extends ph.EventModule
-  constructor: (@url,@httpUrl,@deferred,@_storageScope) ->
+  constructor:(@url,@httpUrl,@deferred,@_storageScope) ->
     super
     @_subscribes={}
-    @isWs=(url.lastIndexOf('ws',0)==0)
     @_openCount=0
-    @stat=ph.pa.STAT_AUTH
+    @stat=ph.pa.STAT_INIT
     @_sendMsgs=[]
     @_reciveMsgs=[] #–¢subcrive‚Å”zM‚Å‚«‚È‚Á‚½message todo:—­‚Ü‚è‚·‚¬
-    auth=ph.auth.auth(url)
-    auth.done(@_doneAuth)
-    auth.fail(@_failAuth)
+    @_ready=ph.jQuery.Deferred()
+  _init: (@url,@httpUrl,@deferred,@_storageScope) ->
+    @isWs=(url.lastIndexOf('ws',0)==0)
+    @stat=ph.pa.STAT_AUTH
+    @_ready.resolve()
+    con=@
+    ph.auth.auth(url).done((auth)->con._doneAuth(auth)).fail((auth)->con._failAuth(auth))
   _failAuth:(auth)=>
     delete ph.pa._connections[@url]
     @trigger(ph.pa.RESULT_ERROR,'auth',@)#fail to auth
@@ -266,6 +269,12 @@ class Connection extends ph.EventModule
       @_send({type:ph.pa.TYPE_CLOSE})
     @
   subscribe:(qname,subname,onMessage)->
+    dfd=ph.jQuery.Deferred()
+    prm=dfd.promise(new Subscription())
+    con=@
+    @_ready.done(->con._subscribe(qname,subname,onMessage,dfd,prm))
+    prm
+  _subscribe:(qname,subname,onMessage,dfd,prm)->
     @checkState()
     if subname && ph.jQuery.isFunction(subname)
      onMessage=subname
@@ -275,8 +284,8 @@ class Connection extends ph.EventModule
     key="#{qname}@#{subname}"
     if @_subscribes[key]
       return @_subscribes[key].promise
-    dfd=ph.jQuery.Deferred()
-    prm=dfd.promise(new Subscription(@,dfd,qname,subname))
+##    dfd=ph.jQuery.Deferred()
+    prm._init(@,dfd,qname,subname)
     @_subscribes[key]={deferred:dfd,promise:prm}
     if onMessage
       prm.onMessage(onMessage)
