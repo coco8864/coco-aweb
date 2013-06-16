@@ -47,10 +47,13 @@ window.ph.pa={
   _XHR_FRAME_NAME_PREFIX:'__pa_xhr_' #xhrPaFrame.vsp‚É“¯‚¶’è‹`‚ ‚è
   _XHR_FRAME_URL:'/~xhrPaFrame'
   _connections:{} #key:url value:{deferred:dfd,promise:prm}
-  connect:(url,conCb)->
-    if ph.loading
-      ph.event.on('phload',->ph.pa.connect(url.conCb))
-      return
+  connect:(url,conCb,initCon)->
+    state=ph.load.state()
+    if state=='pending'
+      dfd=ph.jQuery.Deferred()
+      prm=dfd.promise(new Connection())
+      ph.load.always(->ph.pa.connect(url,conCb,{deferred:dfd,promise:prm}))
+      return prm
     httpUrl=null
     if url.lastIndexOf('ws://',0)==0||url.lastIndexOf('wss://',0)==0
       httpUrl='http' + url.substring(2)
@@ -79,8 +82,13 @@ window.ph.pa={
     if @_connections[url]
       prm=@_connections[url].promise
     else
-      dfd=ph.jQuery.Deferred()
-      prm=dfd.promise(new Connection(url,httpUrl,dfd))
+      if initCon
+        dfd=initCon.deferred
+        prm=initCon.promise
+      else
+        dfd=ph.jQuery.Deferred()
+        prm=dfd.promise(new Connection())
+      prm._init(url,httpUrl,dfd)
       @_connections[url]={deferred:dfd,promise:prm}
     prm._openCount++
     if conCb

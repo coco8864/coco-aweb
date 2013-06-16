@@ -103,6 +103,13 @@ class PhAuth
     else
       @_finAuth(res)
     return
+  auth:(aplUrl,cb)->
+    dfd=ph.jQuery.Deferred()
+    auth=dfd.promise(new Auth())
+    ph.load.done(->ph.auth.onlineAuth(aplUrl,cb,dfd,auth)).fail(->ph.auth.offlineAuth(aplUrl,cb,def,auth))
+    auth
+
+  offlineAuth:(aplUrl,cb,dfd,auth)->
 
 #----------auth outer api----------
 #  /*authUrl固有のappSidを取得する、以下のパターンがある
@@ -110,9 +117,13 @@ class PhAuth
 #  2)primaryは認証済みだがsecondaryが未=>認可してappSidを作成
 #  3)primaryは認証未=>このメソッドは復帰せず認証画面に遷移
 #  */
-  auth:(aplUrl,cb)->
-    if ph.loading
-      ph.event.on('phload',->ph.auth.auth(aplUrl.cb))
+  onlineAuth:(aplUrl,cb,prmDfd,prmAuth)->
+    state=ph.load.state()
+    if state=='pending'
+      ph.load.done(->ph.auth.auth(aplUrl,cb)).fail(->ph.auth.offlineAuth(aplUrl,cb))
+      return
+    else if state=='rejected'
+      ph.auth.offlineAuth(aplUrl,cb)
       return
     aplUrl.match(@_urlPtn)
     protocol=RegExp.$1
@@ -139,8 +150,9 @@ class PhAuth
       else if cb
         cb(auth)
       return auth
-    dfd=ph.jQuery.Deferred()
-    auth=dfd.promise(new Auth(keyUrl,checkAplUrl,dfd))
+    dfd=prmDfd
+    auth=prmAuth
+    auth._init(keyUrl,checkAplUrl,dfd)
     auth._checkAplUrl=checkAplUrl
     if cb
       auth.on('done',cb)
@@ -167,9 +179,11 @@ ph.jQuery(->
 class Auth extends ph.EventModule
   _reqQueue:[]
   _processReq:null
-  constructor: (@_keyUrl,@_checkAplUrl,@_deferred) ->
+  constructor:->
     super
+  _init:(@_keyUrl,@_checkAplUrl,@_deferred) ->
     ph.event.on('message',@_onMessage)
+    @
   _setup:(res)->
     @loginId=res.loginId
     @authUrl=res.authUrl
