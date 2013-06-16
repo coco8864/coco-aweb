@@ -178,7 +178,7 @@ class Auth extends ph.EventModule
   _processReq:null
   constructor:->
     super
-  _init:(@_keyUrl,@_checkAplUrl,@_deferred) ->
+  _init:(@_keyUrl,@_checkAplUrl,@_deferred)->
     ph.event.on('message',@_onMessage)
     @
   _setup:(res)->
@@ -195,8 +195,6 @@ class Auth extends ph.EventModule
       "</iframe>")
     ph.jQuery("body").append(@_frame)
 #    @_frame.css({'background-color':'#CFCFCF','overflow':'auto','height':'200px','width':'300px','position':'absolute','top':'50%','left':'50%','margin-top':'-100px','margin-left':'-150px'})
-  _frameLoad:=>
-    @_deferred.resolve(@)
   _requestQ:(req,cb)->
     reqObj={req:req,cb:cb}
     @_reqQueue.push(reqObj)
