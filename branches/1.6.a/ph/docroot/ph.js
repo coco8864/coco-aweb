@@ -1,3 +1,4 @@
+##offline cacheに入る
 (function(){
 if(window.ph){
  return;
@@ -18,7 +19,7 @@ window.ph={
  useHashChange:false,
  useBlobBuilder:false,
  useAppCache:false,
- loading:true,
+ isOffline:false,
  createBlob:function(data){
   if(Blob){
    return new Blob(data);
@@ -205,7 +206,13 @@ for(var i=0;i<ph.scripts.length;i++){
  document.write('></' + 'script>');
 }
 
-function phLoad(){
+ph.onLoad=function(){
+ ph.load=ph.jQuery.Deferred();
+ if(navigator.onLine===false){
+   ph.load.reject();
+   ph.isOffline=true;
+   return;
+ }
  ph.jQuery.ajax({
   type: 'GET',
   url: '/ph.json',
@@ -219,17 +226,17 @@ function phLoad(){
    }else{
     ph.useWebSocket=false;
    }
-   ph.loading=false;
-   ph.event.trigger('phload');
+   ph.load.resolve();
+   ph.isOffline=false;
   },
-  error: function(xhr){alert('error');}
+  error: function(xhr){ph.load.reject();ph.isOffline=true,alert('error');}
  })
 }
-if (window.addEventListener){## W3C standard
-  window.addEventListener('load', phLoad, false); // NB **not** 'onload'
-}else if (window.attachEvent){## Microsoft
-  window.attachEvent('onload', phLoad);
-}
+##if (window.addEventListener){## W3C standard
+##  window.addEventListener('load', phLoad, false); // NB **not** 'onload'
+##}else if (window.attachEvent){## Microsoft
+##  window.attachEvent('onload', phLoad);
+##}
 
 })();
 
