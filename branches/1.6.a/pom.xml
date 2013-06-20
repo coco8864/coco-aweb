@@ -180,8 +180,9 @@
 								<fileset dir="ph/docroot/">
 									<include name="favicon.ico" />
 									<include name="index.html" />
+									<include name="ph.js" />
+									<include name="ph.json" />
 									<include name="pub/js/ph-event.js" />
-									<include name="pub/js/ph-loader.js" />
 									<include name="pub/js/ph-auth.js" />
 									<include name="pub/js/ph-json2.js" />
 									<include name="pub/js/ph-jqnoconflict.js" />
