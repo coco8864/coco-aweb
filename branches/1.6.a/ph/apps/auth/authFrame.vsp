@@ -9,17 +9,14 @@
 <script type="text/javascript" src="/pub/js/jquery-1.8.3.min.js"></script>
 <script type="text/javascript" src="/pub/js/ph-json2.js"></script>
 <script type="text/javascript" src="/pub/js/aes.js"></script>
-<script type="text/javascript" src="/pub/js/sha256.js"></script>
 <script  type="text/javascript"><!--
-##隕ｪframe縺ｮlocation.href
+##親frameのlocation.href
 var OFFLINE_KEY='PaOfflineAuth'
 var parentOrigin;
-var isOfflineAuth=false;
-var isOnlineAuth=false;
-var offlinePassHash=null;
-var authInfo=null;
+var offlinePassHash='$!esc.javascript(${offlinePassHash})';
+var authInfo=ph.JSON.parse('$esc.javascript(${info})');
 
-##crossDomainRequest諠�蝣ｱ
+##crossDomainRequest情報
 var cdr={isIn:false,req:null};
 
 function onRequest(ev){
@@ -33,7 +30,7 @@ function onRequest(ev){
   var req=ph.JSON.parse(ev.data);
   if(parentOrigin==="*" || origin===parentOrigin){
     if(cdr.isIn){
-      return;//parent縺九ｉresponse繧貞ｾ�縺溘★縺ｫ邯壹￠縺ｦrequest縺輔ｌ縺滂ｼ育焚蟶ｸ)
+      return;//parentからresponseを待たずに続けてrequestされた（異常)
     }
     cdr.isIn=true;
     cdr.req=req;
@@ -53,63 +50,16 @@ function onRequest(ev){
       response(req);
     }else if(req.type==="logout"){
       jQuery.ajax({
-        type:'POST',
+        type:'GET',
         url:'ajaxLogout',
         dataType:'json',
         success:function(x){response(x);},
         error:function(x){response({result:false});}
       });
-    }else if(req.type==="onlineSetup"){
-      jQuery.ajax({
-        type:'POST',
-        url:'onlineSetup',
-        data:{loginId:req.loginId,appSid:req.appSid,token:req.token},
-        dataType:'json',
-      }).done(doneOnlineSetup).fail(failOnlineSetup);
-    }else if(req.type==="offlineAuth"){
     }else if(req.type==="info"){
       response(authInfo);
     }
   }
-}
-
-function doneOnlineSetup(data){
- isOnlineAuth=true;
- offlinePassHash=data.offlinePassHash;
- authInfo=data.authInfo;
- setAuthInfo(data.loginId,data);
- response({result:true});
-}
-
-function failOnlineSetup(){
- response({result:false});
-}
-
-function getAuthInfo(loginId){
-  var offlineInfo={};
-  var offlineInfoText=localStorage.getItem(OFFLINE_KEY);
-  if(offlineInfoText){
-    offlineInfo=ph.JSON.parse(offlineInfoText);
-  }
-  var authInfo=offlineInfo[loginId];
-  if(!authInfo){
-    return null;
-  }
-  authInfo=CryptoJS.AES.decrypt(authInfo, offlinePassHash).toString(CryptoJS.enc.Utf8);
-  return authInfo;
-}
-
-function setAuthInfo(loginId,authInfo){
-  var authInfoText=ph.JSON.stringify(authInfo);
-  authInfoText=CryptoJS.AES.encrypt(authInfoText, offlinePassHash).toString();
-  var offlineInfo={};
-  var offlineInfoText=localStorage.getItem(OFFLINE_KEY);
-  if(offlineInfoText){
-    offlineInfo=ph.JSON.parse(offlineInfoText);
-  }
-  offlineInfo[loginId]=authInfoText;
-  var offlineInfoText=ph.JSON.stringify(offlineInfo);
-  localStorage.setItem(OFFLINE_KEY,offlineInfoText);
 }
 
 function response(msg){
@@ -129,32 +79,61 @@ jQuery(function(){
   }else if(window.attachEvent){
     window.attachEvent('onmessage',onRequest);
   }
-  response({result:true});
+
+  var offlineInfo={};
+  var offlineInfoText=localStorage.getItem(OFFLINE_KEY);
+  if(offlineInfoText){
+    offlineInfo=ph.JSON.parse(offlineInfoText);
+  }
+  var loginId=authInfo.user.loginId;
+  var userInfoEncText=offlineInfo[loginId];
+  var userInfo;
+  if(userInfoEncText){
+    var userInfoText;
+    if(offlinePassHash){
+      userInfoText=CryptoJS.AES.decrypt(userInfoEncText, offlinePassHash).toString(CryptoJS.enc.Utf8);
+    }else{
+      userInfoText=userInfoEncText;
+    }
+    userInfo=ph.JSON.parse(userInfoText);
+  }else{
+    userInfo={onlineAuthCount:0,offlineAuthCount:0};
+  }
+##  userInfo.offlinePassHash=offlinePassHash;
+  userInfo.user=authInfo.user;
+  userInfo.onlineAuthCount++;
+
+  var userInfoText=ph.JSON.stringify(userInfo);
+  if(offlinePassHash){
+    userInfoEncText=CryptoJS.AES.encrypt(userInfoText, offlinePassHash).toString();
+  }else{
+    userInfoEncText=userInfoText;
+  }
+  offlineInfo[loginId]=userInfoEncText;
+  offlineInfoText=ph.JSON.stringify(offlineInfo);
+  localStorage.setItem(OFFLINE_KEY,offlineInfoText)
+
+/*
+  //XX {loginId1:{passCheckText:'',offlineLoginCount:99},loginId2:... }
+  //localStrageから既存のXXを取得
+  //logidIdでXXを複合かしてloginIdになることをチェック
+  //yesなら
+  //noなら
+
+  //login回数をインクリメント
+
+  //localStrageに設定
+*/
+
+  response(authInfo);
+
 });
-
-function offlineLogon(){
-  var loginId=jQuery('#loginId').val();
-  var password=jQuery('#password').val();
-  offlinePassHash=CryptoJS.SHA256(loginId+":"+password");//need solt
-  var userInfo=getAuthInfo(loginId);
-  if(!userInfo){
-    alert('oops');
-    return;
-  }
-  if(data.offlinePassHash!==offlinePassHash){
-    alert('oops2');
-    return;
-  }
-  authInfo=userInfo.authInfo;
-  response({result:true});
-}
-
 // --></script>
 </head>
 <body>
 <h1>Phantom offline logon</h1>
-<div>loginId:<input name=loginId></div>
-<div>offline password:<input type='password' name=password></div>
-<div><input type='button' value='logon' onclick='offlineLogon();'></div>
+<div>user:<input name=userid></div>
+<div>offline password:<input type='password' name=userid></div>
+<div><input type='button' value='logon' onclick='parent.postMessage("hideFrame",parentOrigin)'></div>
 </body>
 </html>
