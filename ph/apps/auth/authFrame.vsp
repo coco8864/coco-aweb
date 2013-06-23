@@ -10,13 +10,13 @@
 <script type="text/javascript" src="/pub/js/ph-json2.js"></script>
 <script type="text/javascript" src="/pub/js/aes.js"></script>
 <script  type="text/javascript"><!--
-##eframe‚Ìlocation.href
+##è¦ªframeã®location.href
 var OFFLINE_KEY='PaOfflineAuth'
 var parentOrigin;
 var offlinePassHash='$!esc.javascript(${offlinePassHash})';
 var authInfo=ph.JSON.parse('$esc.javascript(${info})');
 
-##crossDomainRequestî•ñ
+##crossDomainRequestæƒ…å ±
 var cdr={isIn:false,req:null};
 
 function onRequest(ev){
@@ -30,7 +30,7 @@ function onRequest(ev){
   var req=ph.JSON.parse(ev.data);
   if(parentOrigin==="*" || origin===parentOrigin){
     if(cdr.isIn){
-      return;//parent‚©‚çresponse‚ð‘Ò‚½‚¸‚É‘±‚¯‚Ärequest‚³‚ê‚½iˆÙí)
+      return;##parentã‹ã‚‰responseã‚’å¾…ãŸãšã«ç¶šã‘ã¦requestã•ã‚ŒãŸï¼ˆç•°å¸¸)
     }
     cdr.isIn=true;
     cdr.req=req;
@@ -115,14 +115,14 @@ jQuery(function(){
 
 /*
   //XX {loginId1:{passCheckText:'',offlineLoginCount:99},loginId2:... }
-  //localStrage‚©‚çŠù‘¶‚ÌXX‚ðŽæ“¾
-  //logidId‚ÅXX‚ð•¡‡‚©‚µ‚ÄloginId‚É‚È‚é‚±‚Æ‚ðƒ`ƒFƒbƒN
-  //yes‚È‚ç
-  //no‚È‚ç
+  //localStrageã‹ã‚‰æ—¢å­˜ã®XXã‚’å–å¾—
+  //logidIdã§XXã‚’è¤‡åˆã‹ã—ã¦loginIdã«ãªã‚‹ã“ã¨ã‚’ãƒã‚§ãƒƒã‚¯
+  //yesãªã‚‰
+  //noãªã‚‰
 
-  //login‰ñ”‚ðƒCƒ“ƒNƒŠƒƒ“ƒg
+  //loginå›žæ•°ã‚’ã‚¤ãƒ³ã‚¯ãƒªãƒ¡ãƒ³ãƒˆ
 
-  //localStrage‚ÉÝ’è
+  //localStrageã«è¨­å®š
 */
 
   response(authInfo);

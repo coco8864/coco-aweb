@@ -221,9 +221,7 @@ ph.onLoad=function(){
    for(key in json){
     ph[key]=json[key]
    }
-   if(ph.websocketSpec){
-    ph.useWebSocket=true;
-   }else{
+   if(ph.useWebSocket && !ph.websocketSpec){
     ph.useWebSocket=false;
    }
    ph.load.resolve();
