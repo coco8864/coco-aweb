@@ -288,8 +288,11 @@ public class Authorizer implements Timer{
 	public static final int CHECK_NO_PRIMARY=1;
 	public static final int CHECK_PRIMARY_ONLY=2;
 	public static final int CHECK_SECONDARY_OK=3;
+	public int checkSecondarySessionByPrimaryId(String id,String appUrl){
+		return checkSecondarySessionByPrimaryId(id, appUrl, null, null);
+	}
 	
-	public int checkSecondarySessionByPrimaryId(String id,String authUrl,StringBuffer appSid){
+	public int checkSecondarySessionByPrimaryId(String id,String appUrl,String appSid,String token){
 		if(id==null){
 			return CHECK_NO_PRIMARY;
 		}
@@ -305,13 +308,15 @@ public class Authorizer implements Timer{
 			if(authSession==null){
 				return CHECK_NO_PRIMARY;
 			}
-			AuthSession secondarySession=authSession.getSecondarySession(authUrl);
+			AuthSession secondarySession=authSession.getSecondarySession(appUrl);
 			if(secondarySession==null){
 				return CHECK_PRIMARY_ONLY;
 			}
-			if(appSid!=null){
-				String secondaryId=secondarySession.getSessionId().getId();
-				appSid.append(DataUtil.digestHex(secondaryId.getBytes()));
+			if(appSid!=null && !appSid.equals(secondarySession.getAppSid())){
+				return CHECK_PRIMARY_ONLY;
+			}
+			if(token!=null && !token.equals(secondarySession.getToken())){
+				return CHECK_PRIMARY_ONLY;
 			}
 		}
 		return CHECK_SECONDARY_OK;

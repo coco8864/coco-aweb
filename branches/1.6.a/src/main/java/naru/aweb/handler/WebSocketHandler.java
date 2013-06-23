@@ -123,7 +123,9 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		requestContext.registerLogoutEvnet(this);
 		wsProtocol=WsProtocol.createWsProtocol(requestHeader,getRequestMapping());
 		if(wsProtocol==null){
-			completeResponse("400");
+			//webSocket‚ÅÚ‘±‚ğ‹‘”Û‚·‚é‚Ì‚ÍŒˆ‚Ü‚Á‚½•û–@‚ª‚È‚¢
+			//http://blog.aklaswad.com/2012/000517.html
+			completeResponse("422");//422 Protocol Extension Refused
 			logger.warn("not found WebSocket Protocol");
 			return;
 		}
@@ -133,14 +135,14 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		String reqSubprotocols=wsProtocol.getRequestSubProtocols(requestHeader);
 		if(reqSubprotocols==null){
 			if(wsProtocol.isUseSubprotocol()){//subprotocol‚ğ•K—v‚Æ‚·‚é‚Ì‚É‚È‚¢
-				completeResponse("400");
+				completeResponse("422");//422 Protocol Extension Refused
 				return;
 			}
 		}else{
 			selectSubprotocol=wsProtocol.checkSubprotocol(reqSubprotocols);
 			if(selectSubprotocol==null){//subprotocol‚ªˆê’v‚µ‚È‚¢
 				logger.debug("WsHybi10#suprotocol error.webSocketProtocol:"+reqSubprotocols);
-				completeResponse("400");
+				completeResponse("422");//422 Protocol Extension Refused
 				return;
 			}
 		}
