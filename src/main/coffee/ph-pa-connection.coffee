@@ -98,6 +98,8 @@ class Connection extends ph.EventModule
     ph.log('Pa _onWsClose.code:'+event.code+':reason:'+event.reason+':wasClean:'+event.wasClean)
 #    @__onClose(event.reason)
     if @stat!=ph.pa.STAT_CONNECT
+#      if @stat==ph.pa.STAT_OPEN
+#        #Ú‘±’¼Œã‚ÉØ‚ê‚é‚Ì‚Íwebsocket‚ªg‚¦‚È‚¢‚Æl‚¦‚é
       @trigger('unload')
       @deferred.resolve('out session')
       @stat=ph.pa.INIT

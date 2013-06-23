@@ -29,6 +29,7 @@ public class AuthHandler extends WebServerHandler {
 	private static Config config = Config.getConfig();
 	private static Authenticator authenticator = config.getAuthenticator();
 	private static Authorizer authorizer=config.getAuthorizer();
+	public static String AUTH_URL="authUrl";
 	public static String LOGIN_ID="loginId";
 	public static String APP_SID="appSid";//javascript側でアプリケーションセションを識別するID,setAuthメソッド復帰情報、jsonのキーとして使用
 	public static String TOKEN="token";
@@ -36,6 +37,7 @@ public class AuthHandler extends WebServerHandler {
 	public static String AUTHENTICATE_PATH="/authenticate";//必要があれば認証処理も行うパス
 	public static String INFO_PATH="/info";//ユーザ情報,利用可能サービスの問い合わせAPI
 	public static String AUTH_FRAME_PATH="/authFrame";//ユーザ情報,利用可能サービスの問い合わせAPI
+	public static String USER_INFO_PATH="/userInfo";//ユーザ情報,利用可能サービスの問い合わせAPI
 	private static String CLEANUP_AUTH_HEADER_PATH="/cleanupAuthHeader";//auth header削除用path
 	private static String LOGOUT_PATH="/logout";//logout用
 	private static String AJAX_LOGOUT_PATH="/ajaxLogout";//ajax Logout用
@@ -265,9 +267,8 @@ public class AuthHandler extends WebServerHandler {
 			crossDomainResponse(response,null);
 			return;
 		}
-		
 		response.element("result", true);
-		response.element("authUrl",config.getAuthUrl());
+		response.element(AUTH_URL,config.getAuthUrl());
 		response.element(APP_SID, authSession.getAppSid());
 		response.element(LOGIN_ID, authSession.getUser().getLoginId());
 		response.element(TOKEN, authSession.getToken());
@@ -283,22 +284,22 @@ public class AuthHandler extends WebServerHandler {
 			crossDomainResponse(response,null);
 			return;
 		}
-		String url=temporaryId.getUrl();
-		StringBuffer appSid=new StringBuffer();
-		int rc=authorizer.checkSecondarySessionByPrimaryId(cookieId,url,appSid);
+		String appUrl=temporaryId.getUrl();
+//		StringBuffer appSid=new StringBuffer();
+		int rc=authorizer.checkSecondarySessionByPrimaryId(cookieId,appUrl);
 		switch(rc){
 		case Authorizer.CHECK_SECONDARY_OK://これはないはず
 			response.element("result", false);
 			response.element("reason", "aleady secondary session");
 			break;
 		case Authorizer.CHECK_PRIMARY_ONLY:
-			SessionId pathOnceSession=authorizer.createPathOnceIdByPrimary(url, cookieId);
+			SessionId pathOnceSession=authorizer.createPathOnceIdByPrimary(appUrl, cookieId);
 			if(pathOnceSession!=null){
-				if(url.startsWith("ws")){
-					url=url.replaceAll("^ws", "http");
-					crossDomainRedirect(url +"?" + QUERY_CD_WS_SET + "&pathOnceId=" + pathOnceSession.getId(), null);
+				if(appUrl.startsWith("ws")){
+					appUrl=appUrl.replaceAll("^ws", "http");
+					crossDomainRedirect(appUrl +"?" + QUERY_CD_WS_SET + "&pathOnceId=" + pathOnceSession.getId(), null);
 				}else{
-					crossDomainRedirect(url +"?" + QUERY_CD_SET + "&pathOnceId=" + pathOnceSession.getId(), null);
+					crossDomainRedirect(appUrl +"?" + QUERY_CD_SET + "&pathOnceId=" + pathOnceSession.getId(), null);
 				}
 				return;
 			}else{
@@ -451,7 +452,7 @@ public class AuthHandler extends WebServerHandler {
 		return response;
 	}
 	
-	//authFrame
+	//authFrame将来的に削除
 	private void authFrame(String cookieId){
 		User user=authorizer.getUserByPrimaryId(cookieId);
 		JSONObject response=infoObject(user);
@@ -462,6 +463,27 @@ public class AuthHandler extends WebServerHandler {
 			setRequestAttribute("offlinePassHash", "");
 		}
 		forwardAuthPage("/authFrame.vsp");
+	}
+	
+	//userInfo
+	private void userInfo(String cookieId,ParameterParser parameter){
+		String appUrl=parameter.getParameter("appUrl");
+		String appSid=parameter.getParameter(APP_SID);
+		String token=parameter.getParameter(TOKEN);
+		//passHashを返却するので厳密にチェック
+		int check=authorizer.checkSecondarySessionByPrimaryId(cookieId, appUrl, appSid, token);
+		JSONObject response=new JSONObject();
+		if(check!=Authorizer.CHECK_SECONDARY_OK){
+			response.element("result", false);
+		}else{
+			response.element("result", true);
+			User user=authorizer.getUserByPrimaryId(cookieId);
+			if(user!=null){
+				response.element("offlinePassHash", user.getOfflinePassHash());
+			}
+			response.element("userInfo",infoObject(user));
+		}
+		responseJson(response);
 	}
 	
 	//info
@@ -556,11 +578,11 @@ public class AuthHandler extends WebServerHandler {
 		if(CLEANUP_AUTH_HEADER_PATH.equals(path)){
 			cleanupAuthHeader();
 			return;
-//		}else if(CHECK_SESSION_PATH.equals(path)){
-//			checkSession(cookieId);
-//			return;
 		}else if(AUTH_FRAME_PATH.equals(path)){
 			authFrame(cookieId);
+			return;
+		}else if(USER_INFO_PATH.equals(path)){
+			userInfo(cookieId,parameter);
 			return;
 		}else if(INFO_PATH.equals(path)){
 			info(cookieId);
