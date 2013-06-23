@@ -60,7 +60,7 @@ ph.jQuery(function() {
 			changeEntry(logId);
 		}
 	});
-	ph.admin.con.done(function(){location=ph.publicWebUrl;});
+	ph.admin.con.done(function(){/*location=ph.publicWebUrl;*/});
 	ph.admin.accessLogSub=ph.admin.con.subscribe('admin','accessLog',
 		function(res){
 			if(!res){
