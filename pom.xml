@@ -48,6 +48,15 @@
          <compileIndividualFiles>false</compileIndividualFiles>
          <coffeeJoinSets>
             <joinSet>
+                <id>~auth</id>
+                <fileSet>
+                    <directory>${basedir}/src/main/coffee</directory>
+                    <includes>
+                        <include>~auth.coffee</include>
+                    </includes>
+                </fileSet>
+            </joinSet>
+            <joinSet>
                 <id>ph-event</id>
                 <fileSet>
                     <directory>${basedir}/src/main/coffee</directory>
