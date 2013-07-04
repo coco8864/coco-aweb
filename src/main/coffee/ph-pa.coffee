@@ -47,6 +47,13 @@ window.ph.pa={
   _XHR_FRAME_NAME_PREFIX:'__pa_xhr_' #xhrPaFrame.vspに同じ定義あり
   _XHR_FRAME_URL:'/~xhrPaFrame'
   _connections:{} #key:url value:{deferred:dfd,promise:prm}
+# urlから以下の事を判断する。
+# httpで始まる場合、必ずxhrで通信する
+# wsで始まる場合、wsで通信、失敗すればxhrで通信する
+# 両者でない場合、ph.jsをdownloadしたdomainと判断、後は、wsが指定された場合と同じ
+# ##
+# connectWsUrl:必ず存在して、管理上のキーとしても利用する
+# connectXhrUrl
   connect:(url,conCb,initCon)->
     state=ph.load.state()
     if state=='pending'
@@ -54,33 +61,22 @@ window.ph.pa={
       prm=dfd.promise(new Connection())
       ph.load.always(->ph.pa.connect(url,conCb,{deferred:dfd,promise:prm}))
       return prm
-    httpUrl=null
+    connectWsUrl=connectXhrUrl=null
     if url.lastIndexOf('ws://',0)==0||url.lastIndexOf('wss://',0)==0
-      httpUrl='http' + url.substring(2)
-      if !ph.useWebSocket
-        #webSocketが使えなくてurlがws://だったらhttp://に変更
-        url='http' + url.substring(2)
-    else if url.lastIndexOf('http://',0)!=0&&url.lastIndexOf('https://',0)!=0
-      if ph.useWebSocket
-        if ph.isSsl
-          scm='wss://'
-        else
-          scm='ws://'
-      else
-        if ph.isSsl
-          scm='https://'
-        else
-          scm='http://'
-      if ph.isSsl
-        httpUrl='https://' + ph.domain+url
-      else
-        httpUrl='http://' + ph.domain+url
-      url=scm+ph.domain+url
+      connectXhrUrl='http' + url.substring(2)
+      connectWsUrl=url
+    else if url.lastIndexOf('http://',0)==0||url.lastIndexOf('https://',0)==0
+      connectXhrUrl=url
     else
-      httpUrl=url
-    ph.log('url:' + url+':httpUrl:'+httpUrl)
-    if @_connections[url]
-      prm=@_connections[url].promise
+      if ph.isSsl
+        connectXhrUrl='https://' + ph.domain + url
+        connectWsUrl='wss://' + ph.domain + url
+      else
+        connectXhrUrl='http://' + ph.domain + url
+        connectWsUrl='ws://' + ph.domain + url
+    ph.log('url:' + url+':connectXhrUrl:'+connectXhrUrl)
+    if @_connections[connectXhrUrl]
+      prm=@_connections[connectXhrUrl].promise
     else
       if initCon
         dfd=initCon.deferred
@@ -88,7 +84,7 @@ window.ph.pa={
       else
         dfd=ph.jQuery.Deferred()
         prm=dfd.promise(new Connection())
-      prm._init(url,httpUrl,dfd)
+      prm._init(connectXhrUrl,connectWsUrl,dfd)
       @_connections[url]={deferred:dfd,promise:prm}
     prm._openCount++
     if conCb

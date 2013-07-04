@@ -72,10 +72,7 @@ jQuery(->
  parentOrigin=decodeURIComponent(location.search.substring('?origin='.length))
  if parentOrigin=='file://'
   parentOrigin='*'
- if window.addEventListener
-  window.addEventListener('message',onRequest, false)
- else if window.attachEvent
-  window.attachEvent('onmessage',onRequest)
+ jQuery(window).on('message',onRequest)
 )
 
 userInfo=(appUrl,appSid,token)->

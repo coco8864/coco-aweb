@@ -1,6 +1,6 @@
 #-------------------Connection-------------------
 class Connection extends ph.EventModule
-  constructor:(@url,@httpUrl,@deferred,@_storageScope) ->
+  constructor:(@connectXhrUrl,@connectWsUrl,@deferred,@_storageScope) ->
     super
     @_subscribes={}
     @_openCount=0
@@ -8,20 +8,20 @@ class Connection extends ph.EventModule
     @_sendMsgs=[]
     @_reciveMsgs=[] #–¢subcrive‚Å”zM‚Å‚«‚È‚Á‚½message todo:—­‚Ü‚è‚·‚¬
     @_ready=ph.jQuery.Deferred()
-  _init: (@url,@httpUrl,@deferred,@_storageScope) ->
-    @isWs=(url.lastIndexOf('ws',0)==0)
+  _init: (@connectXhrUrl,@connectWsUrl,@deferred,@_storageScope) ->
+    @isWs=(ph.useWebSocket && connectWsUrl!=null)
     @stat=ph.pa.STAT_AUTH
     @_ready.resolve()
     con=@
-    ph.auth.auth(url).done((auth)->con._doneAuth(auth)).fail((auth)->con._failAuth(auth))
+    ph.auth.auth(connectXhrUrl).done((auth)->con._doneAuth(auth)).fail((auth)->con._failAuth(auth))
   _failAuth:(auth)=>
-    delete ph.pa._connections[@url]
+    delete ph.pa._connections[@connectXhrUrl]
     @trigger(ph.pa.RESULT_ERROR,'auth',@)#fail to auth
   _doneAuth:(auth)=>
     @_auth=auth
     @_loginId=auth.loginId
     @_appSid=auth.appSid
-    @ppStorage=new PrivateSessionStorage(@httpUrl,@_auth)
+    @ppStorage=new PrivateSessionStorage(@connectXhrUrl,@_auth)
     @_token=auth.token
     @trigger(ph.pa.RESULT_SUCCESS,'auth',@)#success to auth
     @trigger('auth',@)#success to auth
@@ -43,7 +43,7 @@ class Connection extends ph.EventModule
       @_openWebSocket()
     else
       @_openXhr()
-    @_downloadFrameName=ph.pa._DOWNLOAD_FRAME_NAME_PREFIX + @url
+    @_downloadFrameName=ph.pa._DOWNLOAD_FRAME_NAME_PREFIX + @connectXhrUrl
     @_downloadFrame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' +
       @_downloadFrameName + 
       '"></iframe>')
@@ -114,7 +114,7 @@ class Connection extends ph.EventModule
   _openWebSocket:=>
     ph.log('Pa WebSocket start')
     @stat=ph.pa.STAT_OPEN
-    ws=new WebSocket(@url)
+    ws=new WebSocket(@connectWsUrl)
     ws.onopen=@_onWsOpen
     ws.onmessage=@_onWsMessage
     ws.onclose=@_onWsClose
@@ -124,11 +124,11 @@ class Connection extends ph.EventModule
   _openXhr:->
     ph.log('Pa _openXhr')
     @stat=ph.pa.STAT_OPEN
-    @_xhrFrameName=ph.pa._XHR_FRAME_NAME_PREFIX + @url
+    @_xhrFrameName=ph.pa._XHR_FRAME_NAME_PREFIX + @connectXhrUrl
     @_xhrFrame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' +
       @_xhrFrameName + 
       '" src="' + 
-      @url + ph.pa._XHR_FRAME_URL +
+      @connectXhrUrl + ph.pa._XHR_FRAME_URL +
       '"></iframe>')
     con=@
     @_xhrFrame.load(->con._onXhrLoad())
@@ -183,7 +183,7 @@ class Connection extends ph.EventModule
       @stat=ph.pa.STAT_INIT
       @_xhrFrame.remove()
     @_setBid(null)
-    delete ph.pa._connections[@url]
+    delete ph.pa._connections[@connectXhrUrl]
 #----------for response event----------
   __getSd:(msg)->
     key="#{msg.qname}@#{msg.subname}"
@@ -225,7 +225,7 @@ class Connection extends ph.EventModule
       @__onClose(msg)
     else if msg.type==ph.pa.TYPE_DOWNLOAD
       ph.log('download.msg.key:'+msg.key)
-      form=ph.jQuery("<form method='POST' target='#{@_downloadFrameName}' action='#{@httpUrl}/~paDownload'>" +
+      form=ph.jQuery("<form method='POST' target='#{@_downloadFrameName}' action='#{@connectXhrUrl}/~paDownload'>" +
          "<input type='hidden' name='bid' value='#{@_getBid()}'/>" +
          "<input type='hidden' name='token' value='#{@_token}'/>" +
          "<input type='hidden' name='key' value='#{msg.key}'/>" +
@@ -318,14 +318,14 @@ class Connection extends ph.EventModule
       return @ppStorage
     else if scope==ph.pa.SCOPE_SESSION_PRIVATE
       if !@spStorage
-        @spStorage=new PrivateLocalStorage(@httpUrl,@_auth,@_getBid(),scope)
+        @spStorage=new PrivateLocalStorage(@connectXhrUrl,@_auth,@_getBid(),scope)
       return @spStorage
     else if scope==ph.pa.SCOPE_APL_PRIVATE
       if !@apStorage
-        @apStorage=new PrivateLocalStorage(@httpUrl,@_auth,@_getBid(),scope)
+        @apStorage=new PrivateLocalStorage(@connectXhrUrl,@_auth,@_getBid(),scope)
       return @apStorage
     else if scope==ph.pa.SCOPE_APL_LOCAL
       if !@alStorage
-        @alStorage=new PrivateLocalStorage(@httpUrl,@_auth,@_getBid(),scope)
+        @alStorage=new PrivateLocalStorage(@connectXhrUrl,@_auth,@_getBid(),scope)
       return @alStorage
 
