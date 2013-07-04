@@ -2,8 +2,7 @@
 {
 "version":"$esc.javascript(${config.getString("phantomVersion")})",
 "isSsl":$esc.javascript(${handler.isSsl()}),
-"domain":"$esc.javascript(${handler.getLocalIp()}):$esc.javascript(${handler.getLocalPort()})",
-## hostHeader:'$esc.javascript(${handler.getRequestHeader().getServer()})',
+"domain":"$esc.javascript(${handler.getRequestHeader().getServer()})",
 "authUrl":"$esc.javascript(${config.authUrl})",
 "adminUrl":"$esc.javascript(${config.adminUrl})",
 "publicWebUrl":"$esc.javascript(${config.publicWebUrl})",
