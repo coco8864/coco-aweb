@@ -104,12 +104,16 @@ class PhAuth
       @_finAuth(res)
     return
   auth:(aplUrl,cb)->
-    dfd=ph.jQuery.Deferred()
-    auth=dfd.promise(new Auth())
-    ph.load.done(->ph.auth.onlineAuth(aplUrl,cb,dfd,auth)).fail(->ph.auth.offlineAuth(aplUrl,cb,def,auth))
-    auth
-
-  offlineAuth:(aplUrl,cb,dfd,auth)->
+    auth=new Auth(aplUrl)
+    orgAuth=@_auths[auth.keyUrl]
+    if orgAuth
+      auth=orgAuth
+      auth.checkCall(cb)
+    else
+      @_auths[auth.keyUrl]=auth
+      ph.load.done(->ph.auth.onlineAuth(cb,auth)).fail(->ph.auth.offlineAuth(cb,auth))
+    auth.promise
+  offlineAuth:(cb,auth)->
 
 #----------auth outer api----------
 #  /*authUrl固有のappSidを取得する、以下のパターンがある
@@ -117,44 +121,25 @@ class PhAuth
 #  2)primaryは認証済みだがsecondaryが未=>認可してappSidを作成
 #  3)primaryは認証未=>このメソッドは復帰せず認証画面に遷移
 #  */
-  onlineAuth:(aplUrl,cb,prmDfd,prmAuth)->
-    state=ph.load.state()
-    if state=='pending'
-      ph.load.done(->ph.auth.onlineAuth(aplUrl,cb,prmDfd,prmAuth))
-      return prmAuth
-    aplUrl.match(@_urlPtn)
-    protocol=RegExp.$1
-    authDomain=RegExp.$2
-    authPath=RegExp.$3
-    keyUrl=checkAplUrl=null
-    if protocol=='ws:'
-      keyUrl="http://#{authDomain}#{authPath}"
-      checkAplUrl=keyUrl+@_checkWsAplQuery
-    else if protocol=='wss:'
-      keyUrl="https://#{authDomain}#{authPath}"
-      checkAplUrl=keyUrl+@_checkWsAplQuery
-    else if protocol==null || protocol==''
-      keyUrl="#{location.protocol}//#{location.host}#{authPath}"
-      checkAplUrl=keyUrl+@_checkAplQuery
-    else #http or https
-      keyUrl=aplUrl;
-      checkAplUrl=aplUrl+@_checkAplQuery
-    authObj=@_auths[keyUrl]
-    if authObj
-      auth=authObj.promise
-      if cb && auth.state()=='pending'
-        auth.on('done',cb)
-      else if cb
-        cb(auth)
-      return auth
-    dfd=prmDfd
-    auth=prmAuth
-    auth._init(keyUrl,checkAplUrl,dfd)
-    auth._checkAplUrl=checkAplUrl
+  onlineAuth:(cb,auth)->
+#    state=ph.load.state()
+#    if state=='pending'
+#      ph.load.done(->ph.auth.onlineAuth(aplUrl,cb,auth))
+#      return auth.promise
+##    authObj=@_auths[keyUrl]
+#    if authObj
+#      auth=authObj.promise
+#      if cb && auth.state()=='pending'
+#        auth.on('done',cb)
+#      else if cb
+#        cb(auth)
+#      return auth
+#    auth=prmAuth
+    auth._init()
     if cb
       auth.on('done',cb)
     auth.always(@_alwaysAsyncAuth)
-    @_auths[keyUrl]={deferred:dfd,promise:auth}
+    @_auths[keyUrl]=auth
     @_callAsyncAuth(auth)
     auth
   info:(cb,authUrl)->
@@ -173,12 +158,34 @@ ph.jQuery(->
 )
 
 #-------------------Auth-------------------
-class Auth extends ph.EventModule
+class Auth extends ph.EventModule2
   _reqQueue:[]
   _processReq:null
-  constructor:->
+  constructor:(aplUrl)->
     super
-  _init:(@_keyUrl,@_checkAplUrl,@_deferred)->
+    @deferred=ph.jQuery.Deferred()
+    @promise=@deferred.promise(@)
+    aplUrl.match(ph.auth_urlPtn)
+    protocol=RegExp.$1
+    aplDomain=RegExp.$2
+    aplPath=RegExp.$3
+    keyUrl=checkAplUrl=null
+    if protocol=='ws:'
+      @keyUrl="http://#{aplDomain}#{aplPath}"
+      @checkAplUrl=keyUrl+ph.auth._checkWsAplQuery
+    else if protocol=='wss:'
+      @keyUrl="https://#{aplDomain}#{aplPath}"
+      @checkAplUrl=keyUrl+ph.auth._checkWsAplQuery
+    else if protocol==null || protocol==''
+      if ph.isSsl
+        @keyUrl="https//#{ph.domain}#{aplPath}"
+      else
+        @keyUrl="http//#{ph.domain}#{aplPath}"
+      @checkAplUrl=keyUrl+ph.auth._checkAplQuery
+    else #http or https
+      @keyUrl=aplUrl;
+      @checkAplUrl=aplUrl+ph.auth._checkAplQuery
+  _init:->
     ph.event.on('message',@_onMessage)
     @
   _setup:(res)->

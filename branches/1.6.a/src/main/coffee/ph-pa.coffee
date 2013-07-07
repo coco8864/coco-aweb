@@ -54,13 +54,7 @@ window.ph.pa={
 # ##
 # connectWsUrl:必ず存在して、管理上のキーとしても利用する
 # connectXhrUrl
-  connect:(url,conCb,initCon)->
-    state=ph.load.state()
-    if state=='pending'
-      dfd=ph.jQuery.Deferred()
-      prm=dfd.promise(new Connection())
-      ph.load.always(->ph.pa.connect(url,conCb,{deferred:dfd,promise:prm}))
-      return prm
+  connect:(url,conCb,storageScope)->
     connectWsUrl=connectXhrUrl=null
     if url.lastIndexOf('ws://',0)==0||url.lastIndexOf('wss://',0)==0
       connectXhrUrl='http' + url.substring(2)
@@ -75,17 +69,9 @@ window.ph.pa={
         connectXhrUrl='http://' + ph.domain + url
         connectWsUrl='ws://' + ph.domain + url
     ph.log('url:' + url+':connectXhrUrl:'+connectXhrUrl)
-    if @_connections[connectXhrUrl]
-      prm=@_connections[connectXhrUrl].promise
-    else
-      if initCon
-        dfd=initCon.deferred
-        prm=initCon.promise
-      else
-        dfd=ph.jQuery.Deferred()
-        prm=dfd.promise(new Connection())
-      prm._init(connectXhrUrl,connectWsUrl,dfd)
-      @_connections[url]={deferred:dfd,promise:prm}
+    if !@_connections[connectXhrUrl]
+      @_connections[connectXhrUrl]=new Connection(connectXhrUrl,connectWsUrl,storageScope)
+    prm=@_connections[connectXhrUrl]
     prm._openCount++
     if conCb
       prm.on('connected',conCb)
