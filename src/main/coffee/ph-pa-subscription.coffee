@@ -1,28 +1,26 @@
 #-------------------Subscription-------------------
-class Subscription extends ph.EventModule
-  constructor:->
+class Subscription extends ph.EventModule2
+  constructor:(@_con,@qname,@subname)->
     super
-    @_ready=ph.jQuery.Deferred()
-  _init:(@_con,@deferred,@qname,@subname)->
-    @_ready.resolve()
+    @deferred=ph.jQuery.Deferred()
+    @promise=@deferred.promise(@)
+    @_con.checkCall(@_connectionOnLoad)
+    @
+  _connectionOnLoad:=>
+    @load()
     @_con._send({type:ph.pa.TYPE_SUBSCRIBE,qname:@qname,subname:@subname})
+    return
   unsubscribe:->
-    sub=@
-    @_ready.done(->sub._unsubscribe())
+    @checkCall(@_unsubscribe)
   _unsubscribe:->
-    @checkState()
     @_con._send({type:ph.pa.TYPE_UNSUBSCRIBE,qname:@qname,subname:@subname})
   publish:(msg)->
-    sub=@
-    @_ready.done(->sub._publish(msg))
+    @checkCall(@_publish,msg)
   _publish:(msg)->
-    @checkState()
     @_con._send({type:ph.pa.TYPE_PUBLISH,qname:@qname,subname:@subname,message:msg})
   publishForm:(formId)->
-    sub=@
-    @_ready.done(->sub._publishForm(formId))
+    @checkCall(@_publishForm,formId)
   _publishForm:(formId)->
-    @checkState()
     form=ph.jQuery('#'+formId)
     if form.length==0 || form[0].tagName!='FORM'
       throw 'not form tag id'
@@ -45,7 +43,6 @@ class Subscription extends ph.EventModule
     qnameInput.remove()
     subnameInput.remove()
   onMessage:(cb)->
-    sub=@
-    @_ready.done(->sub._onMessage(cb))
+    @checkCall(@_onMessage,cb)
   _onMessage:(cb)->
     @on(ph.pa.TYPE_MESSAGE,cb)

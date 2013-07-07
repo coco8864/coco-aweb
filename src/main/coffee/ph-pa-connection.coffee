@@ -1,22 +1,22 @@
 #-------------------Connection-------------------
-class Connection extends ph.EventModule
-  constructor:(@connectXhrUrl,@connectWsUrl,@deferred,@_storageScope) ->
+class Connection extends ph.EventModule2
+  constructor:(@connectXhrUrl,@connectWsUrl,@_storageScope) ->
     super
     @_subscribes={}
     @_openCount=0
     @stat=ph.pa.STAT_INIT
     @_sendMsgs=[]
     @_reciveMsgs=[] #未subcriveで配信できなったmessage todo:溜まりすぎ
-    @_ready=ph.jQuery.Deferred()
-  _init: (@connectXhrUrl,@connectWsUrl,@deferred,@_storageScope) ->
     @isWs=(ph.useWebSocket && connectWsUrl!=null)
     @stat=ph.pa.STAT_AUTH
-    @_ready.resolve()
+    @deferred=ph.jQuery.Deferred()
+    @promise=@deferred.promise(@)
     con=@
     ph.auth.auth(connectXhrUrl).done((auth)->con._doneAuth(auth)).fail((auth)->con._failAuth(auth))
   _failAuth:(auth)=>
     delete ph.pa._connections[@connectXhrUrl]
     @trigger(ph.pa.RESULT_ERROR,'auth',@)#fail to auth
+    @unload()
   _doneAuth:(auth)=>
     @_auth=auth
     @_loginId=auth.loginId
@@ -38,6 +38,7 @@ class Connection extends ph.EventModule
       @ppStorage.on('dataLoad',@_loadStorage)
     else
       @_loadStorage()
+    @load()
   _loadStorage:=>
     if @isWs
       @_openWebSocket()
@@ -97,10 +98,15 @@ class Connection extends ph.EventModule
   _onWsClose: (event)=>
     ph.log('Pa _onWsClose.code:'+event.code+':reason:'+event.reason+':wasClean:'+event.wasClean)
 #    @__onClose(event.reason)
-    if @stat!=ph.pa.STAT_CONNECT
+    if @stat==ph.pa.STAT_OPEN
+# 接続直後に切れるのはwebsocketが使えないと考える
+      @isWs=false
+      @_openXhr()
+      return
+    else if @stat!=ph.pa.STAT_CONNECT
 #      if @stat==ph.pa.STAT_OPEN
-#        #接続直後に切れるのはwebsocketが使えないと考える
       @trigger('unload')
+      @unload()
       @deferred.resolve('out session')
       @stat=ph.pa.INIT
       return
@@ -171,10 +177,11 @@ class Connection extends ph.EventModule
       @trigger('connected',@) #success to connect
     return
   __onClose:(msg)->
-    if @deferred.state()!='pending'
+    if @isUnload()
       ph.log('aleady closed')
       return
     @trigger('unload')
+    @unload()
     @deferred.resolve(msg,@)
     if @isWs
       @stat=ph.pa.STAT_CLOSE
@@ -265,19 +272,13 @@ class Connection extends ph.EventModule
         @__onError(msg)
 #----------Connection outer api----------
   close:->
-    @checkState()
+    @checkCall()
     @_openCount--
     if @_openCount==0
       @_send({type:ph.pa.TYPE_CLOSE})
     @
   subscribe:(qname,subname,onMessage)->
-    dfd=ph.jQuery.Deferred()
-    prm=dfd.promise(new Subscription())
-    con=@
-    @_ready.done(->con._subscribe(qname,subname,onMessage,dfd,prm))
-    prm
-  _subscribe:(qname,subname,onMessage,dfd,prm)->
-    @checkState()
+    @checkCall()
     if subname && ph.jQuery.isFunction(subname)
      onMessage=subname
      subname=ph.pa._DEFAULT_SUB_ID
@@ -286,9 +287,9 @@ class Connection extends ph.EventModule
     key="#{qname}@#{subname}"
     if @_subscribes[key]
       return @_subscribes[key].promise
-##    dfd=ph.jQuery.Deferred()
-    prm._init(@,dfd,qname,subname)
-    @_subscribes[key]={deferred:dfd,promise:prm}
+    subscription=new Subscription(@,qname,subname)
+    prm=subscription.promise
+    @_subscribes[key]=subscription
     if onMessage
       prm.onMessage(onMessage)
     #aleady recive message check
@@ -300,18 +301,18 @@ class Connection extends ph.EventModule
       ,0)
     prm
   publish:(qname,msg)->
-    @checkState()
+    @checkCall()
     @_send({type:ph.pa.TYPE_PUBLISH,qname:qname,message:msg})
   qnames:(cb)->
-    @checkState()
+    @checkCall()
     if cb
       @on(ph.pa.TYPE_QNAMES,cb)
     @_send({type:ph.pa.TYPE_QNAMES})
   deploy:(qname,className)->
-    @checkState()
+    @checkCall()
     @_send({type:ph.pa.TYPE_DEPLOY,qname:qname,paletClassName:className})
   undeploy:(qname)->
-    @checkState()
+    @checkCall()
     @_send({type:ph.pa.TYPE_UNDEPLOY,qname:qname})
   storage:(scope)->
     if !scope || scope==ph.pa.SCOPE_PAGE_PRIVATE
