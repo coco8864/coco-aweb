@@ -74,8 +74,8 @@ ph.jQuery(function() {
 				if(typeof searchPage!=='undefined')searchPage();
 			}
 		});
-	ph.admin.perfSub=ph.admin.con.subscribe('admin','perf');
-	ph.admin.perfSub.onMessage(perfCheckServer);
+	ph.admin.perfSub=ph.admin.con.subscribe('admin','perf',perfCheckServer);
+//	ph.admin.perfSub.onMessage(perfCheckServer);
 
 	jQuery("#stress").dialog({title:'stressオプション入力'});
 	jQuery("#stress").dialog('close');
