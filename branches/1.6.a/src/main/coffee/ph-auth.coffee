@@ -20,8 +20,8 @@ class PhAuth
     if res.result
       auth._setup(res)
     else
-      delete @_authQueue[auth._keyUrl]
-      auth._deferred.reject(auth)
+      delete @_authQueue[auth.keyUrl]
+      auth.deferred.reject(auth)
     return
   _alwaysAsyncAuth:(auth)=>
     auth.trigger('done',auth)
@@ -37,7 +37,7 @@ class PhAuth
       return
     auth=@_authQueue.pop()
     @_processAuth=auth
-    @_requestUrl(auth._checkAplUrl,@_aplCheckCb)
+    @_requestUrl(auth.checkAplUrl,@_aplCheckCb)
     return
   _requestUrl:(url,cb)->
     req={url:url,cb:cb}
@@ -139,7 +139,7 @@ class PhAuth
     if cb
       auth.on('done',cb)
     auth.always(@_alwaysAsyncAuth)
-    @_auths[keyUrl]=auth
+    @_auths[auth.keyUrl]=auth
     @_callAsyncAuth(auth)
     auth
   info:(cb,authUrl)->
@@ -165,23 +165,22 @@ class Auth extends ph.EventModule2
     super
     @deferred=ph.jQuery.Deferred()
     @promise=@deferred.promise(@)
-    aplUrl.match(ph.auth_urlPtn)
+    aplUrl.match(ph.auth._urlPtn)
     protocol=RegExp.$1
     aplDomain=RegExp.$2
     aplPath=RegExp.$3
-    keyUrl=checkAplUrl=null
     if protocol=='ws:'
       @keyUrl="http://#{aplDomain}#{aplPath}"
-      @checkAplUrl=keyUrl+ph.auth._checkWsAplQuery
+      @checkAplUrl=@keyUrl+ph.auth._checkWsAplQuery
     else if protocol=='wss:'
       @keyUrl="https://#{aplDomain}#{aplPath}"
-      @checkAplUrl=keyUrl+ph.auth._checkWsAplQuery
+      @checkAplUrl=@keyUrl+ph.auth._checkWsAplQuery
     else if protocol==null || protocol==''
       if ph.isSsl
         @keyUrl="https//#{ph.domain}#{aplPath}"
       else
         @keyUrl="http//#{ph.domain}#{aplPath}"
-      @checkAplUrl=keyUrl+ph.auth._checkAplQuery
+      @checkAplUrl=@keyUrl+ph.auth._checkAplQuery
     else #http or https
       @keyUrl=aplUrl;
       @checkAplUrl=aplUrl+ph.auth._checkAplQuery
@@ -227,7 +226,7 @@ class Auth extends ph.EventModule2
     if @_loadFrame
       @_loadFrame=false
       @_info=ph.JSON.parse(ev.data)
-      @_deferred.resolve(@)
+      @deferred.resolve(@)
       return
     if ev.data=='showFrame'
       @_frame.css({'height':'200px','width':'300px','top':'50%','left':'50%'})
