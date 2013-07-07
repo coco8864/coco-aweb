@@ -57,6 +57,15 @@
                 </fileSet>
             </joinSet>
             <joinSet>
+                <id>ph-event2</id>
+                <fileSet>
+                    <directory>${basedir}/src/main/coffee</directory>
+                    <includes>
+                        <include>ph-event2.coffee</include>
+                    </includes>
+                </fileSet>
+            </joinSet>
+            <joinSet>
                 <id>ph-event</id>
                 <fileSet>
                     <directory>${basedir}/src/main/coffee</directory>
