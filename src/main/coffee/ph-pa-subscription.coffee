@@ -7,8 +7,8 @@ class Subscription extends ph.EventModule2
     @_con.checkCall(@_connectionOnLoad)
     @
   _connectionOnLoad:=>
-    @load()
     @_con._send({type:ph.pa.TYPE_SUBSCRIBE,qname:@qname,subname:@subname})
+    @load()
     return
   unsubscribe:->
     @checkCall(@_unsubscribe)
@@ -43,6 +43,4 @@ class Subscription extends ph.EventModule2
     qnameInput.remove()
     subnameInput.remove()
   onMessage:(cb)->
-    @checkCall(@_onMessage,cb)
-  _onMessage:(cb)->
     @on(ph.pa.TYPE_MESSAGE,cb)

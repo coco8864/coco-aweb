@@ -38,7 +38,6 @@ class Connection extends ph.EventModule2
       @ppStorage.on('dataLoad',@_loadStorage)
     else
       @_loadStorage()
-    @load()
   _loadStorage:=>
     if @isWs
       @_openWebSocket()
@@ -169,12 +168,12 @@ class Connection extends ph.EventModule2
     if msg.bid!=@_getBid()
       @_setBid(msg.bid)
       @_send({type:ph.pa.TYPE_NEGOTIATE,bid:msg.bid,token:@_token,needRes:false})
-    @offlinePassHash=msg.offlinePassHash
     if @_initStorage && @_initStorage.status!='load'
       c=@
       @_initStorage.on('dataLoad',->c.trigger('connected',c))
     else
       @trigger('connected',@) #success to connect
+    @load()
     return
   __onClose:(msg)->
     if @isUnload()
@@ -285,8 +284,11 @@ class Connection extends ph.EventModule2
     else if !subname
       subname=ph.pa._DEFAULT_SUB_ID
     key="#{qname}@#{subname}"
-    if @_subscribes[key]
-      return @_subscribes[key].promise
+    prm=@_subscribes[key]
+    if prm
+      if onMessage
+        prm.onMessage(onMessage)
+      return prm
     subscription=new Subscription(@,qname,subname)
     prm=subscription.promise
     @_subscribes[key]=subscription
