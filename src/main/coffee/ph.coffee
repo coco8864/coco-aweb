@@ -15,21 +15,16 @@ class EventModule2
     if !@_callback[name]? then @_callback[name]=[]
     @_callback[name].push(callback)
     @
-  _off:(cbs,list,name,cb)->
-    list=cbs[name]
-    if !list
-      return
+  off: (name, cb) =>
+    list = @_callback[name]
+    return @ unless list
     if !cb
-      delete cbs[name]
-      return
+      delete @_callback[name]
+      return @
     n=list.length
     for i in [n-1..0]
       if list[i]==cb
         list.splice(i,1)
-    return
-  off: (name, cb) =>
-    _off(@_callbackOne,name,cb)
-    _off(@_callback,name,cb)
     @
   load:->
     if @_stat=='@loading'
@@ -40,18 +35,22 @@ class EventModule2
     if @_stat=='@load'
       @_stat='@unload'
     return
-  _trigger: (list,name,args...) ->
-    return unless list
+  _triggerOne: (name,args...) ->
+    list = @_callbackOne[name]
+    return @ unless list
     for callback in list
       callback.apply(@,args)
+    delete @_callbackOne[name]
     return
-  trigger: (args...) ->
-    if @_callbackOne[name]
-      @_trigger.apply(@_callbackOne[name],@,args)
-      delete @_callbackOne[name]
-    if @_callback[name]
-      @_trigger.apply(@_callback[name],@,args)
+  _trigger: (name,args...) ->
+    list = @_callback[name]
+    return @ unless list
+    for callback in list
+      callback.apply(@,args)
     @
+  trigger: (args...) ->
+    @_trigger.apply(@,args)
+    @_triggerOne.apply(@,args)
 # 状態によってメソッドの呼び出す
 # @loading+funcが指定された場合は、load時にfuncを実行
   checkCall:(func,args...)->
