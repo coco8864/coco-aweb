@@ -81,7 +81,7 @@ class PhAuth
     clearTimeout(req.timerId)
     req.timerId=null
     if req.url.lastIndexOf(ev.origin, 0)!=0
-      @_reqestCallback({result:false,reason:'domain error'})
+      @_requestCallback({result:false,reason:'domain error'})
       return
     res=ph.JSON.parse(ev.data)
     @_requestCallback(res)
