@@ -68,10 +68,8 @@ class EventModule2
   isUnload:->
     @_stat=='@unload'
 
-window.ph.EventModule2=EventModule2
-
 #-------------------Ph-------------------
-class Ph extends ph.EventModule2
+class Ph extends EventModule2
  version:'$esc.javascript(${config.getString("phantomVersion")})'
  isSsl:'$esc.javascript(${handler.isSsl()})'=='true'
  domain:'$esc.javascript(${handler.getRequestHeader().getServer()})'
@@ -79,7 +77,7 @@ class Ph extends ph.EventModule2
  adminUrl:'$esc.javascript(${config.adminUrl})'
  publicWebUrl:'$esc.javascript(${config.publicWebUrl})'
  scriptBase:''
- scripts:['jquery-1.8.3.min.js','ph-jqnoconflict.js','ph-json2.js','ph-auth.js','ph-pa.js']
+ scripts:['jquery-1.8.3.min.js','ph-jqnoconflict.js','ph-json2.js','ph-auth.js','ph-event.js','ph-pa.js']
  useWebSocket:typeof window.WebSocket != 'undefined' || typeof window.MozWebSocket !='undefined' ## WebSocketを使うか否か?
  useSessionStorage:typeof window.sessionStorage != 'undefined' ## SessionStorageを使うか否か?
  useCrossDomain:typeof window.postMessage != 'undefined' ## iframeを使ったクロスドメイン通信を使うか否か?
@@ -194,7 +192,7 @@ class Ph extends ph.EventModule2
    url: '/ph.json',
    dataType:'json',
    success: (json)->
-    for key,value in json
+    for key,value of json
      ph[key]=value
     if ph.useWebSocket && !ph.websocketSpec
      ph.useWebSocket=false
@@ -209,6 +207,8 @@ class Ph extends ph.EventModule2
   ph.jQuery(window).unload((ev)->window.trigger('unload',ev))
 
 window.ph=new Ph()
+window.ph.EventModule2=EventModule2
+window.ph.event=new EventModule2()
 
 for script in ph.scripts
  document.write('<script type="text/javascript" src="');
