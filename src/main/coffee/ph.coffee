@@ -70,14 +70,8 @@ class EventModule2
 
 #-------------------Ph-------------------
 class Ph extends EventModule2
- version:'$esc.javascript(${config.getString("phantomVersion")})'
- isSsl:'$esc.javascript(${handler.isSsl()})'=='true'
- domain:'$esc.javascript(${handler.getRequestHeader().getServer()})'
- authUrl:'$esc.javascript(${config.authUrl})'
- adminUrl:'$esc.javascript(${config.adminUrl})'
- publicWebUrl:'$esc.javascript(${config.publicWebUrl})'
  scriptBase:''
- scripts:['jquery-1.8.3.min.js','ph-jqnoconflict.js','ph-json2.js','ph-auth.js','ph-event.js','ph-pa.js']
+ scripts:['jquery-1.8.3.min.js','ph-jqnoconflict.js','ph-json2.js','ph-auth.js','ph-pa.js']
  useWebSocket:typeof window.WebSocket != 'undefined' || typeof window.MozWebSocket !='undefined' ## WebSocketを使うか否か?
  useSessionStorage:typeof window.sessionStorage != 'undefined' ## SessionStorageを使うか否か?
  useCrossDomain:typeof window.postMessage != 'undefined' ## iframeを使ったクロスドメイン通信を使うか否か?
@@ -182,9 +176,8 @@ class Ph extends EventModule2
   return baseroot + bases.concat(pathes).join("/")
 #ph-jqnoconflict.jsでload時にph.onLoadが呼び出されるようにしている
  onLoad:->
-  ph.load=ph.jQuery.Deferred()
   if !navigator.onLine
-    ph.load.reject()
+    ph.load()
     ph.isOffline=true
     return
   ph.jQuery.ajax({
@@ -196,19 +189,19 @@ class Ph extends EventModule2
      ph[key]=value
     if ph.useWebSocket && !ph.websocketSpec
      ph.useWebSocket=false
-    ph.load.resolve()
+    ph.load()
     ph.isOffline=false
    error: (xhr)->
-    ph.load.reject()
+    ph.unload()
     ph.isOffline=true
   })
   ph.jQuery(window).on('message',(ev)->window.ph.trigger('message',ev))
   ph.jQuery(window).on('storage',(ev)->window.ph.trigger('storage',ev))
-  ph.jQuery(window).unload((ev)->window.trigger('unload',ev))
+  ph.jQuery(window).unload((ev)->window.ph.trigger('unload',ev))
 
 window.ph=new Ph()
 window.ph.EventModule2=EventModule2
-window.ph.event=new EventModule2()
+#window.ph.event=new EventModule2()
 
 for script in ph.scripts
  document.write('<script type="text/javascript" src="');
