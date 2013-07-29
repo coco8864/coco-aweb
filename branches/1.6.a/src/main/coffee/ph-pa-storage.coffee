@@ -1,5 +1,5 @@
 #-------------------PagePrivateStorage-------------------
-class PrivateSessionStorage extends ph.EventModule
+class PrivateSessionStorage extends ph.EventModule2
   constructor:(url,@_auth)->
     super
     @status='init'
@@ -48,7 +48,7 @@ class PrivateSessionStorage extends ph.EventModule
     @trigger('remove',@)
 
 #-------------------Session,Apl PrivateStorage-------------------
-class PrivateLocalStorage extends ph.EventModule
+class PrivateLocalStorage extends ph.EventModule2
   constructor:(url,@_auth,@_bid,@scope)->
     super
     @status='init' #‚Ü‚¾ƒf[ƒ^‚ª€”õ‚Å‚«‚Ä‚È‚¢‚ÌˆÓ

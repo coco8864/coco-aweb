@@ -12,11 +12,11 @@ class Subscription extends ph.EventModule2
     return
   unsubscribe:->
     @checkCall(@_unsubscribe)
-  _unsubscribe:->
+  _unsubscribe:=>
     @_con._send({type:ph.pa.TYPE_UNSUBSCRIBE,qname:@qname,subname:@subname})
   publish:(msg)->
     @checkCall(@_publish,msg)
-  _publish:(msg)->
+  _publish:(msg)=>
     @_con._send({type:ph.pa.TYPE_PUBLISH,qname:@qname,subname:@subname,message:msg})
   publishForm:(formId)->
     @checkCall(@_publishForm,formId)

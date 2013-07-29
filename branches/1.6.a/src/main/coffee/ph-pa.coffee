@@ -62,12 +62,12 @@ window.ph.pa={
     else if url.lastIndexOf('http://',0)==0||url.lastIndexOf('https://',0)==0
       connectXhrUrl=url
     else
-      if ph.isSsl
-        connectXhrUrl='https://' + ph.domain + url
-        connectWsUrl='wss://' + ph.domain + url
+      if location.protocol=='https:'
+        connectXhrUrl='https://' + location.host + url
+        connectWsUrl='wss://' + location.host + url
       else
-        connectXhrUrl='http://' + ph.domain + url
-        connectWsUrl='ws://' + ph.domain + url
+        connectXhrUrl='http://' + location.host + url
+        connectWsUrl='ws://' + location.host + url
     ph.log('url:' + url+':connectXhrUrl:'+connectXhrUrl)
     if !@_connections[connectXhrUrl]
       @_connections[connectXhrUrl]=new Connection(connectXhrUrl,connectWsUrl,storageScope)
@@ -121,8 +121,8 @@ window.ph.pa={
 }
 #xhr通信用のイベント登録
 ph.jQuery(->
-  ph.event.on('message',ph.pa._xhrOnMessage)
-  ph.event.on('unload',ph.pa._onUnload)
-  ph.event.on('storage',ph.pa._onStorage)
+  ph.on('message',ph.pa._xhrOnMessage)
+  ph.on('unload',ph.pa._onUnload)
+  ph.on('storage',ph.pa._onStorage)
 )
 #setTimeout(ph.pa._onTimer,ph.pa._INTERVAL)

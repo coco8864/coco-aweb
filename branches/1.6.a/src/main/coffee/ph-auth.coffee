@@ -72,7 +72,7 @@ class PhAuth
     ph.jQuery("body").append(@_frame)
     return
   _onMessage:(ev)=>
-    if !@_frame || ev.source!=@_frame[0].contentWindow
+    if !@_frame || ev.originalEvent.source!=@_frame[0].contentWindow
       return
     @_frame[0].src='about:blank'
     req=@_processReq
@@ -80,10 +80,10 @@ class PhAuth
       return
     clearTimeout(req.timerId)
     req.timerId=null
-    if req.url.lastIndexOf(ev.origin, 0)!=0
+    if req.url.lastIndexOf(ev.originalEvent.origin, 0)!=0
       @_requestCallback({result:false,reason:'domain error'})
       return
-    res=ph.JSON.parse(ev.data)
+    res=ph.JSON.parse(ev.originalEvent.data)
     @_requestCallback(res)
     return
   _authCheckCb:(res)=>
@@ -111,7 +111,8 @@ class PhAuth
       auth.checkCall(cb)
     else
       @_auths[auth.keyUrl]=auth
-      ph.load.done(->ph.auth.onlineAuth(cb,auth)).fail(->ph.auth.offlineAuth(cb,auth))
+      ph.checkCall(->ph.auth.onlineAuth(cb,auth))
+#.fail(->ph.auth.offlineAuth(cb,auth))
     auth.promise
   offlineAuth:(cb,auth)->
 
@@ -143,8 +144,11 @@ class PhAuth
     @_callAsyncAuth(auth)
     auth
   info:(cb,authUrl)->
+    ph.checkCall(ph.auth._info,cb,authUrl)
+  _info:(cb,authUrl)=>
     if !authUrl #指定がなければ自分をダウンロードしたauthUrl
       authUrl=ph.authUrl
+#      authUrl='https://192.168.1.30:1280/auth'
     url=authUrl+@_infoPath;
     @_requestUrl(url,cb);
     return
@@ -154,7 +158,7 @@ window.ph.auth=new PhAuth()
 #xhr通信用のイベント登録
 ph.jQuery(->
   ph.auth._init()
-  ph.event.on('message',ph.auth._onMessage)
+  ph.on('message',ph.auth._onMessage)
 )
 
 #-------------------Auth-------------------
@@ -185,7 +189,7 @@ class Auth extends ph.EventModule2
       @keyUrl=aplUrl;
       @checkAplUrl=aplUrl+ph.auth._checkAplQuery
   _init:->
-    ph.event.on('message',@_onMessage)
+    ph.on('message',@_onMessage)
     @
   _setup:(res)->
     @loginId=res.loginId
@@ -221,23 +225,23 @@ class Auth extends ph.EventModule2
     @_request()
     return
   _onMessage:(ev)=>
-    if !@_frame || ev.source!=@_frame[0].contentWindow
+    if !@_frame || ev.originalEvent.source!=@_frame[0].contentWindow
       return
     if @_loadFrame
       @_loadFrame=false
-      @_info=ph.JSON.parse(ev.data)
+      @_info=ph.JSON.parse(ev.originalEvent.data)
       @deferred.resolve(@)
       return
-    if ev.data=='showFrame'
+    if ev.originalEvent.data=='showFrame'
       @_frame.css({'height':'200px','width':'300px','top':'50%','left':'50%'})
       return
-    if ev.data=='hideFrame'
+    if ev.originalEvent.data=='hideFrame'
       @_frame.css({'height':'0px','width':'0px','top':'0%','left':'0%'})
       return
     req=@_processReq
     if !req
       return
-    res=ph.JSON.parse(ev.data)
+    res=ph.JSON.parse(ev.originalEvent.data)
     @_requestCallback(res)
     return
   logout:(cb)->
