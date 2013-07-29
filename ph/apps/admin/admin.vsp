@@ -10,7 +10,7 @@
 	<title>Phatom Server Console</title>
 
 	<link type="text/css" href="/pub/css/jquery-ui-1.10.2.custom.css" rel="stylesheet" />
-	<script type="text/javascript" src="/ph.js"></script>
+	<script type="text/javascript" src="/pub/js/ph.js"></script>
 	<script type="text/javascript" src="/pub/js/dateformat.js"></script>
 	<script type="text/javascript" src="/pub/js/jquery-1.8.3.min.js"></script>
 	<script type="text/javascript" src="/pub/js/jquery-ui-1.10.2.custom.min.js"></script>
@@ -52,7 +52,7 @@ ph.jQuery(function() {
 	});
 ##ph.useWebSocket=false;
 	ph.jQuery('#dialogs').hide();
-	ph.admin.con=ph.pa.connect('/admin',function(){
+	ph.admin.con=ph.pa.connect("/admin",function(){
 		ph.jQuery('#dialogs').show();
 		var stor=ph.admin.storage=ph.admin.con.storage();
 		var logId=stor.getItem('logId');
