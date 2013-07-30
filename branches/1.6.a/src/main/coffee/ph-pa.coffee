@@ -62,12 +62,12 @@ window.ph.pa={
     else if url.lastIndexOf('http://',0)==0||url.lastIndexOf('https://',0)==0
       connectXhrUrl=url
     else
-      if location.protocol=='https:'
-        connectXhrUrl='https://' + location.host + url
-        connectWsUrl='wss://' + location.host + url
+      if ph.isSsl
+        connectXhrUrl='https://' + ph.domain + url
+        connectWsUrl='wss://' + ph.domain + url
       else
-        connectXhrUrl='http://' + location.host + url
-        connectWsUrl='ws://' + location.host + url
+        connectXhrUrl='http://' + ph.domain + url
+        connectWsUrl='ws://' + ph.domain + url
     ph.log('url:' + url+':connectXhrUrl:'+connectXhrUrl)
     if !@_connections[connectXhrUrl]
       @_connections[connectXhrUrl]=new Connection(connectXhrUrl,connectWsUrl,storageScope)
@@ -86,18 +86,18 @@ window.ph.pa={
     for url,con of ph.pa._connections
       pms=con.promise
       pms.trigger('storage',event)
-  _xhrOnMessage:(event)->
+  _xhrOnMessage:(ev)->
     for url,con of ph.pa._connections
       c=con.promise
       if !c._xhrFrame
         continue
-      if event.source==c._xhrFrame[0].contentWindow
+      if ev.originalEvent.source==c._xhrFrame[0].contentWindow
           cd=c
           break
     if !cd
       #‘¼‚ÌƒCƒxƒ“ƒg
       return
-    ress=ph.JSON.parse(event.data)
+    ress=ph.JSON.parse(ev.originalEvent.data)
     if !ph.jQuery.isArray(ress)
       if ress.load
         cd._onXhrOpen(ress)

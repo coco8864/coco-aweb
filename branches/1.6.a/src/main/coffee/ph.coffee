@@ -34,6 +34,7 @@ class EventModule2
   unload:->
     if @_stat=='@load'
       @_stat='@unload'
+    @trigger('@unload')
     return
   _triggerOne: (name,args...) ->
     list = @_callbackOne[name]
@@ -64,12 +65,17 @@ class EventModule2
         func.apply(@,args)
       return true
     else
-      throw 'stat error:'+@_stat
+      if func
+        func.apply(@,args)
+      return true
   isUnload:->
     @_stat=='@unload'
 
 #-------------------Ph-------------------
 class Ph extends EventModule2
+ version:'$esc.javascript(${config.getString("phantomVersion")})'
+ isSsl:'$esc.javascript(${handler.isSsl()})'=='true'
+ domain:'$esc.javascript(${handler.getRequestHeader().getServer()})'
  scriptBase:''
  scripts:['jquery-1.8.3.min.js','ph-jqnoconflict.js','ph-json2.js','ph-auth.js','ph-pa.js']
  useWebSocket:typeof window.WebSocket != 'undefined' || typeof window.MozWebSocket !='undefined' ## WebSocket‚ðŽg‚¤‚©”Û‚©?
