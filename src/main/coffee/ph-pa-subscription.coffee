@@ -4,22 +4,22 @@ class Subscription extends ph.EventModule2
     super
     @deferred=ph.jQuery.Deferred()
     @promise=@deferred.promise(@)
-    @_con.checkCall(@_connectionOnLoad)
+    @_con.onLoad(@_connectionOnLoad)
     @
   _connectionOnLoad:=>
     @_con._send({type:ph.pa.TYPE_SUBSCRIBE,qname:@qname,subname:@subname})
     @load()
     return
   unsubscribe:->
-    @checkCall(@_unsubscribe)
+    @onLoad(@_unsubscribe)
   _unsubscribe:=>
     @_con._send({type:ph.pa.TYPE_UNSUBSCRIBE,qname:@qname,subname:@subname})
   publish:(msg)->
-    @checkCall(@_publish,msg)
+    @onLoad(@_publish,msg)
   _publish:(msg)=>
     @_con._send({type:ph.pa.TYPE_PUBLISH,qname:@qname,subname:@subname,message:msg})
   publishForm:(formId)->
-    @checkCall(@_publishForm,formId)
+    @onLoad(@_publishForm,formId)
   _publishForm:(formId)->
     form=ph.jQuery('#'+formId)
     if form.length==0 || form[0].tagName!='FORM'

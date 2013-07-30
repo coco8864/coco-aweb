@@ -21,10 +21,9 @@ class PhAuth
       auth._setup(res)
     else
       delete @_authQueue[auth.keyUrl]
-      auth.deferred.reject(auth)
+      auth.trigger('fail',auth)
     return
   _alwaysAsyncAuth:(auth)=>
-    auth.trigger('done',auth)
     @_processAuth=null
     @_call()
     return
@@ -108,12 +107,12 @@ class PhAuth
     orgAuth=@_auths[auth.keyUrl]
     if orgAuth
       auth=orgAuth
-      auth.checkCall(cb)
+      auth.onLoad(cb)
     else
       @_auths[auth.keyUrl]=auth
-      ph.checkCall(->ph.auth.onlineAuth(cb,auth))
+      ph.onLoad(->ph.auth.onlineAuth(cb,auth))
 #.fail(->ph.auth.offlineAuth(cb,auth))
-    auth.promise
+    auth
   offlineAuth:(cb,auth)->
 
 #----------auth outer api----------
@@ -123,28 +122,16 @@ class PhAuth
 #  3)primaryは認証未=>このメソッドは復帰せず認証画面に遷移
 #  */
   onlineAuth:(cb,auth)->
-#    state=ph.load.state()
-#    if state=='pending'
-#      ph.load.done(->ph.auth.onlineAuth(aplUrl,cb,auth))
-#      return auth.promise
-##    authObj=@_auths[keyUrl]
-#    if authObj
-#      auth=authObj.promise
-#      if cb && auth.state()=='pending'
-#        auth.on('done',cb)
-#      else if cb
-#        cb(auth)
-#      return auth
-#    auth=prmAuth
     auth._init()
     if cb
       auth.on('done',cb)
-    auth.always(@_alwaysAsyncAuth)
+    auth.on('done',@_alwaysAsyncAuth)
+    auth.on('fail',@_alwaysAsyncAuth)
     @_auths[auth.keyUrl]=auth
     @_callAsyncAuth(auth)
     auth
   info:(cb,authUrl)->
-    ph.checkCall(ph.auth._info,cb,authUrl)
+    ph.onLoad(ph.auth._info,cb,authUrl)
   _info:(cb,authUrl)=>
     if !authUrl #指定がなければ自分をダウンロードしたauthUrl
       authUrl=ph.authUrl
@@ -167,8 +154,6 @@ class Auth extends ph.EventModule2
   _processReq:null
   constructor:(aplUrl)->
     super
-    @deferred=ph.jQuery.Deferred()
-    @promise=@deferred.promise(@)
     aplUrl.match(ph.auth._urlPtn)
     protocol=RegExp.$1
     aplDomain=RegExp.$2
@@ -230,7 +215,7 @@ class Auth extends ph.EventModule2
     if @_loadFrame
       @_loadFrame=false
       @_info=ph.JSON.parse(ev.originalEvent.data)
-      @deferred.resolve(@)
+      @trigger('done',@)
       return
     if ev.originalEvent.data=='showFrame'
       @_frame.css({'height':'200px','width':'300px','top':'50%','left':'50%'})
