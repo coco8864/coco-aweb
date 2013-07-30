@@ -128,6 +128,8 @@ class Connection extends ph.EventModule2
     @_ws=ws
   _openXhr:->
     ph.log('Pa _openXhr')
+    if @_xhrFrameName
+      return
     @stat=ph.pa.STAT_OPEN
     @_xhrFrameName=ph.pa._XHR_FRAME_NAME_PREFIX + @connectXhrUrl
     @_xhrFrame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' +
