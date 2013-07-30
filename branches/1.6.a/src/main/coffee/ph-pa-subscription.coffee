@@ -2,8 +2,6 @@
 class Subscription extends ph.EventModule2
   constructor:(@_con,@qname,@subname)->
     super
-    @deferred=ph.jQuery.Deferred()
-    @promise=@deferred.promise(@)
     @_con.onLoad(@_connectionOnLoad)
     @
   _connectionOnLoad:=>

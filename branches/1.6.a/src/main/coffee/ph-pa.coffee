@@ -46,7 +46,7 @@ window.ph.pa={
   _DOWNLOAD_FRAME_NAME_PREFIX:'__pa_dl_'
   _XHR_FRAME_NAME_PREFIX:'__pa_xhr_' #xhrPaFrame.vspに同じ定義あり
   _XHR_FRAME_URL:'/~xhrPaFrame'
-  _connections:{} #key:url value:{deferred:dfd,promise:prm}
+  _connections:{} #key:url value:Connection object
 # urlから以下の事を判断する。
 # httpで始まる場合、必ずxhrで通信する
 # wsで始まる場合、wsで通信、失敗すればxhrで通信する
@@ -79,20 +79,17 @@ window.ph.pa={
   _onUnload:->
     ph.log('onUnload')
     for url,con of ph.pa._connections
-      pms=con.promise
-      pms.trigger('unload')
-  _onStorage:(event)->
+      con.trigger('unload')
+  _onStorage:(ev)->
     ph.log('onStorage.key:'+event.key)
     for url,con of ph.pa._connections
-      pms=con.promise
-      pms.trigger('storage',event)
+      con.trigger('storage',ev)
   _xhrOnMessage:(ev)->
     for url,con of ph.pa._connections
-      c=con.promise
-      if !c._xhrFrame
+      if !con._xhrFrame
         continue
-      if ev.originalEvent.source==c._xhrFrame[0].contentWindow
-          cd=c
+      if ev.originalEvent.source==con._xhrFrame[0].contentWindow
+          cd=con
           break
     if !cd
       #他のイベント

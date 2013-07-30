@@ -9,8 +9,8 @@ class Connection extends ph.EventModule2
     @_reciveMsgs=[] #–¢subcrive‚Å”zM‚Å‚«‚È‚Á‚½message todo:—­‚Ü‚è‚·‚¬
     @isWs=(ph.useWebSocket && connectWsUrl!=null)
     @stat=ph.pa.STAT_AUTH
-    @deferred=ph.jQuery.Deferred()
-    @promise=@deferred.promise(@)
+#    @deferred=ph.jQuery.Deferred()
+#    @promise=@deferred.promise(@)
     auth=ph.auth.auth(connectXhrUrl)
     con=@
     auth.on('done',(auth)->con._doneAuth(auth))
@@ -108,7 +108,7 @@ class Connection extends ph.EventModule2
 #      if @stat==ph.pa.STAT_OPEN
       @trigger('unload')
       @unload()
-      @deferred.resolve('out session')
+#      @deferred.resolve('out session')
       @stat=ph.pa.INIT
       return
     @stat=ph.pa.STAT_IDLE
@@ -185,7 +185,7 @@ class Connection extends ph.EventModule2
       return
     @trigger('unload')
     @unload()
-    @deferred.resolve(msg,@)
+#    @deferred.resolve(msg,@)
     if @isWs
       @stat=ph.pa.STAT_CLOSE
       @_ws.close(1000)
@@ -203,7 +203,8 @@ class Connection extends ph.EventModule2
     sd=@_subscribes[key]
     if !sd
       return false
-    sd.deferred.resolve(msg,sd.promise)
+#    sd.deferred.resolve(msg,sd.promise)
+    sd.trigger('done',msg,sd)
     delete @_subscribes[key]
     true
   __onSuccess:(msg)->
@@ -216,7 +217,7 @@ class Connection extends ph.EventModule2
     else
       sd=@__getSd(msg)
       if sd
-        sd.promise.trigger(ph.pa.RESULT_SUCCESS,msg.requestType,msg)
+        sd.trigger(ph.pa.RESULT_SUCCESS,msg.requestType,msg)
       else
         @trigger(ph.pa.RESULT_SUCCESS,msg.requestType,msg)
   __onError:(msg)->
@@ -225,7 +226,7 @@ class Connection extends ph.EventModule2
     else
       sd=@__getSd(msg)
       if sd
-        sd.promise.trigger(ph.pa.RESULT_ERROR,msg.requestType,msg)
+        sd.trigger(ph.pa.RESULT_ERROR,msg.requestType,msg)
       else
         @trigger(ph.pa.RESULT_ERROR,msg.requestType,msg)
   _onMessage:(msg)=>
@@ -263,11 +264,11 @@ class Connection extends ph.EventModule2
           ph.log('drop msg:'+x)
         reciveMsgs.push(msg)
         return
-      promise=sd.promise
-      sd.promise.trigger(ph.pa.TYPE_MESSAGE,msg.message,promise)
-      @trigger(promise.qname,msg.message,promise)
-      @trigger(promise.subname,msg.message,promise)
-      @trigger("#{promise.qname}@#{promise.subname}",msg.message,promise)
+#      promise=sd.promise
+      sd.trigger(ph.pa.TYPE_MESSAGE,msg.message,sd)
+      @trigger(sd.qname,msg.message,sd)
+      @trigger(sd.subname,msg.message,sd)
+      @trigger("#{sd.qname}@#{sd.subname}",msg.message,sd)
     else if msg.type==ph.pa.TYPE_RESPONSE
       if msg.result==ph.pa.RESULT_SUCCESS
         @__onSuccess(msg)
@@ -294,10 +295,10 @@ class Connection extends ph.EventModule2
         prm.onMessage(onMessage)
       return prm
     subscription=new Subscription(@,qname,subname)
-    prm=subscription.promise
+#    prm=subscription.promise
     @_subscribes[key]=subscription
     if onMessage
-      prm.onMessage(onMessage)
+      subscription.onMessage(onMessage)
     #aleady recive message check
     reciveMsgs=@_reciveMsgs[key]
     if reciveMsgs && reciveMsgs.length>0
@@ -305,7 +306,7 @@ class Connection extends ph.EventModule2
         for msg in reciveMsgs
           @_onMessage(msg)
       ,0)
-    prm
+    subscription
   publish:(qname,msg)->
     @onLoad()
     @_send({type:ph.pa.TYPE_PUBLISH,qname:qname,message:msg})
