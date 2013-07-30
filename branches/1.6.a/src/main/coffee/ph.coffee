@@ -54,7 +54,7 @@ class EventModule2
     @_triggerOne.apply(@,args)
 # 状態によってメソッドの呼び出す
 # @loading+funcが指定された場合は、load時にfuncを実行
-  checkCall:(func,args...)->
+  onLoad:(func,args...)->
     if @_stat=='@loading'
       if func
         _this=@
@@ -64,6 +64,14 @@ class EventModule2
       if func
         func.apply(@,args)
       return true
+    else
+      throw 'aleady unloaded'
+  onUnload:(func,args...)->
+    if @_stat=='@loading' || @_stat=='@load'
+      if func
+        _this=@
+        @one('@unload',->func.apply(_this,args))
+      return false
     else
       if func
         func.apply(@,args)
@@ -180,8 +188,8 @@ class Ph extends EventModule2
    bases.pop()
    pathes.shift()
   return baseroot + bases.concat(pathes).join("/")
-#ph-jqnoconflict.jsでload時にph.onLoadが呼び出されるようにしている
- onLoad:->
+#ph-jqnoconflict.jsでload時にph.onPhLoadが呼び出されるようにしている
+ onPhLoad:->
   if !navigator.onLine
     ph.load()
     ph.isOffline=true

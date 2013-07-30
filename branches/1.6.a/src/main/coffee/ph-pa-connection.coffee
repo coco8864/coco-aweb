@@ -11,8 +11,10 @@ class Connection extends ph.EventModule2
     @stat=ph.pa.STAT_AUTH
     @deferred=ph.jQuery.Deferred()
     @promise=@deferred.promise(@)
+    auth=ph.auth.auth(connectXhrUrl)
     con=@
-    ph.auth.auth(connectXhrUrl).done((auth)->con._doneAuth(auth)).fail((auth)->con._failAuth(auth))
+    auth.on('done',(auth)->con._doneAuth(auth))
+    auth.on('fail',(auth)->con._failAuth(auth))
   _failAuth:(auth)=>
     delete ph.pa._connections[@connectXhrUrl]
     @trigger(ph.pa.RESULT_ERROR,'auth',@)#fail to auth
@@ -273,13 +275,13 @@ class Connection extends ph.EventModule2
         @__onError(msg)
 #----------Connection outer api----------
   close:->
-    @checkCall()
+    @onLoad()
     @_openCount--
     if @_openCount==0
       @_send({type:ph.pa.TYPE_CLOSE})
     @
   subscribe:(qname,subname,onMessage)->
-    @checkCall()
+    @onLoad()
     if subname && ph.jQuery.isFunction(subname)
      onMessage=subname
      subname=ph.pa._DEFAULT_SUB_ID
@@ -305,18 +307,18 @@ class Connection extends ph.EventModule2
       ,0)
     prm
   publish:(qname,msg)->
-    @checkCall()
+    @onLoad()
     @_send({type:ph.pa.TYPE_PUBLISH,qname:qname,message:msg})
   qnames:(cb)->
-    @checkCall()
+    @onLoad()
     if cb
       @on(ph.pa.TYPE_QNAMES,cb)
     @_send({type:ph.pa.TYPE_QNAMES})
   deploy:(qname,className)->
-    @checkCall()
+    @onLoad()
     @_send({type:ph.pa.TYPE_DEPLOY,qname:qname,paletClassName:className})
   undeploy:(qname)->
-    @checkCall()
+    @onLoad()
     @_send({type:ph.pa.TYPE_UNDEPLOY,qname:qname})
   storage:(scope)->
     if !scope || scope==ph.pa.SCOPE_PAGE_PRIVATE
