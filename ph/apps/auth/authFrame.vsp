@@ -54,6 +54,7 @@ function onRequest(ev){
     cdr.req=req;
     if(req.type==="init"){
       if(req.isOffline){
+        _response({type:"showFrame"});
       }else{
         onlineInfo(req,function(result){
             response({type:"init",result:result});
@@ -90,6 +91,10 @@ function onRequest(ev){
 function response(msg){
   cdr.isIn=false;
   cdr.req=null;
+  _response(msg);
+}
+
+function _response(msg){
   var jsonMsg=ph.JSON.stringify(msg);
   parent.postMessage(jsonMsg,parentOrigin);
 }
@@ -104,7 +109,7 @@ jQuery(function(){
   }else if(window.attachEvent){
     window.attachEvent('onmessage',onRequest);
   }
-  response({type:'load'});
+  _response({type:'load'});
 /*
   var offlineInfo={};
   var offlineInfoText=localStorage.getItem(OFFLINE_KEY);
@@ -160,6 +165,6 @@ jQuery(function(){
 <h1>Phantom offline logon</h1>
 <div>user:<input name=userid></div>
 <div>offline password:<input type='password' name=userid></div>
-<div><input type='button' value='logon' onclick='parent.postMessage("hideFrame",parentOrigin)'></div>
+<div><input type='button' value='logon' onclick='_response({type:"hideFrame"})'></div>
 </body>
 </html>
