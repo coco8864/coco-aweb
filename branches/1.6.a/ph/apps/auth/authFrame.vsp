@@ -13,11 +13,29 @@
 ##親frameのlocation.href
 var OFFLINE_KEY='PaOfflineAuth'
 var parentOrigin;
-var offlinePassHash='$!esc.javascript(${offlinePassHash})';
-var authInfo=ph.JSON.parse('$esc.javascript(${info})');
+
+##このコンテンツはoffline cacheするので個別の値は保存できない
+##var offlinePassHash='$!esc.javascript(${offlinePassHash})';
+##var authInfo=ph.JSON.parse('$esc.javascript(${info})');
+##var offlinePassHash=null;
+##var authInfo=null;
+var userInfo=null;
 
 ##crossDomainRequest情報
 var cdr={isIn:false,req:null};
+
+function onlineInfo(req,cb){
+  jQuery.ajax({
+    type:'POST',
+    url:'userInfo',
+    dataType:'json',
+    data:req,
+    success:function(x){
+      userInfo=x;
+      cb(x.result);},
+    error:function(x){cb({result:false});}
+  });
+}
 
 function onRequest(ev){
   if(ev.source!==parent){
@@ -34,15 +52,22 @@ function onRequest(ev){
     }
     cdr.isIn=true;
     cdr.req=req;
-    if(req.type==="encrypt"){
-      if(offlinePassHash){
+    if(req.type==="init"){
+      if(req.isOffline){
+      }else{
+        onlineInfo(req,function(result){
+            response({type:"init",result:result});
+          });
+      }
+    }else if(req.type==="encrypt"){
+      if(userInfo.offlinePassHash){
         req.encryptText=CryptoJS.AES.encrypt(req.plainText, offlinePassHash).toString();
       }else{
         req.encryptText=req.plainText
       }
       response(req);
     }else if(req.type==="decrypt"){
-      if(offlinePassHash){
+      if(userInfo.offlinePassHash){
         req.plainText=CryptoJS.AES.decrypt(req.encryptText, offlinePassHash).toString(CryptoJS.enc.Utf8);
       }else{
         req.plainText=req.encryptText
@@ -57,7 +82,7 @@ function onRequest(ev){
         error:function(x){response({result:false});}
       });
     }else if(req.type==="info"){
-      response(authInfo);
+      response(userInfo.authInfo);
     }
   }
 }
@@ -71,7 +96,7 @@ function response(msg){
 
 jQuery(function(){
   parentOrigin=decodeURIComponent(location.search.substring('?origin='.length));
-  if(parentOrigin=='file://'){
+  if(parentOrigin==='file://'){
     parentOrigin='*';
   }
   if(window.addEventListener){
@@ -79,7 +104,8 @@ jQuery(function(){
   }else if(window.attachEvent){
     window.attachEvent('onmessage',onRequest);
   }
-
+  response({type:'load'});
+/*
   var offlineInfo={};
   var offlineInfoText=localStorage.getItem(OFFLINE_KEY);
   if(offlineInfoText){
@@ -112,7 +138,8 @@ jQuery(function(){
   offlineInfo[loginId]=userInfoEncText;
   offlineInfoText=ph.JSON.stringify(offlineInfo);
   localStorage.setItem(OFFLINE_KEY,offlineInfoText)
-
+  response(authInfo);
+*/
 /*
   //XX {loginId1:{passCheckText:'',offlineLoginCount:99},loginId2:... }
   //localStrageから既存のXXを取得
@@ -123,9 +150,8 @@ jQuery(function(){
   //login回数をインクリメント
 
   //localStrageに設定
+  response({load:true});
 */
-
-  response(authInfo);
 
 });
 // --></script>

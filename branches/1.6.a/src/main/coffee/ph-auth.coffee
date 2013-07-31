@@ -111,9 +111,10 @@ class PhAuth
     else
       @_auths[auth.keyUrl]=auth
       ph.onLoad(->ph.auth.onlineAuth(cb,auth))
-#.fail(->ph.auth.offlineAuth(cb,auth))
+      ph.onUnload(->ph.auth.offlineAuth(cb,auth))
     auth
   offlineAuth:(cb,auth)->
+    auth._init(true)
 
 #----------auth outer api----------
 #  /*authUrl固有のappSidを取得する、以下のパターンがある
@@ -122,7 +123,7 @@ class PhAuth
 #  3)primaryは認証未=>このメソッドは復帰せず認証画面に遷移
 #  */
   onlineAuth:(cb,auth)->
-    auth._init()
+    auth._init(false)
     if cb
       auth.on('done',cb)
     auth.on('done',@_alwaysAsyncAuth)
@@ -149,7 +150,7 @@ ph.jQuery(->
 )
 
 #-------------------Auth-------------------
-class Auth extends ph.EventModule2
+class Auth extends ph.Deffered
   _reqQueue:[]
   _processReq:null
   constructor:(aplUrl)->
@@ -173,7 +174,7 @@ class Auth extends ph.EventModule2
     else #http or https
       @keyUrl=aplUrl;
       @checkAplUrl=aplUrl+ph.auth._checkAplQuery
-  _init:->
+  _init:(@isOffline)->
     ph.on('message',@_onMessage)
     @
   _setup:(res)->
@@ -185,7 +186,7 @@ class Auth extends ph.EventModule2
     @_frame=ph.jQuery(
       "<iframe " +
       "style='frameborder:no;background-color:#CFCFCF;overflow:auto;height:0px;width:0px;position:absolute;top:0%;left:0%;margin-top:-100px;margin-left:-150px;' " +
-      "name='#{ph.auth._authEachFrameName}#{@_keyUrl}' " +
+      "name='#{ph.auth._authEachFrameName}#{@keyUrl}' " +
       "src='#{@authUrl}/authFrame?origin=#{location.protocol}//#{location.host}'>" + 
       "</iframe>")
     ph.jQuery("body").append(@_frame)
@@ -212,28 +213,43 @@ class Auth extends ph.EventModule2
   _onMessage:(ev)=>
     if !@_frame || ev.originalEvent.source!=@_frame[0].contentWindow
       return
-    if @_loadFrame
+    res=ph.JSON.parse(ev.originalEvent.data)
+    if res.type=='load'
       @_loadFrame=false
+      if @isOffline
+        reqText=ph.JSON.stringify({
+          type:'init',
+          isOffline:@isOffline})
+      else
+        reqText=ph.JSON.stringify({
+          type:'init',
+          isOffline:@isOffline,
+          loginId:@loginId,
+          appUrl:@keyUrl,
+          appSid:@appSid,
+          token:@token})
+      @_frame[0].contentWindow.postMessage(reqText,'*')
+      return
+    if res.type=='init'
       @_info=ph.JSON.parse(ev.originalEvent.data)
       @trigger('done',@)
       return
-    if ev.originalEvent.data=='showFrame'
+    if res.type=='showFrame'
       @_frame.css({'height':'200px','width':'300px','top':'50%','left':'50%'})
       return
-    if ev.originalEvent.data=='hideFrame'
+    if res.type=='hideFrame'
       @_frame.css({'height':'0px','width':'0px','top':'0%','left':'0%'})
       return
     req=@_processReq
     if !req
       return
-    res=ph.JSON.parse(ev.originalEvent.data)
     @_requestCallback(res)
     return
   logout:(cb)->
     @_requestQ({type:'logout'},(res)=>
       cb(res)
       @_frame.remove()
-      delete ph.auth._auths[@_keyUrl])
+      delete ph.auth._auths[@keyUrl])
     @
   info:(cb)->
     @_requestQ({type:'info'},cb)

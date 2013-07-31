@@ -481,7 +481,7 @@ public class AuthHandler extends WebServerHandler {
 			if(user!=null){
 				response.element("offlinePassHash", user.getOfflinePassHash());
 			}
-			response.element("userInfo",infoObject(user));
+			response.element("authInfo",infoObject(user));
 		}
 		responseJson(response);
 	}

@@ -2,7 +2,7 @@ if window.ph
  return
 
 #-------------------EventModule-------------------
-class EventModule2
+class Deffered
   constructor:->
     @_callback ={}
     @_callbackOne ={}
@@ -80,7 +80,7 @@ class EventModule2
     @_stat=='@unload'
 
 #-------------------Ph-------------------
-class Ph extends EventModule2
+class Ph extends Deffered
  version:'$esc.javascript(${config.getString("phantomVersion")})'
  isSsl:'$esc.javascript(${handler.isSsl()})'=='true'
  domain:'$esc.javascript(${handler.getRequestHeader().getServer()})'
@@ -191,7 +191,7 @@ class Ph extends EventModule2
 #ph-jqnoconflict.js‚ÅloadŽž‚Éph.onPhLoad‚ªŒÄ‚Ño‚³‚ê‚é‚æ‚¤‚É‚µ‚Ä‚¢‚é
  onPhLoad:->
   if !navigator.onLine
-    ph.load()
+    ph.unload()
     ph.isOffline=true
     return
   ph.jQuery.ajax({
@@ -214,8 +214,7 @@ class Ph extends EventModule2
   ph.jQuery(window).unload((ev)->window.ph.trigger('unload',ev))
 
 window.ph=new Ph()
-window.ph.EventModule2=EventModule2
-#window.ph.event=new EventModule2()
+window.ph.Deffered=Deffered
 
 for script in ph.scripts
  document.write('<script type="text/javascript" src="');
