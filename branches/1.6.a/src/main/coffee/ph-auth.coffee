@@ -110,11 +110,22 @@ class PhAuth
       auth.onLoad(cb)
     else
       @_auths[auth.keyUrl]=auth
-      ph.onLoad(->ph.auth.onlineAuth(cb,auth))
-      ph.onUnload(->ph.auth.offlineAuth(cb,auth))
+      ph.onLoad(->ph.auth._onlineAuth(cb,auth))
+      ph.onUnload(->ph.auth._offlineAuth(cb,auth))
     auth
-  offlineAuth:(cb,auth)->
+  offlineAuth:(aplUrl,cb)->
+    auth=new Auth(aplUrl)
+    orgAuth=@_auths[auth.keyUrl]
+    if orgAuth
+      auth=orgAuth
+      auth.onLoad(cb)
+    else
+      @_auths[auth.keyUrl]=auth
+      @_offlineAuth(cb,auth)
+    auth
+  _offlineAuth:(cb,auth)->
     auth._init(true)
+    auth._loadEachFrame()
 
 #----------auth outer api----------
 #  /*authUrl固有のappSidを取得する、以下のパターンがある
@@ -122,7 +133,7 @@ class PhAuth
 #  2)primaryは認証済みだがsecondaryが未=>認可してappSidを作成
 #  3)primaryは認証未=>このメソッドは復帰せず認証画面に遷移
 #  */
-  onlineAuth:(cb,auth)->
+  _onlineAuth:(cb,auth)->
     auth._init(false)
     if cb
       auth.on('done',cb)
@@ -136,7 +147,6 @@ class PhAuth
   _info:(cb,authUrl)=>
     if !authUrl #指定がなければ自分をダウンロードしたauthUrl
       authUrl=ph.authUrl
-#      authUrl='https://192.168.1.30:1280/auth'
     url=authUrl+@_infoPath;
     @_requestUrl(url,cb);
     return
@@ -177,11 +187,7 @@ class Auth extends ph.Deffered
   _init:(@isOffline)->
     ph.on('message',@_onMessage)
     @
-  _setup:(res)->
-    @loginId=res.loginId
-    @authUrl=res.authUrl
-    @appSid=res.appSid
-    @token=res.token
+  _loadEachFrame:->
     @_loadFrame=true
     @_frame=ph.jQuery(
       "<iframe " +
@@ -190,6 +196,12 @@ class Auth extends ph.Deffered
       "src='#{@authUrl}/authFrame?origin=#{location.protocol}//#{location.host}'>" + 
       "</iframe>")
     ph.jQuery("body").append(@_frame)
+  _setup:(res)->
+    @loginId=res.loginId
+    @authUrl=res.authUrl
+    @appSid=res.appSid
+    @token=res.token
+    @_loadEachFrame()
 #    @_frame.css({'background-color':'#CFCFCF','overflow':'auto','height':'200px','width':'300px','position':'absolute','top':'50%','left':'50%','margin-top':'-100px','margin-left':'-150px'})
   _requestQ:(req,cb)->
     reqObj={req:req,cb:cb}
