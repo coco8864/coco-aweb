@@ -1,5 +1,5 @@
 #-------------------Subscription-------------------
-class Subscription extends ph.EventModule2
+class Subscription extends ph.Deffered
   constructor:(@_con,@qname,@subname)->
     super
     @_con.onLoad(@_connectionOnLoad)
