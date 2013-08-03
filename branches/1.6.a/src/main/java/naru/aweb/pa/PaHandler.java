@@ -169,7 +169,9 @@ public class PaHandler extends WebSocketHandler implements Timer{
 	
 	@Override
 	public void onWsClose(short code,String reason) {
-		paSession.setupWsHandler(this,null);
+		if(paSession!=null){
+			paSession.setupWsHandler(this,null);
+		}
 	}
 	
 	private PaSessions getPaSessions(AuthSession authSession){

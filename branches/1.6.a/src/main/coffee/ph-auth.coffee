@@ -252,10 +252,8 @@ class Auth extends ph.Deffered
     if res.type=='hideFrame'
       @_frame.css({'height':'0px','width':'0px','top':'0%','left':'0%'})
       return
-    req=@_processReq
-    if !req
-      return
-    @_requestCallback(res)
+    if @_processReq
+      @_requestCallback(res)
     return
   logout:(cb)->
     @_requestQ({type:'logout'},(res)=>
