@@ -137,7 +137,7 @@ public class AppcacheOption {
 			return true;
 		}
 		if(path.equals(cacheHtmlPath)){
-			forwardAppcacheTemplate(handler,phappcache,"~ph.html");
+			forwardAppcacheTemplate(handler,phappcache,path.substring(1));//æ“ª‚Ì"/"‚ğíœ
 			return true;
 		}
 		return false;
