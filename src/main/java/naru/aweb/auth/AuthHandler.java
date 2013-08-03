@@ -52,6 +52,8 @@ public class AuthHandler extends WebServerHandler {
 	
 	public static String QUERY_CD_CHECK="__PH_AUTH__=__CD_CHECK__";
 	public static String QUERY_CD_WS_CHECK="__PH_AUTH__=__CD_WS_CHECK__";
+	public static String QUERY_XHR_CHECK="__PH_AUTH__=__XHR_CHECK__";
+	public static String QUERY_XHR_WS_CHECK="__PH_AUTH__=__XHR_WS_CHECK__";
 	public static String QUERY_CD_AUTHORIZE="__PH_AUTH__=__CD_AUTHORIZE__";
 	public static String QUERY_CD_SET="__PH_AUTH__=__CD_SET__";
 	public static String QUERY_CD_WS_SET="__PH_AUTH__=__CD_WS_SET__";
