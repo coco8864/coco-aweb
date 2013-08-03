@@ -30,7 +30,7 @@ public class DispatchResponseHandler extends WebServerHandler {
 	private static final String RESPONSE = "response";
 
 	private enum Type {
-		FORBIDDEN, NOT_FOUND, REDIRECT,AJAX_ALEADY_AUTH,AUTHENTICATE,CROSS_DOMAIN_FRAME
+		FORBIDDEN, NOT_FOUND, REDIRECT,AJAX_ALEADY_AUTH,AUTHENTICATE,CROSS_DOMAIN_FRAME,JSON_RESPONSE
 	}
 
 	public static MappingResult forbidden() {
@@ -71,7 +71,12 @@ public class DispatchResponseHandler extends WebServerHandler {
 		mapping.setAttribute(RESPONSE, response);
 		return mapping;
 	}
-	
+
+	public static MappingResult jsonResponse(Object response) {
+		MappingResult mapping = createDispatchMapping(Type.JSON_RESPONSE);
+		mapping.setAttribute(RESPONSE, response);
+		return mapping;
+	}
 
 	public static MappingResult redirectOrgPath(String location,String setCookieString) {
 		MappingResult mapping=createDispatchMapping(Type.REDIRECT);
@@ -136,6 +141,10 @@ public class DispatchResponseHandler extends WebServerHandler {
 			mapping.setDesitinationFile(config.getAuthDocumentRoot());
 			setRequestAttribute(RESPONSE, mapping.getAttribute(RESPONSE));
 			forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
+			break;
+		case JSON_RESPONSE:
+			Object response=mapping.getAttribute(RESPONSE);
+			responseJson(response);
 			break;
 		default:
 			completeResponse("500", "type:" + type);

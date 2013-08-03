@@ -537,9 +537,26 @@ public class DispatchHandler extends ServerBaseHandler {
 			KeepAliveContext keepAliveContext,RequestContext requestContext, 
 			MappingResult mapping) {
 		String authMark=(String)getRequestAttribute(AuthHandler.AUTH_MARK);
-		
 		String cookieId=(String)getRequestAttribute(SessionId.SESSION_ID);
-		if(cookieId!=null){
+		if(authMark!=null && (authMark.equals(AuthHandler.QUERY_XHR_CHECK)||authMark.equals(AuthHandler.QUERY_XHR_WS_CHECK))){
+			//XHR経由で認証チェックが来た場合
+			mapping.unref();
+			AuthSession authSession=null;
+			if(cookieId!=null){
+				ServerParser domain=requestHeader.getServer();
+				boolean isSsl=isSsl();
+				authSession=authorizer.getAuthSessionBySecondaryId(cookieId,mapping.getMapping(),isSsl,domain);
+			}
+			JSONObject response=new JSONObject();
+			response.element("result", true);
+			response.element(AuthHandler.AUTH_URL,config.getAuthUrl());
+			if(authSession!=null){
+				response.element(AuthHandler.APP_SID, authSession.getAppSid());
+				response.element(AuthHandler.LOGIN_ID, authSession.getUser().getLoginId());
+				response.element(AuthHandler.TOKEN, authSession.getToken());
+			}
+			return DispatchResponseHandler.jsonResponse(response);
+		}else if(cookieId!=null){
 			//TODO もっと適切な場所がないか？
 			ServerParser domain=requestHeader.getServer();
 			boolean isSsl=isSsl();
@@ -663,6 +680,11 @@ public class DispatchHandler extends ServerBaseHandler {
 				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_SET);
 			}else if(query.startsWith(AuthHandler.QUERY_CD_WS_SET)){
 				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_WS_SET);
+				isWs=true;
+			}else if(query.startsWith(AuthHandler.QUERY_XHR_CHECK)){
+				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.QUERY_XHR_CHECK);
+			}else if(query.startsWith(AuthHandler.QUERY_XHR_WS_CHECK)){
+				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.QUERY_XHR_WS_CHECK);
 				isWs=true;
 //			}else if(query.startsWith("__PH_AUTH_AUTHORIZE__")){
 //				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_AUTHORIZE);

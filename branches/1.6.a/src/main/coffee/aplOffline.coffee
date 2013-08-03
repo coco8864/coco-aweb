@@ -3,6 +3,17 @@ authFrame=null
 workFrame=null
 cdr={isIn:false,req:null}
 
+ONLINE_CHECK_AUTH_URL='?__PH_AUTH__=__XHR_CHECK__'
+
+onlineCheckAuthInfo=->
+ jQuery.ajax({
+  type:'POST',
+  url:ONLINE_CHECK_AUTH_URL+'&xhr=true',
+##    dataType:'json',
+  success:(x)->alert(x),
+  error:(x)->alert(x)
+ })
+
 onMsg=(qjev)->
  ev=qjev.originalEvent
  if !ev.data
@@ -10,9 +21,16 @@ onMsg=(qjev)->
  if ev.source==parent
   req=ph.JSON.parse(ev.data)
   onRequest(req)
- else if ev.source==authFrame
+ else if ev.source==authFrame[0].contentWindow
   res=ph.JSON.parse(ev.data)
-  onResponse(res)
+  onAuthResponse(res)
+ else if ev.source==workFrame[0].contentWindow
+  res=ph.JSON.parse(ev.data)
+  onWorkResponse(res)
+
+onAuthResponse=(req)->
+
+onWorkResponse=(req)->
 
 onRequest=(req)->
  if cdr.isIn
@@ -50,4 +68,5 @@ jQuery(->
       "</iframe>")
  jQuery("body").append(workFrame)
  jQuery("body").append(authFrame)
+ onlineCheckAuthInfo()
 )
