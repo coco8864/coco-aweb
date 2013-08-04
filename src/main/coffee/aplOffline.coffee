@@ -1,17 +1,78 @@
 
+AUTH_URL_LS_KEY='aplOfflineAuthUrl'
+CHECK_XHR_QUERY='?__PH_AUTH__=__XHR_CHECK__'
+CHECK_QUERY='?__PH_AUTH__=__CD_CHECK__'
+CHECK_WS_QUERY='?__PH_AUTH__=__CD_WS_CHECK__'
+SELF_NAME='~offline.html'
+
 authFrame=null
 workFrame=null
 cdr={isIn:false,req:null}
 
-ONLINE_CHECK_AUTH_URL='?__PH_AUTH__=__XHR_CHECK__'
+aplAuthInfo={
+ type:'load'
+ result:false
+ aplUrl:null
+ authUrl:null
+ cause:''
+ isOffline:false
+ appSid:null
+ loginId:null
+ token:null
+}
+authFrameTimerId=null
+workFrameTimerId=null
+workFrameCb=null
+
+loadAuthFrame=(authUrl)->
+ authFrame[0].src=authUrl+'/~offline.html?origin='+location.protocol+'//'+location.host
+ authFrameTimerId=setTimeout((->
+  authFrameTimerId=null
+  _response({type:'load',result:false,cause:'frameTimeout'}))
+  ,1000
+ )
+
+requestToAuthFrame=(msg)->
+ jsonMsg=ph.JSON.stringify(msg)
+ authFrame[0].contentWindow.postMessage(jsonMsg,'*')
+
+loadWorkFrame=(url,cb)->
+ workFrame[0].src=url
+ workFrameCb=cb
+ workFrameTimerId=setTimeout((->
+  workFrameTimerId=null
+  alert('workFrameTimeout'))
+  ,1000
+ )
+
+onlineCheckAuthInfoSuccess=(res)->
+ aplAuthInfo.isOffline=false
+ aplAuthInfo.appSid=res.appSid
+ aplAuthInfo.authUrl=res.authUrl
+ aplAuthInfo.loginId=res.loginId
+ aplAuthInfo.token=res.token
+ localStorage.setItem(AUTH_URL_LS_KEY,res.authUrl)
+ loadAuthFrame(res.authUrl)
+
+onlineCheckAuthInfoError=(res)->
+ aplAuthInfo.isOffline=true
+ authUrl=localStorage.getItem(AUTH_URL_LS_KEY)
+ if authUrl
+  loadAuthFrame(authUrl)
+ else
+  aplAuthInfo.result=false
+  aplAuthInfo.cause='cannot find authUrl'
+  _response(aplAuthInfo)
 
 onlineCheckAuthInfo=->
+ len=location.pathname.length;
+ aplAuthInfo.aplUrl=location.origin+location.pathname.substring(0,len-SELF_NAME.length)
  jQuery.ajax({
   type:'POST',
-  url:ONLINE_CHECK_AUTH_URL+'&xhr=true',
-##    dataType:'json',
-  success:(x)->alert(x),
-  error:(x)->alert(x)
+  url:aplAuthInfo.aplUrl + CHECK_XHR_QUERY,
+  dataType:'json',
+  success:onlineCheckAuthInfoSuccess,
+  error:onlineCheckAuthInfoError
  })
 
 onMsg=(qjev)->
@@ -28,23 +89,77 @@ onMsg=(qjev)->
   res=ph.JSON.parse(ev.data)
   onWorkResponse(res)
 
-onAuthResponse=(req)->
+onAuthResponse=(res)->
+ if res.type=='load' #AuthFrameのロード完了
+  clearTimeout(authFrameTimerId)
+  aplAuthInfo.result=res.result
+  aplAuthInfo.cause=res.cause
+  _response(aplAuthInfo)
+ if res.type=='offlineAuth' #offlineAuth
+  _response({type:'hideFrame'});
+  response(res)
 
-onWorkResponse=(req)->
+onWorkResponse=(res)->
+ clearTimeout(workFrameTimerId)
+ workFrameTimerId=null
+ workFrameCb(res)
+
+### online auth start ###
+onlineAuthResponse=(res)->
+ if res.result==true
+  aplAuthInfo.isOffline=false
+  aplAuthInfo.appSid=res.appSid
+  aplAuthInfo.authUrl=res.authUrl
+  aplAuthInfo.loginId=res.loginId
+  aplAuthInfo.token=res.token
+ response(res)
+
+onlineAuthAuthUrlRes=(res)->
+ if res.result=='redirect'
+  loadWorkFrame(res.location,onlineAuthResponse)
+## else if res.result=='redirectForAuthorizer' ##authUrlでも認証されていなければ
+##  location.href=res.location
+ else
+  onlineAuthResponse(res)
+
+onlineAuthAplUrlRes=(res)->
+ if res.result=='redirect' ##apl未認証の場合authUrlにリダイレクト
+  loadWorkFrame(res.location,onlineAuthAuthUrlRes)
+ else
+  onlineAuthResponse(res)
+
+onlineAuth=(isWs,originUrl)-> ##aplUrlをチェック
+ if isWs
+  url=aplAuthInfo.aplUrl+CHECK_WS_QUERY
+ else
+  url=aplAuthInfo.aplUrl+CHECK_QUERY
+ if originUrl
+  url+='&originUrl='+encodeURIComponent(originUrl)
+ loadWorkFrame(url,onlineAuthAplUrlRes)
+### online auth end ###
 
 onRequest=(req)->
  if cdr.isIn
-  throw "duplicate request"##parentからresponseを待たずに続けてrequestされた（異常)
+  throw "duplicate request"
+ if aplAuthInfo.result==false
+  throw "fail to load"
+ cdr.isIn=true
+ cdr.req=req
  if req.type=='onlineAuth'
-  alert('onlineAuth')
- if req.type=='offlineAuth'
+  onlineAuth(req.isWs,req.originUrl)
+ else if req.type=='offlineAuth'
+  _response({type:'showFrame'});
   alert('offlineAuth')
- if req.type=='encrypt'
-  alert('encrypt')
- if req.type=='decrypt'
-  alert('decrypt')
- if req.type=='logout'
-  alert('logout')
+ else if req.type=='encrypt'
+  requestToAuthFrame(req)
+ else if req.type=='decrypt'
+  requestToAuthFrame(req)
+ else if req.type=='info'
+  requestToAuthFrame(req)
+ else if req.type=='logout'
+  requestToAuthFrame(req)
+ else
+  throw 'unkown type:'+req.type
 
 response=(msg)->
  cdr.isIn=false
@@ -53,13 +168,15 @@ response=(msg)->
 
 _response=(msg)->
  jsonMsg=ph.JSON.stringify(msg)
- parent.postMessage(jsonMsg,'*')
+ if window==parent #テスト時に自分には投げない処理
+  alert('response to parent:'+jsonMsg)
+ else
+  parent.postMessage(jsonMsg,'*')
 
 jQuery(->
  jQuery(window).on('message',onMsg)
  authFrame=jQuery(
-      "<iframe " +
-      "style='frameborder:no;background-color:#CFCFCF;overflow:auto;height:0px;width:0px;position:absolute;top:0%;left:0%;margin-top:-100px;margin-left:-150px;' " +
+      "<iframe width='100%' height='512' frameborder='no' "+
       "name='aplOfflineAuth#{@location.href}' >"+
       "</iframe>")
  workFrame=jQuery(
@@ -69,4 +186,6 @@ jQuery(->
  jQuery("body").append(workFrame)
  jQuery("body").append(authFrame)
  onlineCheckAuthInfo()
+
+ window.onlineAuth=onlineAuth
 )
