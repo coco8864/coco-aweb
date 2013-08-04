@@ -19,6 +19,7 @@ import naru.aweb.auth.Authorizer;
 import naru.aweb.auth.MappingAuth;
 import naru.aweb.auth.SessionId; //import naru.aweb.auth.Authenticator;
 import naru.aweb.config.AccessLog;
+import naru.aweb.config.AppcacheOption;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
 import naru.aweb.config.User;
@@ -536,16 +537,17 @@ public class DispatchHandler extends ServerBaseHandler {
 	private MappingResult checkPhAuth(HeaderParser requestHeader,
 			KeepAliveContext keepAliveContext,RequestContext requestContext, 
 			MappingResult mapping) {
+		String path = mapping.getResolvePath();
+		AppcacheOption appcacheOption=(AppcacheOption)mapping.getOption(Mapping.OPTION_APPCACHE);
 		String authMark=(String)getRequestAttribute(AuthHandler.AUTH_MARK);
 		String cookieId=(String)getRequestAttribute(SessionId.SESSION_ID);
 		if(authMark!=null && (authMark.equals(AuthHandler.QUERY_XHR_CHECK)||authMark.equals(AuthHandler.QUERY_XHR_WS_CHECK))){
 			//XHR経由で認証チェックが来た場合
-			mapping.unref();
 			AuthSession authSession=null;
 			if(cookieId!=null){
 				ServerParser domain=requestHeader.getServer();
 				boolean isSsl=isSsl();
-				authSession=authorizer.getAuthSessionBySecondaryId(cookieId,mapping.getMapping(),isSsl,domain);
+				authSession=getAuthorizer().getAuthSessionBySecondaryId(cookieId,mapping.getMapping(),isSsl,domain);
 			}
 			JSONObject response=new JSONObject();
 			response.element("result", true);
@@ -555,7 +557,11 @@ public class DispatchHandler extends ServerBaseHandler {
 				response.element(AuthHandler.LOGIN_ID, authSession.getUser().getLoginId());
 				response.element(AuthHandler.TOKEN, authSession.getToken());
 			}
+			mapping.unref();
 			return DispatchResponseHandler.jsonResponse(response);
+		}else if(appcacheOption!=null && appcacheOption.isAppachePath(path)){
+			//offline対象は、認証の対象にしない
+			return mapping;
 		}else if(cookieId!=null){
 			//TODO もっと適切な場所がないか？
 			ServerParser domain=requestHeader.getServer();

@@ -53,6 +53,7 @@ onlineCheckAuthInfoSuccess=(res)->
  aplAuthInfo.token=res.token
  localStorage.setItem(AUTH_URL_LS_KEY,res.authUrl)
  loadAuthFrame(res.authUrl)
+## requestToAuthFrame(aplAuthInfo)
 
 onlineCheckAuthInfoError=(res)->
  aplAuthInfo.isOffline=true
@@ -112,6 +113,7 @@ onlineAuthResponse=(res)->
   aplAuthInfo.authUrl=res.authUrl
   aplAuthInfo.loginId=res.loginId
   aplAuthInfo.token=res.token
+  requestToAuthFrame(aplAuthInfo)
  response(res)
 
 onlineAuthAuthUrlRes=(res)->

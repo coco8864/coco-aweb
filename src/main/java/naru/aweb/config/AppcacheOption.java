@@ -142,4 +142,10 @@ public class AppcacheOption {
 		}
 		return false;
 	}
+	public boolean isAppachePath(String path){
+		if(path!=null && (path.startsWith(manifestPath)||path.startsWith(cacheHtmlPath))){
+			return true;
+		}
+		return false;
+	}
 }
