@@ -3,7 +3,7 @@ AUTH_URL_LS_KEY='aplOfflineAuthUrl'
 CHECK_XHR_QUERY='?__PH_AUTH__=__XHR_CHECK__'
 CHECK_QUERY='?__PH_AUTH__=__CD_CHECK__'
 CHECK_WS_QUERY='?__PH_AUTH__=__CD_WS_CHECK__'
-SELF_NAME='~offline.html'
+SELF_NAME='/~offline.html'
 
 authFrame=null
 workFrame=null
