@@ -4,7 +4,7 @@ aplAuthInfo=null
 userAuthInfo=null
 userInfoDfd=null
 
-onlineInfo=(cb)->
+getUserAuthInfo=(cb)->
  userInfoDfd=jQuery.ajax({
   type:'POST',
   url:'userInfo',
@@ -39,7 +39,7 @@ decrypt=(req)->
   return
  req.result=true
  if userAuthInfo.offlinePassHash
-  req.plainText=CryptoJS.AES.decrypt(req.encryptText, offlinePassHash).toString(CryptoJS.enc.Utf8)
+  req.plainText=CryptoJS.AES.decrypt(req.encryptText, userAuthInfo.offlinePassHash).toString(CryptoJS.enc.Utf8)
  else
   req.plainText=req.encryptText
  response(req)
@@ -68,7 +68,7 @@ onRequest=(req)->
   if userInfoDfd
    userInfoDfd.always(->response(userInfo.authInfo))
   else
-   onlineInfo(->response(userInfo.authInfo))
+   getUserAuthInfo(->response(userInfo.authInfo))
 
 onMsg=(qjev)->
  ev=qjev.originalEvent
