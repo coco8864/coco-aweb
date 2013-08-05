@@ -160,7 +160,7 @@ ph.jQuery(->
 )
 
 #-------------------Auth-------------------
-class Auth extends ph.Deffered
+class Auth extends ph.Deferred
   _reqQueue:[]
   _processReq:null
   constructor:(aplUrl)->

@@ -2,7 +2,7 @@ if window.ph
  return
 
 #-------------------EventModule-------------------
-class Deffered
+class Deferred
   constructor:->
     @_callback ={}
     @_callbackOne ={}
@@ -80,7 +80,7 @@ class Deffered
     @_stat=='@unload'
 
 #-------------------Ph-------------------
-class Ph extends Deffered
+class Ph extends Deferred
  version:'$esc.javascript(${config.getString("phantomVersion")})'
  isSsl:'$esc.javascript(${handler.isSsl()})'=='true'
  domain:'$esc.javascript(${handler.getRequestHeader().getServer()})'
@@ -214,7 +214,7 @@ class Ph extends Deffered
   ph.jQuery(window).unload((ev)->window.ph.trigger('unload',ev))
 
 window.ph=new Ph()
-window.ph.Deffered=Deffered
+window.ph.Deferred=Deferred
 
 for script in ph.scripts
  document.write('<script type="text/javascript" src="');
