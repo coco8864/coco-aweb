@@ -3,7 +3,6 @@ AUTH_URL_LS_KEY='aplOfflineAuthUrl'
 CHECK_XHR_QUERY='?__PH_AUTH__=__XHR_CHECK__'
 CHECK_QUERY='?__PH_AUTH__=__CD_CHECK__'
 CHECK_WS_QUERY='?__PH_AUTH__=__CD_WS_CHECK__'
-SELF_NAME='/~offline.html'
 
 authFrame=null
 workFrame=null
@@ -66,8 +65,6 @@ onlineCheckAuthInfoError=(res)->
   _response(aplAuthInfo)
 
 onlineCheckAuthInfo=->
- len=location.pathname.length;
- aplAuthInfo.aplUrl=location.origin+location.pathname.substring(0,len-SELF_NAME.length)
  jQuery.ajax({
   type:'POST',
   url:aplAuthInfo.aplUrl + CHECK_XHR_QUERY,
@@ -91,7 +88,7 @@ onMsg=(qjev)->
   onWorkResponse(res)
 
 onAuthResponse=(res)->
- if res.type=='load' #AuthFrame¤Î¥í¡¼¥É´°Î»
+ if res.type=='load' #AuthFrameã®ãƒ­ãƒ¼ãƒ‰å®Œäº†
   clearTimeout(authFrameTimerId)
   aplAuthInfo.result=res.result
   aplAuthInfo.cause=res.cause
@@ -119,18 +116,18 @@ onlineAuthResponse=(res)->
 onlineAuthAuthUrlRes=(res)->
  if res.result=='redirect'
   loadWorkFrame(res.location,onlineAuthResponse)
-## else if res.result=='redirectForAuthorizer' ##authUrl¤Ç¤âÇ§¾Ú¤µ¤ì¤Æ¤¤¤Ê¤±¤ì¤Ð
+## else if res.result=='redirectForAuthorizer' ##authUrlã§ã‚‚èªè¨¼ã•ã‚Œã¦ã„ãªã‘ã‚Œã°
 ##  location.href=res.location
  else
   onlineAuthResponse(res)
 
 onlineAuthAplUrlRes=(res)->
- if res.result=='redirect' ##aplÌ¤Ç§¾Ú¤Î¾ì¹çauthUrl¤Ë¥ê¥À¥¤¥ì¥¯¥È
+ if res.result=='redirect' ##aplæœªèªè¨¼ã®å ´åˆauthUrlã«ãƒªãƒ€ã‚¤ãƒ¬ã‚¯ãƒˆ
   loadWorkFrame(res.location,onlineAuthAuthUrlRes)
  else
   onlineAuthResponse(res)
 
-onlineAuth=(isWs,originUrl)-> ##aplUrl¤ò¥Á¥§¥Ã¥¯
+onlineAuth=(isWs,originUrl)-> ##aplUrlã‚’ãƒã‚§ãƒƒã‚¯
  if isWs
   url=aplAuthInfo.aplUrl+CHECK_WS_QUERY
  else
@@ -170,20 +167,22 @@ response=(msg)->
 
 _response=(msg)->
  jsonMsg=ph.JSON.stringify(msg)
- if window==parent #¥Æ¥¹¥È»þ¤Ë¼«Ê¬¤Ë¤ÏÅê¤²¤Ê¤¤½èÍý
-  alert('response to parent:'+jsonMsg)
+ if window==parent #ãƒ†ã‚¹ãƒˆæ™‚ã«è‡ªåˆ†ã«ã¯æŠ•ã’ãªã„å‡¦ç†
+  alert('aplOffline response:'+jsonMsg)
  else
   parent.postMessage(jsonMsg,'*')
 
 jQuery(->
+ pos=location.pathname.lastIndexOf('/')
+ aplAuthInfo.aplUrl=location.origin+location.pathname.substring(0,pos)
  jQuery(window).on('message',onMsg)
  authFrame=jQuery(
       "<iframe width='100%' height='512' frameborder='no' "+
-      "name='aplOfflineAuth#{@location.href}' >"+
+      "name='aplOfflineAuth#{aplAuthInfo.aplUrl}' >"+
       "</iframe>")
  workFrame=jQuery(
       "<iframe width='0' height='0' frameborder='no' "+
-      "name='aplOfflineWork#{@location.href}' >"+
+      "name='aplOfflineWork#{aplAuthInfo.aplUrl}' >"+
       "</iframe>")
  jQuery("body").append(workFrame)
  jQuery("body").append(authFrame)

@@ -1,5 +1,5 @@
 #-------------------Connection-------------------
-class Connection extends ph.Deffered
+class Connection extends ph.Deferred
   constructor:(@connectXhrUrl,@connectWsUrl,@_storageScope) ->
     super
     @_subscribes={}

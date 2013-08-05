@@ -419,7 +419,7 @@ public class SessionId extends PoolBase{
 
 	public void setLastAccessTime() {
 		if(type==type.SECONDARY){
-			primaryId.getLastAccessTime();
+			primaryId.setLastAccessTime();
 		}else{
 			this.lastAccessTime=System.currentTimeMillis();
 		}

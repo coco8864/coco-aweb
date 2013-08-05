@@ -1,52 +1,74 @@
 OFFLINE_KEY='PaOfflineAuth'
 parentOrigin=null
-userInfo=null
-cdr={isIn:false,req:null}
+aplAuthInfo=null
+userAuthInfo=null
+userInfoDfd=null
 
-onlineInfo=(req)->
-  jQuery.ajax({
-    type:'POST',
-    url:'userInfo',
-    dataType:'json',
-    data:req,
-    success:((x)->
-      userInfo=x
-      response({type:'refresh',result:true})),
-    error:((x)->
-      response({type:'refresh',result:false}))
-  })
+onlineInfo=(cb)->
+ userInfoDfd=jQuery.ajax({
+  type:'POST',
+  url:'userInfo',
+  dataType:'json',
+  data:aplAuthInfo
+ })
+ userInfoDfd.done((x)->
+   userAuthInfo=x
+   if cb
+    cb(true,x))
+ userInfoDfd.fail((x)->
+   userAuthInfo=null
+   if cb
+    cb(false,x))
+
+encrypt=(req)->
+ if !userAuthInfo
+  req.result=false
+  response(req)
+  return
+ req.result=true
+ if userAuthInfo.offlinePassHash
+  req.encryptText=CryptoJS.AES.encrypt(req.plainText, userAuthInfo.offlinePassHash).toString()
+ else
+  req.encryptText=req.plainText
+ response(req)
+
+decrypt=(req)->
+ if !userAuthInfo
+  req.result=false
+  response(req)
+  return
+ req.result=true
+ if userAuthInfo.offlinePassHash
+  req.plainText=CryptoJS.AES.decrypt(req.encryptText, offlinePassHash).toString(CryptoJS.enc.Utf8)
+ else
+  req.plainText=req.encryptText
+ response(req)
 
 onRequest=(req)->
- if cdr.isIn
-  throw "duplicate request"
- if aplAuthInfo.result==false
-  throw "fail to load"
- cdr.isIn=true
- cdr.req=req
  if req.type=="encrypt"
-  if userInfo.offlinePassHash
-   req.encryptText=CryptoJS.AES.encrypt(req.plainText, offlinePassHash).toString()
+  if userInfoDfd
+   userInfoDfd.always(->encrypt(req))
   else
-   req.encryptText=req.plainText
-  response(req);
+   onlineInfo(->encrypt(req))
  else if req.type=="decrypt"
-  if userInfo.offlinePassHash
-   req.plainText=CryptoJS.AES.decrypt(req.encryptText, offlinePassHash).toString(CryptoJS.enc.Utf8)
+  if userInfoDfd
+   userInfoDfd.always(->decrypt(req))
   else
-   req.plainText=req.encryptText
-  response(req);
+   onlineInfo(->decrypt(req))
  else if req.type=="logout"
   jQuery.ajax({
-        type:'GET',
-        url:'ajaxLogout',
-        dataType:'json',
-        success:(x)->response(x),
-        error:(x)->response({type:'logout',result:false})
-    })
+    type:'GET',
+    url:'ajaxLogout',
+    dataType:'json',
+    success:(x)->response(x),
+    error:(x)->response({type:'logout',result:false})
+   })
  else if req.type=="info"
-  response(userInfo.authInfo)
- else if req.type=="load"
-  onlineInfo(req)
+  aplAuthInfo=req
+  if userInfoDfd
+   userInfoDfd.always(->response(userInfo.authInfo))
+  else
+   onlineInfo(->response(userInfo.authInfo))
 
 onMsg=(qjev)->
  ev=qjev.originalEvent
@@ -57,14 +79,9 @@ onMsg=(qjev)->
   onRequest(req)
 
 response=(msg)->
- cdr.isIn=false
- cdr.req=null
- _response(msg)
-
-_response=(msg)->
  jsonMsg=ph.JSON.stringify(msg)
- if window==parent #¥Æ¥¹¥È»þ¤Ë¼«Ê¬¤Ë¤ÏÅê¤²¤Ê¤¤½èÍý
-  alert('response to parent:'+jsonMsg)
+ if window==parent #ãƒ†ã‚¹ãƒˆæ™‚ã«è‡ªåˆ†ã«ã¯æŠ•ã’ãªã„å‡¦ç†
+  alert('authOffline response:'+jsonMsg)
  else
   parent.postMessage(jsonMsg,'*')
 
@@ -73,6 +90,6 @@ jQuery(->
  if parentOrigin=='file://'
   parentOrigin='*'
  jQuery(window).on('message',onMsg)
- _response({type:'load',result:true})
+ response({type:'load',result:true})
 )
 

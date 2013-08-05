@@ -1,5 +1,5 @@
 #-------------------PagePrivateStorage-------------------
-class PrivateSessionStorage extends ph.Deffered
+class PrivateSessionStorage extends ph.Deferred
   constructor:(url,@_auth)->
     super
     @status='init'
@@ -48,7 +48,7 @@ class PrivateSessionStorage extends ph.Deffered
     @trigger('remove',@)
 
 #-------------------Session,Apl PrivateStorage-------------------
-class PrivateLocalStorage extends ph.Deffered
+class PrivateLocalStorage extends ph.Deferred
   constructor:(url,@_auth,@_bid,@scope)->
     super
     @status='init' #‚Ü‚¾ƒf[ƒ^‚ª€”õ‚Å‚«‚Ä‚È‚¢‚ÌˆÓ
