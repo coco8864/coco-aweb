@@ -161,52 +161,67 @@ ph.jQuery(->
 
 
 #-------------------Auth-------------------
-class Apl extends ph.Deferred
- constructor:(@keyUrl,@isWs)->
+class PaHandle extends ph.Deferred
+ constructor:(@keyUrl,@isWs,@isOffline)->
+  @status='init'
   ph.on('message',@_onMessage)
   @_frame=ph.jQuery(
-      "<iframe " +
-      "style='frameborder:no;background-color:#CFCFCF;overflow:auto;height:0px;width:0px;position:absolute;top:0%;left:0%;margin-top:-100px;margin-left:-150px;' " +
-      "name='AplFrame#{@keyUrl}' " +
-      "src='#{@keyUrl}/^ph.html'>" + 
-      "</iframe>")
+    "<iframe " +
+    "style='frameborder:no;background-color:#CFCFCF;overflow:auto;height:0px;width:0px;position:absolute;top:0%;left:0%;margin-top:-100px;margin-left:-150px;' " +
+    "name='AplFrame#{@keyUrl}' " +
+    "src='#{@keyUrl}/^ph.html'>" + 
+    "</iframe>")
   ph.jQuery("body").append(@_frame)
   @
-  _onMessage:(qjev)=>
-   ev=qjev.originalEvent
-   if !@_frame || ev.source!=@_frame[0].contentWindow
-    return
-   res=ph.JSON.parse(ev.data)
-   if res.type=='showFrame'
-    @_frame.css({'height':'200px','width':'300px','top':'50%','left':'50%'})
-    return
-   if res.type=='hideFrame'
-    @_frame.css({'height':'0px','width':'0px','top':'0%','left':'0%'})
-    return
-   if res.type=='load'
-    @_loadFrame=false
-    if @isOffline
-        reqText=ph.JSON.stringify({
-          type:'init',
-          isOffline:@isOffline})
-      else
-        reqText=ph.JSON.stringify({
-          type:'init',
-          isOffline:@isOffline,
-          loginId:@loginId,
-          appUrl:@keyUrl,
-          appSid:@appSid,
-          token:@token})
-      @_frame[0].contentWindow.postMessage(reqText,'*')
-      return
-    if res.type=='init'
-      @_info=ph.JSON.parse(ev.originalEvent.data)
-      @trigger('done',@)
-      return
-    if @_processReq
-      @_requestCallback(res)
-    return
- 
+ _requestToAplFrame:(msg)->
+  jsonMsg=ph.JSON.stringify(msg)
+  authFrame[0].contentWindow.postMessage(jsonMsg,'*')
+ _onMessage:(qjev)->
+  ev=qjev.originalEvent
+  if !@_frame || ev.source!=@_frame[0].contentWindow
+   return
+  res=ph.JSON.parse(ev.data)
+  if res.type=='showFrame'
+   @_frame.css({'height':'200px','width':'300px','top':'50%','left':'50%'})
+   return
+  if res.type=='hideFrame'
+   @_frame.css({'height':'0px','width':'0px','top':'0%','left':'0%'})
+   return
+  if res.type=='loadAplFrame'
+   if res.loginId #”FØÏ‚Ý‚È‚ç
+    @trigger('onlineAuth',@)
+    @trigger('auth',@)
+    @_requestToAplFrame({type:'connect'})
+   else if res.isOffline
+    @_requestToAplFrame({type:'offlineAuth'})
+   else
+    @_requestToAplFrame({type:'onlineAuth'})
+  if res.type=='onlineAuth'
+   if res.result=='redirect'
+   else if res.result==true
+    @trigger('onlineAuth',@)
+    @trigger('auth',@)
+    @_requestToAplFrame({type:'connect'})
+   else
+    @cause='fail to onlineAuth'
+    @trigger('failToAuth',@)
+  if res.type=='offlineAuth'
+   if res.result==true
+    @trigger('onfflineAuth',@)
+    @trigger('auth',@)
+   else
+    @cause='fail to offlineAuth'
+    @trigger('failToAuth',@)
+ subscribe:(qname,subname)->
+ publish:(qname,msg)->
+ store:(scope)->
+ logout:->
+  @_requestToAplFrame({type:'logout'})
+ encrypt:(text,cb)->
+  @_requestToAplFrame({type:'encrypt',text:text})
+ decrypt:(encText,cb)->
+  @_requestToAplFrame({type:'decrypt',encText:encText})
+
 
 
 

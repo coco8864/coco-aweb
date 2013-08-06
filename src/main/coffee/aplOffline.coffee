@@ -9,7 +9,7 @@ workFrame=null
 cdr={isIn:false,req:null}
 
 aplAuthInfo={
- type:'load'
+ type:'loadAplFrame'
  result:false
  aplUrl:null
  authUrl:null
@@ -55,6 +55,7 @@ onlineCheckAuthInfoSuccess=(res)->
 ## requestToAuthFrame(aplAuthInfo)
 
 onlineCheckAuthInfoError=(res)->
+ #xhr呼び出しに失敗した、offlineでの接続を試す
  aplAuthInfo.isOffline=true
  authUrl=localStorage.getItem(AUTH_URL_LS_KEY)
  if authUrl
@@ -88,7 +89,7 @@ onMsg=(qjev)->
   onWorkResponse(res)
 
 onAuthResponse=(res)->
- if res.type=='load' #AuthFrameのロード完了
+ if res.type=='loadAuthFrame' #AuthFrameのロード完了
   clearTimeout(authFrameTimerId)
   aplAuthInfo.result=res.result
   aplAuthInfo.cause=res.cause
