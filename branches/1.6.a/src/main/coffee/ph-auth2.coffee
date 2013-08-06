@@ -160,7 +160,7 @@ ph.jQuery(->
 )
 
 
-#-------------------Auth-------------------
+#-------------------PaHandle-------------------
 class PaHandle extends ph.Deferred
  constructor:(@keyUrl,@isWs,@isOffline)->
   @status='init'
@@ -221,6 +221,8 @@ class PaHandle extends ph.Deferred
   @_requestToAplFrame({type:'encrypt',text:text})
  decrypt:(encText,cb)->
   @_requestToAplFrame({type:'decrypt',encText:encText})
+ aplAuthInfo:(cb)->
+  
 
 
 
