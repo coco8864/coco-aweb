@@ -48,6 +48,15 @@
          <compileIndividualFiles>false</compileIndividualFiles>
          <coffeeJoinSets>
             <joinSet>
+                <id>ph-auth2</id>
+                <fileSet>
+                    <directory>${basedir}/src/main/coffee</directory>
+                    <includes>
+                        <include>ph-auth2.coffee</include>
+                    </includes>
+                </fileSet>
+            </joinSet>
+            <joinSet>
                 <id>authOffline</id>
                 <fileSet>
                     <directory>${basedir}/src/main/coffee</directory>
