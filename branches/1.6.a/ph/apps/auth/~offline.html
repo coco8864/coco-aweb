@@ -13,8 +13,11 @@
 </head>
 <body>
 <h1>Phantom offline logon</h1>
-<div>user:<input name=userid></div>
-<div>offline password:<input type='password' name=userid></div>
-<div><input type='button' value='logon' onclick='_response({type:"hideFrame"})'></div>
+<div>loginId:<input id='loginId'></div>
+<div>offline password:<input type='password' id='password'></div>
+<div>
+<input type='button' value='logon' id='logonBtn' />
+<input type='button' value='cancel' id='cancelBtn' />
+</div>
 </body>
 </html>
