@@ -8,16 +8,17 @@ authFrame=null
 workFrame=null
 cdr={isIn:false,req:null}
 
-aplAuthInfo={
- type:'loadAplFrame'
- result:false
+aplInfo={
+## type:'loadAplFrame'
+## result:false
+## cause:''
  aplUrl:null
  authUrl:null
- cause:''
  isOffline:false
  appSid:null
  loginId:null
  token:null
+ maxAge:-1
 }
 authFrameTimerId=null
 workFrameTimerId=null
@@ -27,7 +28,7 @@ loadAuthFrame=(authUrl)->
  authFrame[0].src=authUrl+'/~offline.html?origin='+location.protocol+'//'+location.host
  authFrameTimerId=setTimeout((->
   authFrameTimerId=null
-  _response({type:'load',result:false,cause:'frameTimeout'}))
+  _response({type:'loadAplFrame',result:false,cause:'frameTimeout'}))
   ,1000
  )
 
@@ -45,30 +46,30 @@ loadWorkFrame=(url,cb)->
  )
 
 onlineCheckAuthInfoSuccess=(res)->
- aplAuthInfo.isOffline=false
- aplAuthInfo.appSid=res.appSid
- aplAuthInfo.authUrl=res.authUrl
- aplAuthInfo.loginId=res.loginId
- aplAuthInfo.token=res.token
+ aplInfo.isOffline=false
+ aplInfo.appSid=res.appSid
+ aplInfo.authUrl=res.authUrl
+ aplInfo.loginId=res.loginId
+ aplInfo.token=res.token
  localStorage.setItem(AUTH_URL_LS_KEY,res.authUrl)
  loadAuthFrame(res.authUrl)
-## requestToAuthFrame(aplAuthInfo)
+## requestToAuthFrame(aplInfo)
 
 onlineCheckAuthInfoError=(res)->
  #xhr呼び出しに失敗した、offlineでの接続を試す
- aplAuthInfo.isOffline=true
+ aplInfo.isOffline=true
  authUrl=localStorage.getItem(AUTH_URL_LS_KEY)
  if authUrl
   loadAuthFrame(authUrl)
  else
-  aplAuthInfo.result=false
-  aplAuthInfo.cause='cannot find authUrl'
-  _response(aplAuthInfo)
+  aplInfo.result=false
+  aplInfo.cause='cannot find authUrl'
+  _response(aplInfo)
 
 onlineCheckAuthInfo=->
  jQuery.ajax({
   type:'POST',
-  url:aplAuthInfo.aplUrl + CHECK_XHR_QUERY,
+  url:aplInfo.aplUrl + CHECK_XHR_QUERY,
   dataType:'json',
   success:onlineCheckAuthInfoSuccess,
   error:onlineCheckAuthInfoError
@@ -91,11 +92,15 @@ onMsg=(qjev)->
 onAuthResponse=(res)->
  if res.type=='loadAuthFrame' #AuthFrameのロード完了
   clearTimeout(authFrameTimerId)
-  aplAuthInfo.result=res.result
-  aplAuthInfo.cause=res.cause
-  _response(aplAuthInfo)
+  res.type='loadAplFrame'
+  res.aplInfo=aplInfo
+  _response(res)
  if res.type=='offlineAuth' #offlineAuth
   _response({type:'hideFrame'});
+  if res.result
+   aplInfo.loginId=loginId
+   aplInfo.maxAge=30
+   res.aplInfo=aplInfo
   response(res)
 
 onWorkResponse=(res)->
@@ -105,13 +110,14 @@ onWorkResponse=(res)->
 
 ### online auth start ###
 onlineAuthResponse=(res)->
+ res.type='onlineAuth'
  if res.result==true
-  aplAuthInfo.isOffline=false
-  aplAuthInfo.appSid=res.appSid
-  aplAuthInfo.authUrl=res.authUrl
-  aplAuthInfo.loginId=res.loginId
-  aplAuthInfo.token=res.token
-  requestToAuthFrame(aplAuthInfo)
+  aplInfo.isOffline=false
+  aplInfo.appSid=res.appSid
+  aplInfo.authUrl=res.authUrl
+  aplInfo.loginId=res.loginId
+  aplInfo.token=res.token
+  requestToAuthFrame(aplInfo)
  response(res)
 
 onlineAuthAuthUrlRes=(res)->
@@ -122,34 +128,34 @@ onlineAuthAuthUrlRes=(res)->
  else
   onlineAuthResponse(res)
 
-onlineAuthAplUrlRes=(res)->
+onlineAuthAplUrlRes=(res)=>
  if res.result=='redirect' ##apl未認証の場合authUrlにリダイレクト
-  loadWorkFrame(res.location,onlineAuthAuthUrlRes)
+  loadWorkFrame(res.location+'&originUrl='+encodeURIComponent(@originUrl),onlineAuthAuthUrlRes)
  else
   onlineAuthResponse(res)
 
 onlineAuth=(isWs,originUrl)-> ##aplUrlをチェック
  if isWs
-  url=aplAuthInfo.aplUrl+CHECK_WS_QUERY
+  url=aplInfo.aplUrl+CHECK_WS_QUERY
  else
-  url=aplAuthInfo.aplUrl+CHECK_QUERY
+  url=aplInfo.aplUrl+CHECK_QUERY
  if originUrl
-  url+='&originUrl='+encodeURIComponent(originUrl)
+   @originUrl=originUrl
+##  url+='&originUrl='+encodeURIComponent(originUrl)
  loadWorkFrame(url,onlineAuthAplUrlRes)
 ### online auth end ###
 
 onRequest=(req)->
  if cdr.isIn
   throw "duplicate request"
- if aplAuthInfo.result==false
-  throw "fail to load"
+## if aplInfo.result==false
+##  throw "fail to load"
  cdr.isIn=true
  cdr.req=req
  if req.type=='onlineAuth'
   onlineAuth(req.isWs,req.originUrl)
  else if req.type=='offlineAuth'
   _response({type:'showFrame'});
-  alert('offlineAuth')
  else if req.type=='encrypt'
   requestToAuthFrame(req)
  else if req.type=='decrypt'
@@ -175,15 +181,15 @@ _response=(msg)->
 
 jQuery(->
  pos=location.pathname.lastIndexOf('/')
- aplAuthInfo.aplUrl=location.origin+location.pathname.substring(0,pos)
+ aplInfo.aplUrl=location.origin+location.pathname.substring(0,pos)
  jQuery(window).on('message',onMsg)
  authFrame=jQuery(
       "<iframe width='100%' height='512' frameborder='no' "+
-      "name='aplOfflineAuth#{aplAuthInfo.aplUrl}' >"+
+      "name='aplOfflineAuth#{aplInfo.aplUrl}' >"+
       "</iframe>")
  workFrame=jQuery(
       "<iframe width='0' height='0' frameborder='no' "+
-      "name='aplOfflineWork#{aplAuthInfo.aplUrl}' >"+
+      "name='aplOfflineWork#{aplInfo.aplUrl}' >"+
       "</iframe>")
  jQuery("body").append(workFrame)
  jQuery("body").append(authFrame)

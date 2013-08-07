@@ -69,6 +69,9 @@ onRequest=(req)->
    userInfoDfd.always(->response(userInfo.authInfo))
   else
    getUserAuthInfo(->response(userInfo.authInfo))
+ else if req.type=="offlineAuth"
+ else
+   throw 'unkown type:'+req.type
 
 onMsg=(qjev)->
  ev=qjev.originalEvent
@@ -85,11 +88,26 @@ response=(msg)->
  else
   parent.postMessage(jsonMsg,'*')
 
+offlineLogon=->
+ loginId=jQuery('#loginId').val()
+ passowrd=jQuery('#password').val()
+ alert(loginId+':'+passowrd)
+ response({type:'offlineAuth',result:true,loginId:loginId})
+ jQuery('logonId').val("")
+ jQuery('password').val("")
+
+offlineCancel=->
+ jQuery('logonId').val("")
+ jQuery('password').val("")
+ response({type:'offlineAuth',result:false})
+
 jQuery(->
  parentOrigin=decodeURIComponent(location.search.substring('?origin='.length))
+ jQuery('#logonBtn').on('click',offlineLogon)
+ jQuery('#cancelBtn').on('click',offlineCancel)
  if parentOrigin=='file://'
   parentOrigin='*'
  jQuery(window).on('message',onMsg)
- response({type:'load',result:true})
+ response({type:'loadAuthFrame',result:true})
 )
 
