@@ -237,7 +237,7 @@ class Auth extends ph.Deferred
           type:'init',
           isOffline:@isOffline,
           loginId:@loginId,
-          appUrl:@keyUrl,
+          aplUrl:@keyUrl,
           appSid:@appSid,
           token:@token})
       @_frame[0].contentWindow.postMessage(reqText,'*')

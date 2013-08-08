@@ -98,7 +98,7 @@ onAuthResponse=(res)->
  if res.type=='offlineAuth' #offlineAuth
   _response({type:'hideFrame'});
   if res.result
-   aplInfo.loginId=loginId
+   aplInfo.loginId=res.loginId
    aplInfo.maxAge=30
    res.aplInfo=aplInfo
   response(res)
@@ -117,7 +117,7 @@ onlineAuthResponse=(res)->
   aplInfo.authUrl=res.authUrl
   aplInfo.loginId=res.loginId
   aplInfo.token=res.token
-  requestToAuthFrame(aplInfo)
+  requestToAuthFrame({type:'authInfo',aplInfo:aplInfo})
  response(res)
 
 onlineAuthAuthUrlRes=(res)->
@@ -160,7 +160,8 @@ onRequest=(req)->
   requestToAuthFrame(req)
  else if req.type=='decrypt'
   requestToAuthFrame(req)
- else if req.type=='info'
+ else if req.type=='authInfo'
+  req.aplInfo=aplInfo
   requestToAuthFrame(req)
  else if req.type=='logout'
   requestToAuthFrame(req)

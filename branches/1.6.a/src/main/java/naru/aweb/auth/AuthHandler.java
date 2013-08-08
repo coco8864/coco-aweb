@@ -29,6 +29,7 @@ public class AuthHandler extends WebServerHandler {
 	private static Config config = Config.getConfig();
 	private static Authenticator authenticator = config.getAuthenticator();
 	private static Authorizer authorizer=config.getAuthorizer();
+	public static String APL_URL="aplUrl";
 	public static String AUTH_URL="authUrl";
 	public static String LOGIN_ID="loginId";
 	public static String APP_SID="appSid";//javascript側でアプリケーションセションを識別するID,setAuthメソッド復帰情報、jsonのキーとして使用
@@ -286,22 +287,22 @@ public class AuthHandler extends WebServerHandler {
 			crossDomainResponse(response,null);
 			return;
 		}
-		String appUrl=temporaryId.getUrl();
+		String aplUrl=temporaryId.getUrl();
 //		StringBuffer appSid=new StringBuffer();
-		int rc=authorizer.checkSecondarySessionByPrimaryId(cookieId,appUrl);
+		int rc=authorizer.checkSecondarySessionByPrimaryId(cookieId,aplUrl);
 		switch(rc){
 		case Authorizer.CHECK_SECONDARY_OK://これはないはず
 			response.element("result", false);
 			response.element("reason", "aleady secondary session");
 			break;
 		case Authorizer.CHECK_PRIMARY_ONLY:
-			SessionId pathOnceSession=authorizer.createPathOnceIdByPrimary(appUrl, cookieId);
+			SessionId pathOnceSession=authorizer.createPathOnceIdByPrimary(aplUrl, cookieId);
 			if(pathOnceSession!=null){
-				if(appUrl.startsWith("ws")){
-					appUrl=appUrl.replaceAll("^ws", "http");
-					crossDomainRedirect(appUrl +"?" + QUERY_CD_WS_SET + "&pathOnceId=" + pathOnceSession.getId(), null);
+				if(aplUrl.startsWith("ws")){
+					aplUrl=aplUrl.replaceAll("^ws", "http");
+					crossDomainRedirect(aplUrl +"?" + QUERY_CD_WS_SET + "&pathOnceId=" + pathOnceSession.getId(), null);
 				}else{
-					crossDomainRedirect(appUrl +"?" + QUERY_CD_SET + "&pathOnceId=" + pathOnceSession.getId(), null);
+					crossDomainRedirect(aplUrl +"?" + QUERY_CD_SET + "&pathOnceId=" + pathOnceSession.getId(), null);
 				}
 				return;
 			}else{
@@ -469,11 +470,11 @@ public class AuthHandler extends WebServerHandler {
 	
 	//userInfo
 	private void userInfo(String cookieId,ParameterParser parameter){
-		String appUrl=parameter.getParameter("appUrl");
+		String aplUrl=parameter.getParameter(APL_URL);
 		String appSid=parameter.getParameter(APP_SID);
 		String token=parameter.getParameter(TOKEN);
 		//passHashを返却するので厳密にチェック
-		int check=authorizer.checkSecondarySessionByPrimaryId(cookieId, appUrl, appSid, token);
+		int check=authorizer.checkSecondarySessionByPrimaryId(cookieId, aplUrl, appSid, token);
 		JSONObject response=new JSONObject();
 		if(check!=Authorizer.CHECK_SECONDARY_OK){
 			response.element("result", false);
