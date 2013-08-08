@@ -1,48 +1,84 @@
-OFFLINE_KEY='PaOfflineAuth'
+OFFLINE_KEY='PaOfflineAuth:'
 parentOrigin=null
-aplAuthInfo=null
-userAuthInfo=null
+aplInfo=null
+userInfo=null ##{authInfo:{},offlinePassHash:''}
 userInfoDfd=null
 
-getUserAuthInfo=(cb)->
+checkPassword=(loginId,password)->
+ encryptText=localStorage.getItem(OFFLINE_KEY+loginId)
+ if !encryptText
+  return false
+ passHash=null
+ if password
+  passHash=CryptoJS.SHA256("salt:"+loginId+":"+password)
+ plainText=decEncryptText(encryptText,passHash)
+ if !plainText
+  return false
+ userInfo=ph.JSON.parse(plainText)
+ return true
+
+saveUserInfo=->
+ loginId=userInfo.authInfo.user.loginId
+ text=ph.JSON.stringify(userInfo)
+ encText=encPlainText(text,userInfo.offlinePassHash)
+ localStorage.setItem(OFFLINE_KEY+loginId,encText)
+
+getUserInfo=(cb)->
  userInfoDfd=jQuery.ajax({
   type:'POST',
   url:'userInfo',
   dataType:'json',
-  data:aplAuthInfo
+  data:aplInfo
  })
  userInfoDfd.done((x)->
-   userAuthInfo=x
+   userInfo=x
    if cb
-    cb(true,x))
+    cb(true,x)
+   saveUserInfo())
+   
  userInfoDfd.fail((x)->
-   userAuthInfo=null
+   userInfo=null
    if cb
     cb(false,x))
 
+encPlainText=(plainText,passHash)->
+ if passHash
+  return CryptoJS.AES.encrypt(plainText,passHash).toString()
+ else
+  return plainText
+
+decEncryptText=(encryptText,passHash)->
+ if passHash
+  return CryptoJS.AES.decrypt(encryptText, passHash).toString(CryptoJS.enc.Utf8)
+ else
+  return encryptText
+
 encrypt=(req)->
- if !userAuthInfo
+ if !userInfo
   req.result=false
   response(req)
   return
  req.result=true
- if userAuthInfo.offlinePassHash
-  req.encryptText=CryptoJS.AES.encrypt(req.plainText, userAuthInfo.offlinePassHash).toString()
- else
-  req.encryptText=req.plainText
+ req.encryptText=encPlainText(req.plainText,userInfo.offlinePassHash)
  response(req)
 
 decrypt=(req)->
- if !userAuthInfo
+ if !userInfo
   req.result=false
   response(req)
   return
  req.result=true
- if userAuthInfo.offlinePassHash
-  req.plainText=CryptoJS.AES.decrypt(req.encryptText, userAuthInfo.offlinePassHash).toString(CryptoJS.enc.Utf8)
- else
-  req.plainText=req.encryptText
+ req.plainText=decEncryptText(req.encryptText,userInfo.offlinePassHash)
  response(req)
+
+responseAuthInfo=->
+ res={type:'authInfo'}
+ if userInfo && userInfo.authInfo
+  res.result=true
+  res.authInfo=userInfo.authInfo
+ else
+  res.result=false
+ response(res)
 
 onRequest=(req)->
  if req.type=="encrypt"
@@ -63,12 +99,12 @@ onRequest=(req)->
     success:(x)->response(x),
     error:(x)->response({type:'logout',result:false})
    })
- else if req.type=="info"
-  aplAuthInfo=req
+ else if req.type=="authInfo"
+  aplInfo=req.aplInfo
   if userInfoDfd
-   userInfoDfd.always(->response(userInfo.authInfo))
+   userInfoDfd.always(responseAuthInfo)
   else
-   getUserAuthInfo(->response(userInfo.authInfo))
+   getUserInfo(responseAuthInfo)
  else if req.type=="offlineAuth"
  else
    throw 'unkown type:'+req.type
@@ -90,16 +126,20 @@ response=(msg)->
 
 offlineLogon=->
  loginId=jQuery('#loginId').val()
- passowrd=jQuery('#password').val()
- alert(loginId+':'+passowrd)
+ password=jQuery('#password').val()
+ if !checkPassword(loginId,password)
+  alert(loginId+':認証情報に誤りがあります')
+  return
  response({type:'offlineAuth',result:true,loginId:loginId})
- jQuery('logonId').val("")
- jQuery('password').val("")
+ jQuery('logonId').val('')
+ jQuery('password').val('')
+ return
 
 offlineCancel=->
- jQuery('logonId').val("")
- jQuery('password').val("")
+ jQuery('logonId').val('')
+ jQuery('password').val('')
  response({type:'offlineAuth',result:false})
+ return
 
 jQuery(->
  parentOrigin=decodeURIComponent(location.search.substring('?origin='.length))

@@ -85,7 +85,7 @@ class Ph extends Deferred
  isSsl:'$esc.javascript(${handler.isSsl()})'=='true'
  domain:'$esc.javascript(${handler.getRequestHeader().getServer()})'
  scriptBase:''
- scripts:['jquery-1.8.3.min.js','ph-jqnoconflict.js','ph-json2.js','ph-auth.js','ph-pa.js']
+ scripts:['jquery-1.8.3.min.js','ph-jqnoconflict.js','ph-json2.js','ph-auth.js','ph-pa.js','ph-pa2.js']
  useWebSocket:typeof window.WebSocket != 'undefined' || typeof window.MozWebSocket !='undefined' ## WebSocketを使うか否か?
  useSessionStorage:typeof window.sessionStorage != 'undefined' ## SessionStorageを使うか否か?
  useCrossDomain:typeof window.postMessage != 'undefined' ## iframeを使ったクロスドメイン通信を使うか否か?
@@ -93,6 +93,8 @@ class Ph extends Deferred
  useBlobBuilder:false
  useAppCache:typeof window.applicationCache!='undefined'
  useBlob:typeof Uint8Array != 'undefined' && typeof ArrayBuffer != 'undefined' && typeof Blob != 'undefined'
+ constructor:->
+  super
  isOffline:false
  createBlob:(data)->
   if Blob
