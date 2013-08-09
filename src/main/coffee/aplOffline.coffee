@@ -94,6 +94,7 @@ onAuthResponse=(res)->
   clearTimeout(authFrameTimerId)
   res.type='loadAplFrame'
   res.aplInfo=aplInfo
+  authFrame.height(res.offsetHeight)
   _response(res)
  if res.type=='offlineAuth' #offlineAuth
   _response({type:'hideFrame'});
@@ -101,6 +102,8 @@ onAuthResponse=(res)->
    aplInfo.loginId=res.loginId
    aplInfo.maxAge=30
    res.aplInfo=aplInfo
+  response(res)
+ else if res.type=='encrypt' || res.type=='decrypt'
   response(res)
 
 onWorkResponse=(res)->
@@ -155,7 +158,7 @@ onRequest=(req)->
  if req.type=='onlineAuth'
   onlineAuth(req.isWs,req.originUrl)
  else if req.type=='offlineAuth'
-  _response({type:'showFrame'});
+  _response({type:'showFrame',height:document.height});
  else if req.type=='encrypt'
   requestToAuthFrame(req)
  else if req.type=='decrypt'
