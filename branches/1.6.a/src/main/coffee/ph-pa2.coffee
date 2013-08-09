@@ -1,12 +1,16 @@
-#-------------------PaHandler-------------------
-class PaHandler extends ph.Deferred
- constructor:(@keyUrl,@isOffline,@isWs)->
+#-------------------Link-------------------
+class Link extends ph.Deferred
+ constructor:(@keyUrl,@isOffline,@isWs,@storeOnly)->
   super
   @status='init'
+  @reqseq=0
+  @reqcb={}
+  if !@isOffline && !@storeOnly
+   @connection=new Connection(@)
   ph.on('message',@_onMessage)
   @_frame=ph.jQuery(
     "<iframe " +
-    "style='frameborder:no;background-color:#CFCFCF;overflow:auto;height:0px;width:0px;position:absolute;top:0%;left:0%;margin-top:-100px;margin-left:-150px;' " +
+    "style='frameborder:no;background-color:#CFCFCF;overflow:auto;height:0px;width:0px;position:absolute;top:0%;left:0%;' " +
     "name='AplFrame#{@keyUrl}' " +
     "src='#{@keyUrl}/~ph.html'>" + 
     "</iframe>")
@@ -14,7 +18,12 @@ class PaHandler extends ph.Deferred
   @
  _connect:->
   alert('connect start')
- _requestToAplFrame:(msg)->
+  @psStore=new PrivateSessionStorage(@)
+ _requestToAplFrame:(msg,cb)->
+  if cb
+    @reqseq++
+    msg.reqseq=@reqseq
+    @reqcb[msg.reqseq]=cb
   jsonMsg=ph.JSON.stringify(msg)
   @_frame[0].contentWindow.postMessage(jsonMsg,'*')
  _onMessage:(qjev)=>
@@ -22,8 +31,13 @@ class PaHandler extends ph.Deferred
   if !@_frame || ev.source!=@_frame[0].contentWindow
    return
   res=ph.JSON.parse(ev.data)
+  if res.reqseq
+   cb=@reqcb[res.reqseq]
+   delete @reqcb[res.reqseq]
+   cb(res)
+   return
   if res.type=='showFrame'
-   @_frame.css({'height':'200px','width':'300px','top':'50%','left':'50%'})
+   @_frame.css({'height':"#{res.height}px",'width':'500px','top':'100px','left':'50%','margin-top':'0px','margin-left':'-250px'})
    return
   if res.type=='hideFrame'
    @_frame.css({'height':'0px','width':'0px','top':'0%','left':'0%'})
@@ -43,6 +57,7 @@ class PaHandler extends ph.Deferred
      location.href=res.location
      return
    else if res.result==true
+    @aplInfo=res.aplInfo
     @trigger('onlineAuth',@)
     @trigger('auth',@)
     @_connect()
@@ -58,20 +73,26 @@ class PaHandler extends ph.Deferred
     @cause='fail to offlineAuth'
     @trigger('failToAuth',@)
  subscribe:(qname,subname)->
+  @connection.subscribe(qname,subname)
  publish:(qname,msg)->
+  @connection.publish(qname,msg)
+ publishForm:(formId,qname,subname)->
+  @connection.publishForm(formId,qname,subname)
  store:(scope)->
- logout:->
+ unlink:->
   @_requestToAplFrame({type:'logout'})
- encrypt:(text,cb)->
-  @_requestToAplFrame({type:'encrypt',text:text})
- decrypt:(encText,cb)->
-  @_requestToAplFrame({type:'decrypt',encText:encText})
- aplInfo:(cb)->
+ encrypt:(plainText,cb)->
+  @_requestToAplFrame({type:'encrypt',plainText:plainText},cb)
+ decrypt:(encryptText,cb)->
+  @_requestToAplFrame({type:'decrypt',encryptText:encryptText},cb)
+## aplInfo:(cb)->
+##  @_requestToAplFrame({type:'aplInfo'},cb)
  authInfo:(cb)->
+  @_requestToAplFrame({type:'authInfo'},cb)
 
 URL_PTN=/^(?:([^:\/]+:))?(?:\/\/([^\/]*))?(.*)/
 ph._pas=[]
-ph.pa2=(aplUrl,isOffline)->
+ph.link=(aplUrl,isOffline)->
  isXhr=false
  aplUrl.match(URL_PTN)
  protocol=RegExp.$1
@@ -92,9 +113,71 @@ ph.pa2=(aplUrl,isOffline)->
  pa=ph._pas[keyUrl]
  if pa
   return pa
- pa=new PaHandler(keyUrl,isOffline,!isXhr)
+ pa=new Link(keyUrl,isOffline,!isXhr)
  ph._pas[keyUrl]=pa
+ pa.on('failToAuth',->delete ph._pas[keyUrl]) #イベント要検討
  return pa
 
-ph.PaHandler=PaHandler
+class Connection extends ph.Deferred
+ constructor:(@link)->
+  super
+
+#strage scope
+#  SCOPE_PAGE_PRIVATE:'pagePrivate' ...そのページだけ、reloadを挟んで情報を維持するため
+#  SCOPE_SESSION_PRIVATE:'sessionPrivate'...開いている同一セションのwindow間で情報を共有
+#  SCOPE_APL_PRIVATE:'aplPrivate'...当該apl当該userの情報を保持
+#  SCOPE_APL_LOCAL:'aplLocal'...当該aplの情報を保持
+#  SCOPE_APL:'apl'
+#  SCOPE_QNAME:'qname'
+#  SCOPE_SUBNAME:'subname'
+#  SCOPE_USER:'user'
+
+#-------------------PagePrivateStorage-------------------
+class PrivateSessionStorage extends ph.Deferred
+ constructor:(@link)->
+  super
+  @status='init'
+  aplInfo=@link.aplInfo
+  @_paPss="_paPss:#{@link.keyUrl}:#{aplInfo.loginId}:#{aplInfo.appSid}"
+  ##不要なsessionStorageの刈り取り
+  sameLoginIdKey="_paPss:#{@link.keyUrl}:#{aplInfo.loginId}:"
+  i=sessionStorage.length
+  while (i-=1) >=0
+   key=sessionStorage.key(i)
+   if key.lastIndexOf(sameLoginIdKey,0)==0 && key!=@_paPss
+    sessionStorage.removeItem(key)
+  s=@
+  ph.pa._storDecrypt(sessionStorage,@link,@_paPss,(decText)->
+    if decText
+     s.data=ph.JSON.parse(decText)
+    else
+     s.data={}
+    s.status='load'
+    s.trigger('dataLoad')
+    )
+ getItem:(key)->
+  @data[key]
+ setItem:(key,value)->
+  oldValue=@data[key]
+  @data[key]=value
+  @trigger(key,{key:key,oldValue:oldValue,newValue:value})
+  s=@
+  @link.encrypt(ph.JSON.stringify(@data),(text)->s.encText=text)
+  return
+ removeItem:(key)->
+  oldValue=@data[key]
+  if !oldValue
+   return
+  delete @data[key]
+  @trigger(key,{key:key,oldValue:oldValue})
+  s=@
+  @link.encrypt(ph.JSON.stringify(@data),(text)->s.encText=text)
+  return
+ _unload:=>
+  if @encText
+   sessionStorage.setItem(@_paPss,@encText)
+  @trigger('save',@)
+ _remove:->
+  sessionStorage.removeItem(@_paPss)
+  @trigger('remove',@)
 

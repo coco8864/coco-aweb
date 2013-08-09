@@ -11,7 +11,10 @@ checkPassword=(loginId,password)->
  passHash=null
  if password
   passHash=CryptoJS.SHA256("salt:"+loginId+":"+password)
- plainText=decEncryptText(encryptText,passHash)
+ try
+  plainText=decEncryptText(encryptText,passHash)
+ catch error
+  return false
  if !plainText
   return false
  userInfo=ph.JSON.parse(plainText)
@@ -148,6 +151,6 @@ jQuery(->
  if parentOrigin=='file://'
   parentOrigin='*'
  jQuery(window).on('message',onMsg)
- response({type:'loadAuthFrame',result:true})
+ response({type:'loadAuthFrame',result:true,offsetHeight:document.documentElement.offsetHeight})
 )
 
