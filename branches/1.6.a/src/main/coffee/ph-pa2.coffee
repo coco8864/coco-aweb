@@ -12,7 +12,7 @@ class Link extends ph.Deferred
     "<iframe " +
     "style='frameborder:no;background-color:#CFCFCF;overflow:auto;height:0px;width:0px;position:absolute;top:0%;left:0%;' " +
     "name='AplFrame#{@keyUrl}' " +
-    "src='#{@keyUrl}/~ph.html'>" + 
+    "src='#{@keyUrl}/~ph.vsp'>" + 
     "</iframe>")
   ph.jQuery("body").append(@_frame)
   @
@@ -58,6 +58,7 @@ class Link extends ph.Deferred
      return
    else if res.result==true
     @aplInfo=res.aplInfo
+    @authInfo=res.authInfo
     @trigger('onlineAuth',@)
     @trigger('auth',@)
     @_connect()
@@ -66,7 +67,8 @@ class Link extends ph.Deferred
     @trigger('failToAuth',@)
   if res.type=='offlineAuth'
    if res.result==true
-    @aplInfo=res.aplInfo
+    @authInfo=res.authInfo
+    @aplInfo={loginId:@authInfo.user.loginId}
     @trigger('onfflineAuth',@)
     @trigger('auth',@)
    else
@@ -85,10 +87,6 @@ class Link extends ph.Deferred
   @_requestToAplFrame({type:'encrypt',plainText:plainText},cb)
  decrypt:(encryptText,cb)->
   @_requestToAplFrame({type:'decrypt',encryptText:encryptText},cb)
-## aplInfo:(cb)->
-##  @_requestToAplFrame({type:'aplInfo'},cb)
- authInfo:(cb)->
-  @_requestToAplFrame({type:'authInfo'},cb)
 
 URL_PTN=/^(?:([^:\/]+:))?(?:\/\/([^\/]*))?(.*)/
 ph._pas=[]
