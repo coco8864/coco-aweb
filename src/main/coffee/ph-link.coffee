@@ -34,7 +34,12 @@ class Link extends ph.Deferred
   if res.reqseq
    cb=@reqcb[res.reqseq]
    delete @reqcb[res.reqseq]
-   cb(res)
+   if !res.result
+    cb(null)
+   else if res.type=='encrypt'
+    cb(res.encryptText)
+   else if res.type=='decrypt'
+    cb(res.plainText)
    return
   if res.type=='showFrame'
    @_frame.css({'height':"#{res.height}px",'width':'500px','top':'100px','left':'50%','margin-top':'0px','margin-left':'-250px'})
@@ -74,6 +79,18 @@ class Link extends ph.Deferred
    else
     @cause='fail to offlineAuth'
     @trigger('failToAuth',@)
+ _storDecrypt:(storage,key,cb)->
+  encText=storage.getItem(key)
+  if encText
+   @decrypt(encText,(decText)->cb(decText))
+  else
+   cb(null)
+ _encryptStor:(storage,key,value,cb)->
+  @encrypt(value,(encText)->
+    storage.setItem(key,encText)
+    if cb
+     cb(encText)
+    )
  subscribe:(qname,subname)->
   @connection.subscribe(qname,subname)
  publish:(qname,msg)->
@@ -138,21 +155,21 @@ class PrivateSessionStorage extends ph.Deferred
   aplInfo=@link.aplInfo
   @_paPss="_paPss:#{@link.keyUrl}:#{aplInfo.loginId}:#{aplInfo.appSid}"
   ##•s—v‚ÈsessionStorage‚ÌŠ ‚èŽæ‚è
-  sameLoginIdKey="_paPss:#{@link.keyUrl}:#{aplInfo.loginId}:"
+  sameLoginIdKey="_paPss:#{@link.keyUrl}:"
   i=sessionStorage.length
   while (i-=1) >=0
    key=sessionStorage.key(i)
    if key.lastIndexOf(sameLoginIdKey,0)==0 && key!=@_paPss
     sessionStorage.removeItem(key)
   s=@
-  ph.pa._storDecrypt(sessionStorage,@link,@_paPss,(decText)->
+  @link._storDecrypt(sessionStorage,@_paPss,(decText)->
     if decText
      s.data=ph.JSON.parse(decText)
     else
      s.data={}
-    s.status='load'
-    s.trigger('dataLoad')
-    )
+    s.load()
+  )
+  ph.on('unload',@_unload)
  getItem:(key)->
   @data[key]
  setItem:(key,value)->
