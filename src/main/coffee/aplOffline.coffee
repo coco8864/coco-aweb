@@ -23,9 +23,10 @@ aplInfo={
 authFrameTimerId=null
 workFrameTimerId=null
 workFrameCb=null
+authInfo=null
 
 loadAuthFrame=(authUrl)->
- authFrame[0].src=authUrl+'/~offline.html?origin='+location.protocol+'//'+location.host
+ authFrame[0].src=authUrl+'/~ph.vsp?origin='+location.protocol+'//'+location.host
  authFrameTimerId=setTimeout((->
   authFrameTimerId=null
   _response({type:'loadAplFrame',result:false,cause:'frameTimeout'}))
@@ -99,12 +100,16 @@ onAuthResponse=(res)->
  if res.type=='offlineAuth' #offlineAuth
   _response({type:'hideFrame'});
   if res.result
-   aplInfo.loginId=res.loginId
+   aplInfo.loginId=res.authInfo.user.loginId
    aplInfo.maxAge=30
    res.aplInfo=aplInfo
+   res.authInfo=res.authInfo
   response(res)
  else if res.type=='encrypt' || res.type=='decrypt'
   response(res)
+ else if res.type=='authInfo'
+  authInfo=res.authInfo
+  response({type:'onlineAuth',result:res.result,aplInfo:aplInfo,authInfo:res.authInfo})
 
 onWorkResponse=(res)->
  clearTimeout(workFrameTimerId)
@@ -113,7 +118,6 @@ onWorkResponse=(res)->
 
 ### online auth start ###
 onlineAuthResponse=(res)->
- res.type='onlineAuth'
  if res.result==true
   aplInfo.isOffline=false
   aplInfo.appSid=res.appSid
@@ -121,7 +125,9 @@ onlineAuthResponse=(res)->
   aplInfo.loginId=res.loginId
   aplInfo.token=res.token
   requestToAuthFrame({type:'authInfo',aplInfo:aplInfo})
- response(res)
+ else
+  res.type='onlineAuth'
+  response(res)
 
 onlineAuthAuthUrlRes=(res)->
  if res.result=='redirect'
@@ -162,9 +168,6 @@ onRequest=(req)->
  else if req.type=='encrypt'
   requestToAuthFrame(req)
  else if req.type=='decrypt'
-  requestToAuthFrame(req)
- else if req.type=='authInfo'
-  req.aplInfo=aplInfo
   requestToAuthFrame(req)
  else if req.type=='logout'
   requestToAuthFrame(req)

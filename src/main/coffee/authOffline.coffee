@@ -10,7 +10,7 @@ checkPassword=(loginId,password)->
   return false
  passHash=null
  if password
-  passHash=CryptoJS.SHA256("salt:"+loginId+":"+password)
+  passHash=CryptoJS.SHA256(offlinePassSalt+":"+loginId+":"+password).toString()
  try
   plainText=decEncryptText(encryptText,passHash)
  catch error
@@ -133,7 +133,7 @@ offlineLogon=->
  if !checkPassword(loginId,password)
   alert(loginId+':認証情報に誤りがあります')
   return
- response({type:'offlineAuth',result:true,loginId:loginId})
+ response({type:'offlineAuth',result:true,authInfo:userInfo.authInfo})
  jQuery('logonId').val('')
  jQuery('password').val('')
  return
