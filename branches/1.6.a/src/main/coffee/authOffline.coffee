@@ -85,15 +85,9 @@ responseAuthInfo=->
 
 onRequest=(req)->
  if req.type=="encrypt"
-  if userInfoDfd
-   userInfoDfd.always(->encrypt(req))
-  else
-   onlineInfo(->encrypt(req))
+  encrypt(req)
  else if req.type=="decrypt"
-  if userInfoDfd
-   userInfoDfd.always(->decrypt(req))
-  else
-   onlineInfo(->decrypt(req))
+  decrypt(req)
  else if req.type=="logout"
   jQuery.ajax({
     type:'GET',
