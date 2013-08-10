@@ -72,10 +72,6 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		if (!mapping.getBooleanOption(Mapping.OPTION_VELOCITY_USE,true)) {
 			return false;
 		}
-		if (path.endsWith("ph-loader.js")) {// ì¡ï àµÇ¢
-			setRequestAttribute(ATTRIBUTE_RESPONSE_CONTENT_TYPE,"application/javascript");
-			return true;
-		}
 		Pattern pattern=(Pattern)mapping.getOption(Mapping.OPTION_VELOCITY_PATTERN);
 		if(pattern==null){
 			return false;
@@ -133,7 +129,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		/* appcacheÇÃèÍçá */
 		AppcacheOption appcacheOption=(AppcacheOption)mapping.getOption(Mapping.OPTION_APPCACHE);
 		if(appcacheOption!=null){
-			if(appcacheOption.check(this,path)){
+			if(appcacheOption.checkAndForward(this,path)){
 				return false;
 			}
 		}

@@ -23,7 +23,7 @@ import net.sf.json.JSONObject;
 public class AppcacheOption {
 	private static final String DEFAULT_CACHE_FILE_PATTERN=".*\\.html$|.*\\.htm$|.*\\.css$|.*\\.js$|.*\\.jpg$|.*\\.png$|.*\\.gif$";
 	private static final String DEFAULT_MANIFEST_PATH="/~ph.appcache";
-	private static final String DEFAULT_CACHE_HTML_PATH="/~ph.html";
+	private static final String DEFAULT_CACHE_HTML_PATH="/~ph.vsp";
 	private static Logger logger = Logger.getLogger(AppcacheOption.class);
 	private static Config config = Config.getConfig();
 	
@@ -125,13 +125,12 @@ public class AppcacheOption {
 	 * @param path
 	 * @return
 	 */
-	public boolean check(WebServerHandler handler,String path){
+	public boolean checkAndForward(WebServerHandler handler,String path){
 		if(!enabled){
 			return false;
 		}
 		String cookie=handler.getRequestHeader().getHeader(HeaderParser.COOKIE_HEADER);
 		String phappcache=Cookie.parseHeader(cookie, "phappcache", null);
-//		boolean useAppcache=!"clean".equals(phappcache);
 		if(path.equals(manifestPath)){
 			checkAppcacheManifest(handler,phappcache);
 			return true;
