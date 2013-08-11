@@ -120,7 +120,10 @@ class Link extends ph.Deferred
   if @connection
    @connection.close()
   @ppStorage.close()
-  @_requestToAplFrame({type:'logout'})
+  link=@
+  @ppStorage.onUnload(->
+    link._requestToAplFrame({type:'logout'})
+   )
 ##  link=@
 ##  @ppStorage.onUnload(->
 ##    link._frame[0].src='about:blank'
