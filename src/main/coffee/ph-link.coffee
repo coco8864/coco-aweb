@@ -73,6 +73,7 @@ class Link extends ph.Deferred
    else
     @cause='fail to onlineAuth'
     @trigger('failToAuth',@)
+    @unload()
   if res.type=='offlineAuth'
    if res.result==true
     @authInfo=res.authInfo
@@ -82,6 +83,7 @@ class Link extends ph.Deferred
    else
     @cause='fail to offlineAuth'
     @trigger('failToAuth',@)
+    @unload()
  _storDecrypt:(storage,key,cb)->
   encText=storage.getItem(key)
   if encText
@@ -112,11 +114,13 @@ class Link extends ph.Deferred
  decrypt:(encryptText,cb)->
   @_requestToAplFrame({type:'decrypt',encryptText:encryptText},cb)
  unlink:->
+  if @connection
+   @connection.close()
+  @ppStorage.close()
   @_requestToAplFrame({type:'logout'})
 
-
 URL_PTN=/^(?:([^:\/]+:))?(?:\/\/([^\/]*))?(.*)/
-ph._pas=[]
+ph._links=[]
 ph.link=(aplUrl,isOffline)->
  isXhr=false
  aplUrl.match(URL_PTN)
@@ -135,13 +139,13 @@ ph.link=(aplUrl,isOffline)->
  else #http or https
   isXhr=true
   keyUrl=aplUrl
- pa=ph._pas[keyUrl]
- if pa
-  return pa
- pa=new Link(keyUrl,isOffline,!isXhr)
- ph._pas[keyUrl]=pa
- pa.on('failToAuth',->delete ph._pas[keyUrl]) #イベント要検討
- return pa
+ link=ph._links[keyUrl]
+ if link
+  return link
+ link=new Link(keyUrl,isOffline,!isXhr)
+ ph._links[keyUrl]=pa
+ link.onUnload(->delete ph._links[keyUrl])
+ return link
 
 #strage scope
 #  SCOPE_PAGE_PRIVATE:'pagePrivate' ...そのページだけ、reloadを挟んで情報を維持するため
@@ -175,7 +179,8 @@ class PrivateSessionStorage extends ph.Deferred
      s.data={}
     s.load()
   )
-  ph.on('unload',@_unload)
+  ph.one('unload',@_unload) #pageがunloadされるときsessionStorageに残す
+  @onUnload(@_unload)
  getItem:(key)->
   @data[key]
  setItem:(key,value)->
@@ -194,7 +199,11 @@ class PrivateSessionStorage extends ph.Deferred
   s=@
   @link.encrypt(ph.JSON.stringify(@data),(text)->s.encText=text)
   return
+ close:->
+  @unload()
+  @
  _unload:=>
+  ph.off('unload',@_unload)
   if @encText
    sessionStorage.setItem(@_paPss,@encText)
   @trigger('save',@)
