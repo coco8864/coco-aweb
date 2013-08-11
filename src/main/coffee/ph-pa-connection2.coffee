@@ -142,7 +142,7 @@ class Connection extends ph.Deferred
     if msg.bid!=@_getBid()
       @_setBid(msg.bid)
       @_send({type:ph.pa.TYPE_NEGOTIATE,bid:msg.bid,token:@_token,needRes:false})
-    if @isUnload()
+    if @isLoading()
       @trigger('connected',@) #success to connect
       @load()
     return
