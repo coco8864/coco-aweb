@@ -78,6 +78,8 @@ class Deferred
       return true
   isUnload:->
     @_stat=='@unload'
+  isLoading:->
+    @_stat=='@loading'
 
 #-------------------Ph-------------------
 class Ph extends Deferred
