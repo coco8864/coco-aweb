@@ -3,8 +3,8 @@ class Connection extends ph.Deferred
   constructor:(@link) ->
     super
     @_subscribes={}
-    @_openCount=0
-    @stat=ph.pa.STAT_INIT
+    @_openCount=1
+    @stat=ph.STAT_INIT
     @_sendMsgs=[]
     @_reciveMsgs=[] #未subcriveで配信できなったmessage todo:溜まりすぎ
   init:->
@@ -18,13 +18,13 @@ class Connection extends ph.Deferred
       @_openWebSocket()
     else
       @_openXhr()
-    @_downloadFrameName=ph.pa._DOWNLOAD_FRAME_NAME_PREFIX + @connectXhrUrl
+    @_downloadFrameName=ph._DOWNLOAD_FRAME_NAME_PREFIX + @connectXhrUrl
     @_downloadFrame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' +
       @_downloadFrameName + 
       '"></iframe>')
     ph.jQuery('body').append(@_downloadFrame)
   _flushMsg:->
-    if @stat!=ph.pa.STAT_CONNECT
+    if @stat!=ph.STAT_CONNECT
       return
     if @_sendMsgs.length==0
       return
@@ -35,7 +35,7 @@ class Connection extends ph.Deferred
       for msg in msgs
         env=new Envelope()
         env.pack(msg,(protocolData)=>
-          if ph.useBlob && protocolData instanceof Blob && protocolData.size>=ph.pa._SEND_DATA_MAX
+          if ph.useBlob && protocolData instanceof Blob && protocolData.size>=ph._SEND_DATA_MAX
             ph.log('blob size:'+protocolData.size)
             @__onError({requestType:msg.type,qname:msg.qname,subname:msg.subname,message:'too long size:'+protocolData.size})
             return
@@ -59,7 +59,7 @@ class Connection extends ph.Deferred
       jsonText=ph.JSON.stringify([msg])
       @_xhrFrame[0].contentWindow.postMessage(jsonText,"*")#TODO origin
   _send:(msg)->
-    if msg.type==ph.pa.TYPE_NEGOTIATE
+    if msg.type==ph.TYPE_NEGOTIATE
       @_sendMsgs.unshift(msg)
     else
       @_sendMsgs.push(msg)
@@ -70,19 +70,19 @@ class Connection extends ph.Deferred
   _onWsClose: (event)=>
     ph.log('Pa _onWsClose.code:'+event.code+':reason:'+event.reason+':wasClean:'+event.wasClean)
 #    @__onClose(event.reason)
-    if @stat==ph.pa.STAT_OPEN
+    if @stat==ph.STAT_OPEN
 # 接続直後に切れるのはwebsocketが使えないと考える
       @isWs=false
       @_openXhr()
       return
-    else if @stat!=ph.pa.STAT_CONNECT
-#      if @stat==ph.pa.STAT_OPEN
+    else if @stat!=ph.STAT_CONNECT
+#      if @stat==ph.STAT_OPEN
       @trigger('unload')
       @unload()
 #      @deferred.resolve('out session')
-      @stat=ph.pa.INIT
+      @stat=ph.INIT
       return
-    @stat=ph.pa.STAT_IDLE
+    @stat=ph.STAT_IDLE
     @_openWebSocket()
     return
   _onWsMessage:(msg)=>
@@ -91,7 +91,7 @@ class Connection extends ph.Deferred
     envelope.unpack(msg.data,@_onMessage)
   _openWebSocket:=>
     ph.log('Pa WebSocket start')
-    @stat=ph.pa.STAT_OPEN
+    @stat=ph.STAT_OPEN
     ws=new WebSocket(@connectWsUrl)
     ws.onopen=@_onWsOpen
     ws.onmessage=@_onWsMessage
@@ -103,19 +103,19 @@ class Connection extends ph.Deferred
     ph.log('Pa _openXhr')
     if @_xhrFrameName
       return
-    @stat=ph.pa.STAT_OPEN
-    @_xhrFrameName=ph.pa._XHR_FRAME_NAME_PREFIX + @connectXhrUrl
+    @stat=ph.STAT_OPEN
+    @_xhrFrameName=ph._XHR_FRAME_NAME_PREFIX + @connectXhrUrl
     @_xhrFrame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' +
       @_xhrFrameName + 
       '" src="' + 
-      @connectXhrUrl + ph.pa._XHR_FRAME_URL +
+      @connectXhrUrl + ph._XHR_FRAME_URL +
       '"></iframe>')
     con=@
     @_xhrFrame.load(->con._onXhrLoad())
     ph.jQuery('body').append(@_xhrFrame)
   _onXhrLoad:=>
     ph.log('Pa _onXhrLoad')
-#    @stat=ph.pa.STAT_LOADING
+#    @stat=ph.STAT_LOADING
   _onXhrOpen:(res)->
     ph.log('Pa _onXhrOpen')
     if res.load
@@ -135,13 +135,13 @@ class Connection extends ph.Deferred
     else
       @link.ppStorage.removeItem('bid')
   _onOpen:->
-    @stat=ph.pa.STAT_NEGOTIATION
-    @_sendNego({type:ph.pa.TYPE_NEGOTIATE,bid:@_getBid(),token:@_token,needRes:true})
+    @stat=ph.STAT_NEGOTIATION
+    @_sendNego({type:ph.TYPE_NEGOTIATE,bid:@_getBid(),token:@_token,needRes:true})
   __onMsgNego:(msg)->
-    @stat=ph.pa.STAT_CONNECT
+    @stat=ph.STAT_CONNECT
     if msg.bid!=@_getBid()
       @_setBid(msg.bid)
-      @_send({type:ph.pa.TYPE_NEGOTIATE,bid:msg.bid,token:@_token,needRes:false})
+      @_send({type:ph.TYPE_NEGOTIATE,bid:msg.bid,token:@_token,needRes:false})
     if @isLoading()
       @trigger('connected',@) #success to connect
       @load()
@@ -153,13 +153,13 @@ class Connection extends ph.Deferred
     @trigger('unload')
     @unload()
     if @isWs
-      @stat=ph.pa.STAT_CLOSE
+      @stat=ph.STAT_CLOSE
       @_ws.close(1000)
     else
-      @stat=ph.pa.STAT_INIT
+      @stat=ph.STAT_INIT
       @_xhrFrame.remove()
     @_setBid(null)
-    delete ph.pa._connections[@connectXhrUrl]
+    delete ph._links[@connectXhrUrl]
 #----------for response event----------
   __getSd:(msg)->
     key="#{msg.qname}@#{msg.subname}"
@@ -173,33 +173,33 @@ class Connection extends ph.Deferred
     delete @_subscribes[key]
     true
   __onSuccess:(msg)->
-    if msg.requestType==ph.pa.TYPE_SUBSCRIBE
+    if msg.requestType==ph.TYPE_SUBSCRIBE
       @__endOfSubscribe(msg)
-    else if msg.requestType==ph.pa.TYPE_CLOSE
+    else if msg.requestType==ph.TYPE_CLOSE
       @__onClose(msg)
-    else if msg.requestType==ph.pa.TYPE_QNAMES
-      @trigger(ph.pa.TYPE_QNAMES,msg.message)
+    else if msg.requestType==ph.TYPE_QNAMES
+      @trigger(ph.TYPE_QNAMES,msg.message)
     else
       sd=@__getSd(msg)
       if sd
-        sd.trigger(ph.pa.RESULT_SUCCESS,msg.requestType,msg)
+        sd.trigger(ph.RESULT_SUCCESS,msg.requestType,msg)
       else
-        @trigger(ph.pa.RESULT_SUCCESS,msg.requestType,msg)
+        @trigger(ph.RESULT_SUCCESS,msg.requestType,msg)
   __onError:(msg)->
-    if msg.requestType==ph.pa.TYPE_SUBSCRIBE
+    if msg.requestType==ph.TYPE_SUBSCRIBE
       @__endOfSubscribe(msg)
     else
       sd=@__getSd(msg)
       if sd
-        sd.trigger(ph.pa.RESULT_ERROR,msg.requestType,msg)
+        sd.trigger(ph.RESULT_ERROR,msg.requestType,msg)
       else
-        @trigger(ph.pa.RESULT_ERROR,msg.requestType,msg)
+        @trigger(ph.RESULT_ERROR,msg.requestType,msg)
   _onMessage:(msg)=>
-    if msg.type==ph.pa.TYPE_NEGOTIATE
+    if msg.type==ph.TYPE_NEGOTIATE
       @__onMsgNego(msg)
-    else if msg.type==ph.pa.TYPE_CLOSE
+    else if msg.type==ph.TYPE_CLOSE
       @__onClose(msg)
-    else if msg.type==ph.pa.TYPE_DOWNLOAD
+    else if msg.type==ph.TYPE_DOWNLOAD
       ph.log('download.msg.key:'+msg.key)
       form=ph.jQuery("<form method='POST' target='#{@_downloadFrameName}' action='#{@connectXhrUrl}/~paDownload'>" +
          "<input type='hidden' name='bid' value='#{@_getBid()}'/>" +
@@ -209,27 +209,27 @@ class Connection extends ph.Deferred
       ph.jQuery('body').append(form)
       form.submit()
       form.remove()
-    else if msg.type==ph.pa.TYPE_MESSAGE
+    else if msg.type==ph.TYPE_MESSAGE
       key="#{msg.qname}@#{msg.subname}"
       sd=@_subscribes[key]
       if !sd
         ph.log('before subscribe message')
-        if !ph.pa._KEEP_MSG_BEFORE_SUBSCRIBE
+        if !ph._KEEP_MSG_BEFORE_SUBSCRIBE
           return
         reciveMsgs=@_reciveMsgs[key]
         if !reciveMsgs
           reciveMsgs=@_reciveMsgs[key]=[]
-        if reciveMsgs.length>=ph.pa._KEEP_MSG_MAX
+        if reciveMsgs.length>=ph._KEEP_MSG_MAX
           x=reciveMsgs.shift()
           ph.log('drop msg:'+x)
         reciveMsgs.push(msg)
         return
-      sd.trigger(ph.pa.TYPE_MESSAGE,msg.message,sd)
+      sd.trigger(ph.TYPE_MESSAGE,msg.message,sd)
       @trigger(sd.qname,msg.message,sd)
       @trigger(sd.subname,msg.message,sd)
       @trigger("#{sd.qname}@#{sd.subname}",msg.message,sd)
-    else if msg.type==ph.pa.TYPE_RESPONSE
-      if msg.result==ph.pa.RESULT_SUCCESS
+    else if msg.type==ph.TYPE_RESPONSE
+      if msg.result==ph.RESULT_SUCCESS
         @__onSuccess(msg)
       else
         @__onError(msg)
@@ -238,15 +238,15 @@ class Connection extends ph.Deferred
     @onLoad()
     @_openCount--
     if @_openCount==0
-      @_send({type:ph.pa.TYPE_CLOSE})
+      @_send({type:ph.TYPE_CLOSE})
     @
   subscribe:(qname,subname,onMessage)->
     @onLoad()
     if subname && ph.jQuery.isFunction(subname)
      onMessage=subname
-     subname=ph.pa._DEFAULT_SUB_ID
+     subname=ph._DEFAULT_SUB_ID
     else if !subname
-      subname=ph.pa._DEFAULT_SUB_ID
+      subname=ph._DEFAULT_SUB_ID
     key="#{qname}@#{subname}"
     prm=@_subscribes[key]
     if prm
@@ -267,16 +267,16 @@ class Connection extends ph.Deferred
     subscription
   publish:(qname,msg)->
     @onLoad()
-    @_send({type:ph.pa.TYPE_PUBLISH,qname:qname,message:msg})
+    @_send({type:ph.TYPE_PUBLISH,qname:qname,message:msg})
   qnames:(cb)->
     @onLoad()
     if cb
-      @on(ph.pa.TYPE_QNAMES,cb)
-    @_send({type:ph.pa.TYPE_QNAMES})
+      @on(ph.TYPE_QNAMES,cb)
+    @_send({type:ph.TYPE_QNAMES})
   deploy:(qname,className)->
     @onLoad()
-    @_send({type:ph.pa.TYPE_DEPLOY,qname:qname,paletClassName:className})
+    @_send({type:ph.TYPE_DEPLOY,qname:qname,paletClassName:className})
   undeploy:(qname)->
     @onLoad()
-    @_send({type:ph.pa.TYPE_UNDEPLOY,qname:qname})
+    @_send({type:ph.TYPE_UNDEPLOY,qname:qname})
 

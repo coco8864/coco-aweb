@@ -83,6 +83,52 @@ class Deferred
 
 #-------------------Ph-------------------
 class Ph extends Deferred
+ STAT_INIT:'INIT'
+ STAT_AUTH:'AUTH'
+ STAT_IDLE:'IDLE'
+ STAT_NEGOTIATION:'NEGOTIATION'
+ STAT_OPEN:'OPEN',
+ STAT_LOADING:'LOADING'
+ STAT_CONNECT:'CONNECT'
+ STAT_CLOSE:'CLOSE'
+ CB_INFO:'INFO'
+ CB_ERROR:'ERROR'
+ CB_MESSAGE:'MESSAGE'
+#request type
+ TYPE_NEGOTIATE:'negotiate'
+ TYPE_PUBLISH:'publish'
+ TYPE_SUBSCRIBE:'subscribe'
+ TYPE_UNSUBSCRIBE:'unsubscribe'
+ TYPE_DEPLOY:'deploy'
+ TYPE_UNDEPLOY:'undeploy'
+ TYPE_QNAMES:'qnames'
+ TYPE_CLOSE:'close'
+#response type
+ TYPE_RESPONSE:'response'
+ TYPE_MESSAGE:'message'
+ TYPE_DOWNLOAD:'download'
+ RESULT_ERROR:'error'
+ RESULT_SUCCESS:'success'
+#strage scope
+ SCOPE_PAGE_PRIVATE:'pagePrivate'
+ SCOPE_SESSION_PRIVATE:'sessionPrivate'
+ SCOPE_APL_PRIVATE:'aplPrivate'
+ SCOPE_APL_LOCAL:'aplLocal'
+ SCOPE_APL:'apl'
+ SCOPE_QNAME:'qname'
+ SCOPE_SUBNAME:'subname'
+ SCOPE_USER:'user'
+
+#  _INTERVAL:1000
+ _SEND_DATA_MAX:(1024*1024*2)
+ _WS_RETRY_MAX:3
+ _KEEP_MSG_BEFORE_SUBSCRIBE:true
+ _KEEP_MSG_MAX:64
+ _DEFAULT_SUB_ID:'@'
+ _DOWNLOAD_FRAME_NAME_PREFIX:'__pa_dl_'
+ _XHR_FRAME_NAME_PREFIX:'__pa_xhr_' #xhrPaFrame.vsp‚É“¯‚¶’è‹`‚ ‚è
+ _XHR_FRAME_URL:'/~xhrPaFrame'
+
  version:'$esc.javascript(${config.getString("phantomVersion")})'
  isSsl:'$esc.javascript(${handler.isSsl()})'=='true'
  domain:'$esc.javascript(${handler.getRequestHeader().getServer()})'

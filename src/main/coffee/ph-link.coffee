@@ -17,7 +17,7 @@ class Link extends ph.Deferred
   ph.jQuery("body").append(@_frame)
   @
  _connect:->
-  alert('connect start')
+#  alert('connect start2')
   @ppStorage=new PrivateSessionStorage(@)
   con=@connection
   @ppStorage.onLoad(->con.init())
@@ -118,6 +118,8 @@ class Link extends ph.Deferred
    @connection.close()
   @ppStorage.close()
   @_requestToAplFrame({type:'logout'})
+  @_frame[0].src='about:blank'
+  @_frame.remove()
 
 URL_PTN=/^(?:([^:\/]+:))?(?:\/\/([^\/]*))?(.*)/
 ph._links=[]
@@ -143,7 +145,7 @@ ph.link=(aplUrl,isOffline)->
  if link
   return link
  link=new Link(keyUrl,isOffline,!isXhr)
- ph._links[keyUrl]=pa
+ ph._links[keyUrl]=link
  link.onUnload(->delete ph._links[keyUrl])
  return link
 

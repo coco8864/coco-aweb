@@ -93,7 +93,7 @@ onRequest=(req)->
     type:'GET',
     url:'ajaxLogout',
     dataType:'json',
-    success:(x)->response(x),
+    success:(x)->response({type:'logout',result:true,x:x}),
     error:(x)->response({type:'logout',result:false})
    })
  else if req.type=="authInfo"
