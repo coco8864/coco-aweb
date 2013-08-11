@@ -84,6 +84,9 @@ class Link extends ph.Deferred
     @cause='fail to offlineAuth'
     @trigger('failToAuth',@)
     @unload()
+  if res.type=='logout'
+    link._frame[0].src='about:blank'
+    link._frame.remove()
  _storDecrypt:(storage,key,cb)->
   encText=storage.getItem(key)
   if encText
@@ -118,8 +121,11 @@ class Link extends ph.Deferred
    @connection.close()
   @ppStorage.close()
   @_requestToAplFrame({type:'logout'})
-  @_frame[0].src='about:blank'
-  @_frame.remove()
+##  link=@
+##  @ppStorage.onUnload(->
+##    link._frame[0].src='about:blank'
+##    link._frame.remove()
+##   )
 
 URL_PTN=/^(?:([^:\/]+:))?(?:\/\/([^\/]*))?(.*)/
 ph._links=[]
