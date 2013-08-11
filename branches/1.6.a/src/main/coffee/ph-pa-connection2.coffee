@@ -1,32 +1,20 @@
 #-------------------Connection-------------------
 class Connection extends ph.Deferred
-  constructor:(@pa) ->
+  constructor:(@link) ->
     super
     @_subscribes={}
     @_openCount=0
     @stat=ph.pa.STAT_INIT
     @_sendMsgs=[]
     @_reciveMsgs=[] #–¢subcrive‚Å”zM‚Å‚«‚È‚Á‚½message todo:—­‚Ü‚è‚·‚¬
-    @isWs=(ph.useWebSocket && connectWsUrl!=null)
-    @stat=ph.pa.STAT_AUTH
-    @ppStorage=new PrivateSessionStorage(@connectXhrUrl,@_auth)
-    @trigger(ph.pa.RESULT_SUCCESS,'auth',@)#success to auth
-    @trigger('auth',@)#success to auth
-    if @_storageScope
-      @_initStorage=@storage(@_storageScope)
-##unloadŽž‚ÉsessionStrage‚É•Û‘¶
-    @on('unload',->
-        @ppStorage?._unload()
-        @spStorage?._unload()
-        @apStorage?._unload()
-        @alStorage?._unload()
-      )
-    if @ppStorage.status!='load'
-      @ppStorage.on('dataLoad',@_loadStorage)
-    else
-      @_loadStorage()
-  _loadStorage:=>
+  init:->
+    @_loginId=@link.aplInfo.loginId
+    @_appSid=@link.aplInfo.appSid
+    @_token=@link.aplInfo.token
+    @isWs=@link.isWs
+    @connectXhrUrl=@link.keyUrl
     if @isWs
+      @connectWsUrl='ws'+@connectXhrUrl.substring(4) #http->ws‚É
       @_openWebSocket()
     else
       @_openXhr()
@@ -34,8 +22,6 @@ class Connection extends ph.Deferred
     @_downloadFrame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' +
       @_downloadFrameName + 
       '"></iframe>')
-#    con=@
-#    @_xhrFrame.load(->con._onXhrLoad())
     ph.jQuery('body').append(@_downloadFrame)
   _flushMsg:->
     if @stat!=ph.pa.STAT_CONNECT
@@ -142,13 +128,12 @@ class Connection extends ph.Deferred
     envelope.unpack(obj,@_onMessage)
 #   @_onMessage(obj)
   _getBid:->
-    @ppStorage.getItem('bid') ? 0
+    @link.ppStorage.getItem('bid') ? 0
   _setBid:(bid)->
     if bid
-      @ppStorage.setItem('bid',bid)
+      @link.ppStorage.setItem('bid',bid)
     else
-      @ppStorage._remove()
-      @ppStorage=null
+      @link.ppStorage.removeItem('bid')
   _onOpen:->
     @stat=ph.pa.STAT_NEGOTIATION
     @_sendNego({type:ph.pa.TYPE_NEGOTIATE,bid:@_getBid(),token:@_token,needRes:true})
@@ -157,12 +142,9 @@ class Connection extends ph.Deferred
     if msg.bid!=@_getBid()
       @_setBid(msg.bid)
       @_send({type:ph.pa.TYPE_NEGOTIATE,bid:msg.bid,token:@_token,needRes:false})
-    if @_initStorage && @_initStorage.status!='load'
-      c=@
-      @_initStorage.on('dataLoad',->c.trigger('connected',c))
-    else
+    if @isUnload()
       @trigger('connected',@) #success to connect
-    @load()
+      @load()
     return
   __onClose:(msg)->
     if @isUnload()
@@ -170,7 +152,6 @@ class Connection extends ph.Deferred
       return
     @trigger('unload')
     @unload()
-#    @deferred.resolve(msg,@)
     if @isWs
       @stat=ph.pa.STAT_CLOSE
       @_ws.close(1000)
@@ -188,7 +169,6 @@ class Connection extends ph.Deferred
     sd=@_subscribes[key]
     if !sd
       return false
-#    sd.deferred.resolve(msg,sd.promise)
     sd.trigger('done',msg,sd)
     delete @_subscribes[key]
     true
@@ -226,11 +206,6 @@ class Connection extends ph.Deferred
          "<input type='hidden' name='token' value='#{@_token}'/>" +
          "<input type='hidden' name='key' value='#{msg.key}'/>" +
          "</form>")
-#      frame=ph.jQuery('<iframe width="0" height="0" frameborder="no"' +
-#        ' src="' + 
-#        @downloadUrl + '?bid=' + @_getBid() + '&token=' + @_token + '&key=' + msg.key +
-#        '"></iframe>')
-#      frame.load(->alert('load'))
       ph.jQuery('body').append(form)
       form.submit()
       form.remove()
@@ -249,7 +224,6 @@ class Connection extends ph.Deferred
           ph.log('drop msg:'+x)
         reciveMsgs.push(msg)
         return
-#      promise=sd.promise
       sd.trigger(ph.pa.TYPE_MESSAGE,msg.message,sd)
       @trigger(sd.qname,msg.message,sd)
       @trigger(sd.subname,msg.message,sd)
@@ -280,7 +254,6 @@ class Connection extends ph.Deferred
         prm.onMessage(onMessage)
       return prm
     subscription=new Subscription(@,qname,subname)
-#    prm=subscription.promise
     @_subscribes[key]=subscription
     if onMessage
       subscription.onMessage(onMessage)
@@ -306,19 +279,4 @@ class Connection extends ph.Deferred
   undeploy:(qname)->
     @onLoad()
     @_send({type:ph.pa.TYPE_UNDEPLOY,qname:qname})
-  storage:(scope)->
-    if !scope || scope==ph.pa.SCOPE_PAGE_PRIVATE
-      return @ppStorage
-    else if scope==ph.pa.SCOPE_SESSION_PRIVATE
-      if !@spStorage
-        @spStorage=new PrivateLocalStorage(@connectXhrUrl,@_auth,@_getBid(),scope)
-      return @spStorage
-    else if scope==ph.pa.SCOPE_APL_PRIVATE
-      if !@apStorage
-        @apStorage=new PrivateLocalStorage(@connectXhrUrl,@_auth,@_getBid(),scope)
-      return @apStorage
-    else if scope==ph.pa.SCOPE_APL_LOCAL
-      if !@alStorage
-        @alStorage=new PrivateLocalStorage(@connectXhrUrl,@_auth,@_getBid(),scope)
-      return @alStorage
 

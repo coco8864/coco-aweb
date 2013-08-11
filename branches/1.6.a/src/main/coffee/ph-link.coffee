@@ -18,7 +18,10 @@ class Link extends ph.Deferred
   @
  _connect:->
   alert('connect start')
-  @psStore=new PrivateSessionStorage(@)
+  @ppStorage=new PrivateSessionStorage(@)
+  con=@connection
+  @ppStorage.onLoad(->con.init())
+  con
  _requestToAplFrame:(msg,cb)->
   if cb
     @reqseq++
@@ -97,13 +100,19 @@ class Link extends ph.Deferred
   @connection.publish(qname,msg)
  publishForm:(formId,qname,subname)->
   @connection.publishForm(formId,qname,subname)
+ qnames:(cb)->
+  @connection.qnames(cb)
+ deploy:(qname,className)->
+  @connection.deploy(qname,className)
+ undeploy:(qname)->
+  @connection.undeploy(qname)
  store:(scope)->
- unlink:->
-  @_requestToAplFrame({type:'logout'})
  encrypt:(plainText,cb)->
   @_requestToAplFrame({type:'encrypt',plainText:plainText},cb)
  decrypt:(encryptText,cb)->
   @_requestToAplFrame({type:'decrypt',encryptText:encryptText},cb)
+ unlink:->
+  @_requestToAplFrame({type:'logout'})
 
 URL_PTN=/^(?:([^:\/]+:))?(?:\/\/([^\/]*))?(.*)/
 ph._pas=[]
@@ -132,10 +141,6 @@ ph.link=(aplUrl,isOffline)->
  ph._pas[keyUrl]=pa
  pa.on('failToAuth',->delete ph._pas[keyUrl]) #イベント要検討
  return pa
-
-class Connection extends ph.Deferred
- constructor:(@link)->
-  super
 
 #strage scope
 #  SCOPE_PAGE_PRIVATE:'pagePrivate' ...そのページだけ、reloadを挟んで情報を維持するため
@@ -192,7 +197,4 @@ class PrivateSessionStorage extends ph.Deferred
   if @encText
    sessionStorage.setItem(@_paPss,@encText)
   @trigger('save',@)
- _remove:->
-  sessionStorage.removeItem(@_paPss)
-  @trigger('remove',@)
 
