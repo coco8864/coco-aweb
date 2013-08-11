@@ -48,11 +48,14 @@
          <compileIndividualFiles>false</compileIndividualFiles>
          <coffeeJoinSets>
             <joinSet>
-                <id>ph-pa2</id>
+                <id>ph-link</id>
                 <fileSet>
                     <directory>${basedir}/src/main/coffee</directory>
                     <includes>
-                        <include>ph-pa2.coffee</include>
+                        <include>ph-link.coffee</include>
+                        <include>ph-pa-connection2.coffee</include>
+                        <include>ph-pa-subscription.coffee</include>
+                        <include>ph-pa-envelope.coffee</include>
                     </includes>
                 </fileSet>
             </joinSet>
