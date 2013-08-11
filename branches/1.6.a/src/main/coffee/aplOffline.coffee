@@ -155,10 +155,8 @@ onlineAuth=(isWs,originUrl)-> ##aplUrlをチェック
 ### online auth end ###
 
 onRequest=(req)->
- if cdr.isIn
-  throw "duplicate request"
-## if aplInfo.result==false
-##  throw "fail to load"
+## if cdr.isIn
+##  throw "duplicate request"
  cdr.isIn=true
  cdr.req=req
  if req.type=='onlineAuth'
