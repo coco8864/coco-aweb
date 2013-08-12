@@ -10,7 +10,8 @@ class Link extends ph.Deferred
   if !@param.useOffline && !@param.useConnection
    @connection=new Connection(@)
    @connection.onLoad(->
-     link.load()
+     link.load(link)
+     link.trigger('linked',link)
     )
    @connection.onUnload(->
      if link.ppStorage
@@ -29,7 +30,7 @@ class Link extends ph.Deferred
     link._frameTimerId=null
     link._frame.remove()
     link.trigger('failToAuth',link)
-    link.unload())
+    link.unload(link))
    ,10000
    )
   @
@@ -136,7 +137,8 @@ class Link extends ph.Deferred
       link.trigger('ppStorage',link)
       link.trigger('onfflineAuth',link)
       link.trigger('auth',link)
-      link.load()
+      link.load(link)
+      link.trigger('linked',link)
      )
     @ppStorage.onUnload(->link._logout())
    else
@@ -160,8 +162,8 @@ class Link extends ph.Deferred
     if cb
      cb(encText)
     )
- subscribe:(qname,subname)->
-  @connection.subscribe(qname,subname)
+ subscribe:(qname,subname,cb)->
+  @connection.subscribe(qname,subname,cb)
  publish:(qname,msg)->
   @connection.publish(qname,msg)
  publishForm:(formId,qname,subname)->
@@ -173,7 +175,7 @@ class Link extends ph.Deferred
  undeploy:(qname)->
   @connection.undeploy(qname)
  storage:(scope)->
-  if scope==ph.SCOPE_PAGE_PRIVATE
+  if scope==ph.SCOPE_PAGE_PRIVATE || !scope
    return @ppStorage
   else if scope==ph.SCOPE_SESSION_PRIVATE
    return @ppStorage
@@ -229,7 +231,10 @@ ph.link=(aplUrl,useOffline,useConnection,useWs)->
  param.keyUrl=keyUrl
  link=new Link(param)
  ph._links[keyUrl]=link
- link.onUnload(->delete ph._links[keyUrl])
+ link.onUnload(->
+   link.trigger('unlinked',link)
+   delete ph._links[keyUrl]
+  )
  return link
 
 #strage scope
