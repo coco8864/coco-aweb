@@ -1,4 +1,4 @@
-package naru.aweb.pa;
+package naru.aweb.link;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,15 +13,15 @@ import naru.async.pool.PoolManager;
 import naru.aweb.auth.AuthSession;
 import naru.aweb.auth.LogoutEvent;
 import naru.aweb.config.User;
-import naru.aweb.pa.api.Blob;
-import naru.aweb.pa.api.PaMsg;
-import naru.aweb.pa.api.PaPeer;
+import naru.aweb.link.api.Blob;
+import naru.aweb.link.api.LinkMsg;
+import naru.aweb.link.api.LinkPeer;
 import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
 
 import org.apache.log4j.Logger;
 
-public class PaSession extends PoolBase implements LogoutEvent{
+public class LinkSession extends PoolBase implements LogoutEvent{
 	/* req/res共通のkey */
 	public static final String KEY_TYPE="type";
 	public static final String KEY_BID="bid";
@@ -55,12 +55,12 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	public static final String RESULT_SUCCESS="success";
 	public static final String RESULT_ERROR="error";
 	
-	private static Logger logger=Logger.getLogger(PaSession.class);
+	private static Logger logger=Logger.getLogger(LinkSession.class);
 	
-	static PaSession create(String path,Integer bid,boolean isWs,AuthSession authSession){
-		PaSession paSession=(PaSession)PoolManager.getInstance(PaSession.class);
+	static LinkSession create(String path,Integer bid,boolean isWs,AuthSession authSession){
+		LinkSession paSession=(LinkSession)PoolManager.getInstance(LinkSession.class);
 		paSession.path=path;
-		paSession.paManager=PaManager.getInstance(path);
+		paSession.paManager=LinkManager.getInstance(path);
 		paSession.bid=bid;
 		paSession.isWs=isWs;
 		
@@ -84,7 +84,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		isWs=false;
 		super.recycle();
 	}
-	private PaManager paManager;
+	private LinkManager paManager;
 	
 	private String path;//接続path
 	
@@ -96,13 +96,13 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	private Integer bid;//brawserId
 	private boolean isWs;
 	//アプリに通知する同じPaPeerのインスタンスを一意にするための浄水器
-	private Map<PaPeer,PaPeer> peers=new HashMap<PaPeer,PaPeer>();
-	private PaHandler wsHandler;
-	private PaHandler xhrHandler;
+	private Map<LinkPeer,LinkPeer> peers=new HashMap<LinkPeer,LinkPeer>();
+	private LinkHandler wsHandler;
+	private LinkHandler xhrHandler;
 	private List<Object> qdata=new ArrayList<Object>();
 	private List<AsyncBuffer> qbin=new ArrayList<AsyncBuffer>();
 	
-	private void wsSend(PaHandler handler,Object data){
+	private void wsSend(LinkHandler handler,Object data){
 		if(data instanceof String){
 			handler.postMessage((String)data);
 		}else if(data instanceof AsyncBuffer){
@@ -113,7 +113,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		//TODO impliment
 	}
 	
-	private void xhrSend(PaHandler handler,List<Object> qdata){
+	private void xhrSend(LinkHandler handler,List<Object> qdata){
 		if(qdata.size()==0){
 			handler.completeResponse("204");
 		}else{
@@ -124,7 +124,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		handler.setDoneXhr();
 	}
 	
-	public synchronized void setupWsHandler(PaHandler orgHandler,PaHandler handler){
+	public synchronized void setupWsHandler(LinkHandler orgHandler,LinkHandler handler){
 		if(orgHandler!=null && this.wsHandler!=orgHandler){
 			return;
 		}
@@ -146,7 +146,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	 * @param handler
 	 * @return responseした場合true
 	 */
-	public synchronized void setupXhrHandler(PaHandler handler){
+	public synchronized void setupXhrHandler(LinkHandler handler){
 		if(this.xhrHandler!=null && handler==null){
 			this.xhrHandler=null;
 			return;
@@ -164,7 +164,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	}
 	
 	/* レスポンスするオブジェクトがなかったとしても一定時間後にはレスポンスする */
-	public synchronized void xhrResponse(PaHandler handler){
+	public synchronized void xhrResponse(LinkHandler handler){
 		if(handler.doneXhr()){
 			return;
 		}
@@ -226,14 +226,14 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	public void subscribe(JSONObject msg){
 		String qname=msg.getString(KEY_QNAME);
 		String subname=msg.optString(KEY_SUBNAME,null);
-		PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
+		LinkletWrapper paletWrapper=paManager.getPaletWrapper(qname);
 		if(paletWrapper==null){
 			sendError(TYPE_SUBSCRIBE,qname, subname,null);
 			return;
 		}
-		PaPeer keyPeer=PaPeer.create(paManager,this, qname, subname);
+		LinkPeer keyPeer=LinkPeer.create(paManager,this, qname, subname);
 		synchronized(peers){
-			PaPeer peer=peers.get(keyPeer);
+			LinkPeer peer=peers.get(keyPeer);
 			if(peer!=null){//すでにsubscribe済み処理はない
 				keyPeer.unref(true);
 				return;
@@ -246,7 +246,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	public void unsubscribe(JSONObject msg){
 		String qname=msg.getString(KEY_QNAME);
 		String subname=msg.optString(KEY_SUBNAME,null);
-		PaPeer keyPeer=PaPeer.create(paManager,this, qname, subname);
+		LinkPeer keyPeer=LinkPeer.create(paManager,this, qname, subname);
 		if( !unsubscribeFromWrapper(keyPeer) ){
 			sendError(TYPE_UNSUBSCRIBE,qname, subname,"not found peer");
 			keyPeer.unref(true);
@@ -257,7 +257,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	}
 	
 	/* API経由でのunsubscribe, clientにunsubscribe(subscribe失敗)を通知する */
-	public boolean unsubscribeByPeer(PaPeer peer){
+	public boolean unsubscribeByPeer(LinkPeer peer){
 		String qname=peer.getQname();
 		synchronized(peers){
 			peer=peers.remove(peer);
@@ -272,20 +272,20 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		return true;
 	}
 	
-	public void publish(PaMsg msg){
+	public void publish(LinkMsg msg){
 		String qname=msg.getString(KEY_QNAME);
 		String subname=msg.getString(KEY_SUBNAME);
-		PaMsg message=msg.getMap(KEY_MESSAGE);
+		LinkMsg message=msg.getMap(KEY_MESSAGE);
 		message.ref();
 		msg.unref();
-		PaPeer keyPeer=PaPeer.create(paManager,this, qname, subname);
-		PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
+		LinkPeer keyPeer=LinkPeer.create(paManager,this, qname, subname);
+		LinkletWrapper paletWrapper=paManager.getPaletWrapper(qname);
 		if(subname==null){//送信元がないPublish 便宜的なPeer
 			paletWrapper.onPublish(keyPeer, message);
 			keyPeer.unref();
 			return;
 		}
-		PaPeer peer=null;
+		LinkPeer peer=null;
 		synchronized(peers){
 			peer=peers.get(keyPeer);
 			keyPeer.unref(true);
@@ -298,8 +298,8 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	}
 	
 	/* PaletWrapperからのunsubcribe */
-	private boolean unsubscribeFromWrapper(PaPeer peer){
-		PaletWrapper paletWrapper=paManager.getPaletWrapper(peer.getQname());
+	private boolean unsubscribeFromWrapper(LinkPeer peer){
+		LinkletWrapper paletWrapper=paManager.getPaletWrapper(peer.getQname());
 		if(paletWrapper==null){
 			return false;
 		}
@@ -309,9 +309,9 @@ public class PaSession extends PoolBase implements LogoutEvent{
 		return true;
 	}
 	
-	private PaPeer getPeer(){
+	private LinkPeer getPeer(){
 		synchronized(peers){
-			for(PaPeer peer:peers.keySet()){
+			for(LinkPeer peer:peers.keySet()){
 				peers.remove(peer);
 				return peer;
 			}
@@ -322,7 +322,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 	public void close(){
 		int count=0;
 		while(true){
-			PaPeer peer=getPeer();
+			LinkPeer peer=getPeer();
 			if(peer==null){
 				break;
 			}
@@ -375,7 +375,7 @@ public class PaSession extends PoolBase implements LogoutEvent{
 				break;
 			}
 			for(Object peer:reqs){
-				if( ((PaPeer)peer).unsubscribe()==false){
+				if( ((LinkPeer)peer).unsubscribe()==false){
 					//TODO 意味不明だが停止時にループした
 					logger.error("fail to onLogout for unsubscribe",new Exception());
 					unref();//セションが終わったらPaSessionも必要なし

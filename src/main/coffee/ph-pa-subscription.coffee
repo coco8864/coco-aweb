@@ -5,17 +5,17 @@ class Subscription extends ph.Deferred
     @_con.onLoad(@_connectionOnLoad)
     @
   _connectionOnLoad:=>
-    @_con._send({type:ph.pa.TYPE_SUBSCRIBE,qname:@qname,subname:@subname})
+    @_con._send({type:ph.TYPE_SUBSCRIBE,qname:@qname,subname:@subname})
     @load()
     return
   unsubscribe:->
     @onLoad(@_unsubscribe)
   _unsubscribe:=>
-    @_con._send({type:ph.pa.TYPE_UNSUBSCRIBE,qname:@qname,subname:@subname})
+    @_con._send({type:ph.TYPE_UNSUBSCRIBE,qname:@qname,subname:@subname})
   publish:(msg)->
     @onLoad(@_publish,msg)
   _publish:(msg)=>
-    @_con._send({type:ph.pa.TYPE_PUBLISH,qname:@qname,subname:@subname,message:msg})
+    @_con._send({type:ph.TYPE_PUBLISH,qname:@qname,subname:@subname,message:msg})
   publishForm:(formId)->
     @onLoad(@_publishForm,formId)
   _publishForm:(formId)->
@@ -41,4 +41,4 @@ class Subscription extends ph.Deferred
     qnameInput.remove()
     subnameInput.remove()
   onMessage:(cb)->
-    @on(ph.pa.TYPE_MESSAGE,cb)
+    @on(ph.TYPE_MESSAGE,cb)

@@ -12,11 +12,11 @@ import naru.async.BufferGetter;
 import naru.async.pool.BuffersUtil;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
-import naru.aweb.pa.api.Blob;
-import naru.aweb.pa.api.PaMsg;
-import naru.aweb.pa.api.PaPeer;
-import naru.aweb.pa.api.Palet;
-import naru.aweb.pa.api.PaletCtx;
+import naru.aweb.link.api.Blob;
+import naru.aweb.link.api.LinkMsg;
+import naru.aweb.link.api.LinkPeer;
+import naru.aweb.link.api.Linklet;
+import naru.aweb.link.api.LinkletCtx;
 import naru.aweb.robot.ConnectChecker;
 import naru.aweb.robot.Scenario;
 import naru.aweb.robot.ServerChecker;
@@ -25,15 +25,15 @@ import naru.aweb.util.StringConverter;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
-public class PerfPalet implements Palet,Event {
+public class PerfPalet implements Linklet,Event {
 	private static Logger logger = Logger.getLogger(PerfPalet.class);
 	private static Config config=Config.getConfig();
 
-	private PaletCtx ctx;
+	private LinkletCtx ctx;
 	private Scenario scenario=null;
 	
 	@Override
-	public void init(String qname,String subname,PaletCtx ctx) {
+	public void init(String qname,String subname,LinkletCtx ctx) {
 		this.ctx=ctx;
 	}
 	
@@ -46,15 +46,15 @@ public class PerfPalet implements Palet,Event {
 	}
 
 	@Override
-	public void onSubscribe(PaPeer peer) {
+	public void onSubscribe(LinkPeer peer) {
 	}
 
 	@Override
-	public void onUnsubscribe(PaPeer peer, String reason) {
+	public void onUnsubscribe(LinkPeer peer, String reason) {
 	}
 
 	@Override
-	public void onPublish(PaPeer peer, PaMsg parameter) {
+	public void onPublish(LinkPeer peer, LinkMsg parameter) {
 //		JSONObject parameter=null;
 //		if(data instanceof JSONObject){
 //			parameter=(JSONObject)data;
@@ -73,7 +73,7 @@ public class PerfPalet implements Palet,Event {
 		if("checkConnect".equals(kind)){
 			Integer count=parameter.getInt("count");
 			Integer maxFailCount=parameter.getInt("maxFailCount");
-			PaPeer publishPeer=PaPeer.create(config.getAdminPaManager(), null,peer.getQname(),peer.getSubname());
+			LinkPeer publishPeer=LinkPeer.create(config.getAdminPaManager(), null,peer.getQname(),peer.getSubname());
 			if( ConnectChecker.start(count, maxFailCount, 0,publishPeer)==false ){
 				parameter.put("kind","checkConnectResult");
 				parameter.put("result","fail");
@@ -123,7 +123,7 @@ public class PerfPalet implements Palet,Event {
 				peer.message(parameter);
 				return;
 			}
-			PaPeer publishPeer=PaPeer.create(config.getAdminPaManager(), null,peer.getQname(),peer.getSubname());
+			LinkPeer publishPeer=LinkPeer.create(config.getAdminPaManager(), null,peer.getQname(),peer.getSubname());
 			if(!doStress(accessLogs,name,
 						Integer.parseInt(browserCount),
 						Integer.parseInt(call),
@@ -174,13 +174,13 @@ public class PerfPalet implements Palet,Event {
 	
 	private boolean doStress(AccessLog[] accessLogs,String name,int browserCount,int callCount,
 			boolean isCallerKeepAlive,long thinkingTime,
-			boolean isAccessLog,boolean isResponseHeaderTrace,boolean isResponseBodyTrace,PaPeer peer){
+			boolean isAccessLog,boolean isResponseHeaderTrace,boolean isResponseBodyTrace,LinkPeer peer){
 		Scenario scenario=Scenario.run(accessLogs, name, browserCount, callCount, isCallerKeepAlive, thinkingTime, isAccessLog, isResponseHeaderTrace, isResponseBodyTrace,peer);
 		return settingScenario(scenario);
 	}
 	
 	private boolean doStressFile(AccessLog[] accessLogs,JSONArray stressJson){
-		PaPeer publishPeer=PaPeer.create(config.getAdminPaManager(), null,stressFilePeer.getQname(),stressFilePeer.getSubname());
+		LinkPeer publishPeer=LinkPeer.create(config.getAdminPaManager(), null,stressFilePeer.getQname(),stressFilePeer.getSubname());
 		stressFilePeer.unref();
 		stressFilePeer=null;
 		Scenario scenario=Scenario.run(accessLogs, stressJson,publishPeer);
@@ -189,7 +189,7 @@ public class PerfPalet implements Palet,Event {
 	}
 
 	private String stressFileList;
-	private PaPeer stressFilePeer;
+	private LinkPeer stressFilePeer;
 
 	@Override
 	public void done(boolean result, Object obj) {

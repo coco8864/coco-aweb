@@ -1,6 +1,6 @@
-package naru.aweb.pa.api;
+package naru.aweb.link.api;
 
-public interface Palet {
+public interface Linklet {
 	/**
 	 * call when this object is loaded
 	 * subname‚ªnull‚Ìê‡‚ÍArootPalet
@@ -8,7 +8,7 @@ public interface Palet {
 	 * @param subname
 	 * @param ctx
 	 */
-	void init(String qname,String subname,PaletCtx ctx);
+	void init(String qname,String subname,LinkletCtx ctx);
 	
 	/**
 	 * call when this object is unloaded
@@ -17,7 +17,7 @@ public interface Palet {
 	
 	/**
 	 * call when time interval
-	 * @see PaletCtx#setInterval
+	 * @see LinkletCtx#setInterval
 	 */
 	void onTimer();
 	
@@ -25,8 +25,8 @@ public interface Palet {
 	 * call when subscribe this queue and subname
 	 * @param peer
 	 */
-	void onSubscribe(PaPeer peer);
-	void onUnsubscribe(PaPeer peer,String reason);
+	void onSubscribe(LinkPeer peer);
+	void onUnsubscribe(LinkPeer peer,String reason);
 	
 	/**
 	 * Connection Deffed‚Épublish‚µ‚½ê‡‚ÍApeer‚Ésubname‚ªİ’è‚³‚ê‚È‚¢B
@@ -37,5 +37,5 @@ public interface Palet {
 	 * @param peer
 	 * @param data
 	 */
-	void onPublish(PaPeer peer,PaMsg data);
+	void onPublish(LinkPeer peer,LinkMsg data);
 }

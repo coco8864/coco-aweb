@@ -1,18 +1,18 @@
-package naru.aweb.pa;
+package naru.aweb.link;
 
-import naru.aweb.pa.api.PaMsg;
-import naru.aweb.pa.api.PaPeer;
-import naru.aweb.pa.api.Palet;
-import naru.aweb.pa.api.PaletCtx;
+import naru.aweb.link.api.LinkMsg;
+import naru.aweb.link.api.LinkPeer;
+import naru.aweb.link.api.Linklet;
+import naru.aweb.link.api.LinkletCtx;
 
 import org.apache.log4j.Logger;
 
-public class SamplePalet implements Palet{
+public class SamplePalet implements Linklet{
 	private static Logger logger=Logger.getLogger(SamplePalet.class);
-	private PaletCtx ctx;
+	private LinkletCtx ctx;
 
 	@Override
-	public void init(String qname,String subname,PaletCtx ctx) {
+	public void init(String qname,String subname,LinkletCtx ctx) {
 		this.ctx=ctx;
 	}
 
@@ -27,18 +27,18 @@ public class SamplePalet implements Palet{
 	}
 
 	@Override
-	public void onSubscribe(PaPeer peer) {
+	public void onSubscribe(LinkPeer peer) {
 		logger.info("onSubscribe.peer:"+peer);
 	}
 
 	@Override
-	public void onUnsubscribe(PaPeer peer, String reason) {
+	public void onUnsubscribe(LinkPeer peer, String reason) {
 		logger.info("onUnsubscribe.peer:"+peer+":"+reason);
 	}
 
 
 	@Override
-	public void onPublish(PaPeer peer, PaMsg data) {
+	public void onPublish(LinkPeer peer, LinkMsg data) {
 		logger.info("onPublishObj.peer:"+peer+":"+data);
 		ctx.message(data);
 	}

@@ -1,4 +1,4 @@
-package naru.aweb.pa;
+package naru.aweb.link;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -11,33 +11,33 @@ import org.apache.log4j.Logger;
 
 import naru.async.Timer;
 import naru.async.timer.TimerManager;
-import naru.aweb.pa.api.Blob;
-import naru.aweb.pa.api.PaMsg;
-import naru.aweb.pa.api.PaPeer;
-import naru.aweb.pa.api.Palet;
-import naru.aweb.pa.api.PaletCtx;
+import naru.aweb.link.api.Blob;
+import naru.aweb.link.api.LinkMsg;
+import naru.aweb.link.api.LinkPeer;
+import naru.aweb.link.api.Linklet;
+import naru.aweb.link.api.LinkletCtx;
 
-public class PaletWrapper implements PaletCtx,Timer{
-	private static Logger logger=Logger.getLogger(PaSession.class);
+public class LinkletWrapper implements LinkletCtx,Timer{
+	private static Logger logger=Logger.getLogger(LinkSession.class);
 	private Object intervalObj=null;
 	private String qname;
-	private Palet rootPalet;//root palet
-	private Map<String,Palet> subscribers=new HashMap<String,Palet>();
+	private Linklet rootPalet;//root palet
+	private Map<String,Linklet> subscribers=new HashMap<String,Linklet>();
 	private boolean isTerminate=false;
-	private Set<PaPeer> peers=new HashSet<PaPeer>();
-	private Map<String,Set<PaPeer>> subnamePeersMap=new HashMap<String,Set<PaPeer>>();
+	private Set<LinkPeer> peers=new HashSet<LinkPeer>();
+	private Map<String,Set<LinkPeer>> subnamePeersMap=new HashMap<String,Set<LinkPeer>>();
 	private Map<String,Object> attribute=new HashMap<String,Object>();//同じqname配下のpalet間で情報を共有する
 
-	public PaletWrapper(String qname,Palet rootPalet){
+	public LinkletWrapper(String qname,Linklet rootPalet){
 		this(qname, rootPalet, null);
 	}
-	public PaletWrapper(String qname,Palet rootPalet,Map<String,Palet> subscribers){
+	public LinkletWrapper(String qname,Linklet rootPalet,Map<String,Linklet> subscribers){
 		this.qname=qname;
 		this.rootPalet=rootPalet;
 		rootPalet.init(qname,null,this);
 		if(subscribers!=null){
 			for(String subname:subscribers.keySet()){
-				Palet palet=subscribers.get(subname);
+				Linklet palet=subscribers.get(subname);
 				palet.init(qname,subname,this);
 				this.subscribers.put(subname, palet);
 			}
@@ -45,9 +45,9 @@ public class PaletWrapper implements PaletCtx,Timer{
 		isTerminate=false;
 	}
 	
-	private Palet getPalet(PaPeer peer){
+	private Linklet getPalet(LinkPeer peer){
 		String subname=peer.getSubname();
-		Palet palet=null;
+		Linklet palet=null;
 		if(subname!=null){
 			palet=subscribers.get(subname);
 		}
@@ -57,7 +57,7 @@ public class PaletWrapper implements PaletCtx,Timer{
 		return rootPalet;
 	}
 	
-	void onSubscribe(PaPeer peer){
+	void onSubscribe(LinkPeer peer){
 		String subname=peer.getSubname();
 		synchronized(peers){
 			if(isTerminate){
@@ -65,29 +65,29 @@ public class PaletWrapper implements PaletCtx,Timer{
 				return;
 			}
 			peers.add(peer);
-			Set<PaPeer> subnamePeers=subnamePeersMap.get(subname);
+			Set<LinkPeer> subnamePeers=subnamePeersMap.get(subname);
 			if(subnamePeers==null){
-				subnamePeers=new HashSet<PaPeer>();
+				subnamePeers=new HashSet<LinkPeer>();
 				subnamePeersMap.put(subname,subnamePeers);
 			}
 			subnamePeers.add(peer);
 		}
-		Palet palet=getPalet(peer);
+		Linklet palet=getPalet(peer);
 		palet.onSubscribe(peer);
 	}
 	
-	public boolean onUnubscribe(PaPeer peer,String reason){
+	public boolean onUnubscribe(LinkPeer peer,String reason){
 		boolean exist=false;
 		String subname=peer.getSubname();
 		synchronized(peers){
 			exist=peers.remove(peer);
-			Set<PaPeer> subnamePeers=subnamePeersMap.get(subname);
+			Set<LinkPeer> subnamePeers=subnamePeersMap.get(subname);
 			if(subnamePeers!=null){
 				subnamePeers.remove(peer);
 			}
 		}
 		if(exist){
-			Palet palet=getPalet(peer);
+			Linklet palet=getPalet(peer);
 			palet.onUnsubscribe(peer,reason);
 			return true;
 		}else{
@@ -95,13 +95,13 @@ public class PaletWrapper implements PaletCtx,Timer{
 		}
 	}
 	
-	void onPublish(PaPeer peer,Object data){
-		Palet palet=getPalet(peer);
-		PaMsg msg=null;
-		if(data instanceof PaMsg){
-			msg=(PaMsg)data;
+	void onPublish(LinkPeer peer,Object data){
+		Linklet palet=getPalet(peer);
+		LinkMsg msg=null;
+		if(data instanceof LinkMsg){
+			msg=(LinkMsg)data;
 		}else if(data instanceof Map){
-			msg=PaMsg.wrap((Map)data);
+			msg=LinkMsg.wrap((Map)data);
 		}else{
 			logger.error("onPublish data type" + data.getClass().getName());
 		}
@@ -118,7 +118,7 @@ public class PaletWrapper implements PaletCtx,Timer{
 	 * @return
 	 */
 	public int message(Object data){
-		return message(data,getPeers(),(PaPeer)null);
+		return message(data,getPeers(),(LinkPeer)null);
 	}
 	
 	/**
@@ -128,7 +128,7 @@ public class PaletWrapper implements PaletCtx,Timer{
 	 * @return
 	 */
 	public int message(Object data,String subname){
-		return message(data,getPeers(subname),(PaPeer)null);
+		return message(data,getPeers(subname),(LinkPeer)null);
 	}
 	
 	/**
@@ -138,13 +138,13 @@ public class PaletWrapper implements PaletCtx,Timer{
 	 * @param excptPeers
 	 * @return
 	 */
-	public int message(Object data,String subname,Set<PaPeer> exceptPeers){
+	public int message(Object data,String subname,Set<LinkPeer> exceptPeers){
 		return message(data,getPeers(subname),exceptPeers);
 	}
 	
-	private int messageJson(Envelope envelope,Set<PaPeer> peers,Set<PaPeer> exceptPeers){
+	private int messageJson(Envelope envelope,Set<LinkPeer> peers,Set<LinkPeer> exceptPeers){
 		int count=0;
-		for(PaPeer peer:peers){
+		for(LinkPeer peer:peers){
 			if(exceptPeers!=null && exceptPeers.contains(peer)){
 				continue;
 			}
@@ -155,9 +155,9 @@ public class PaletWrapper implements PaletCtx,Timer{
 		return count;
 	}
 	
-	private int messageBin(Envelope envelope,Set<PaPeer> peers,Set<PaPeer> exceptPeers){
+	private int messageBin(Envelope envelope,Set<LinkPeer> peers,Set<LinkPeer> exceptPeers){
 		int count=0;
-		for(PaPeer peer:peers){
+		for(LinkPeer peer:peers){
 			if(exceptPeers!=null && exceptPeers.contains(peer)){
 				continue;
 			}
@@ -175,14 +175,14 @@ public class PaletWrapper implements PaletCtx,Timer{
 	 * @param excptPeers
 	 * @return
 	 */
-	public int message(Object data,Set<PaPeer> peers,Set<PaPeer> exceptPeers){
+	public int message(Object data,Set<LinkPeer> peers,Set<LinkPeer> exceptPeers){
 		if(peers==null){
 			return 0;
 		}
 		Map message=new HashMap();
-		message.put(PaSession.KEY_TYPE, PaSession.TYPE_MESSAGE);
-		message.put(PaSession.KEY_MESSAGE, data);
-		message.put(PaSession.KEY_QNAME, qname);
+		message.put(LinkSession.KEY_TYPE, LinkSession.TYPE_MESSAGE);
+		message.put(LinkSession.KEY_MESSAGE, data);
+		message.put(LinkSession.KEY_QNAME, qname);
 		//subnameだけはここでは決められない
 		Envelope envelope=Envelope.pack(message);
 		int count=0;
@@ -202,17 +202,17 @@ public class PaletWrapper implements PaletCtx,Timer{
 	}
 	
 	@Override
-	public int download(Blob blob, Set<PaPeer> peers, Set<PaPeer> exceptPeers) {
+	public int download(Blob blob, Set<LinkPeer> peers, Set<LinkPeer> exceptPeers) {
 		if(peers==null){
 			return 0;
 		}
 		Map message=new HashMap();
-		message.put(PaSession.KEY_TYPE, PaSession.TYPE_DOWNLOAD);
-		message.put(PaSession.KEY_KEY, getDownloadKey());
-		message.put(PaSession.KEY_QNAME, qname);
+		message.put(LinkSession.KEY_TYPE, LinkSession.TYPE_DOWNLOAD);
+		message.put(LinkSession.KEY_KEY, getDownloadKey());
+		message.put(LinkSession.KEY_QNAME, qname);
 		Envelope envelope=Envelope.pack(message);
 		int count=0;
-		for(PaPeer peer:peers){
+		for(LinkPeer peer:peers){
 			if(exceptPeers!=null && exceptPeers.contains(peer)){
 				continue;
 			}
@@ -226,13 +226,13 @@ public class PaletWrapper implements PaletCtx,Timer{
 	}
 	
 	@Override
-	public int message(Object data, String subname, PaPeer exceptPeer) {
+	public int message(Object data, String subname, LinkPeer exceptPeer) {
 		return message(data,getPeers(subname),exceptPeer);
 	}
 
 	@Override
-	public int message(Object data, Set<PaPeer> peers, PaPeer exceptPeer) {
-		Set<PaPeer> exceptPeers=new HashSet<PaPeer>();
+	public int message(Object data, Set<LinkPeer> peers, LinkPeer exceptPeer) {
+		Set<LinkPeer> exceptPeers=new HashSet<LinkPeer>();
 		exceptPeers.add(exceptPeer);
 		return message(data,peers,exceptPeers);
 	}
@@ -241,12 +241,12 @@ public class PaletWrapper implements PaletCtx,Timer{
 		return qname;
 	}
 	
-	public Set<PaPeer> getPeers(){
+	public Set<LinkPeer> getPeers(){
 		return Collections.unmodifiableSet(peers);
 	}
 	
-	public Set<PaPeer> getPeers(String subname){
-		Set<PaPeer> subnamePeers=subnamePeersMap.get(subname);
+	public Set<LinkPeer> getPeers(String subname){
+		Set<LinkPeer> subnamePeers=subnamePeersMap.get(subname);
 		if(subnamePeers==null){
 			return null;
 		}
@@ -264,10 +264,10 @@ public class PaletWrapper implements PaletCtx,Timer{
 		return true;
 	}
 	
-	private PaPeer getTerminalPeer(){
+	private LinkPeer getTerminalPeer(){
 		synchronized(peers){
 			isTerminate=true;
-			for(PaPeer peer:peers){
+			for(LinkPeer peer:peers){
 				return peer;
 			}
 		}
@@ -276,13 +276,13 @@ public class PaletWrapper implements PaletCtx,Timer{
 	
 	public boolean terminate(){
 		while(true){
-			PaPeer peer=getTerminalPeer();
+			LinkPeer peer=getTerminalPeer();
 			if(peer==null){
 				break;
 			}
 			peer.unsubscribe("terminate");
 		}
-		for(Palet palet:subscribers.values()){
+		for(Linklet palet:subscribers.values()){
 			palet.term(null);
 		}
 		rootPalet.term(null);
@@ -292,7 +292,7 @@ public class PaletWrapper implements PaletCtx,Timer{
 	@Override
 	public void onTimer(Object arg0) {
 		rootPalet.onTimer();
-		for(Palet palet:subscribers.values()){
+		for(Linklet palet:subscribers.values()){
 			palet.onTimer();
 		}
 	}
@@ -301,7 +301,7 @@ public class PaletWrapper implements PaletCtx,Timer{
 	 * 同じqname間で情報共有する仕組み
 	 */
 	@Override
-	public Palet getPalet(String subname) {
+	public Linklet getPalet(String subname) {
 		if(subname==null){
 			return rootPalet;
 		}

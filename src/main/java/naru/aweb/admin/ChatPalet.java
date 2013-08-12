@@ -8,21 +8,21 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import naru.aweb.config.Config;
-import naru.aweb.pa.api.PaMsg;
-import naru.aweb.pa.api.PaPeer;
-import naru.aweb.pa.api.Palet;
-import naru.aweb.pa.api.PaletCtx;
+import naru.aweb.link.api.LinkMsg;
+import naru.aweb.link.api.LinkPeer;
+import naru.aweb.link.api.Linklet;
+import naru.aweb.link.api.LinkletCtx;
 import net.sf.json.JSONObject;
 
-public class ChatPalet implements Palet {
+public class ChatPalet implements Linklet {
 	private static Logger logger = Logger.getLogger(ChatPalet.class);
 	private static Config config=Config.getConfig();
 
-	private Map<PaPeer,String> names=Collections.synchronizedMap(new HashMap<PaPeer,String>());
+	private Map<LinkPeer,String> names=Collections.synchronizedMap(new HashMap<LinkPeer,String>());
 	
-	private PaletCtx ctx;
+	private LinkletCtx ctx;
 	@Override
-	public void init(String qname,String subname,PaletCtx ctx) {
+	public void init(String qname,String subname,LinkletCtx ctx) {
 		this.ctx=ctx;
 	}
 
@@ -35,17 +35,17 @@ public class ChatPalet implements Palet {
 	}
 
 	@Override
-	public void onSubscribe(PaPeer peer) {
+	public void onSubscribe(LinkPeer peer) {
 		names.put(peer, peer.getLoginId());
 	}
 
 	@Override
-	public void onUnsubscribe(PaPeer peer, String reason) {
+	public void onUnsubscribe(LinkPeer peer, String reason) {
 		names.remove(peer);
 	}
 
 	@Override
-	public void onPublish(PaPeer peer, PaMsg data) {
+	public void onPublish(LinkPeer peer, LinkMsg data) {
 		String kind=(String)data.get("kind");
 		if("who".equals(kind)){
 			JSONObject res=new JSONObject();

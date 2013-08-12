@@ -1,14 +1,14 @@
-package naru.aweb.pa.api;
+package naru.aweb.link.api;
 
 import java.util.List;
 
 import naru.async.AsyncBuffer;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
-import naru.aweb.pa.Envelope;
-import naru.aweb.pa.PaManager;
-import naru.aweb.pa.PaSession;
-import naru.aweb.pa.PaletWrapper;
+import naru.aweb.link.Envelope;
+import naru.aweb.link.LinkManager;
+import naru.aweb.link.LinkSession;
+import naru.aweb.link.LinkletWrapper;
 import net.sf.json.JSONObject;
 
 /*
@@ -16,9 +16,9 @@ import net.sf.json.JSONObject;
  * 外れる場合には、同時にreleaseすると共にメンバpaSessionをnullにする
  * !!要チェック!!
  */
-public class PaPeer extends PoolBase{
-	public static PaPeer create(PaManager paManager,PaSession paSession,String qname,String subname){
-		PaPeer peer=(PaPeer)PoolManager.getInstance(PaPeer.class);
+public class LinkPeer extends PoolBase{
+	public static LinkPeer create(LinkManager paManager,LinkSession paSession,String qname,String subname){
+		LinkPeer peer=(LinkPeer)PoolManager.getInstance(LinkPeer.class);
 		peer.paSession=paSession;
 		peer.paManager=paManager;
 		if(paSession!=null){
@@ -31,8 +31,8 @@ public class PaPeer extends PoolBase{
 		return peer;
 	}
 	
-	private PaManager paManager;
-	private PaSession paSession;
+	private LinkManager paManager;
+	private LinkSession paSession;
 	private long paSessionId;
 	private String qname;//queue名
 	private String subname;//クライアントid(認証idが同じでもブラウザの違い等により、clientは別のpeerで接続できる)
@@ -81,10 +81,10 @@ public class PaPeer extends PoolBase{
 			return true;
 		}
 		JSONObject json=new JSONObject();
-		json.put(PaSession.KEY_TYPE, PaSession.TYPE_MESSAGE);
-		json.put(PaSession.KEY_MESSAGE, message);
-		json.put(PaSession.KEY_QNAME, qname);
-		json.put(PaSession.KEY_SUBNAME, subname);
+		json.put(LinkSession.KEY_TYPE, LinkSession.TYPE_MESSAGE);
+		json.put(LinkSession.KEY_MESSAGE, message);
+		json.put(LinkSession.KEY_QNAME, qname);
+		json.put(LinkSession.KEY_SUBNAME, subname);
 		//subnameだけはここでは決められない
 		Envelope envelope=Envelope.pack(json);
 		if(envelope.isBinary()){
@@ -109,10 +109,10 @@ public class PaPeer extends PoolBase{
 	
 	public boolean download(Blob blob){
 		JSONObject json=new JSONObject();
-		json.put(PaSession.KEY_TYPE, PaSession.TYPE_DOWNLOAD);
-		json.put(PaSession.KEY_KEY, getDownloadKey());
-		json.put(PaSession.KEY_QNAME, qname);
-		json.put(PaSession.KEY_SUBNAME, subname);
+		json.put(LinkSession.KEY_TYPE, LinkSession.TYPE_DOWNLOAD);
+		json.put(LinkSession.KEY_KEY, getDownloadKey());
+		json.put(LinkSession.KEY_QNAME, qname);
+		json.put(LinkSession.KEY_SUBNAME, subname);
 		paSession.download(json,blob);
 		return true;
 	}
@@ -143,7 +143,7 @@ public class PaPeer extends PoolBase{
 		/* clientにunsubscribe(subscribe失敗)を通知する */
 		if( paSession!=null && paSession.unsubscribeByPeer(this) ){
 			/* paletにonUnsubscribeを通知する */
-			PaletWrapper paletWrapper=paManager.getPaletWrapper(qname);
+			LinkletWrapper paletWrapper=paManager.getPaletWrapper(qname);
 			return paletWrapper.onUnubscribe(this,reason);
 		}else{
 			return false;
@@ -169,7 +169,7 @@ public class PaPeer extends PoolBase{
 //			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		PaPeer other = (PaPeer) obj;
+		LinkPeer other = (LinkPeer) obj;
 		if (paSessionId != other.paSessionId)
 			return false;
 		if (qname == null) {

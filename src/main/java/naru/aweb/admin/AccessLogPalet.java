@@ -18,22 +18,22 @@ import naru.async.store.StoreManager;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.http.HeaderParser;
-import naru.aweb.pa.api.Blob;
-import naru.aweb.pa.api.PaMsg;
-import naru.aweb.pa.api.PaPeer;
-import naru.aweb.pa.api.Palet;
-import naru.aweb.pa.api.PaletCtx;
+import naru.aweb.link.api.Blob;
+import naru.aweb.link.api.LinkMsg;
+import naru.aweb.link.api.LinkPeer;
+import naru.aweb.link.api.Linklet;
+import naru.aweb.link.api.LinkletCtx;
 import naru.aweb.robot.Browser;
 import net.sf.json.JSON;
 import net.sf.json.JSONObject;
 
-public class AccessLogPalet implements Palet {
+public class AccessLogPalet implements Linklet {
 	private static Logger logger = Logger.getLogger(AccessLogPalet.class);
 	private static Config config=Config.getConfig();
 
-	private PaletCtx ctx;
+	private LinkletCtx ctx;
 	@Override
-	public void init(String qname,String subname,PaletCtx ctx) {
+	public void init(String qname,String subname,LinkletCtx ctx) {
 		this.ctx=ctx;
 		ctx.setInterval(2000);
 	}
@@ -44,12 +44,12 @@ public class AccessLogPalet implements Palet {
 
 	@Override
 	public void onTimer() {
-		PaPeer[] peers=null;
+		LinkPeer[] peers=null;
 		synchronized(watchsMap){
-			peers=(PaPeer[])watchsMap.keySet().toArray(new PaPeer[0]);
+			peers=(LinkPeer[])watchsMap.keySet().toArray(new LinkPeer[0]);
 		}
-		for(PaPeer peer:peers){
-			PaMsg parameter=watchsMap.get(peer);
+		for(LinkPeer peer:peers){
+			LinkMsg parameter=watchsMap.get(peer);
 			if(parameter==null){
 				continue;
 			}
@@ -64,14 +64,14 @@ public class AccessLogPalet implements Palet {
 	}
 
 	@Override
-	public void onSubscribe(PaPeer peer) {
+	public void onSubscribe(LinkPeer peer) {
 	}
 
 	@Override
-	public void onUnsubscribe(PaPeer peer, String reason) {
+	public void onUnsubscribe(LinkPeer peer, String reason) {
 	}
 
-	private void list(PaPeer peer, PaMsg parameter){
+	private void list(LinkPeer peer, LinkMsg parameter){
 		JSONObject res=new JSONObject();
 		res.put("command", "list");
 		JSON list=listAccessLogJson(parameter);
@@ -79,8 +79,8 @@ public class AccessLogPalet implements Palet {
 		peer.message(res);
 	}
 	
-	private Map<PaPeer,PaMsg> watchsMap=new HashMap<PaPeer,PaMsg>();
-	private void checkWatch(PaPeer peer, PaMsg parameter){
+	private Map<LinkPeer,LinkMsg> watchsMap=new HashMap<LinkPeer,LinkMsg>();
+	private void checkWatch(LinkPeer peer, LinkMsg parameter){
 		boolean isWatch=parameter.getBoolean("isWatch");
 		synchronized(watchsMap){
 			if(isWatch){
@@ -88,7 +88,7 @@ public class AccessLogPalet implements Palet {
 				peer.ref();
 				watchsMap.put(peer,parameter);
 			}else{
-				PaMsg msg=watchsMap.remove(peer);
+				LinkMsg msg=watchsMap.remove(peer);
 				if(msg!=null){
 					msg.unref();
 					peer.unref();
@@ -98,7 +98,7 @@ public class AccessLogPalet implements Palet {
 	}
 	
 	@Override
-	public void onPublish(PaPeer peer, PaMsg parameter) {
+	public void onPublish(LinkPeer peer, LinkMsg parameter) {
 		JSONObject res=new JSONObject();
 		String command=parameter.getString("command");
 		res.put("command", command);
@@ -190,7 +190,7 @@ public class AccessLogPalet implements Palet {
 		return header;
 	}
 	
-	private HeaderParser getPartHeader(PaMsg parameter,String part,String digest) throws UnsupportedEncodingException{
+	private HeaderParser getPartHeader(LinkMsg parameter,String part,String digest) throws UnsupportedEncodingException{
 		String text=parameter.optString(part,null);
 		String encode=parameter.optString(part+"Encode",null);
 		if(text!=null){
@@ -217,7 +217,7 @@ public class AccessLogPalet implements Palet {
 		return store.getDigest();
 	}
 	
-	private ByteBuffer[] getPartBuffer(PaMsg parameter,String part,String digest) throws UnsupportedEncodingException{
+	private ByteBuffer[] getPartBuffer(LinkMsg parameter,String part,String digest) throws UnsupportedEncodingException{
 		String body=parameter.optString(part,null);
 		String bodyEncode=parameter.optString(part+"Encode",null);
 		if(body==null){
@@ -252,7 +252,7 @@ public class AccessLogPalet implements Palet {
 	 * traceタブにあるsave newボタン
 	 * runした後は、そのプロトコル情報をtrace画面で表示
 	 */
-	private AccessLog getEditedAccessLog(PaMsg parameter) throws UnsupportedEncodingException{
+	private AccessLog getEditedAccessLog(LinkMsg parameter) throws UnsupportedEncodingException{
 		long accessLogId=parameter.getLong("accessLogId");
 		String requestHeader=parameter.optString("requestHeader",null);
 		String requestBody=parameter.optString("requestBody",null);
@@ -334,7 +334,7 @@ public class AccessLogPalet implements Palet {
 	 * traceタブにあるrunボタン
 	 * runした後は、そのプロトコル情報をtrace画面で表示
 	 */
-	private void runAccessLog(PaMsg parameter,PaPeer peer) throws UnsupportedEncodingException{
+	private void runAccessLog(LinkMsg parameter,LinkPeer peer) throws UnsupportedEncodingException{
 		long accessLogId=parameter.getLong("accessLogId");
 		String requestBody=parameter.optString("requestBody",null);
 		AccessLog accessLog=AccessLog.getById(accessLogId);
@@ -371,7 +371,7 @@ public class AccessLogPalet implements Palet {
 		browser.start(peer);//TODO
 	}
 	
-	private JSON listAccessLogJson(PaMsg parameter){
+	private JSON listAccessLogJson(LinkMsg parameter){
 		try{
 			String query=parameter.getString("query");
 			Integer from=parameter.getInt("from");
@@ -391,7 +391,7 @@ public class AccessLogPalet implements Palet {
 		return null;
 	}
 	
-	private void importAccesslog(PaPeer peer,Map<String, ?> parameter) {
+	private void importAccesslog(LinkPeer peer,Map<String, ?> parameter) {
 		Blob importsFile=(Blob)parameter.get("importsFile");
 		config.getLogPersister().importAccessLog(importsFile,peer);
 	}

@@ -1,4 +1,4 @@
-package naru.aweb.pa;
+package naru.aweb.link;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
@@ -13,8 +13,8 @@ import naru.async.AsyncBuffer;
 import naru.async.cache.CacheBuffer;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
-import naru.aweb.pa.api.Blob;
-import naru.aweb.pa.api.PaMsg;
+import naru.aweb.link.api.Blob;
+import naru.aweb.link.api.LinkMsg;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -90,7 +90,7 @@ public class Envelope extends PoolBase{
 		}
 		sendJson=new JSONObject();
 		sendJson.putAll(mainObj);
-		sendJson.put(PaSession.KEY_SUBNAME, subname);
+		sendJson.put(LinkSession.KEY_SUBNAME, subname);
 		sendJsonCache.put(subname, sendJson);
 		return sendJson;
 	}
@@ -123,7 +123,7 @@ public class Envelope extends PoolBase{
 		}
 		ByteBuffer headerBuffer=headerBufferCache.get(subname);
 		if(headerBuffer==null){
-			mainObj.put(PaSession.KEY_SUBNAME, subname);
+			mainObj.put(LinkSession.KEY_SUBNAME, subname);
 			headerBuffer=getHeaderBuffer(mainObj);
 			headerBufferCache.put(subname, headerBuffer);
 		}
@@ -162,7 +162,7 @@ public class Envelope extends PoolBase{
 	
 	public Object deserialize(Object obj){
 		if(obj instanceof JSONObject){
-			PaMsg clone=PaMsg.create();
+			LinkMsg clone=LinkMsg.create();
 			JSONObject json=(JSONObject)obj;
 			for(Object key:json.keySet()){
 				clone.put((String)key, deserialize(json.get(key)));
@@ -217,7 +217,7 @@ public class Envelope extends PoolBase{
 	
 	/* protocol data -> user obj
 	 */
-	public static PaMsg unpack(CacheBuffer prot){
+	public static LinkMsg unpack(CacheBuffer prot){
 		if(!prot.isInTopBuffer()){
 			prot.unref();
 			throw new UnsupportedOperationException("Envelope parse");
@@ -260,11 +260,11 @@ public class Envelope extends PoolBase{
 		return unpack(header,blobsList);
 	}
 	
-	public static PaMsg unpack(JSONObject header,List<Blob> blobs){
+	public static LinkMsg unpack(JSONObject header,List<Blob> blobs){
 		JSONObject meta=header.getJSONObject("meta");
 		JSONArray dates=meta.getJSONArray("dates");
 		if(blobs==null && dates.size()==0){
-			return PaMsg.wrap(header);
+			return LinkMsg.wrap(header);
 		}
 		Envelope envelop=(Envelope)PoolManager.getInstance(Envelope.class);
 		if(blobs!=null){
@@ -274,7 +274,7 @@ public class Envelope extends PoolBase{
 		for(int i=0;i<size;i++){
 			envelop.dates.add(dates.getLong(i));
 		}
-		PaMsg result=(PaMsg)envelop.deserialize(header);
+		LinkMsg result=(LinkMsg)envelop.deserialize(header);
 		envelop.unref();
 		return result;
 	}

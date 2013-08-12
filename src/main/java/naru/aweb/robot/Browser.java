@@ -20,7 +20,7 @@ import naru.aweb.config.AccessLog;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.WebClientConnection;
 import naru.aweb.http.WebClientHandler;
-import naru.aweb.pa.api.PaPeer;
+import naru.aweb.link.api.LinkPeer;
 //import naru.aweb.queue.QueueManager;
 import naru.aweb.util.ServerParser;
 
@@ -338,7 +338,7 @@ public class Browser extends PoolBase implements Timer{
 	
 //	private String chId;//終了時に通知するQueueのchannelId
 	private long startTime;
-	private PaPeer peer=null;//TODO 通知先
+	private LinkPeer peer=null;//TODO 通知先
 	public void start(){
 		start(null);
 	}
@@ -351,7 +351,7 @@ public class Browser extends PoolBase implements Timer{
 	 * 
 	 * @param chId
 	 */
-	public void start(PaPeer peer){
+	public void start(LinkPeer peer){
 		if(peer!=null){
 			peer.ref();
 			this.peer=peer;
