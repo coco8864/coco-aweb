@@ -91,7 +91,7 @@ ph.jQuery(function() {
 	if(ph.admin.storage){
 		broardcastWatch();
 	}else{
-		ph.admin.con.on('connected',broardcastWatch);
+		ph.admin.con.on('linked',broardcastWatch);
 	}
 });
 
