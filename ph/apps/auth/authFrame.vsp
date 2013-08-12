@@ -62,14 +62,14 @@ function onRequest(ev){
       }
     }else if(req.type==="encrypt"){
       if(userInfo.offlinePassHash){
-        req.encryptText=CryptoJS.AES.encrypt(req.plainText, offlinePassHash).toString();
+        req.encryptText=CryptoJS.AES.encrypt(req.plainText, userInfo.offlinePassHash).toString();
       }else{
         req.encryptText=req.plainText
       }
       response(req);
     }else if(req.type==="decrypt"){
       if(userInfo.offlinePassHash){
-        req.plainText=CryptoJS.AES.decrypt(req.encryptText, offlinePassHash).toString(CryptoJS.enc.Utf8);
+        req.plainText=CryptoJS.AES.decrypt(req.encryptText, userInfo.offlinePassHash).toString(CryptoJS.enc.Utf8);
       }else{
         req.plainText=req.encryptText
       }
