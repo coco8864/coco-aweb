@@ -52,7 +52,8 @@ ph.jQuery(function() {
 	});
 ##ph.useWebSocket=false;
 	ph.jQuery('#dialogs').hide();
-	ph.admin.con=ph.pa.connect("/admin",function(){
+	ph.admin.con=ph.link('/admin');
+    ph.admin.con.on('linked',function(){
 		ph.jQuery('#dialogs').show();
 		var stor=ph.admin.storage=ph.admin.con.storage();
 		var logId=stor.getItem('logId');
@@ -60,7 +61,7 @@ ph.jQuery(function() {
 			changeEntry(logId);
 		}
 	});
-	ph.admin.con.on('done',function(){/*location=ph.publicWebUrl;*/});
+	ph.admin.con.on('unlinked',function(){/*location=ph.publicWebUrl;*/});
 	ph.admin.accessLogSub=ph.admin.con.subscribe('admin','accessLog',
 		function(res){
 			if(!res){
