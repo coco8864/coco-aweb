@@ -172,7 +172,16 @@ class Link extends ph.Deferred
   @connection.deploy(qname,className)
  undeploy:(qname)->
   @connection.undeploy(qname)
- store:(scope)->
+ storage:(scope)->
+  if scope==ph.SCOPE_PAGE_PRIVATE
+   return @ppStorage
+  else if scope==ph.SCOPE_SESSION_PRIVATE
+   return @ppStorage
+  else if scope==ph.SCOPE_APL_PRIVATE
+   return @ppStorage
+  else if scope==ph.SCOPE_APL_LOCAL
+   return @ppStorage
+  throw 'unkown scope:'+scope
  encrypt:(plainText,cb)->
   @_requestToAplFrame({type:'encrypt',plainText:plainText},cb)
  decrypt:(encryptText,cb)->

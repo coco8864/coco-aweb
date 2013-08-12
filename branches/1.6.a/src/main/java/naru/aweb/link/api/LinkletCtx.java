@@ -1,8 +1,8 @@
-package naru.aweb.pa.api;
+package naru.aweb.link.api;
 
 import java.util.Set;
 
-public interface PaletCtx{
+public interface LinkletCtx{
 	/**
 	 * 全peerにmessageを送信する
 	 * dataはMap型を想定、Blobが含まれていた場合は、処理後解放さる。
@@ -27,8 +27,8 @@ public interface PaletCtx{
 	 * @param excptPeers
 	 * @return
 	 */
-	public int message(Object data,String subname,Set<PaPeer> exceptPeers);
-	public int message(Object data,String subname,PaPeer exceptPeer);
+	public int message(Object data,String subname,Set<LinkPeer> exceptPeers);
+	public int message(Object data,String subname,LinkPeer exceptPeer);
 	
 	/**
 	 * 
@@ -37,8 +37,8 @@ public interface PaletCtx{
 	 * @param excptPeers
 	 * @return
 	 */
-	public int message(Object data,Set<PaPeer> peers,Set<PaPeer> exceptPeers);
-	public int message(Object data,Set<PaPeer> peers,PaPeer exceptPeer);
+	public int message(Object data,Set<LinkPeer> peers,Set<LinkPeer> exceptPeers);
+	public int message(Object data,Set<LinkPeer> peers,LinkPeer exceptPeer);
 	
 	/**
 	 * ブラウザにblobをダウンロードさせる
@@ -49,11 +49,11 @@ public interface PaletCtx{
 	 * @param exceptPeers
 	 * @return
 	 */
-	public int download(Blob blob,Set<PaPeer> peers,Set<PaPeer> exceptPeers);
+	public int download(Blob blob,Set<LinkPeer> peers,Set<LinkPeer> exceptPeers);
 	
 	public String getQname();
-	public Set<PaPeer> getPeers();
-	public Set<PaPeer> getPeers(String subname);
+	public Set<LinkPeer> getPeers();
+	public Set<LinkPeer> getPeers(String subname);
 	public boolean setInterval(long interval);
 	public boolean terminate();
 	
@@ -62,7 +62,7 @@ public interface PaletCtx{
 	 * @param subname
 	 * @return　palet
 	 */
-	public Palet getPalet(String subname);
+	public Linklet getPalet(String subname);
 	
 	public Object getAttribute(String name);
 	public void setAttribute(String name, Object value);

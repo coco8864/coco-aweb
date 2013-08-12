@@ -1,4 +1,4 @@
-package naru.aweb.pa.api;
+package naru.aweb.link.api;
 
 import java.io.File;
 import java.nio.ByteBuffer;

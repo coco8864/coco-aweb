@@ -5,12 +5,12 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import naru.aweb.config.Config;
-import naru.aweb.pa.api.PaMsg;
-import naru.aweb.pa.api.PaPeer;
-import naru.aweb.pa.api.Palet;
-import naru.aweb.pa.api.PaletCtx;
+import naru.aweb.link.api.LinkMsg;
+import naru.aweb.link.api.LinkPeer;
+import naru.aweb.link.api.Linklet;
+import naru.aweb.link.api.LinkletCtx;
 
-public class PaAdmin implements Palet {
+public class PaAdmin implements Linklet {
 	public static final String QNAME = "admin";
 	public static final String SUBNAME_CHAT = "chat";
 	public static final String SUBNAME_PERF = "perf";
@@ -20,9 +20,9 @@ public class PaAdmin implements Palet {
 	private static Logger logger = Logger.getLogger(PaAdmin.class);
 	private static Config config=Config.getConfig();
 	
-	private PaletCtx ctx;
+	private LinkletCtx ctx;
 	@Override
-	public void init(String qname,String subname,PaletCtx ctx) {
+	public void init(String qname,String subname,LinkletCtx ctx) {
 		this.ctx=ctx;
 	}
 
@@ -35,14 +35,14 @@ public class PaAdmin implements Palet {
 	}
 
 	@Override
-	public void onSubscribe(PaPeer peer) {
+	public void onSubscribe(LinkPeer peer) {
 	}
 
 	@Override
-	public void onUnsubscribe(PaPeer peer, String reason) {
+	public void onUnsubscribe(LinkPeer peer, String reason) {
 	}
 	
-	private void setting(PaPeer peer,Map<String, ?> data){
+	private void setting(LinkPeer peer,Map<String, ?> data){
 		
 		/*
 		 * %proxy
@@ -70,7 +70,7 @@ public class PaAdmin implements Palet {
 	}
 
 	@Override
-	public void onPublish(PaPeer peer, PaMsg parameter) {
+	public void onPublish(LinkPeer peer, LinkMsg parameter) {
 		String subname=peer.getSubname();
 		if(SUBNAME_STASTICS.equals(subname)){
 			ctx.message(parameter, subname);

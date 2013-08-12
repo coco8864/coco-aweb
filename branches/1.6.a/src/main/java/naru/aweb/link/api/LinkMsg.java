@@ -1,4 +1,4 @@
-package naru.aweb.pa.api;
+package naru.aweb.link.api;
 
 import java.util.Collection;
 import java.util.Date;
@@ -10,15 +10,15 @@ import java.util.Set;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 
-public class PaMsg extends PoolBase implements Map{
+public class LinkMsg extends PoolBase implements Map{
 	private Map root;
 	
-	public static PaMsg create(){
+	public static LinkMsg create(){
 		return wrap(null);
 	}
 	
-	public static PaMsg wrap(Map root){
-		PaMsg paData=(PaMsg)PoolManager.getInstance(PaMsg.class);
+	public static LinkMsg wrap(Map root){
+		LinkMsg paData=(LinkMsg)PoolManager.getInstance(LinkMsg.class);
 		if(root==null){
 			paData.root=new HashMap();
 		}else{
@@ -101,8 +101,8 @@ public class PaMsg extends PoolBase implements Map{
 			return;
 		}
 		for(Object value:values()){
-			if(value instanceof PaMsg){
-				((PaMsg)value).unref();
+			if(value instanceof LinkMsg){
+				((LinkMsg)value).unref();
 			}
 		}
 		root=null;
@@ -138,12 +138,12 @@ public class PaMsg extends PoolBase implements Map{
 	public Date getDate(String key){
 		return (Date)root.get(key); 
 	}
-	public PaMsg getMap(String key){
+	public LinkMsg getMap(String key){
 		Map map=(Map)root.get(key);
-		if(map instanceof PaMsg){
-			return (PaMsg)map;
+		if(map instanceof LinkMsg){
+			return (LinkMsg)map;
 		}else{
-			PaMsg value=wrap(map);
+			LinkMsg value=wrap(map);
 			root.put(key, value);
 			return value;
 		}

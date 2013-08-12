@@ -1,4 +1,4 @@
-package naru.aweb.pa;
+package naru.aweb.link;
 
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -8,7 +8,7 @@ import naru.async.BufferGetter;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
-import naru.aweb.pa.api.Blob;
+import naru.aweb.link.api.Blob;
 
 /*
  * ƒŒƒXƒ|ƒ“ƒX–ˆ‚É‚P‚Â‚Ã‚Âì¬‚·‚é

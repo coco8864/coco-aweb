@@ -38,8 +38,8 @@ import naru.aweb.core.ServerBaseHandler;
 import naru.aweb.handler.FilterHelper;
 import naru.aweb.handler.InjectionHelper;
 import naru.aweb.handler.ReplayHelper;
+import naru.aweb.link.LinkManager;
 import naru.aweb.mapping.Mapper;
-import naru.aweb.pa.PaManager;
 import naru.aweb.secure.SslContextPool;
 import naru.aweb.spdy.SpdyConfig;
 import naru.aweb.util.JdoUtil;
@@ -123,7 +123,7 @@ public class Config {
 	private FilterHelper filterHelper;
 	private InjectionHelper injectionHelper;
 	private Configuration configuration = null;
-	private PaManager paManager =null;
+	private LinkManager paManager =null;
 	private Object stasticsObject;
 	private File tmpDir;
 	private DiskFileItemFactory uploadItemFactory;
@@ -755,7 +755,7 @@ public class Config {
 		
 		//adminハンドラーの設定
 		//TODO 動的に設定できるようにする
-		paManager = PaManager.getInstance("/admin");
+		paManager = LinkManager.getInstance("/admin");
 		JSONObject subscribers=JSONObject.fromObject(
 				"{accessLog:'naru.aweb.admin.AccessLogPalet'," +
 				"chat:'naru.aweb.admin.ChatPalet'," +
@@ -1248,7 +1248,7 @@ public class Config {
 		return spdyConfig;
 	}
 	
-	public PaManager getAdminPaManager(){
+	public LinkManager getAdminPaManager(){
 		return paManager;
 	}
 	

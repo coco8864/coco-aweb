@@ -24,7 +24,7 @@ import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
 import naru.async.store.Store;
 import naru.aweb.http.HeaderParser;
-import naru.aweb.pa.api.PaPeer;
+import naru.aweb.link.api.LinkPeer;
 import naru.aweb.util.DatePropertyFilter;
 import naru.aweb.util.JdoUtil;
 import net.sf.json.JSON;
@@ -235,7 +235,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		return chId;
 	}
 	*/
-	public void setPeer(PaPeer peer){
+	public void setPeer(LinkPeer peer){
 		if(peer!=null){
 			peer.ref();
 		}
@@ -523,7 +523,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	private WebClientLog webClientLog;
 	
 	@NotPersistent
-	private PaPeer peer;
+	private LinkPeer peer;
 	
 	@NotPersistent
 	private int traceCount=1;

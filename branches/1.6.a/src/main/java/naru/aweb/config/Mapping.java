@@ -33,8 +33,8 @@ import naru.aweb.handler.ProxyHandler;
 import naru.aweb.handler.SslProxyHandler;
 import naru.aweb.handler.VelocityPageHandler;
 import naru.aweb.handler.WsProxyHandler;
+import naru.aweb.link.LinkHandler;
 import naru.aweb.mapping.MappingResult;
-import naru.aweb.pa.PaHandler;
 import naru.aweb.util.JdoUtil;
 import naru.aweb.util.ServerParser;
 import net.sf.json.JSON;
@@ -90,7 +90,7 @@ public class Mapping{
 	public static Class FILE_SYSTEM_HANDLER=FileSystemHandler.class;
 	public static Class STORE_HANDLER=StoreHandler.class;
 	public static Class WS_PROXY_HANDLE=WsProxyHandler.class;
-	public static Class PA_HANDLER=PaHandler.class;
+	public static Class PA_HANDLER=LinkHandler.class;
 	
 	private static Logger logger = Logger.getLogger(Mapping.class);
 	private static JsonConfig jsonConfig;

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package naru.aweb.pa;
+package naru.aweb.link;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,9 +19,9 @@ import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
 import naru.aweb.handler.WebSocketHandler;
 import naru.aweb.http.ParameterParser;
+import naru.aweb.link.api.Blob;
+import naru.aweb.link.api.LinkMsg;
 import naru.aweb.mapping.MappingResult;
-import naru.aweb.pa.api.Blob;
-import naru.aweb.pa.api.PaMsg;
 import net.sf.json.JSON;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -36,7 +36,7 @@ import org.apache.log4j.Logger;
  * @author Naru
  *
  */
-public class PaHandler extends WebSocketHandler implements Timer{
+public class LinkHandler extends WebSocketHandler implements Timer{
 	private static final String PA_SESSIONS_KEY = "PaSessions";
 	private static final String XHR_FRAME_PATH = "/~xhrPaFrame";
 	private static final String XHR_FRAME_TEMPLATE = "~xhrPaFrame.vsp";
@@ -45,10 +45,10 @@ public class PaHandler extends WebSocketHandler implements Timer{
 	private static final String UPLOAD_PATH="/~paUpload";
 	private static int XHR_SLEEP_TIME=1000;
 	private static Config config = Config.getConfig();
-	private static Logger logger=Logger.getLogger(PaHandler.class);
+	private static Logger logger=Logger.getLogger(LinkHandler.class);
 	
 	private Integer bid;
-	private PaSession paSession;
+	private LinkSession paSession;
 	private boolean isNegotiated=false;
 	
 	@Override
@@ -79,14 +79,14 @@ public class PaHandler extends WebSocketHandler implements Timer{
 	 */
 	private void dispatchMessage(JSONObject msg){
 		String type=msg.getString("type");
-		if(PaSession.TYPE_SUBSCRIBE.equals(type)){
+		if(LinkSession.TYPE_SUBSCRIBE.equals(type)){
 			paSession.subscribe(msg);
-		}else if(PaSession.TYPE_UNSUBSCRIBE.equals(type)){
+		}else if(LinkSession.TYPE_UNSUBSCRIBE.equals(type)){
 			paSession.unsubscribe(msg);
-		}else if(PaSession.TYPE_PUBLISH.equals(type)){
-			PaMsg realMessage=Envelope.unpack(msg, null);
+		}else if(LinkSession.TYPE_PUBLISH.equals(type)){
+			LinkMsg realMessage=Envelope.unpack(msg, null);
 			paSession.publish(realMessage);
-		}else if(PaSession.TYPE_CLOSE.equals(type)){
+		}else if(LinkSession.TYPE_CLOSE.equals(type)){
 			paSession.close();
 			AuthSession authSession=getAuthSession();
 			PaSessions paSessions=null;
@@ -96,13 +96,13 @@ public class PaHandler extends WebSocketHandler implements Timer{
 				isNegotiated=false;
 				bid=0;
 			}
-		}else if(PaSession.TYPE_QNAMES.equals(type)){
+		}else if(LinkSession.TYPE_QNAMES.equals(type)){
 			paSession.qname(msg);
-		}else if(PaSession.TYPE_DEPLOY.equals(type)){
+		}else if(LinkSession.TYPE_DEPLOY.equals(type)){
 			paSession.deploy(msg);
-		}else if(PaSession.TYPE_UNDEPLOY.equals(type)){
+		}else if(LinkSession.TYPE_UNDEPLOY.equals(type)){
 			paSession.undeploy(msg);
-		}else if(PaSession.TYPE_NEGOTIATE.equals(type)){
+		}else if(LinkSession.TYPE_NEGOTIATE.equals(type)){
 			if(!negotiation(msg)){
 				paSession.sendError(type,null, null,"fail to negotiation");
 				return;
@@ -189,12 +189,12 @@ public class PaHandler extends WebSocketHandler implements Timer{
 	private void sendNegotiation(){
 		JSONObject negores=new JSONObject();
 		AuthSession authSession=getAuthSession();
-		negores.put(PaSession.KEY_TYPE,PaSession.TYPE_NEGOTIATE);
-		negores.put(PaSession.KEY_BID,bid);
+		negores.put(LinkSession.KEY_TYPE,LinkSession.TYPE_NEGOTIATE);
+		negores.put(LinkSession.KEY_BID,bid);
 		long lastAccess=authSession.getLastAccessTime();
 		long now=System.currentTimeMillis();
 		long timeout=config.getAuthorizer().getSessionTimeout();
-		negores.put(PaSession.KEY_SESSION_TIME_LIMIT, ((lastAccess+timeout)-now));
+		negores.put(LinkSession.KEY_SESSION_TIME_LIMIT, ((lastAccess+timeout)-now));
 //		User user=authSession.getUser();
 //		negores.put(PaSession.KEY_OFFLINE_PASS_HASH,user.getOfflinePassHash());
 		paSession.sendJson(negores);
@@ -206,17 +206,17 @@ public class PaHandler extends WebSocketHandler implements Timer{
 	 * @return
 	 */
 	private boolean negotiation(JSONObject negoreq){
-		String type=negoreq.getString(PaSession.KEY_TYPE);
-		if(!PaSession.TYPE_NEGOTIATE.equals(type)){
+		String type=negoreq.getString(LinkSession.KEY_TYPE);
+		if(!LinkSession.TYPE_NEGOTIATE.equals(type)){
 			return false;
 		}
-		String token=negoreq.getString(PaSession.KEY_TOKEN);
+		String token=negoreq.getString(LinkSession.KEY_TOKEN);
 		AuthSession authSession=getAuthSession();
 		if(!token.equals(authSession.getToken())){
 			return false;
 		}
 		
-		bid=negoreq.getInt(PaSession.KEY_BID);
+		bid=negoreq.getInt(LinkSession.KEY_BID);
 		boolean needRes=negoreq.getBoolean("needRes");
 		PaSessions paSessions=getPaSessions(authSession);
 		paSession=paSessions.sessions.get(bid);
@@ -235,7 +235,7 @@ public class PaHandler extends WebSocketHandler implements Timer{
 		synchronized(paSessions){
 			paSessions.bidSeq++;
 			bid=paSessions.bidSeq;
-			paSession=PaSession.create(path,bid, isWs, authSession);
+			paSession=LinkSession.create(path,bid, isWs, authSession);
 			paSessions.sessions.put(bid, paSession);
 			sendNegotiation();
 		}
@@ -245,7 +245,7 @@ public class PaHandler extends WebSocketHandler implements Timer{
 	
 	/* authSessionÇ…èÊÇπÇÈPaSessionä«óùClass */
 	private static class PaSessions{
-		Map<Integer,PaSession> sessions=new HashMap<Integer,PaSession>();
+		Map<Integer,LinkSession> sessions=new HashMap<Integer,LinkSession>();
 		Integer bidSeq=0;
 	}
 
@@ -256,19 +256,19 @@ public class PaHandler extends WebSocketHandler implements Timer{
 	
 	private static final Set<String> UPLOAD_RESERVE_KEY=new HashSet<String>();
 	static{
-		UPLOAD_RESERVE_KEY.add(PaSession.KEY_TOKEN);
-		UPLOAD_RESERVE_KEY.add(PaSession.KEY_QNAME);
-		UPLOAD_RESERVE_KEY.add(PaSession.KEY_SUBNAME);
-		UPLOAD_RESERVE_KEY.add(PaSession.KEY_BID);
+		UPLOAD_RESERVE_KEY.add(LinkSession.KEY_TOKEN);
+		UPLOAD_RESERVE_KEY.add(LinkSession.KEY_QNAME);
+		UPLOAD_RESERVE_KEY.add(LinkSession.KEY_SUBNAME);
+		UPLOAD_RESERVE_KEY.add(LinkSession.KEY_BID);
 	}
 	private void formPublish(ParameterParser parameter){
-		String token=parameter.getParameter(PaSession.KEY_TOKEN);
+		String token=parameter.getParameter(LinkSession.KEY_TOKEN);
 		AuthSession authSession=getAuthSession();
 		if(!token.equals(authSession.getToken())){
 			completeResponse("403");
 			return;
 		}
-		int bid=Integer.parseInt(parameter.getParameter(PaSession.KEY_BID));
+		int bid=Integer.parseInt(parameter.getParameter(LinkSession.KEY_BID));
 		PaSessions paSessions=getPaSessions(authSession);
 		paSession=paSessions.sessions.get(bid);
 		if(paSession==null){
@@ -276,12 +276,12 @@ public class PaHandler extends WebSocketHandler implements Timer{
 			return;
 		}
 		//Map rawParam=parameter.getParameterMap();
-		PaMsg msg=PaMsg.create();
+		LinkMsg msg=LinkMsg.create();
 		Map message=new HashMap();
-		msg.put(PaSession.KEY_TYPE, PaSession.TYPE_PUBLISH);
-		msg.put(PaSession.KEY_QNAME, parameter.getParameter(PaSession.KEY_QNAME));
-		msg.put(PaSession.KEY_SUBNAME, parameter.getParameter(PaSession.KEY_SUBNAME));
-		msg.put(PaSession.KEY_MESSAGE, message);
+		msg.put(LinkSession.KEY_TYPE, LinkSession.TYPE_PUBLISH);
+		msg.put(LinkSession.KEY_QNAME, parameter.getParameter(LinkSession.KEY_QNAME));
+		msg.put(LinkSession.KEY_SUBNAME, parameter.getParameter(LinkSession.KEY_SUBNAME));
+		msg.put(LinkSession.KEY_MESSAGE, message);
 		
 		Iterator itr=parameter.getParameterNames();
 		while(itr.hasNext()){
@@ -305,13 +305,13 @@ public class PaHandler extends WebSocketHandler implements Timer{
 	}
 	
 	private void download(ParameterParser parameter){
-		String token=parameter.getParameter(PaSession.KEY_TOKEN);
+		String token=parameter.getParameter(LinkSession.KEY_TOKEN);
 		AuthSession authSession=getAuthSession();
 		if(!token.equals(authSession.getToken())){
 			completeResponse("403");
 			return;
 		}
-		int bid=Integer.parseInt(parameter.getParameter(PaSession.KEY_BID));
+		int bid=Integer.parseInt(parameter.getParameter(LinkSession.KEY_BID));
 		String key=parameter.getParameter("key");
 		PaSessions paSessions=getPaSessions(authSession);
 		paSession=paSessions.sessions.get(bid);
@@ -372,7 +372,7 @@ public class PaHandler extends WebSocketHandler implements Timer{
 			return;
 		}
 		String srcPath=getRequestMapping().getSourcePath();
-		PaManager paManager=PaManager.getInstance(srcPath);
+		LinkManager paManager=LinkManager.getInstance(srcPath);
 		forwardHandler(paManager.getNextHandler());
 	}
 	

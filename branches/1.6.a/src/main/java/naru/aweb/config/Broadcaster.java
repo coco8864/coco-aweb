@@ -16,18 +16,18 @@ import naru.async.timer.TimerManager;
 import naru.aweb.admin.PaAdmin;
 import naru.aweb.auth.AuthSession;
 import naru.aweb.http.RequestContext;
-import naru.aweb.pa.PaManager;
+import naru.aweb.link.LinkManager;
 import net.sf.json.JSONObject;
 
 public class Broadcaster implements Timer {
 	private static Logger logger=Logger.getLogger(Broadcaster.class);	
 	private static final long BROADCAST_INTERVAL=1000;
 	private static final long LOG_WATCH_INTERVAL=300000;
-	private PaManager paManager;/*=PaManager.getInstance("/pa");*/
+	private LinkManager paManager;/*=PaManager.getInstance("/pa");*/
 	private long timerId=TimerManager.INVALID_ID;
 	private Config config;
 	
-	Broadcaster(Config config,PaManager paManager){
+	Broadcaster(Config config,LinkManager paManager){
 		this.config=config;
 		this.paManager=paManager;
 		long interval=config.getLong("broardcastInterval", BROADCAST_INTERVAL);
