@@ -7,12 +7,12 @@ class Connection extends ph.Deferred
     @stat=ph.STAT_INIT
     @_sendMsgs=[]
     @_reciveMsgs=[] #未subcriveで配信できなったmessage todo:溜まりすぎ
-  init:->
+  init:(@useWs)->
     @_loginId=@link.aplInfo.loginId
     @_appSid=@link.aplInfo.appSid
     @_token=@link.aplInfo.token
-    @isWs=@link.isWs
     @connectXhrUrl=@link.keyUrl
+    @isWs=!(@useWs==false)
     if @isWs
       @connectWsUrl='ws'+@connectXhrUrl.substring(4) #http->wsに
       @_openWebSocket()
@@ -23,6 +23,8 @@ class Connection extends ph.Deferred
       @_downloadFrameName + 
       '"></iframe>')
     ph.jQuery('body').append(@_downloadFrame)
+    con=@
+    @onUnload(->con._downloadFrame.remove())
   _flushMsg:->
     if @stat!=ph.STAT_CONNECT
       return
@@ -72,14 +74,17 @@ class Connection extends ph.Deferred
 #    @__onClose(event.reason)
     if @stat==ph.STAT_OPEN
 # 接続直後に切れるのはwebsocketが使えないと考える
+      if @useWs==true
+        @trigger('unload')
+        @unload()
+        @stat=ph.INIT
+        return
       @isWs=false
       @_openXhr()
       return
     else if @stat!=ph.STAT_CONNECT
-#      if @stat==ph.STAT_OPEN
       @trigger('unload')
       @unload()
-#      @deferred.resolve('out session')
       @stat=ph.INIT
       return
     @stat=ph.STAT_IDLE
@@ -87,6 +92,7 @@ class Connection extends ph.Deferred
     return
   _onWsMessage:(msg)=>
     ph.log('Pa _onWsMessage:'+msg.data)
+    @useWs=true #一回websocketでつながれば、xhrのスイッチを許さない
     envelope=new Envelope()
     envelope.unpack(msg.data,@_onMessage)
   _openWebSocket:=>
@@ -99,23 +105,46 @@ class Connection extends ph.Deferred
     ws.onerror=@_onWsClose
     ws._connection=@
     @_ws=ws
+    con=@
+    @onUnload(->
+      if con._ws
+        try
+          con._ws.close(1000)
+        catch error
+        con._ws=null
+     )
   _openXhr:->
     ph.log('Pa _openXhr')
     if @_xhrFrameName
       return
     @stat=ph.STAT_OPEN
+    ##TODO:aplFrameを使って効率化
     @_xhrFrameName=ph._XHR_FRAME_NAME_PREFIX + @connectXhrUrl
     @_xhrFrame=ph.jQuery('<iframe width="0" height="0" frameborder="no" name="' +
       @_xhrFrameName + 
       '" src="' + 
       @connectXhrUrl + ph._XHR_FRAME_URL +
       '"></iframe>')
-    con=@
-    @_xhrFrame.load(->con._onXhrLoad())
     ph.jQuery('body').append(@_xhrFrame)
-  _onXhrLoad:=>
-    ph.log('Pa _onXhrLoad')
-#    @stat=ph.STAT_LOADING
+    ph.on('message',@_xhrOnMessage)
+    con=@
+    @onUnload(->
+      if con._xhrFrame
+       con._xhrFrame.remove()
+       con._xhrFrame=null
+      ph.off('message',con._xhrOnMessage)
+     )
+  _xhrOnMessage:(ev)=>
+    if ev.originalEvent.source!=@_xhrFrame[0].contentWindow
+      return
+    ress=ph.JSON.parse(ev.originalEvent.data)
+    if !ph.jQuery.isArray(ress)
+      if ress.load
+        @_onXhrOpen(ress)
+      return
+    for res in ress
+      @_onXhrMessage(res)
+    return
   _onXhrOpen:(res)->
     ph.log('Pa _onXhrOpen')
     if res.load
@@ -150,16 +179,10 @@ class Connection extends ph.Deferred
     if @isUnload()
       ph.log('aleady closed')
       return
+    @_setBid(null)
     @trigger('unload')
     @unload()
-    if @isWs
-      @stat=ph.STAT_CLOSE
-      @_ws.close(1000)
-    else
-      @stat=ph.STAT_INIT
-      @_xhrFrame.remove()
-    @_setBid(null)
-    delete ph._links[@connectXhrUrl]
+    @stat=ph.STAT_CLOSE
 #----------for response event----------
   __getSd:(msg)->
     key="#{msg.qname}@#{msg.subname}"

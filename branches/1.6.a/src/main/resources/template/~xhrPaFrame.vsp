@@ -45,7 +45,7 @@ function objFromParent(msg){
 
 function xhrSuccess(text){
   errorCount=0;
-  if(text){##受け取ったtextはそ�?ままparentFrameに送信
+  if(text){##受け取ったtextはそ・ままparentFrameに送信
     parent.postMessage(text,'*');
   }
   if(msgs.length===0){
@@ -88,7 +88,8 @@ function xhrRequest(){
     processData: false,
     data: jsonText,
     success: xhrSuccess,
-    error: xhrError
+    error: xhrError,
+    timeout:INTERVAL*3
   });
 }
 
@@ -111,7 +112,7 @@ jQuery(function(){
   if(!xhrUrl){
     return;
   }
-  //unload後queueされてmessageを�?信,subscribeは行わないTODO
+  //unload後queueされてmessageを・信,subscribeは行わないTODO
   jQuery(window).unload(function(){
     xhrRequest(true);
   });

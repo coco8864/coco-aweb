@@ -9,9 +9,6 @@ workFrame=null
 cdr={isIn:false,req:null}
 
 aplInfo={
-## type:'loadAplFrame'
-## result:false
-## cause:''
  aplUrl:null
  authUrl:null
  isOffline:false
@@ -28,10 +25,10 @@ authInfo=null
 loadAuthFrame=(authUrl)->
  authFrame[0].src=authUrl+'/~ph.vsp?origin='+location.protocol+'//'+location.host
  authFrameTimerId=setTimeout((->
-  authFrameTimerId=null
-  _response({type:'loadAplFrame',result:false,cause:'frameTimeout'}))
+   authFrameTimerId=null
+   _response({type:'loadAplFrame',result:false,cause:'frameTimeout'}))
   ,1000
- )
+  )
 
 requestToAuthFrame=(msg)->
  jsonMsg=ph.JSON.stringify(msg)
@@ -42,7 +39,7 @@ loadWorkFrame=(url,cb)->
  workFrameCb=cb
  workFrameTimerId=setTimeout((->
   workFrameTimerId=null
-  alert('workFrameTimeout'))
+  alert('aplOffline workFrameTimeout'))
   ,1000
  )
 
@@ -54,7 +51,6 @@ onlineCheckAuthInfoSuccess=(res)->
  aplInfo.token=res.token
  localStorage.setItem(AUTH_URL_LS_KEY,res.authUrl)
  loadAuthFrame(res.authUrl)
-## requestToAuthFrame(aplInfo)
 
 onlineCheckAuthInfoError=(res)->
  #xhr呼び出しに失敗した、offlineでの接続を試す
@@ -93,6 +89,7 @@ onMsg=(qjev)->
 onAuthResponse=(res)->
  if res.type=='loadAuthFrame' #AuthFrameのロード完了
   clearTimeout(authFrameTimerId)
+  authFrameTimerId=null
   res.type='loadAplFrame'
   res.aplInfo=aplInfo
   authFrame.height(res.offsetHeight)
@@ -105,7 +102,7 @@ onAuthResponse=(res)->
    res.aplInfo=aplInfo
    res.authInfo=res.authInfo
   response(res)
- else if res.type=='encrypt' || res.type=='decrypt'
+ else if res.type=='encrypt' || res.type=='decrypt' || res.type=='logout'
   response(res)
  else if res.type=='authInfo'
   authInfo=res.authInfo

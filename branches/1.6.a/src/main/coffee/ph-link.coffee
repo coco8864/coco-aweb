@@ -1,12 +1,22 @@
 #-------------------Link-------------------
 class Link extends ph.Deferred
- constructor:(@keyUrl,@isOffline,@isWs,@storeOnly)->
+ constructor:(@param)->
   super
+  @keyUrl=@param.keyUrl
   @status='init'
   @reqseq=0
   @reqcb={}
-  if !@isOffline && !@storeOnly
+  link=@
+  if !@param.useOffline && !@param.useConnection
    @connection=new Connection(@)
+   @connection.onLoad(->
+     link.load()
+    )
+   @connection.onUnload(->
+     if link.ppStorage
+      link.ppStorage.close()
+      link.ppStorage=null
+    )
   ph.on('message',@_onMessage)
   @_frame=ph.jQuery(
     "<iframe " +
@@ -15,13 +25,33 @@ class Link extends ph.Deferred
     "src='#{@keyUrl}/~ph.vsp'>" + 
     "</iframe>")
   ph.jQuery("body").append(@_frame)
+  @_frameTimerId=setTimeout((->
+    link._frameTimerId=null
+    link._frame.remove()
+    link.trigger('failToAuth',link)
+    link.unload())
+   ,10000
+   )
   @
  _connect:->
 #  alert('connect start2')
   @ppStorage=new PrivateSessionStorage(@)
+  link=@
+  @ppStorage.onUnload(->link._logout())
+  if @param.useConnection==false
+   @isConnect=false
+   @ppStorage.onLoad(->link.trigger('ppStorage',link))
+   return
+  @isConnect=true
+  isWs=@param.useWs
   con=@connection
-  @ppStorage.onLoad(->con.init())
-  con
+  @ppStorage.onLoad(->
+    con.init(isWs)
+    link.trigger('ppStorage',link)
+   )
+  return
+ _logout:->
+  @_requestToAplFrame({type:'logout'})
  _requestToAplFrame:(msg,cb)->
   if cb
     @reqseq++
@@ -51,20 +81,41 @@ class Link extends ph.Deferred
    @_frame.css({'height':'0px','width':'0px','top':'0%','left':'0%'})
    return
   if res.type=='loadAplFrame'
-   if res.loginId #認証済みなら
-    @aplInfo=res.aplInfo
-    @trigger('onlineAuth',@)
-    @trigger('auth',@)
-    @_connect()
-   else if res.isOffline || @isOffline
+   clearTimeout(@_frameTimerId)
+   @_frameTimerId=null
+   if !res.result
+    @cause='fail to onlineAuth'
+    @trigger('failToAuth',@)
+    @unload()
+#   else if res.aplInfo.loginId #TODO:認証済みなら,最適化
+#    @aplInfo=res.aplInfo
+#    @authInfo=res.authInfo
+#    @trigger('onlineAuth',@)
+#    @trigger('auth',@)
+#    @_connect()
+   else if res.isOffline==false && @param.useOffline==true
+    @cause='cannot use offline'
+    @trigger('failToAuth',@)
+    @unload()
+   else if res.isOffline==true && @param.useOffline==false
+    @cause='cannot use online'
+    @trigger('failToAuth',@)
+    @unload()
+   else if res.isOffline==true || @param.useOffline==true
+    @isOffline=true
     @_requestToAplFrame({type:'offlineAuth'})
    else
-    @_requestToAplFrame({type:'onlineAuth',isWs:@isWs,originUrl:location.href})
+    @isOffline=false
+##isWsは、wsでチェックするかhttpでチェックするかだが、mappingに両者登録しないとlinkアプリは正しく動かない
+##あまり意味はない
+    isWs=!(@param.useWs==false) 
+    @_requestToAplFrame({type:'onlineAuth',isWs:isWs,originUrl:location.href})
   if res.type=='onlineAuth'
    if res.result=='redirectForAuthorizer'
      location.href=res.location
      return
    else if res.result==true
+    @isOffline=false
     @aplInfo=res.aplInfo
     @authInfo=res.authInfo
     @trigger('onlineAuth',@)
@@ -76,17 +127,27 @@ class Link extends ph.Deferred
     @unload()
   if res.type=='offlineAuth'
    if res.result==true
+    @isOffline=true
     @authInfo=res.authInfo
-    @aplInfo={loginId:@authInfo.user.loginId}
-    @trigger('onfflineAuth',@)
-    @trigger('auth',@)
+    @aplInfo={loginId:@authInfo.user.loginId,appSid:'offline'}
+    @ppStorage=new PrivateSessionStorage(@)
+    link=@
+    @ppStorage.onLoad(->
+      link.trigger('ppStorage',link)
+      link.trigger('onfflineAuth',link)
+      link.trigger('auth',link)
+      link.load()
+     )
+    @ppStorage.onUnload(->link._logout())
    else
     @cause='fail to offlineAuth'
     @trigger('failToAuth',@)
     @unload()
   if res.type=='logout'
-    link._frame[0].src='about:blank'
-    link._frame.remove()
+    @_frame[0].src='about:blank'
+    @_frame.remove()
+    @unload()
+  return
  _storDecrypt:(storage,key,cb)->
   encText=storage.getItem(key)
   if encText
@@ -119,21 +180,24 @@ class Link extends ph.Deferred
  unlink:->
   if @connection
    @connection.close()
+   return
   @ppStorage.close()
-  link=@
-  @ppStorage.onUnload(->
-    link._requestToAplFrame({type:'logout'})
-   )
-##  link=@
-##  @ppStorage.onUnload(->
-##    link._frame[0].src='about:blank'
-##    link._frame.remove()
-##   )
 
 URL_PTN=/^(?:([^:\/]+:))?(?:\/\/([^\/]*))?(.*)/
 ph._links=[]
-ph.link=(aplUrl,isOffline)->
- isXhr=false
+
+# aplUrl:
+# useOffline:ture=必ずoffline,false=必ずonline,undefined=onlineで試してだめならoffline
+# useConnection:onlineの場合有効 true=必ずconnectする,false=必ずconnectしない,undefined=connectして失敗すればそのまま
+# useWs:connect成功した場合、true=必ずwebsocketを使う,false=必ずxhrを使う、undefined=websocketに失敗すればxhr
+ph.link=(aplUrl,useOffline,useConnection,useWs)->
+ if ph.jQuery.isPlainObject(aplUrl)
+  param=aplUrl
+  if !param.aplUrl
+    throw 'illegal argument'
+  aplUrl=param.aplUrl
+ else
+  param={aplUrl:aplUrl,useOffline:useOffline,useConnection:useConnection,useWs:useWs}
  aplUrl.match(URL_PTN)
  protocol=RegExp.$1
  aplDomain=RegExp.$2
@@ -148,12 +212,13 @@ ph.link=(aplUrl,isOffline)->
   else
    keyUrl="http://#{ph.domain}#{aplPath}"
  else #http or https
-  isXhr=true
+  param.useWs=false
   keyUrl=aplUrl
  link=ph._links[keyUrl]
  if link
   return link
- link=new Link(keyUrl,isOffline,!isXhr)
+ param.keyUrl=keyUrl
+ link=new Link(param)
  ph._links[keyUrl]=link
  link.onUnload(->delete ph._links[keyUrl])
  return link
