@@ -2,7 +2,7 @@
 
 = 汎用サーバ =
 
- Phantom Proxyは[Mapping mapping]の定義により一般のサーバと同じ動作をさせることができます。ここでは、Phantom Proxyを各種サーバにするための[Mapping mapping]定義を説明します。
+ Phantom Serverは[Mapping mapping]の定義により一般のサーバと同じ動作をさせることができます。ここでは、Phantom Serverを各種サーバにするための[Mapping mapping]定義を説明します。
  基本的には、以下２つの事項を考慮します。
   # source: どのようなプロトコルで、どこからリクエストを受け付けるか？
   # destination: 何からレスポンスを作成するか？
