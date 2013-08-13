@@ -762,13 +762,13 @@ public class Mapping{
 		//2)wss proxy
 		//3)ws proxy
 		switch(sourceType){
+		case WS_PROXY:
 		case PROXY:
 			if(!SecureType.SSL.equals(secureType)){
 				return false;
 			}
-		case WS:
-		case WS_PROXY:
 			break;
+		case WS:
 		case WEB:
 			return false;
 		}

@@ -147,8 +147,8 @@ class PhAuth
   _info:(cb,authUrl)=>
     if !authUrl #指定がなければ自分をダウンロードしたauthUrl
       authUrl=ph.authUrl
-    url=authUrl+@_infoPath;
-    @_requestUrl(url,cb);
+    url=authUrl+@_infoPath
+    @_requestUrl(url,cb)
     return
 
 window.ph.auth=new PhAuth()

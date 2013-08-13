@@ -12,11 +12,13 @@ class Link extends ph.Deferred
    @connection.onLoad(->
      link.load(link)
      link.trigger('linked',link)
+     return
     )
    @connection.onUnload(->
      if link.ppStorage
       link.ppStorage.close()
       link.ppStorage=null
+     return
     )
   ph.on('message',@_onMessage)
   @_frame=ph.jQuery(
@@ -30,7 +32,8 @@ class Link extends ph.Deferred
     link._frameTimerId=null
     link._frame.remove()
     link.trigger('failToAuth',link)
-    link.unload(link))
+    link.unload(link)
+    return)
    ,10000
    )
   @
@@ -45,19 +48,22 @@ class Link extends ph.Deferred
    return
   @isConnect=true
   isWs=@param.useWs
+  if !ph.useWebSocket
+   isWs=false
   con=@connection
   @ppStorage.onLoad(->
     con.init(isWs)
     link.trigger('ppStorage',link)
+    return
    )
   return
  _logout:->
   @_requestToAplFrame({type:'logout'})
  _requestToAplFrame:(msg,cb)->
   if cb
-    @reqseq++
-    msg.reqseq=@reqseq
-    @reqcb[msg.reqseq]=cb
+   @reqseq++
+   msg.reqseq=@reqseq
+   @reqcb[msg.reqseq]=cb
   jsonMsg=ph.JSON.stringify(msg)
   @_frame[0].contentWindow.postMessage(jsonMsg,'*')
  _onMessage:(qjev)=>
@@ -109,7 +115,7 @@ class Link extends ph.Deferred
     @isOffline=false
 ##isWsは、wsでチェックするかhttpでチェックするかだが、mappingに両者登録しないとlinkアプリは正しく動かない
 ##あまり意味はない
-    isWs=!(@param.useWs==false) 
+    isWs=!(@param.useWs==false) && ph.useWebSocket
     @_requestToAplFrame({type:'onlineAuth',isWs:isWs,originUrl:location.href})
   if res.type=='onlineAuth'
    if res.result=='redirectForAuthorizer'
@@ -237,6 +243,44 @@ ph.link=(aplUrl,useOffline,useConnection,useWs)->
   )
  return link
 
+ph.authInfo=(cb,authUrl)->
+ ph.onLoad(->authInfo(cb,authUrl))
+
+ph.wfsec=0 #workFrame名のシーケンス番号
+authInfo=(cb,authUrl)->
+ if !authUrl
+  authUrl=ph.authUrl
+ ph.wfsec++
+ workFrame=ph.jQuery(
+      "<iframe width='0' height='0' frameborder='no' "+
+      "src='#{authUrl}/info' " +
+      "name='authInfoFrame#{ph.wfsec}' >"+
+      "</iframe>")
+ ph.jQuery("body").append(workFrame)
+ eh=(qjev)->
+  ev=qjev.originalEvent
+  if ev.source!=workFrame[0].contentWindow
+   return
+  workFrame.remove()
+  ph.off('message',eh)
+  clearTimeout(timerId)
+  cb(ph.JSON.parse(ev.data))
+ timerId=setTimeout(->
+    ph.off('message',eh)
+    workFrame.remove()
+    cb({result:false})
+    return
+   ,1000
+  )
+ ph.on('message',eh)
+# dfd=ph.jQuery.ajax({
+#  url:authUrl+'/authInfo',
+#  dataType:'json'
+# })
+# dfd.done((res)->cb(res))
+# dfd.fail(->cb({result:false}))
+# return
+
 #strage scope
 #  SCOPE_PAGE_PRIVATE:'pagePrivate' ...そのページだけ、reloadを挟んで情報を維持するため
 #  SCOPE_SESSION_PRIVATE:'sessionPrivate'...開いている同一セションのwindow間で情報を共有
@@ -246,7 +290,6 @@ ph.link=(aplUrl,useOffline,useConnection,useWs)->
 #  SCOPE_QNAME:'qname'
 #  SCOPE_SUBNAME:'subname'
 #  SCOPE_USER:'user'
-
 #-------------------PagePrivateStorage-------------------
 class PrivateSessionStorage extends ph.Deferred
  constructor:(@link)->
