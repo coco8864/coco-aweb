@@ -9,7 +9,7 @@
   <title>linkテスト</title>
 
   <link type="text/css" href="/pub/css/jquery-ui-1.8.2.custom.css" rel="stylesheet" />
-  <script type="text/javascript" src="/pub/js/ph2.js"></script>
+  <script type="text/javascript" src="/pub/js/ph.js"></script>
   <script type="text/javascript" src="/pub/js/dateformat.js"></script>
   <script type="text/javascript" src="/pub/js/jquery-1.8.3.min.js"></script>
   <script type="text/javascript" src="/pub/js/jquery-ui-1.8.2.custom.min.js"></script>
@@ -40,11 +40,12 @@ var sd;
 <input type="button" value="undeploy" onclick="link.undeploy('test');"/>
 <input type="button" value="subscribe" onclick="subscribe();"/>
 <input type="button" value="unsubscribe" onclick="sd.unsubscribe();"/>
-<input type="button" value="qnames" onclick="link.qnames(function(qnames){ph.log('qnames cb');ph.dump(qnames);});"/>
+<input type="button" value="qnames" onclick="cd.qnames(function(qnames){ph.log('qnames cb');ph.dump(qnames);});"/>
 
-<input type="button" value="storage" onclick="spStorage=link.storage(ph.SCOPE_SESSION_PRIVATE);"/>
+<input type="button" value="storage" onclick="spStorage=cd.storage(ph.SCOPE_SESSION_PRIVATE);"/>
 
 <!--文字列のpublishはサポートしない-->
+<input type="button" value="publish string" onclick="sd.publish('testAAA');"/>
 <input type="button" value="publish object" onclick="sd.publish({aaa:'testBBB'});"/>
 <input type="button" value="publish bin" onclick="sd.publish({aaa:'testCCC',blobData:[{data:'aaaa'},{data:ph.stringToArrayBuffer('bbbbb')}]});"/>
 <input type="button" value="publishForm" onclick="sd.publishForm('testForm');"/>
@@ -52,7 +53,7 @@ var sd;
 <input type="button" value="onMessage dorp files" onclick="onDropFiles();"/>
 
 </ul>
-<div>link.deploy('admin','naru.aweb.admin.PaAdmin');<pre>
+<div>cd.deploy('admin','naru.aweb.admin.PaAdmin');<pre>
 </pre></div>
 <form id='testForm'>
 <input type='file' name='file' />
@@ -109,8 +110,8 @@ function onDropFiles(){
 }
 
 function connect(){
-  cd=ph.connect('/admin');
-  cd.onLoade(
+  cd=ph.pa.connect('/admin');
+  cd.done(
     function(con){
       ph.log('++cd done cb++ message:'+con);
       ph.dump(con);
@@ -152,9 +153,9 @@ function subscribe(){
   sd=link.subscribe('test');
   sd.onLoad(
     function(con){
-      ph.log('++sd done sd++ message:'+con);
+      ph.log('++sd onLoad sd++ message:'+con);
       ph.dump(con);
-      ph.log('--sd done sd--');
+      ph.log('--sd onLoad sd--');
     });
   sd.onMessage(
     function(data){
