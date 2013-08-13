@@ -61,7 +61,9 @@ ph.jQuery(function() {
 			changeEntry(logId);
 		}
 	});
-	ph.admin.con.on('unlinked',function(){/*location=ph.publicWebUrl;*/});
+	ph.admin.con.on('unlinked',function(){
+          if (confirm('!!unlinked!!\nDo you go Phantom Server Home?')){location=ph.publicWebUrl;}
+          });
 	ph.admin.accessLogSub=ph.admin.con.subscribe('admin','accessLog',
 		function(res){
 			if(!res){
