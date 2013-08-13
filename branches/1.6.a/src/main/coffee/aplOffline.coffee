@@ -182,8 +182,9 @@ _response=(msg)->
   parent.postMessage(jsonMsg,'*')
 
 jQuery(->
- pos=location.pathname.lastIndexOf('/')
- aplInfo.aplUrl=location.origin+location.pathname.substring(0,pos)
+ href=location.href
+ pos=href.lastIndexOf('/')
+ aplInfo.aplUrl=href.substring(0,pos)
  jQuery(window).on('message',onMsg)
  authFrame=jQuery(
       "<iframe width='100%' height='512' frameborder='no' "+

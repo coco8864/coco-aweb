@@ -21,6 +21,8 @@ checkPassword=(loginId,password)->
  return true
 
 saveUserInfo=->
+ if !userInfo
+  return
  loginId=userInfo.authInfo.user.loginId
  text=ph.JSON.stringify(userInfo)
  encText=encPlainText(text,userInfo.offlinePassHash)
@@ -34,15 +36,17 @@ getUserInfo=(cb)->
   data:aplInfo
  })
  userInfoDfd.done((x)->
-   userInfo=x
+   userInfo=null
+   if x.result
+    userInfo=x
    if cb
-    cb(true,x)
+    cb()
    saveUserInfo())
    
  userInfoDfd.fail((x)->
    userInfo=null
    if cb
-    cb(false,x))
+    cb())
 
 encPlainText=(plainText,passHash)->
  if passHash
