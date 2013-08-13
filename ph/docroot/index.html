@@ -71,7 +71,7 @@ ph.jQuery(function() {
 		ph.jQuery("#loginout").attr("src","/pub/images/logout.gif");
 		return;
 	}
-	ph.auth.info(function(res){
+	ph.authInfo(function(res){
 		if(!res.result){
 			alert('fail to auth.info.'+res.reason);
 			return;
