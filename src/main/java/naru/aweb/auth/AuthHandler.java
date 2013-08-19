@@ -41,6 +41,7 @@ public class AuthHandler extends WebServerHandler {
 	public static String USER_INFO_PATH="/userInfo";//ユーザ情報,利用可能サービスの問い合わせAPI
 	private static String CLEANUP_AUTH_HEADER_PATH="/cleanupAuthHeader";//auth header削除用path
 	private static String LOGOUT_PATH="/logout";//logout用
+	private static String REDIRECT_PATH="/redirect";//internetAuth中継用
 	private static String AJAX_LOGOUT_PATH="/ajaxLogout";//ajax Logout用
 	private static String AUTH_ID="authId";//...temporaryIdの別名
 	
@@ -592,6 +593,10 @@ public class AuthHandler extends WebServerHandler {
 			return;
 		}else if(AJAX_LOGOUT_PATH.equals(path)){
 			ajaxLogout(cookieId);
+			return;
+		}else if(REDIRECT_PATH.equals(path)){//TODO uri制限要　for security
+			String uri=parameter.getParameter("uri");
+			redirect(uri);
 			return;
 		}else if(LOGOUT_PATH.equals(path)){
 			authorizer.logout(cookieId);

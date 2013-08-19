@@ -47,6 +47,9 @@ public class Authenticator {
 	public static final String DIGEST="Digest";//Digest認証
 	public static final String BASIC_FORM="BasicForm";//Form認証
 	public static final String DIGEST_FORM="DigestForm";//Form認証
+	public static final String INTERNET_AUTH="InternetAuth";//facebook,google,openId認証,
+	//http://d.hatena.ne.jp/vividcode/20111025/1319547289 fasebook
+	//https://developers.google.com/accounts/docs/OpenID?hl=ja#gsa_example google
 	private static SecureRandom nonceRandom;
 	private static SecureRandom tokenRandom;
 	private static MessageDigest passDigest;
@@ -146,6 +149,8 @@ public class Authenticator {
 			this.scheme=BASIC_FORM;
 		}else if(DIGEST_FORM.equalsIgnoreCase(scheme)){
 			this.scheme=DIGEST_FORM;
+		}else if(INTERNET_AUTH.equalsIgnoreCase(scheme)){
+			this.scheme=INTERNET_AUTH;
 		}else{
 			this.scheme=NONE;
 		}
@@ -417,6 +422,8 @@ public class Authenticator {
 			authParam.put(KEY_CNONCE, parameter.getParameter(KEY_CNONCE));
 			authParam.put(KEY_NONCE, parameter.getParameter(KEY_NONCE));
 			user=digestFormAuthentication(authParam);
+		}else if(scheme==INTERNET_AUTH){
+			
 		}
 		if(user==null){
 			forwardWebAuthenication(authHandler);
@@ -511,6 +518,9 @@ public class Authenticator {
 		}else if(scheme==DIGEST_FORM){
 			response.setRequestAttribute("nonce", getNonce());
 			response.forwardAuthPage("digestForm.vsp");
+		}else if(scheme==INTERNET_AUTH){
+			response.setRequestAttribute("fbAppId", "495791087169690");
+			response.forwardAuthPage("internetAuth.vsp");
 		}else{//ありえない
 			response.completeResponse("500","Authorization Error");
 		}
