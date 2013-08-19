@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja" dir="ltr" #if( $useAppcache )manifest="$esc.html($manifest)"#end>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Pragma" content="no-cache"> 
+<meta http-equiv="Cache-Control" content="no-cache"> 
+<meta http-equiv="Expires" content="0"> 
+</head>
+<body>
+<h1>Phantom internet authentication</h1>
+<ul>
+##<li><a href='https://www.facebook.com/dialog/oauth?client_id=${fbAppId}&redirect_uri=$esc.html(${config.authUrl})/fb'>facebook</a></li>
+<li><a href='https://www.facebook.com/dialog/oauth?client_id=${fbAppId}&redirect_uri=https://www40405u.sakura.ne.jp:8080/auth/redirect?uri=$esc.html(${config.authUrl})/fb'>facebook</a></li>
+</ul>
+</body>
+</html>
