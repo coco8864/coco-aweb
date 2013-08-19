@@ -291,6 +291,7 @@ writeTimeout:<input type="text" id="writeTimeout" size="8" value="$!esc.html($!{
 <option value="Digest">Digest</option>
 <option value="BasicForm">BasicForm</option>
 <option value="DigestForm">DigestForm</option>
+<option value="InternetAuth">InternetAuth</option>
 </select>現在:<span id="curSchme">$!esc.html($!{config.getString('authenticateScheme')})</span><br/>
 sessionTimeout:<input type="text" id="authSessionTimeout" size="12" value="$!esc.html($!{config.getString('sessionTimeout')})"/>ms<br/>
 ##logoutUrl:<input type="text" id="authLogoutUrl" size="64" value="$!esc.html($!{config.getString('logoutUrl')})"/><br/>
