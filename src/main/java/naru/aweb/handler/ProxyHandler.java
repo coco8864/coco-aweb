@@ -87,7 +87,11 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 		String path=mapping.getResolvePath();
 		String resolveDigest=AccessLog.calcResolveDigest(requestHeader.getMethod(),mapping.isResolvedHttps(),targetHostServer.toString(),path,requestHeader.getQuery());
 		AccessLog accessLog=getAccessLog();
-		accessLog.setResolveDigest(resolveDigest);
+		if(accessLog!=null){
+			accessLog.setResolveDigest(resolveDigest);
+		}else{
+			logger.warn("accessLog is null",new Throwable());
+		}
 	}
 	
 	private void editRequestHeader(HeaderParser requestHeader) {

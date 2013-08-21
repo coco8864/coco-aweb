@@ -294,6 +294,9 @@ public abstract class WsProtocol extends PoolBase{
 	 */
 	private void wsTrace(char sourceType,String contentType,String comment,String statusCode,long length,ByteBuffer[] message,boolean isPersist){
 		AccessLog accessLog=handler.getAccessLog();
+		if(accessLog==null){
+			return;
+		}
 		AccessLog wsAccessLog=accessLog.copyForWs();
 		wsAccessLog.setContentType(contentType);
 		wsAccessLog.setRequestLine(comment);

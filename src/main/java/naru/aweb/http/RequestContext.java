@@ -111,8 +111,9 @@ public class RequestContext extends PoolBase {
 		return true;
 	}
 	
-	public void allocAccessLog() {
+	public AccessLog allocAccessLog() {
 		accessLog=(AccessLog)PoolManager.getInstance(AccessLog.class);
+		return accessLog;
 //		logger.info("$$$"+accessLog,new Exception());
 	}
 

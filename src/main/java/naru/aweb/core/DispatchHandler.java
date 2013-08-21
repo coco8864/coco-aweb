@@ -177,8 +177,7 @@ public class DispatchHandler extends ServerBaseHandler {
 	public void onReadPlain(Object userContext, ByteBuffer[] buffers) {
 		logger.debug("#onReadPlain.cid:" + getChannelId()+ ":buffers.hashCode:" + buffers.hashCode());
 		if(isSpdyAvailable){
-			getRequestContext().allocAccessLog();
-			AccessLog accessLog = getAccessLog();
+			AccessLog accessLog = getRequestContext().allocAccessLog();
 			accessLog.setStartTime(startTime);
 			accessLog.setConnectTime(connectTime);
 			accessLog.setHandshakeTime(handshakeTime);

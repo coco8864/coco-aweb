@@ -108,6 +108,9 @@ public class ReplayHelper {
 		logger.debug("#doReplay cid:"+handler.getChannelId());
 //		Set history=getUserSetting().getReplayHistory();
 		AccessLog accessLog=handler.getAccessLog();
+		if(accessLog==null){
+			return true;//ƒŒƒXƒ|ƒ“ƒX‚ªØ‚ê‚½‚©‚ç
+		}
 		HeaderParser requestHeader=handler.getRequestHeader();
 		MappingResult mapping=handler.getRequestMapping();
 		AccessLog recodeLog=searchAccessLog(accessLog,requestHeader,mapping);

@@ -161,14 +161,16 @@ public class AuthHandler extends WebServerHandler {
 		if(temporaryId.isDirectUrl()){
 			//directUrlÇÃèÍçáÇÕë¶ç¿Ç…redirectÇ∑ÇÈ
 			pathOnceId.unref();
-			setHeader(HeaderParser.LOCATION_HEADER, url);
-			completeResponse("302");
+			redirect(url);
+//			setHeader(HeaderParser.LOCATION_HEADER, url);
+//			completeResponse("302");
 			return;
 		}
 		String encodeUrl = pathOnceId.encodeUrl();
 		//å≥ÇÃurlÇ…ñﬂÇÈÇ∆Ç±ÇÎ
-		setHeader(HeaderParser.LOCATION_HEADER, encodeUrl);
-		completeResponse("302");
+		redirect(encodeUrl);
+//		setHeader(HeaderParser.LOCATION_HEADER, encodeUrl);
+//		completeResponse("302");
 	}
 	
 	//TODO on making
