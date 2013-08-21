@@ -151,6 +151,7 @@
 							</copy>
 							<copy todir="pack/phantom/ph/apps/admin/">
 								<fileset dir="ph/apps/admin/">
+									<include name="~ph.vsp" />
 									<include name="admin.vsp" />
 									<include name="adminjs.vpf" />
 									<include name="status.vsf" />
@@ -168,12 +169,15 @@
 							</copy>
 							<copy todir="pack/phantom/ph/apps/auth/">
 								<fileset dir="ph/apps/auth/">
+									<include name="~ph.appcache" />
+									<include name="~ph.vsp" />
 									<include name="authFrame.vsp" />
 									<include name="crossDomainFrame.vsp" />
 									<include name="basicForm.vsp" />
 									<include name="creanupAuthHeader.vsp" />
 									<include name="digestForm.vsp" />
 									<include name="webAuthenticate.vsp" />
+									<include name="internetAuth.vsp" />
 								</fileset>
 							</copy>
 							<copy todir="pack/phantom/ph/setting/">
@@ -199,11 +203,12 @@
 									<include name="index.html" />
 									<include name="ph.js" />
 									<include name="ph.json" />
-									<include name="pub/js/ph-event.js" />
-									<include name="pub/js/ph-auth.js" />
+									<include name="pub/js/authOffline.js" />
+									<include name="pub/js/aplOffline.js" />
+									<include name="pub/js/ph-link.js" />
 									<include name="pub/js/ph-json2.js" />
 									<include name="pub/js/ph-jqnoconflict.js" />
-									<include name="pub/js/ph-pa.js" />
+									<include name="pub/js/ph.js" />
 								</fileset>
 							</copy>
 							<copy todir="pack/phantom/ph/lib/">
@@ -217,6 +222,9 @@
 									<include name="self.pac" />
 									<include name="listing.vsp" />
 									<include name="xhrFrame.vsp" />
+									<include name="~ph.appcache" />
+									<include name="~ph.html" />
+									<include name="~xhrPaFrame.vsp" />
 								</fileset>
 							</copy>
 							<mkdir dir="pack/phantom/watch"/>
