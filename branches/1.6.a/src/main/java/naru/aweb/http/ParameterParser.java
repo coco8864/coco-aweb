@@ -146,14 +146,15 @@ public class ParameterParser extends PoolBase{
 				try {
 					name = URLDecoder.decode(encName,enc);
 				} catch (IllegalArgumentException e) {
-					logger.warn("name decode error.name:"+name);
+					logger.warn("name decode error.name:"+name,e);
 					continue;
 				}
 				String value=null;
 				try {
 					value=URLDecoder.decode(encValue,enc);
 				} catch (IllegalArgumentException e) {
-					logger.warn("value decode error.value:"+value + " name:"+name);
+					logger.warn("value decode error.encValue:"+encValue + " name:"+name +":"+e.getMessage());
+					value=encValue;
 				}
 				addParameter(name,value);
 			} catch (IOException e) {

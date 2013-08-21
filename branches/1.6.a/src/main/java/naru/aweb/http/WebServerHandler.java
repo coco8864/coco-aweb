@@ -175,7 +175,12 @@ public class WebServerHandler extends ServerBaseHandler {
 		}
 		if (requestContentLength <= 0) {// GETのような場合bodyはない
 			//ここでNPE発生することあり
-			getAccessLog().setTimeCheckPint(AccessLog.TimePoint.requestBody);
+			AccessLog accessLog=getAccessLog();
+			if(accessLog==null){
+				logger.warn("accessLog is null",new Throwable());
+				return;
+			}
+			accessLog.setTimeCheckPint(AccessLog.TimePoint.requestBody);
 			startResponseReqBody();// パラメタ読み込み完了を通知
 			return;
 		}
@@ -389,6 +394,9 @@ public class WebServerHandler extends ServerBaseHandler {
 	/* accessLogは、RequestContextからの参照がきれたタイミングで自動で出力される */
 	private void doAccessLog(){
 		AccessLog accessLog = getAccessLog();
+		if(accessLog==null){
+			return;
+		}
 		accessLog.endProcess();
 		accessLog.setStatusCode(responseHeader.getStatusCode());
 		accessLog.setResponseHeaderLength(responseHeaderLength);
@@ -612,7 +620,12 @@ public class WebServerHandler extends ServerBaseHandler {
 	at naru.queuelet.core.ServiceThread.run(ServiceThread.java:65)
 	at java.lang.Thread.run(Thread.java:722)
 			 */
-			getAccessLog().setTimeCheckPint(AccessLog.TimePoint.responseBody);
+			AccessLog accessLog=getAccessLog();
+			if(accessLog==null){
+				logger.warn("accessLog is null.",new Throwable());
+				return false;
+			}
+			accessLog.setTimeCheckPint(AccessLog.TimePoint.responseBody);
 		}
 		// bodyWriteCount++;
 		long length = BuffersUtil.remaining(buffers);
@@ -641,6 +654,9 @@ public class WebServerHandler extends ServerBaseHandler {
 			return;// 何をしても無駄
 		}
 		AccessLog accessLog = getAccessLog();
+		if(accessLog==null){
+			return;// 何をしても無駄
+		}
 		accessLog.setTimeCheckPint(AccessLog.TimePoint.responseHeader);
 		responseHeaderLength = BuffersUtil.remaining(headerBuffer);
 		boolean isPersist=false;
@@ -741,6 +757,11 @@ public class WebServerHandler extends ServerBaseHandler {
 	
 	private void traceHeader(boolean isHeaderOnlyResponse,ByteBuffer[] headerBuffer){
 		Store responsePeek = null;
+		AccessLog accessLog = getAccessLog();
+		if(accessLog==null){
+			logger.warn("accessLog is null",new Throwable());
+			return;
+		}
 		MappingResult mapping=getRequestMapping();
 		if(mapping!=null){
 			switch (mapping.getLogType()) {
@@ -755,21 +776,16 @@ public class WebServerHandler extends ServerBaseHandler {
 				responsePeek = Store.open(true);
 				ByteBuffer[] headerDup = headerBuffer;
 				responsePeek.putBuffer(headerDup);
-				AccessLog accessLog = getAccessLog();
 				logger.debug("#flushFirstResponse"+responsePeek.getStoreId());
 				accessLog.incTrace();
 				responsePeek.close(accessLog,responsePeek);
 				accessLog.setResponseHeaderDigest(responsePeek.getDigest());
-//				responsePeek = Store.open(true);
 			}
 		}
-		getAccessLog().setTimeCheckPint(AccessLog.TimePoint.responseHeader);
+		accessLog.setTimeCheckPint(AccessLog.TimePoint.responseHeader);
 		if (isHeaderOnlyResponse) {
 			/* headerだけのレスポンス */
-			getAccessLog().setTimeCheckPint(AccessLog.TimePoint.responseBody);
-//			if (responsePeek != null) {
-//				responsePeek.close();// ないので...
-//			}
+			accessLog.setTimeCheckPint(AccessLog.TimePoint.responseBody);
 			return;
 		}
 		/* bodyが続くレスポンス */
@@ -900,10 +916,12 @@ public class WebServerHandler extends ServerBaseHandler {
 			return;
 		}
 		// リクエストbody終了
-		getAccessLog().setTimeCheckPint(AccessLog.TimePoint.requestBody);
-		
+		AccessLog accessLog=getAccessLog();
+		if(accessLog==null){
+			return;
+		}
+		accessLog.setTimeCheckPint(AccessLog.TimePoint.requestBody);
 		startResponseReqBody();
-		return;
 	}
 
 	public ChannelHandler forwardHandler(Class handlerClass) {

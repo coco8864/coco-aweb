@@ -271,6 +271,10 @@ public class SpdyHandler extends ServerBaseHandler {
 		logger.debug("#finished.cid:"+getChannelId());
 		resetAll();
 		AccessLog accessLog=getAccessLog();
+		if(accessLog==null){
+			super.onFinished();
+			return;
+		}
 		accessLog.endProcess();
 		KeepAliveContext keepAliveContext=getKeepAliveContext();
 		accessLog.setRealHost(keepAliveContext.getRealHost().getName());
