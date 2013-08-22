@@ -1173,6 +1173,9 @@ public class Config {
 
 	//verocityマクロから利用する
 	public String getAuthUrl(){
+		if(authorizer==null){//終了間際に呼ばれた場合あり得る
+			return null;
+		}
 		return authorizer.getAuthUrl();
 	}
 
