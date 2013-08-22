@@ -770,8 +770,16 @@ public class HeaderParser extends PoolBase {
 	}
 
 	public void setStatusCode(String statusCode, String reasonPhrase) {
-		firstLineToken2 = statusCode.trim();
-		firstLineToken3 = reasonPhrase.trim();
+		if(statusCode!=null){
+			firstLineToken2 = statusCode.trim();
+		}else{
+			firstLineToken2 ="500";
+		}
+		if(reasonPhrase!=null){
+			firstLineToken3 = reasonPhrase.trim();
+		}else{
+			firstLineToken3 = "unknown";
+		}
 	}
 
 	public String getReasonPhrase() {

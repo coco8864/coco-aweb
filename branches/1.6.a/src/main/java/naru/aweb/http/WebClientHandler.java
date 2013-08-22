@@ -525,6 +525,10 @@ public class WebClientHandler extends SslHandler implements Timer {
 		return startRequest(webClient,userContext,connectTimeout,requestHeaderBuffer,requestContentLength, isCallerkeepAlive, keepAliveTimeout);
 	}
 	
+	public final synchronized void endRequest(){
+		setWebClient(null);
+	}
+	
 	public final void requestBody(ByteBuffer[] buffers) {
 		//connectŠ®—¹‘O‚ÉbodyBuffer‚ğó‚¯•t‚¯‚½ê‡
 		synchronized (this) {

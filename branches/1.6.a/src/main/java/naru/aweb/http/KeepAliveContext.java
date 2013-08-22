@@ -88,11 +88,12 @@ public class KeepAliveContext extends PoolBase {
 		realHost=null;
 	}
 	
-	private synchronized void setWebClientHandler(WebClientHandler webClientHandler){
+	public synchronized void setWebClientHandler(WebClientHandler webClientHandler){
 		if(webClientHandler!=null){
 			webClientHandler.ref();
 		}
 		if(this.webClientHandler!=null){
+			this.webClientHandler.endRequest();
 			if(this.webClientHandler.isConnect()){
 				this.webClientHandler.asyncClose(null);
 			}

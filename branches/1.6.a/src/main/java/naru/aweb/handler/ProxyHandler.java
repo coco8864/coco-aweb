@@ -45,11 +45,16 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 	private WebClientHandler webClientHandler;
 	
 	//response時のヘッダ編集対象
+	private boolean isRequestEnd=false;//isRequestEndは、一回以上呼ばれないようにする
+	private boolean isResponseHeader=false;//レスポンスを受信していなければ独自でエラーを返却する
 	private List<String> removeResponseHeaders=new ArrayList<String>();
 	private Map<String,String> addResponseHeaders=new HashMap<String,String>();
 	
 	public void recycle() {
-		isTryAgain=isReplay=isReplace=false;
+		isResponseHeader=isRequestEnd=isTryAgain=isReplay=isReplace=false;
+		if(webClientHandler!=null){
+			webClientHandler.endRequest();
+		}
 		webClientHandler=null;
 		bodyPage.recycle();
 		if(injector!=null){
@@ -235,6 +240,9 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 
 	public void onResponseBody(Object userContext,ByteBuffer[] buffer) {
 		logger.debug("#responseBody.cid:"+getChannelId());
+		if(isRequestEnd){
+			return;
+		}
 		if(isTryAgain||isReplace){
 			PoolManager.poolBufferInstance(buffer);
 			return;//再実行時レスポンスbodyは捨てる
@@ -263,6 +271,10 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 	}
 	
 	public void onResponseHeader(Object userContext,HeaderParser responseHeader) {
+		if(isRequestEnd){
+			return;
+		}
+		isResponseHeader=true;
 		logger.debug("#responseHeader.cid:"+getChannelId());
 		long injectLength=0;
 		boolean isInject=false;
@@ -325,9 +337,23 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 			removeHeader(HeaderParser.TRANSFER_ENCODING_HEADER);
 		}
 	}
-
+	
+	private boolean requestEnd(){
+		if(isRequestEnd){
+			return false;
+		}
+		isRequestEnd=true;
+		webClientHandler=null;
+		KeepAliveContext keepAliveContext=getKeepAliveContext();
+		keepAliveContext.setWebClientHandler(null);
+		return true;
+	}
+	
 	public void onRequestEnd(Object userContext,int stat) {
 		logger.debug("#webClientEnd.cid:"+getChannelId());
+		if(requestEnd()==false){
+			return;
+		}
 		if(isTryAgain){
 			isTryAgain=false;
 			startResponse();
@@ -347,17 +373,19 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 //			InjectionHelper helper=config.getInjectionHelper();
 //			helper.doInject(injectContext, this, null);
 //		}
-		if(getResponseStatusCode()==null){//レスポンスヘッダが確定していない
-			completeResponse("500","no response");
-		}else{
+		if(isResponseHeader){//レスポンスヘッダが確定していない
 			responseEnd();
+		}else{
+			completeResponse("500","no response");
 		}
 	}
 
 	public void onRequestFailure(Object userContext,int stat,Throwable t) {
 		logger.debug("#webClientFailure.cid:"+getChannelId()+":"+stat,t);
-		String statusCode=getResponseStatusCode();
-		if(statusCode!=null){
+		if(requestEnd()==false){
+			return;
+		}
+		if(isResponseHeader){
 			responseEnd();
 		}else{
 			//headerをレスポンスする事なく異常となった

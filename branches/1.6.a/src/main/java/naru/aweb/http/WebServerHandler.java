@@ -284,8 +284,8 @@ public class WebServerHandler extends ServerBaseHandler {
 		if (body != null) {
 			responseContentLengthApl = (long) body.remaining();
 			setContentLength(responseContentLengthApl);
-			setHeader(HeaderParser.CONTENT_LENGTH_HEADER, Long
-					.toString(responseContentLengthApl));
+//			setHeader(HeaderParser.CONTENT_LENGTH_HEADER, Long
+//					.toString(responseContentLengthApl));
 			responseBody(body);
 		}
 		responseEnd();
