@@ -26,13 +26,17 @@ import naru.aweb.config.Config;
 public class SslContextPool {
 	private static Logger logger = Logger.getLogger(SslContextPool.class);
 	private static final String TRUST_STORE_PASSWORD = "trustStorePassword";
+	private static final String CA_PASSWORD = "caPassword";
 	private static final String TRUST_STORE_DIR = "trustStoreDir";
 	private static final String KEYTOOL = "keytool";
+	private static final String OPENSSL = "openssl";
 	
 	private File trustStoreDir;
 	private String password;
 	private Map<String,SSLContext> sslContexts;
 	private String keytool;
+	private String openssl=null;
+	private String caPassword;
 	private Provider sslProvider;
 	
 	public SslContextPool(Config config,Provider sslProvider){
@@ -49,6 +53,18 @@ public class SslContextPool {
 			keytool=javaHome +"/bin/keytool";
 		}
 		logger.info("keytool command:"+keytool);
+		openssl=config.getString(OPENSSL);
+		if(openssl==null){
+			openssl="/usr/bin/openssl";
+		}
+		File test=new File(openssl);
+		if(!test.exists()){
+			openssl=null;
+			logger.info("openssl not found");
+		}else{
+			caPassword=config.getString(CA_PASSWORD);
+			logger.info("openssl command:"+openssl);
+		}
 	}
 	
 	public SSLContext getSSLContext(String domain){
@@ -58,7 +74,7 @@ public class SslContextPool {
 		}
 		InputStream storeStream=null;
 		try {
-			storeStream=createTrustStore(domain, password);
+			storeStream=createTrustStore(domain, password,caPassword);
 			sslContext=createSSLContext(storeStream,password);
 			synchronized(sslContexts){
 				sslContexts.put(domain, sslContext);
@@ -83,8 +99,9 @@ public class SslContextPool {
 			p.getInputStream().close();
 			p.getOutputStream().close();
 			p.waitFor();
-			System.out.println(title +" exitValue:"+p.exitValue());
+			logger.info(title +" exitValue:"+p.exitValue());
 		} catch (Exception e) {
+			logger.warn("fail to " +title,e);
 			throw new RuntimeException("fail to " +title,e);
 		}
 	}
@@ -103,14 +120,14 @@ public class SslContextPool {
 				"-alias","phantom",
 				"-keypass",password,
 				"-storepass",password,
-				"-dname","C=JP, ST=Shizuoka, L=Numazu-shi, O=coco8864, OU=phantom Project ,CN="+cn,
+				"-dname","C=JP, ST=shizuoka, L=numazu, O=coco8864, OU=phantom ,CN="+cn,
 				"-keystore",trustStoreFile.getAbsolutePath()
 		};
 		exec("generate key cn:"+cn,args);
 	}
 	
 	private void runImportCA(File trustStoreFile,String password){
-		File caFile=new File(trustStoreDir,"CA/phantomCA.pem");
+		File caFile=new File(trustStoreDir,"CA/cacert.pem");
 		String args[]={
 /*
 keytool -keystore cacerts_192.168.1.30.jks -storepass changeit -import -noprompt -trustcacerts -alias phantomCA -file D:\prj\aweb\CA\cacert.pem
@@ -128,7 +145,7 @@ keytool -keystore cacerts_192.168.1.30.jks -storepass changeit -import -noprompt
 	}
 	
 	private void runCertreq(File trustStoreFile,String cn,String password){
-		File certreqFile=new File(trustStoreDir,cn+"_certreq.csr");
+		File certreqFile=new File(trustStoreDir,cn+".csr");//.csr: èêñºóvãÅ (PEM-encoded X.509 Certificate Signing Request)
 		String args[]={
 /*
 keytool -keystore cacerts_192.168.1.30.jks -storepass changeit -certreq -alias phantom -file 192.168.1.30_certreq.csr
@@ -145,7 +162,7 @@ keytool -keystore cacerts_192.168.1.30.jks -storepass changeit -certreq -alias p
 	}
 	
 	private void runExportCert(File trustStoreFile,String cn,String password){
-		File certFile=new File(trustStoreDir,cn+".csr");
+		File certFile=new File(trustStoreDir,cn+".cer");
 		String args[]={
 /*
 keytool -export -storepass changeit -keystore D:\prj\aweb\ph\security\ph.login.yahoo.co.jp.jks -alias phantom -file ph.login.yahoo.co.jp.cer
@@ -161,8 +178,31 @@ keytool -export -storepass changeit -keystore D:\prj\aweb\ph\security\ph.login.y
 		exec("exportCert",args);
 	}
 	
+	private void runServerCert(File trustStoreFile,String cn,String caPassword){
+		File confFile=new File(trustStoreDir,"CA/openssl-ca.cnf");
+		File keyFile=new File(trustStoreDir,"CA/private/cakey.pem");
+		File casertFile=new File(trustStoreDir,"CA/cacert.pem");
+		File certreqFile=new File(trustStoreDir,cn+".csr");//.csr: èêñºóvãÅ (PEM-encoded X.509 Certificate Signing Request)
+		File certFile=new File(trustStoreDir,cn+".crt");//.crt: èÿñæèë(X509ÇÃPEM encoded)
+		String args[]={
+/*
+openssl ca -config /home/naru/phantom3/ph/security/CA/openssl-ca.cnf -keyfile /home/naru/phantom3/ph/security/CA/private/cakey.pem -cert /home/naru/phantom3/ph/security/CA/cacert.pem -in /home/naru/phantom3/ph/security/49.212.107.199_certreq.csr -out /home/naru/phantom3/ph/security/49.212.107.199_cert.cer -passin pass:xxxxxx -batch
+*/
+				openssl,
+				"ca",
+				"-config",confFile.getAbsolutePath(),
+				"-keyfile",keyFile.getAbsolutePath(),
+				"-cert",casertFile.getAbsolutePath(),
+				"-in",certreqFile.getAbsolutePath(),
+				"-out",certFile.getAbsolutePath(),
+				"-passin","pass:"+caPassword,
+				"-batch"
+		};
+		exec("serverCert",args);
+	}
+	
 	private void runImportCert(File trustStoreFile,String cn,String password){
-		File certFile=new File(trustStoreDir,cn+"_cert.csr");
+		File certFile=new File(trustStoreDir,cn+".crt");//.crt: èÿñæèë(X509ÇÃPEM encoded)
 		String args[]={
 /*
 keytool -keystore ph.www.google.com.jks -storepass changeit -import -noprompt -alias phantom -file D:\prj\aweb\ph\CA\ph.www.google.com_cert.csr
@@ -178,33 +218,21 @@ keytool -keystore ph.www.google.com.jks -storepass changeit -import -noprompt -a
 		exec("certreq",args);
 	}
 	
-	private void runServerCert(File trustStoreFile,String cn,String password){
-		File certFile=new File(trustStoreDir,cn+"_cert.csr");
-		String args[]={
-/*
-openssl ca -config /etc/pki/tls/openssl-ca.cnf -keyfile private/cakey.pem -cert cacert.pem -in ../ph.www.google.com_certreq.csr -out ph.www.google.com_cert.csr
-*/
-				openSsl,
-				"ca",
-				"-config",confFile,
-				"-keyfile",caKeyFile,
-				"-cert",casertFile,
-				"-in",certreqFile.getAbsolutePath(),
-				"-out",serverCertFile,
-				
-		};
-		exec("certreq",args);
-	}
-	
-	
-	private InputStream createTrustStore(String cn,String trustStorePassword) throws FileNotFoundException{
+	private InputStream createTrustStore(String cn,String trustStorePassword,String caPassword) throws FileNotFoundException{
 		File trustStoreFile=new File(trustStoreDir,cn+".jks");
 		if(trustStoreFile.exists()){
 			return new FileInputStream(trustStoreFile);
 		}
 		runKeytoolGenkey(trustStoreFile,cn,trustStorePassword);
-		runImportCA(trustStoreFile,trustStorePassword);
-		runCertreq(trustStoreFile,cn,trustStorePassword);
+		if(openssl==null){
+			runExportCert(trustStoreFile,cn,trustStorePassword);
+		}else{
+			runImportCA(trustStoreFile,trustStorePassword);
+			runCertreq(trustStoreFile,cn,trustStorePassword);
+			runServerCert(trustStoreFile,cn,caPassword);
+			runImportCert(trustStoreFile,cn,trustStorePassword);
+		}
+		
 		if(trustStoreFile.exists()){
 			return new FileInputStream(trustStoreFile);
 		}

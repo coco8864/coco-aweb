@@ -117,7 +117,7 @@ public class SpdyHandler extends ServerBaseHandler {
 			//ヘッダの内容を設定、ここにSpdyのVLが関係してくるので、SpdyFrameの中で実行
 			frame.setupHeader(requestHeader);
 			ServerParser server=requestHeader.getServer();
-			server.ref();
+			acceptServer.ref();
 			/* spdy固有のkeepAlive初期化 */
 			keepAliveContext.setSpdyAcceptServer(acceptServer,realHost,server);
 			logger.debug("url:" + requestHeader.getRequestUri());
