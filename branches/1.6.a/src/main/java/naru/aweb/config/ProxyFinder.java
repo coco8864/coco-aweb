@@ -83,7 +83,7 @@ public class ProxyFinder {
 			baos.write(buf, 0, len);
 		}
 		is.close();
-		String contents = new String(baos.toByteArray(), "iso8859_1");
+		String contents = new String(baos.toByteArray(), /*"iso8859_1"*/"utf-8");
 		baos.close();
 		return contents;
 	}

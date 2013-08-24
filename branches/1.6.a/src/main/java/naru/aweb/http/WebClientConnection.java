@@ -100,7 +100,8 @@ public class WebClientConnection extends PoolBase {
 		requestHeader.getAndRemoveCookieHeader(SessionId.SESSION_ID);
 		//TODO mapping認証したトレースだった場合、authentication headerがついている、削除
 		//しかしバックのproxyが必要としている可能性もある
-		requestHeader.removeHeader(HeaderParser.PROXY_AUTHORIZATION_HEADER);
+		//バックのproxy対応
+//		requestHeader.removeHeader(HeaderParser.PROXY_AUTHORIZATION_HEADER);
 		//TODO Refererがph.xxxになっているかもしれない削除もしくは修正したほうがよい
 		overloadHeaders.put(HeaderParser.HOST_HEADER,getTargetServer()+":"+getTargetPort());
 		KeepAliveContext.setConnectionHandler(overloadHeaders,(!isHttps() && isUseProxy()),isCallerkeepAlive);

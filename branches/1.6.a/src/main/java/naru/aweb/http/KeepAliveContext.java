@@ -398,6 +398,16 @@ public class KeepAliveContext extends PoolBase {
 		}
 	}
 	
+	/* spdy‚Ìê‡‚Ì‰Šú‰» */
+	public void setSpdyAcceptServer(ServerParser acceptServer,RealHost realHost,ServerParser proxyTargetServer){
+		this.acceptServer=acceptServer;
+		this.realHost=realHost;
+		RealHost wkRealHost=config.getRealHost(proxyTargetServer);
+		if(!realHost.equals(wkRealHost)){
+			this.proxyTargetServer=proxyTargetServer;
+		}
+	}
+	
 	public ServerParser getAcceptServer(){
 		return acceptServer;
 	}
