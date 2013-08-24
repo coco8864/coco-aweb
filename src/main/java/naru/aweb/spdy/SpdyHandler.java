@@ -12,6 +12,7 @@ import naru.async.pool.PoolManager;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.core.DispatchHandler;
+import naru.aweb.core.RealHost;
 import naru.aweb.core.ServerBaseHandler;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.KeepAliveContext;
@@ -35,6 +36,8 @@ public class SpdyHandler extends ServerBaseHandler {
 	private char rcvGoawayStatusCode;
 	private long readLength;
 	private long writeLength;
+	private RealHost realHost;
+	private ServerParser acceptServer;
 	
 	public boolean onHandshaked(String protocol) {
 		logger.debug("#handshaked.cid:" + getChannelId() +":"+protocol);
@@ -44,6 +47,9 @@ public class SpdyHandler extends ServerBaseHandler {
 		lastGoodStreamId=0;
 		sendGoawayStatusCode=rcvGoawayStatusCode='*';
 		readLength=writeLength=0;
+		KeepAliveContext keepAliveContext=getKeepAliveContext();
+		realHost=keepAliveContext.getRealHost();
+		acceptServer=keepAliveContext.getAcceptServer();
 		return false;//é©óÕÇ≈asyncReadÇµÇΩÇΩÇﬂ
 	}
 	
@@ -112,7 +118,8 @@ public class SpdyHandler extends ServerBaseHandler {
 			frame.setupHeader(requestHeader);
 			ServerParser server=requestHeader.getServer();
 			server.ref();
-			keepAliveContext.setAcceptServer(server);
+			/* spdyå≈óLÇÃkeepAliveèâä˙âª */
+			keepAliveContext.setSpdyAcceptServer(acceptServer,realHost,server);
 			logger.debug("url:" + requestHeader.getRequestUri());
 			//KeepAliveContextÇ©ÇÁSpdySessionÇçÏÇÈ
 			session=SpdySession.create(this, streamId, keepAliveContext,frame.isFin());
