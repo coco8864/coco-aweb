@@ -404,7 +404,7 @@ public class KeepAliveContext extends PoolBase {
 		this.realHost=realHost;
 		RealHost wkRealHost=config.getRealHost(proxyTargetServer);
 		if(!realHost.equals(wkRealHost)){
-			this.proxyTargetServer=proxyTargetServer;
+			setProxyTargetServer(proxyTargetServer);
 		}
 	}
 	
