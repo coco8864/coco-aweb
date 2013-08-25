@@ -57,6 +57,9 @@ public class NameValueBuilder {
 	}
 	
 	private void putString(ByteBuffer workBuffer,String data){
+		if(data==null){
+			return;
+		}
 		try {
 			byte[] bytes=data.getBytes(SpdyFrame.ENCODE);
 			putLength(workBuffer,bytes.length);

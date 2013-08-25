@@ -392,6 +392,45 @@ public class Authenticator {
 		}
 	}
 	
+	public void forceDigestAuthenticate(AuthHandler authHandler,Authorizer authorizer){
+		HeaderParser requestHeader=authHandler.getRequestHeader();
+		Map<String,String> authParam=parseAuthHeaders(requestHeader,HeaderParser.WWW_AUTHORIZATION_HEADER,DIGEST,realm);
+		User user=headerAuthenticate(authParam,requestHeader.getMethod(),DIGEST);
+		if(user!=null){
+			SessionId temporaryId = authorizer.createTemporaryId(null,authorizer.getAuthPath());
+			String authId=temporaryId.getAuthId();
+			AuthSession authSession=loginUser(user);
+			authorizer.setAuthSessionToTemporaryId(authId, authSession);
+			authHandler.setRequestAttribute(AuthHandler.AUTH_ID, authId);
+			
+			authHandler.setRequestAttribute("dummyname", DUMMY_USER_NAME);
+			authHandler.setRequestAttribute("username", user.getLoginId());
+			authHandler.setRequestAttribute("dummyPassword", user.getDummyPassword());
+			authHandler.setRequestAttribute("cleanupPath", "cleanupAuthForceDigest");
+			authHandler.forwardAuthPage("/creanupAuthHeader.vsp");
+		}else{
+			authHandler.setHeader(HeaderParser.WWW_AUTHENTICATE_HEADER,createDigestAuthenticateHeader(realm));
+			authHandler.setRequestAttribute(AuthHandler.ATTRIBUTE_RESPONSE_STATUS_CODE, "401");
+			authHandler.forwardAuthPage("/webAuthenticate.vsp");
+		}
+	}
+	
+	public boolean cleanupAuthForceDigest(AuthHandler authHandler){
+		//普通の認証どは逆でcredentialに誤りがあれば200,正しければ401
+		HeaderParser requestHeader=authHandler.getRequestHeader();
+		Map<String,String> authParam=parseAuthHeaders(requestHeader,HeaderParser.WWW_AUTHORIZATION_HEADER,DIGEST,realm);
+		if(authParam!=null){
+			User user=headerAuthenticate(authParam,requestHeader.getMethod(),DIGEST);
+			if(user==null){
+				return true;
+			}
+		}
+		authHandler.setHeader(HeaderParser.WWW_AUTHENTICATE_HEADER,createDigestAuthenticateHeader(realm));
+		authHandler.setRequestAttribute(AuthHandler.ATTRIBUTE_RESPONSE_STATUS_CODE, "401");
+		authHandler.forwardAuthPage("/webAuthenticate.vsp");
+		return false;
+	}
+	
 	/**
 	 * 任意のwebリクエストが通過
 	 * Cookieヘッダからuserを特定
