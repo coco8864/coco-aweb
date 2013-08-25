@@ -41,9 +41,11 @@ public class AuthHandler extends WebServerHandler {
 	public static String USER_INFO_PATH="/userInfo";//ユーザ情報,利用可能サービスの問い合わせAPI
 	private static String CLEANUP_AUTH_HEADER_PATH="/cleanupAuthHeader";//auth header削除用path
 	private static String LOGOUT_PATH="/logout";//logout用
+	private static String FORCE_DIGEST_LOGON_PATH="/forceDigest";//強制ダイジェスト認証用
+	private static String CLEANUP_AUTH_FORCE_DIGEST_HEADER_PATH="/cleanupAuthForceDigest";
 	private static String REDIRECT_PATH="/redirect";//internetAuth中継用
 	private static String AJAX_LOGOUT_PATH="/ajaxLogout";//ajax Logout用
-	private static String AUTH_ID="authId";//...temporaryIdの別名
+	public static String AUTH_ID="authId";//...temporaryIdの別名
 	
 	public static String AUTH_MARK="authMark";
 	public static String AUTH_CD_CHECK="crossDomainAuthCheck";
@@ -171,6 +173,39 @@ public class AuthHandler extends WebServerHandler {
 		redirect(encodeUrl);
 //		setHeader(HeaderParser.LOCATION_HEADER, encodeUrl);
 //		completeResponse("302");
+	}
+	
+	private void forceDigestLogin(String cookieId){
+		User user=authorizer.getUserByPrimaryId(cookieId);
+		if(user!=null){//有効なprimaryがあれば何もしない
+			redirect(config.getPublicWebUrl());
+			return;
+		}
+		authenticator.forceDigestAuthenticate(this,authorizer);
+	}
+	
+	private void cleanupAuthforceDigestHeader(){
+		if( !authenticator.cleanupAuthForceDigest(this) ){
+			return;
+		}
+		ParameterParser parameter = getParameterParser();
+		String authId=parameter.getParameter(AUTH_ID);
+		if(authId==null){
+			forbidden("faild to get authId");
+			return;
+		}
+		//TODO 排他
+		SessionId temporaryId=authorizer.getTemporaryId(authId);
+		if(temporaryId==null){
+			forbidden("faild to get authId");
+			return;
+		}
+		AuthSession authSession=temporaryId.popAuthSession();
+		SessionId primaryId = authorizer.createPrimaryId(authSession);
+		String setCookieString = primaryId.getSetCookieString();
+		setCookie(setCookieString);
+		temporaryId.remove();
+		completeResponse("200", config.getPublicWebUrl());
 	}
 	
 	//TODO on making
@@ -599,6 +634,12 @@ public class AuthHandler extends WebServerHandler {
 		}else if(REDIRECT_PATH.equals(path)){//TODO uri制限要　for security
 			String uri=parameter.getParameter("uri");
 			redirect(uri);
+			return;
+		}else if(FORCE_DIGEST_LOGON_PATH.equals(path)){//InternetAuth時に管理者ように強制ログオンが必要
+			forceDigestLogin(cookieId);
+			return;
+		}else if(CLEANUP_AUTH_FORCE_DIGEST_HEADER_PATH.equals(path)){//InternetAuth時に管理者ように強制ログオンが必要
+			cleanupAuthforceDigestHeader();
 			return;
 		}else if(LOGOUT_PATH.equals(path)){
 			authorizer.logout(cookieId);

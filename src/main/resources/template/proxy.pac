@@ -44,6 +44,9 @@ function FindSocksProxyForURL(url,host) {
   #end
 }
 function isSecurePhantomDomain(host) {
+ if( host=='localhost' ){return false;}
+ if( shExpMatch(host,'127.*') ){return false;}
+ if( shExpMatch(host,'192.*') ){return false;}
  if( host=='${localServer}' ){return false;}
 #foreach($phantom in $proxyFinder.SecurePhantomDomians)
  if( shExpMatch(host,'${phantom}') ){return true;}
@@ -51,6 +54,9 @@ function isSecurePhantomDomain(host) {
  return false;
 }
 function isHttpPhantomDomain(host) {
+ if( host=='localhost' ){return false;}
+ if( shExpMatch(host,'127.*') ){return false;}
+ if( shExpMatch(host,'192.*') ){return false;}
  if( host=='${localServer}' ){return false;}
 #foreach($phantom in $proxyFinder.HttpPhantomDomians)
  if( shExpMatch(host,'${phantom}') ){return true;}
