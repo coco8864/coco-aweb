@@ -201,3 +201,4 @@ keystore cacerts_192.168.1.30
 /etc/pki/tls/misc/CA -newca -config /etc/pki/tls/openssl_server.cnf
 
 
+openssl ca -config /home/naru/phantom3/ph/security/CA/openssl-ca.cnf -keyfile /home/naru/phantom3/ph/security/CA/private/cakey.pem -cert /home/naru/phantom3/ph/security/CA/cacert.pem -in /home/naru/phantom3/ph/security/49.212.107.199_certreq.csr -out /home/naru/phantom3/ph/security/49.212.107.199_cert.cer -passin pass:xxxxxx -batch
