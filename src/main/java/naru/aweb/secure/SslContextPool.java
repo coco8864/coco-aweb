@@ -38,6 +38,7 @@ public class SslContextPool {
 	private String openssl=null;
 	private String caPassword;
 	private Provider sslProvider;
+	private File caDir=null;
 	
 	public SslContextPool(Config config,Provider sslProvider){
 		this.sslProvider=sslProvider;
@@ -63,6 +64,7 @@ public class SslContextPool {
 			logger.info("openssl not found");
 		}else{
 			caPassword=config.getString(CA_PASSWORD);
+			caDir=new File(trustStoreDir,"CA");
 			logger.info("openssl command:"+openssl);
 		}
 	}
@@ -95,7 +97,7 @@ public class SslContextPool {
 	private void exec(String title,String[] args){
 		Process p;
 		try {
-			p = Runtime.getRuntime().exec(args);
+			p = Runtime.getRuntime().exec(args,null,caDir);
 			p.getInputStream().close();
 			p.getOutputStream().close();
 			p.waitFor();
