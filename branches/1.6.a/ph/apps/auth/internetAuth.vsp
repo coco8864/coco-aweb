@@ -8,12 +8,13 @@
 <meta http-equiv="Expires" content="0"> 
 </head>
 <body>
-<h1>Phantom internet authentication</h1>
+<h1>Internet authentication</h1>
 <ul>
 <li><a href='$esc.html(${config.authUrl})/forceDigest'>admin</a></li>
 ##<li><a href='https://www.facebook.com/dialog/oauth?client_id=${fbAppId}&redirect_uri=$esc.html(${config.authUrl})/fb'>facebook</a></li>
 ##<li><a href='https://www.facebook.com/dialog/oauth?client_id=${fbAppId}&redirect_uri=https://www40405u.sakura.ne.jp:8080/auth/redirect?uri=$esc.html(${config.authUrl})/fb'>facebook</a></li>
-<li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})'>openId</a></li>
+<li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("https://www.google.com/accounts/o8/id")'>google</a></li>
+<li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("yahoo.co.jp")'>yahoo</a></li>
 </ul>
 </body>
 </html>
