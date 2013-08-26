@@ -608,8 +608,11 @@ public class AuthHandler extends WebServerHandler {
 			forwardAuthPage(path);
 			return;
 		}
+		if(path.startsWith("/internetAuth")){
+			forwardHandler(InternetAuthHandler.class);
+			return;
+		}
 		
-//		String callback=parameter.getParameter("callback");
 		/**
 		 * digest,basic認証の単純なメカニズムではlogoffを実現できない。
 		 * 認証直後にauthenticationヘッダを破壊+cookie付加でlogoffを実現
