@@ -1,6 +1,8 @@
 package naru.aweb.auth;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -192,6 +194,7 @@ public class SessionId extends PoolBase{
 	//urlが直接認証を必要とするURLか?wsなどAPIで認証をする場合originは認証画面とは関係しない
 	private boolean isDirectUrl;
 	private long lastAccessTime;
+	private Map<String,Object> attribute=new HashMap<String,Object>();//sessionに付随する属性
 	
 	/* secondaryIdが単一のmappingと結びつくとは限らない WebSocket対応*/
 	//	private Mapping mapping;//secondary用の場合、どのmapping用のSessionIdか
@@ -213,45 +216,14 @@ public class SessionId extends PoolBase{
 	public boolean isCookieMatch(boolean isSecure,ServerParser domain,String path){
 		return this.cookieLocation.isMatch(isSecure,domain,path);
 	}
-
-	/*
-	public void onTimer(Object userContext) {
-		try {
-			switch (type) {
-			case PRIMARY:// セションタイムアウト,30minutes
-				long now=System.currentTimeMillis();
-				long latest=0;
-				long nextTimeoutInterval;
-				synchronized(this){
-					if(!isValid){
-						return;
-					}
-					for(SessionId secondaryId:secondaryIds.values()){
-						if(latest<secondaryId.lastAccessTime){
-							latest=secondaryId.lastAccessTime;
-						}
-					}
-					nextTimeoutInterval=SESSION_TIMEOUT-(now-latest);
-					if(nextTimeoutInterval<=0){
-						logoff();
-					}
-				}
-				if(nextTimeoutInterval>0){
-					setTimeout(nextTimeoutInterval);
-				}
-				break;
-			case COOKIE_ONCE:// 認証情報入力が遅すぎる場合は、再実行,5seconds
-				remove();
-				break;
-			case PATH_ONCE:// redirectが遅い,5seconds
-				remove();
-				break;
-			}
-		} finally {
-			unref();
-		}
+	
+	public Object getAttribute(String name){
+		return attribute.get(name);
 	}
-	*/
+	public void setAttribute(String name, Object value) {
+		attribute.put(name, value);
+	}
+	
 	public boolean isMatch(Type type){
 		if(!isValid){
 			return false;
@@ -454,6 +426,7 @@ public class SessionId extends PoolBase{
 			cookieLocation.unref();
 			cookieLocation=null;
 		}
+		attribute.clear();
 		super.recycle();
 	}
 

@@ -79,6 +79,7 @@ public class ParameterParser extends PoolBase{
 	private String contentType;
 	private long contentLength;
 	private long readPointer;
+	private boolean isParseQuery=false;//queryをparameterに加えたか否か?(forwardのたびにparseしないように)
 	
 	public static int  indexOfByte( byte bytes[], int off, int end, char qq ){
         // Works only for UTF 
@@ -197,6 +198,7 @@ public class ParameterParser extends PoolBase{
 			uploadRawFile=null;
 		}
 		uploadPageBuffer.recycle();
+		isParseQuery=false;
 	}
 	
 	//Server側でencodingを決めてしまうのは、汎用性を失うが、アプリが特定している場合に有効
@@ -241,6 +243,10 @@ public class ParameterParser extends PoolBase{
 	}
 	
 	public void parseQuery(String query){
+		if(isParseQuery){
+			return;
+		}
+		isParseQuery=true;
 		try {
 			processParameters(query.getBytes("ISO8859_1"),encoding);
 		} catch (UnsupportedEncodingException e) {
@@ -492,6 +498,16 @@ public class ParameterParser extends PoolBase{
 	
 	public Map getParameterMap(){
 		return parameter;
+	}
+	
+	/* ServletRequest.getParameterMap()形式で返却 */
+	public Map getParameterMapServlet(){
+		HashMap result=new HashMap();
+		for(String key:parameter.keySet()){
+			List values=parameter.get(key);
+			result.put(key, values.toArray(new String[0]));
+		}
+		return result;
 	}
 
 	public List getParameters(String name) {

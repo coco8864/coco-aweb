@@ -558,7 +558,6 @@ public class Authenticator {
 			response.setRequestAttribute("nonce", getNonce());
 			response.forwardAuthPage("digestForm.vsp");
 		}else if(scheme==INTERNET_AUTH){
-			response.setRequestAttribute("fbAppId", "495791087169690");
 			response.forwardAuthPage("internetAuth.vsp");
 		}else{//‚ ‚è‚¦‚È‚¢
 			response.completeResponse("500","Authorization Error");
