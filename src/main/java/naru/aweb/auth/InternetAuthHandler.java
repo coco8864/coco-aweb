@@ -63,7 +63,9 @@ public class InternetAuthHandler extends WebServerHandler {
 	private void openIdReq(SessionId temporaryId){
 		try {
 			ConsumerManager manager=getConsumerManager();
-			List discoveries = manager.discover("https://www.google.com/accounts/o8/id");			
+			ParameterParser parameter = getParameterParser();
+			String identifier=parameter.getParameter("identifier");
+			List discoveries = manager.discover(identifier);			
 			DiscoveryInformation discovered = manager.associate(discoveries);
 			temporaryId.setAttribute("discovered", discovered);
 			
@@ -73,7 +75,6 @@ public class InternetAuthHandler extends WebServerHandler {
 			fetch.addAttribute("Email", "http://schema.openid.net/contact/email", true);
 			AuthRequest authReq = manager.authenticate(discovered, config.getAuthUrl()+"/internetAuth/openIdRes?"+AuthHandler.AUTH_ID +"="+temporaryId.getAuthId());
 			authReq.addExtension(fetch);			
-//			AuthRequest authReq = manager.authenticate(discovered, config.getAuthUrl()+"/internetAuth/openIdRes?"+AuthHandler.AUTH_ID +"="+temporaryId.getAuthId());
 			redirect(authReq.getDestinationUrl(true));
 			return;
 		} catch (DiscoveryException e) {
