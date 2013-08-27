@@ -20,6 +20,9 @@ import org.openid4java.message.ParameterList;
 import org.openid4java.message.ax.AxMessage;
 import org.openid4java.message.ax.FetchRequest;
 import org.openid4java.message.ax.FetchResponse;
+import org.openid4java.message.sreg.SRegMessage;
+import org.openid4java.message.sreg.SRegRequest;
+import org.openid4java.message.sreg.SRegResponse;
 
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
@@ -70,11 +73,20 @@ public class InternetAuthHandler extends WebServerHandler {
 			temporaryId.setAttribute("discovered", discovered);
 			
 			FetchRequest fetch = FetchRequest.createFetchRequest();
-			fetch.addAttribute("FirstName", "http://schema.openid.net/namePerson/first", true);
-			fetch.addAttribute("LastName", "http://schema.openid.net/namePerson/last", true);
-			fetch.addAttribute("Email", "http://schema.openid.net/contact/email", true);
+			fetch.addAttribute("firstName", "http://axschema.org/namePerson/first", true);
+//			fetch.addAttribute("email", "http://schema.openid.net/contact/email", true);
 			AuthRequest authReq = manager.authenticate(discovered, config.getAuthUrl()+"/internetAuth/openIdRes?"+AuthHandler.AUTH_ID +"="+temporaryId.getAuthId());
+			
+			SRegRequest sregReq = SRegRequest.createFetchRequest();
+
+			sregReq.addAttribute("nickname", true);
+////			sregReq.addAttribute("email", true);
+
+//			AuthRequest req = _consumerManager.authenticate(discovered, return_to);
+//			req.addExtension(sregReq);			
+			
 			authReq.addExtension(fetch);			
+			authReq.addExtension(sregReq);			
 			redirect(authReq.getDestinationUrl(true));
 			return;
 		} catch (DiscoveryException e) {
@@ -102,15 +114,19 @@ public class InternetAuthHandler extends WebServerHandler {
 				completeResponse("403");
 			}else{
 				AuthSuccess authSuccess = AuthSuccess.createAuthSuccess(openidResp);
-				MessageExtension ext = authSuccess.getExtension(AxMessage.OPENID_NS_AX);
-				FetchResponse fetchResp = (FetchResponse) ext;
-				String email = fetchResp.getAttributeValue("Email");
-				Map map = fetchResp.getAttributes();
-//		        if (ext != null){
-//		            FetchResponse fetchResp =new FetchResponse(ext.getParameters());
-//		            String email = fetchResp.getParameter("email");
-//		        }
-				completeResponse("200","success:"+verified.getIdentifier()+":"+email+":"+map);
+				if (authSuccess.hasExtension(SRegMessage.OPENID_NS_SREG)){
+					SRegResponse sregResp = (SRegResponse)authSuccess.getExtension(SRegMessage.OPENID_NS_SREG);
+			        String nickName = sregResp.getAttributeValue("nickname");
+			        String email = sregResp.getAttributeValue("email");
+					completeResponse("200","sreg success:"+verified.getIdentifier()+":"+nickName+":"+email);
+				}else if (authSuccess.hasExtension(AxMessage.OPENID_NS_AX)){
+					FetchResponse fetchResp = (FetchResponse)authSuccess.getExtension(AxMessage.OPENID_NS_AX);
+					String firstName = fetchResp.getAttributeValue("firstName");
+					String email = fetchResp.getAttributeValue("email");
+					completeResponse("200","AX success:"+verified.getIdentifier()+":"+firstName+":"+email);
+				}else{
+					completeResponse("200","success:"+verified.getIdentifier());
+				}
 			}
 			return;
 		} catch (DiscoveryException e) {
