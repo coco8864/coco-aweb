@@ -17,6 +17,8 @@
 <li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("yahoo.co.jp")'>yahoo japan</a></li>
 <li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("https://me.yahoo.com")'>yahoo</a></li>
 <li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("http://hcb00013.myopenid.com/")'>myopenid</a></li>
+<li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("http://www.hatena.ne.jp/coco8864")'>hatena</a></li>
+<li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("hcb00013.pip.verisignlabs.com")'>verisign</a></li>
 </ul>
 </body>
 </html>
