@@ -73,7 +73,7 @@ public class InternetAuthHandler extends WebServerHandler {
 			temporaryId.setAttribute("discovered", discovered);
 			
 			FetchRequest fetch = FetchRequest.createFetchRequest();
-			fetch.addAttribute("firstName", "http://axschema.org/namePerson/first", true);
+			fetch.addAttribute("nickname", "http://axschema.org/namePerson/friendly", true);
 //			fetch.addAttribute("email", "http://schema.openid.net/contact/email", true);
 			AuthRequest authReq = manager.authenticate(discovered, config.getAuthUrl()+"/internetAuth/openIdRes?"+AuthHandler.AUTH_ID +"="+temporaryId.getAuthId());
 			
@@ -86,8 +86,9 @@ public class InternetAuthHandler extends WebServerHandler {
 //			req.addExtension(sregReq);			
 			
 			authReq.addExtension(fetch);			
-			authReq.addExtension(sregReq);			
+			authReq.addExtension(sregReq);
 			redirect(authReq.getDestinationUrl(true));
+			temporaryId.setLastAccessTime(2);
 			return;
 		} catch (DiscoveryException e) {
 			logger.error("openIdReq",e);
@@ -117,13 +118,11 @@ public class InternetAuthHandler extends WebServerHandler {
 				if (authSuccess.hasExtension(SRegMessage.OPENID_NS_SREG)){
 					SRegResponse sregResp = (SRegResponse)authSuccess.getExtension(SRegMessage.OPENID_NS_SREG);
 			        String nickName = sregResp.getAttributeValue("nickname");
-			        String email = sregResp.getAttributeValue("email");
-					completeResponse("200","sreg success:"+verified.getIdentifier()+":"+nickName+":"+email);
+					completeResponse("200","sreg success:"+verified.getIdentifier()+":"+nickName);
 				}else if (authSuccess.hasExtension(AxMessage.OPENID_NS_AX)){
 					FetchResponse fetchResp = (FetchResponse)authSuccess.getExtension(AxMessage.OPENID_NS_AX);
-					String firstName = fetchResp.getAttributeValue("firstName");
-					String email = fetchResp.getAttributeValue("email");
-					completeResponse("200","AX success:"+verified.getIdentifier()+":"+firstName+":"+email);
+					String nickname = fetchResp.getAttributeValue("nickname");
+					completeResponse("200","AX success:"+verified.getIdentifier()+":"+nickname);
 				}else{
 					completeResponse("200","success:"+verified.getIdentifier());
 				}
