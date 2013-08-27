@@ -14,7 +14,9 @@
 ##<li><a href='https://www.facebook.com/dialog/oauth?client_id=${fbAppId}&redirect_uri=$esc.html(${config.authUrl})/fb'>facebook</a></li>
 ##<li><a href='https://www.facebook.com/dialog/oauth?client_id=${fbAppId}&redirect_uri=https://www40405u.sakura.ne.jp:8080/auth/redirect?uri=$esc.html(${config.authUrl})/fb'>facebook</a></li>
 <li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("https://www.google.com/accounts/o8/id")'>google</a></li>
-<li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("yahoo.co.jp")'>yahoo</a></li>
+<li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("yahoo.co.jp")'>yahoo japan</a></li>
+<li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("https://me.yahoo.com")'>yahoo</a></li>
+<li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("http://hcb00013.myopenid.com/")'>myopenid</a></li>
 </ul>
 </body>
 </html>
