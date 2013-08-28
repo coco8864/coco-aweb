@@ -23,6 +23,8 @@ import org.openid4java.message.ax.FetchResponse;
 import org.openid4java.message.sreg.SRegMessage;
 import org.openid4java.message.sreg.SRegRequest;
 import org.openid4java.message.sreg.SRegResponse;
+import org.openid4java.util.HttpClientFactory;
+import org.openid4java.util.ProxyProperties;
 
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
@@ -53,6 +55,10 @@ public class InternetAuthHandler extends WebServerHandler {
 	private static ConsumerManager consumerManager=null;
 	private ConsumerManager getConsumerManager(){
 		if(consumerManager==null){
+			ProxyProperties proxyProperties=new ProxyProperties();
+			proxyProperties.setProxyHostName("proxy.gw.nic.fujitsu.com");
+			proxyProperties.setProxyPort(8080);
+			HttpClientFactory.setProxyProperties(proxyProperties);
 			consumerManager=new ConsumerManager();
 		}
 		return consumerManager;
@@ -61,6 +67,37 @@ public class InternetAuthHandler extends WebServerHandler {
 	private void redirect(String location) {
 		setHeader(HeaderParser.LOCATION_HEADER, location);
 		completeResponse("302");
+	}
+	private void setCookie(String setCookieString){
+		if(setCookieString==null){
+			return;
+		}
+		//IEでiframe内のcookieを有効にするヘッダ,http://d.hatena.ne.jp/satoru_net/20090506/1241545178
+		setHeader("P3P", "CP=\"CAO PSA OUR\"");
+		setHeader(HeaderParser.SET_COOKIE_HEADER, setCookieString);
+	}
+	
+	private void successAuth(SessionId temporaryId,User user){
+		String url=temporaryId.getUrl();
+		AuthSession authSession=authenticator.loginUser(user);
+		authorizer.setAuthSessionToTemporaryId(temporaryId.getAuthId(), authSession);
+		SessionId primaryId = authorizer.createPrimaryId(authSession);
+		String setCookieString = primaryId.getSetCookieString();
+		setCookie(setCookieString);
+		if(url==null){
+			redirect(config.getPublicWebUrl());//doneResponse("200","authentication success.");
+			return;
+		}
+		SessionId pathOnceId=authorizer.createPathOnceIdByPrimary(url, primaryId.getId());
+		if(temporaryId.isDirectUrl()){
+			//directUrlの場合は即座にredirectする
+			pathOnceId.unref();
+			redirect(url);
+			return;
+		}
+		String encodeUrl = pathOnceId.encodeUrl();
+		//元のurlに戻るところ
+		redirect(encodeUrl);
 	}
 	
 	private void openIdReq(SessionId temporaryId){
@@ -71,7 +108,7 @@ public class InternetAuthHandler extends WebServerHandler {
 			List discoveries = manager.discover(identifier);			
 			DiscoveryInformation discovered = manager.associate(discoveries);
 			temporaryId.setAttribute("discovered", discovered);
-			
+			System.out.println("opendpoint:"+discovered.getOPEndpoint());
 			FetchRequest fetch = FetchRequest.createFetchRequest();
 			fetch.addAttribute("nickname", "http://axschema.org/namePerson/friendly", true);
 //			fetch.addAttribute("email", "http://schema.openid.net/contact/email", true);
@@ -88,7 +125,7 @@ public class InternetAuthHandler extends WebServerHandler {
 			authReq.addExtension(fetch);			
 			authReq.addExtension(sregReq);
 			redirect(authReq.getDestinationUrl(true));
-			temporaryId.setLastAccessTime(2);
+			temporaryId.setLastAccessTime();
 			return;
 		} catch (DiscoveryException e) {
 			logger.error("openIdReq",e);
@@ -105,7 +142,7 @@ public class InternetAuthHandler extends WebServerHandler {
 			ConsumerManager manager=getConsumerManager();
 			HeaderParser requestHeader = getRequestHeader();
 			ParameterParser parameter = getParameterParser();
-			ParameterList openidResp = new ParameterList(parameter.getParameterMapServlet());		
+			ParameterList openidResp = new ParameterList(parameter.getParameterMapServlet());
 			String receivingURL=requestHeader.getAddressBar(isSsl());
 			DiscoveryInformation discovered = (DiscoveryInformation)temporaryId.getAttribute("discovered");
 			// verify the response
@@ -118,14 +155,20 @@ public class InternetAuthHandler extends WebServerHandler {
 				if (authSuccess.hasExtension(SRegMessage.OPENID_NS_SREG)){
 					SRegResponse sregResp = (SRegResponse)authSuccess.getExtension(SRegMessage.OPENID_NS_SREG);
 			        String nickName = sregResp.getAttributeValue("nickname");
-					completeResponse("200","sreg success:"+verified.getIdentifier()+":"+nickName);
+//					completeResponse("200","sreg success:"+verified.getIdentifier()+":"+nickName);
 				}else if (authSuccess.hasExtension(AxMessage.OPENID_NS_AX)){
 					FetchResponse fetchResp = (FetchResponse)authSuccess.getExtension(AxMessage.OPENID_NS_AX);
 					String nickname = fetchResp.getAttributeValue("nickname");
-					completeResponse("200","AX success:"+verified.getIdentifier()+":"+nickname);
+//					completeResponse("200","AX success:"+verified.getIdentifier()+":"+nickname);
 				}else{
-					completeResponse("200","success:"+verified.getIdentifier());
+//					completeResponse("200","success:"+verified.getIdentifier());
 				}
+				String openid=verified.getIdentifier();
+				User user=authenticator.getUserByLoginId(openid);
+				if(user==null){
+					user=authenticator.createUser(openid,"password","admin");//TODO 初期値
+				}
+				successAuth(temporaryId, user);
 			}
 			return;
 		} catch (DiscoveryException e) {
