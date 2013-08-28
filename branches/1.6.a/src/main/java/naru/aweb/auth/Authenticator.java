@@ -103,7 +103,7 @@ public class Authenticator {
 		return user;
 	}
 	
-	private User createUser(String loginId,String password,String roles){
+	public User createUser(String loginId,String password,String roles){
 		if(DUMMY_USER_NAME.equals(loginId)){
 			//DUMMY_USER_NAME‚Å‚Í“o˜^‚Å‚«‚È‚­‚·‚é
 			return null;

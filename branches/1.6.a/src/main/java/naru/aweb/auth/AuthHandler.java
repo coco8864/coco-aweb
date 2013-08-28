@@ -164,15 +164,11 @@ public class AuthHandler extends WebServerHandler {
 			//directUrl‚Ìê‡‚Í‘¦À‚Éredirect‚·‚é
 			pathOnceId.unref();
 			redirect(url);
-//			setHeader(HeaderParser.LOCATION_HEADER, url);
-//			completeResponse("302");
 			return;
 		}
 		String encodeUrl = pathOnceId.encodeUrl();
 		//Œ³‚Ìurl‚É–ß‚é‚Æ‚±‚ë
 		redirect(encodeUrl);
-//		setHeader(HeaderParser.LOCATION_HEADER, encodeUrl);
-//		completeResponse("302");
 	}
 	
 	private void forceDigestLogin(String cookieId){
