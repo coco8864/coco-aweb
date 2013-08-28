@@ -34,6 +34,7 @@ import naru.aweb.http.KeepAliveContext;
 import naru.aweb.http.ParameterParser;
 import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.util.ServerParser;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -53,12 +54,16 @@ public class InternetAuthHandler extends WebServerHandler {
 	private static Authorizer authorizer=config.getAuthorizer();
 	
 	private static ConsumerManager consumerManager=null;
-	private ConsumerManager getConsumerManager(){
+	private ConsumerManager getConsumerManager(String uri){
 		if(consumerManager==null){
-			ProxyProperties proxyProperties=new ProxyProperties();
-			proxyProperties.setProxyHostName("proxy.gw.nic.fujitsu.com");
-			proxyProperties.setProxyPort(8080);
-			HttpClientFactory.setProxyProperties(proxyProperties);
+			//TODO ‚±‚Ìproxy‚Ì‘I‚Ñ•û‚Í‰ö‚µ‚¢
+			ServerParser proxyServer=config.findProxyServer(uri);
+			if(proxyServer!=null){
+				ProxyProperties proxyProperties=new ProxyProperties();
+				proxyProperties.setProxyHostName(proxyServer.getHost());
+				proxyProperties.setProxyPort(proxyServer.getPort());
+				HttpClientFactory.setProxyProperties(proxyProperties);
+			}
 			consumerManager=new ConsumerManager();
 		}
 		return consumerManager;
@@ -102,11 +107,12 @@ public class InternetAuthHandler extends WebServerHandler {
 	
 	private void openIdReq(SessionId temporaryId){
 		try {
-			ConsumerManager manager=getConsumerManager();
 			ParameterParser parameter = getParameterParser();
 			String identifier=parameter.getParameter("identifier");
-			List discoveries = manager.discover(identifier);			
+			ConsumerManager manager=getConsumerManager(identifier);
+			List discoveries = manager.discover(identifier);
 			DiscoveryInformation discovered = manager.associate(discoveries);
+			temporaryId.setAttribute("manager", manager);
 			temporaryId.setAttribute("discovered", discovered);
 			System.out.println("opendpoint:"+discovered.getOPEndpoint());
 			FetchRequest fetch = FetchRequest.createFetchRequest();
@@ -139,12 +145,12 @@ public class InternetAuthHandler extends WebServerHandler {
 
 	private void openIdRes(SessionId temporaryId){
 		try {
-			ConsumerManager manager=getConsumerManager();
 			HeaderParser requestHeader = getRequestHeader();
 			ParameterParser parameter = getParameterParser();
 			ParameterList openidResp = new ParameterList(parameter.getParameterMapServlet());
 			String receivingURL=requestHeader.getAddressBar(isSsl());
 			DiscoveryInformation discovered = (DiscoveryInformation)temporaryId.getAttribute("discovered");
+			ConsumerManager manager=(ConsumerManager)temporaryId.getAttribute("manager");
 			// verify the response
 			VerificationResult verification = manager.verify(receivingURL, openidResp, discovered);
 			Identifier verified = verification.getVerifiedId();
