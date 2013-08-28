@@ -10,6 +10,8 @@ import java.io.Reader;
 import java.net.Inet4Address;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -828,6 +830,14 @@ public class Config {
 
 	public ServerParser findProxyServer(boolean isSsl, String domain) {
 		return proxyFinder.findProxyServer(isSsl, domain);
+	}
+	public ServerParser findProxyServer(String uri) {
+		try {
+			return proxyFinder.findProxyServer(new URI(uri));
+		} catch (URISyntaxException e) {
+			logger.warn("uri format error."+uri,e);
+			return null;
+		}
 	}
 
 	public String getProxyPac(String localServer) {

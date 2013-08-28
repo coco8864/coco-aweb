@@ -10,10 +10,18 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.Proxy.Type;
+import java.net.ProxySelector;
+import java.net.SocketAddress;
+import java.net.URI;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -40,7 +48,7 @@ import naru.aweb.util.ServerParser;
  * 
  * 3)ÇÕêÊì™ÇÃÇ›ÇëŒè€Ç∆Ç∑ÇÈ
  */
-public class ProxyFinder {
+public class ProxyFinder extends ProxySelector{
 	private static Logger logger = Logger.getLogger(ProxyFinder.class);
 	private static final String NEXT_FIND_PROXY_FOR_URL_FUNC_NAME = "NextFindProxyForURL";
 	private static final ServerParser DIRECT = new ServerParser(null, 0);
@@ -163,26 +171,6 @@ public class ProxyFinder {
 			ScriptEngine pacScriptEngine = factory.getEngineByName("JavaScript");
 			if(pacScriptEngine==null){
 				logger.error("fail to getEngineByName(JavaScript) pacScriptEngine is null");
-				logger.error("SecurityManager:"+System.getSecurityManager());
-				for(ScriptEngineFactory f:factory.getEngineFactories()){
-					logger.error(f.getEngineName() +":" + f.getEngineVersion() +":" + f.getLanguageName());
-				}
-				ClassLoader ctxtLoader = Thread.currentThread().getContextClassLoader();
-				logger.error("ctxtLoader:"+ctxtLoader);
-				Enumeration configs = ctxtLoader.getResources("META-INF/services/"+ScriptEngineFactory.class);
-				logger.error("ContextClassLoader configs:"+configs);
-				while(configs.hasMoreElements()){
-					Object o=configs.nextElement();
-					logger.error("ContextClassLoader loaderScriptEngineFactory resouce:" + o);
-				}
-				ClassLoader loader = ClassLoader.getSystemClassLoader();
-				configs = loader.getResources("META-INF/services/"+ScriptEngineFactory.class);
-				logger.error("SystemClassLoader:"+loader);
-				logger.error("SystemClassLoader configs:"+configs);
-				while(configs.hasMoreElements()){
-					Object o=configs.nextElement();
-					logger.error("SystemClassLoader loaderScriptEngineFactory resouce:" + o);
-				}
 				return false;
 			}else{
 				logger.info("pacScriptEngine:" + pacScriptEngine.getClass().getName());
@@ -326,6 +314,7 @@ public class ProxyFinder {
 			assert (secureProxyServer == null);
 			this.isUseProxy = false;
 		}
+		ProxySelector.setDefault(this);
 		return true;
 	}
 
@@ -359,8 +348,13 @@ public class ProxyFinder {
 			return findProxyServer("http://" + host, host);
 		}
 	}
+	
+	public ServerParser findProxyServer(URI uri) {
+		ServerParser proxyServer=findProxyServer(uri.toString(),uri.getHost());
+		return proxyServer;
+	}
 
-	public ServerParser findProxyServer(String url, String host) {
+	private ServerParser findProxyServer(String url, String host) {
 		if (!isUseProxy) {
 			return null;
 		}
@@ -407,4 +401,24 @@ public class ProxyFinder {
 		}
 		return null;
 	}
+
+	@Override
+	public void connectFailed(URI uri, SocketAddress addr, IOException ioe) {
+		logger.warn("ProxyFinder connectFailed:"+uri,ioe);
+	}
+
+	@Override
+	public List<Proxy> select(URI uri) {
+		ServerParser proxyServer=findProxyServer(uri);
+		Proxy proxy;
+		if(proxyServer==null){
+			proxy=Proxy.NO_PROXY;
+		}else if("socket".equals(uri.getScheme())){
+			proxy=new Proxy(Type.SOCKS,new InetSocketAddress(proxyServer.getHost(),proxyServer.getPort()));
+		}else{
+			proxy=new Proxy(Type.HTTP,new InetSocketAddress(proxyServer.getHost(),proxyServer.getPort()));
+		}
+		return Arrays.asList(proxy);
+	}
+
 }
