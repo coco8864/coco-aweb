@@ -1,5 +1,10 @@
 package naru.aweb.auth;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
@@ -25,6 +30,12 @@ import org.openid4java.message.sreg.SRegRequest;
 import org.openid4java.message.sreg.SRegResponse;
 import org.openid4java.util.HttpClientFactory;
 import org.openid4java.util.ProxyProperties;
+
+import twitter4j.Twitter;
+import twitter4j.TwitterException;
+import twitter4j.TwitterFactory;
+import twitter4j.auth.AccessToken;
+import twitter4j.auth.RequestToken;
 
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
@@ -82,7 +93,11 @@ public class InternetAuthHandler extends WebServerHandler {
 		setHeader(HeaderParser.SET_COOKIE_HEADER, setCookieString);
 	}
 	
-	private void successAuth(SessionId temporaryId,User user){
+	private void successAuth(SessionId temporaryId,String userId){
+		User user=authenticator.getUserByLoginId(userId);
+		if(user==null){
+			user=authenticator.createUser(userId,"password","admin");//TODO 初期値
+		}
 		String url=temporaryId.getUrl();
 		AuthSession authSession=authenticator.loginUser(user);
 		authorizer.setAuthSessionToTemporaryId(temporaryId.getAuthId(), authSession);
@@ -104,6 +119,98 @@ public class InternetAuthHandler extends WebServerHandler {
 		//元のurlに戻るところ
 		redirect(encodeUrl);
 	}
+	
+	public static String contents(URL url) throws IOException {
+		InputStream is = url.openStream();
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		byte[] buf = new byte[1024];
+		while (true) {
+			int len = is.read(buf);
+			if (len < 0) {
+				break;
+			}
+			baos.write(buf, 0, len);
+		}
+		is.close();
+		String contents = new String(baos.toByteArray(), /*"iso8859_1"*/"utf-8");
+		baos.close();
+		return contents;
+	}
+
+	private static String CONSUMER_KEY="rJyJQOaHKAzqLe4PX7VHtw";
+	private static String CONSUMER_SECRET="TfIoMjsrKOqHARDDMs3W197xNIWd97zdpWdY6zhmUw";
+	
+	static TwitterFactory twitterFactory = new TwitterFactory();
+	 
+	private void twitterReq(SessionId temporaryId){
+		Twitter twitter=twitterFactory.getInstance();
+		twitter.setOAuthConsumer(CONSUMER_KEY, CONSUMER_SECRET);
+		try{
+			// リクエストトークンの生成
+			RequestToken reqToken = twitter.getOAuthRequestToken();
+ 			// RequestTokenとTwitterオブジェクトをセッションに保存
+            temporaryId.setAttribute("RequestToken", reqToken);
+            temporaryId.setAttribute("Twitter", twitter);
+    		redirect(reqToken.getAuthenticationURL());
+    		return;
+		}catch (TwitterException e){
+			logger.error("twitterReq",e);
+		}
+		redirect(config.getPublicWebUrl());
+	}
+	
+	private void twitterRes(SessionId temporaryId){
+		Twitter twitter = (Twitter)temporaryId.getAttribute("Twitter");
+		ParameterParser parameter = getParameterParser();
+		String verifier = parameter.getParameter("oauth_verifier");
+		try {
+			AccessToken accessToken = accessToken = twitter.getOAuthAccessToken((RequestToken)temporaryId.getAttribute("RequestToken"), verifier);
+			System.out.println("accessToken"+accessToken.getToken());
+			System.out.println("accessToken"+accessToken.getUserId());
+			System.out.println("accessToken"+accessToken.getScreenName());
+		} catch (TwitterException e) {
+			logger.error("twitterRes",e);
+		}
+		redirect(config.getPublicWebUrl());
+	}
+	
+	private void fbReq(SessionId temporaryId){
+		String redirectUrl="https://www.facebook.com/dialog/oauth";
+		redirectUrl+="?client_id=495791087169690";
+		redirectUrl+="&redirect_uri="+config.getAuthUrl()+"/internetAuth/fbRes?"+AuthHandler.AUTH_ID +"="+temporaryId.getAuthId();
+		redirect(redirectUrl);
+	}
+	private static String APP_ID="495791087169690";
+	private static String APP_SECRET="07249541e046efba0611a9bc58e31f4e";
+	
+	private void fbRes(SessionId temporaryId){
+		ParameterParser parameter = getParameterParser();
+		System.out.println(parameter.getParameterMap());
+		String code=parameter.getParameter("code");
+//		https://graph.facebook.com/oauth/access_token?client_id=YOUR_APP_ID&redirect_uri=YOUR_URL&client_secret=YOUR_APP_SECRET&code=A_CODE_GENERATED_BY_SERVER
+			
+		String accessTokenUrl="https://graph.facebook.com/oauth/access_token?client_id="+APP_ID;
+		accessTokenUrl+="&redirect_uri="+config.getAuthUrl()+"/internetAuth/fbRes?"+AuthHandler.AUTH_ID +"="+temporaryId.getAuthId();
+		accessTokenUrl+="&client_secret=" + APP_SECRET;
+		accessTokenUrl+="&code=" + code;
+		try {
+			String accessToken=contents(new URL(accessTokenUrl));
+			System.out.println("accessToken:"+accessToken);
+			String meUrl="https://graph.facebook.com/me?"+accessToken;
+			String me=contents(new URL(meUrl));
+			JSONObject json=JSONObject.fromObject(me);
+			System.out.println("me:"+me);
+			System.out.println("id:"+json.getString("id"));
+			successAuth(temporaryId, "https://www.facebook.com?id="+json.getString("id"));
+			return;
+		} catch (MalformedURLException e) {
+			logger.error("accessToken",e);
+		} catch (IOException e) {
+			logger.error("accessToken",e);
+		}
+		redirect(config.getPublicWebUrl());
+	}
+	
 	
 	private void openIdReq(SessionId temporaryId){
 		try {
@@ -170,11 +277,7 @@ public class InternetAuthHandler extends WebServerHandler {
 //					completeResponse("200","success:"+verified.getIdentifier());
 				}
 				String openid=verified.getIdentifier();
-				User user=authenticator.getUserByLoginId(openid);
-				if(user==null){
-					user=authenticator.createUser(openid,"password","admin");//TODO 初期値
-				}
-				successAuth(temporaryId, user);
+				successAuth(temporaryId, openid);
 			}
 			return;
 		} catch (DiscoveryException e) {
@@ -212,7 +315,18 @@ public class InternetAuthHandler extends WebServerHandler {
 		}else if("/internetAuth/openIdRes".equals(path)){
 			openIdRes(temporaryId);
 			return;
+		}else if("/internetAuth/fbReq".equals(path)){
+			fbReq(temporaryId);
+			return;
+		}else if("/internetAuth/fbRes".equals(path)){
+			fbRes(temporaryId);
+			return;
+		}else if("/internetAuth/twitterReq".equals(path)){
+			twitterReq(temporaryId);
+			return;
+		}else if("/internetAuth/twitterRes".equals(path)){
+			twitterRes(temporaryId);
+			return;
 		}
-		
 	}
 }

@@ -402,7 +402,6 @@ public class Authenticator {
 			AuthSession authSession=loginUser(user);
 			authorizer.setAuthSessionToTemporaryId(authId, authSession);
 			authHandler.setRequestAttribute(AuthHandler.AUTH_ID, authId);
-			
 			authHandler.setRequestAttribute("dummyname", DUMMY_USER_NAME);
 			authHandler.setRequestAttribute("username", user.getLoginId());
 			authHandler.setRequestAttribute("dummyPassword", user.getDummyPassword());
