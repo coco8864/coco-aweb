@@ -25,9 +25,6 @@ public class Authorizer implements Timer{
 	private static final String AUTHORIZE_RANDOM_ENTOROPY="authorizeRandomEntoropy";
 		
 	private static final long INTERVAL=60000;
-	private static final long PATH_ONCE_TIMEOUT=5000;
-	private static final long TEMPORARY_TIMEOUT=60000*3;//5000; TODO temporaryIdは連打により大量に作られるのでauthに到着したら寿命を延ばしたい
-	private static final long TEMPORARY_TIMEOUT2=60000*3;
 	private SecureRandom random;
 	//ばらばらに覚えた方が無駄な排他をしなくてよい
 	//pathOneceId /authからサービスurlに対してredirectする際にpath付加
@@ -132,12 +129,12 @@ public class Authorizer implements Timer{
 	public void onTimer(Object userContext) {
 		long now=System.currentTimeMillis();
 		int count=0;
-		count=timeoutIds(primaryIds,now-sessionTimeout);//この中で、secondaryIdsもクリアされる
+		count=timeoutIds(primaryIds,now);//この中で、secondaryIdsもクリアされる
 		if(count!=0){
 			logger.info("session timeout primaryIds:"+count);
 		}
-		timeoutIds(pathOnceIds,now-PATH_ONCE_TIMEOUT);
-		timeoutIds(temporaryIds,now-TEMPORARY_TIMEOUT);//この中で、temporaryAuthIdsもクリアされる
+		timeoutIds(pathOnceIds,now);
+		timeoutIds(temporaryIds,now);//この中で、temporaryAuthIdsもクリアされる
 	}
 	
 	public boolean logout(String id){
