@@ -141,7 +141,14 @@ public class InternetAuthHandler extends WebServerHandler {
 	private static String CONSUMER_SECRET="TfIoMjsrKOqHARDDMs3W197xNIWd97zdpWdY6zhmUw";
 	
 	static TwitterFactory twitterFactory = new TwitterFactory();
-	 
+
+/*
+ * http://api.twitter.com/oauth/authenticate?oauth_token=lAqlzvHVCNNGKIXRlNNs16mGvFA7kGOuXiR4whwqE
+
+https://127.0.0.1:1280/auth/internetAuth/twitterRes?oauth_token=lAqlzvHVCNNGKIXRlNNs16mGvFA7kGOuXiR4whwqE&oauth_verifier=tGASVyWV3KTBeFxjlcysQhWxato4SNpiKdoSKRZ6s
+	
+ */
+	
 	private void twitterReq(SessionId temporaryId){
 		Twitter twitter=twitterFactory.getInstance();
 		twitter.setOAuthConsumer(CONSUMER_KEY, CONSUMER_SECRET);
