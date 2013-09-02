@@ -54,14 +54,14 @@ public class ProxyPacHandler extends WebServerHandler {
 		JSONObject pacDef=(JSONObject)mapping.getOption("pacDef");
 		JSONArray ids=pacDef.getJSONArray("ids");
 		JSONArray exceptDomains=pacDef.getJSONArray("exceptDomains");
-		Map<String,Set<String>> domains=(Map<String,Set<String>>)new HashMap();;
-		
+		JSONArray includeDomains=pacDef.getJSONArray("includeDomains");
+		Map<String,Set<String>> mapDomains=(Map<String,Set<String>>)new HashMap();;
 		Iterator<Mapping> itr=config.getMapper().mappingIterator();
 		while(itr.hasNext()){
 			Mapping m=itr.next();
-			collectDomain(m,ids,domains);
-//			RealHost realHost=RealHost.getRealHost(m.getRealHostName());
+			collectDomain(m,ids,mapDomains);
 		}
+		RealHost realHost=RealHost.getRealHost(m.getRealHostName());
 		return null;
 	}
 
