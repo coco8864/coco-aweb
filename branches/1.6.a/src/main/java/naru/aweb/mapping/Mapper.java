@@ -63,6 +63,10 @@ public class Mapper {
 	public void updateMapping(Mapping mapping){
 	}
 	
+	public Iterator<Mapping> mappingIterator(){
+		return entryMappings.iterator();
+	}
+	
 	private void unloadMappings(){
 		for(Mapping mapping:entryMappings){
 			mapping.tearDown();
