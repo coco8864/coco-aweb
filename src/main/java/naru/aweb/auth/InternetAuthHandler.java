@@ -5,9 +5,21 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.protocol.HTTP;
+import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
 import org.openid4java.association.AssociationException;
 import org.openid4java.consumer.ConsumerException;
@@ -55,6 +67,9 @@ import net.sf.json.JSONObject;
  * 2)logout後のurl
  * 3)認証方式[basic|digest|basicForm|digestForm]
  * 
+ * googleの登録URL
+ * https://cloud.google.com/console
+ * 
  * @author naru
  *
  */
@@ -93,13 +108,16 @@ public class InternetAuthHandler extends WebServerHandler {
 		setHeader(HeaderParser.SET_COOKIE_HEADER, setCookieString);
 	}
 	
-	private void successAuth(SessionId temporaryId,String userId){
+	private void successAuth(SessionId temporaryId,String userId,String accessToken){
 		User user=authenticator.getUserByLoginId(userId);
 		if(user==null){
 			user=authenticator.createUser(userId,"password","admin");//TODO 初期値
 		}
 		String url=temporaryId.getUrl();
 		AuthSession authSession=authenticator.loginUser(user);
+		if(accessToken!=null){
+			authSession.setAttribute("accessToken", accessToken);
+		}
 		authorizer.setAuthSessionToTemporaryId(temporaryId.getAuthId(), authSession);
 		SessionId primaryId = authorizer.createPrimaryId(authSession);
 		String setCookieString = primaryId.getSetCookieString();
@@ -119,7 +137,22 @@ public class InternetAuthHandler extends WebServerHandler {
 		//元のurlに戻るところ
 		redirect(encodeUrl);
 	}
-	
+
+	public static String contents(URL url,Map<String,String> requestParams) throws IOException {
+		HttpClient httpClient = new DefaultHttpClient();		
+		HttpPost httpPost = new HttpPost(url.toString());
+		// リクエストパラメータの設定
+        List<NameValuePair> params = new ArrayList<NameValuePair>();
+        for (Map.Entry<String, String> entry : requestParams.entrySet()) {
+            params.add(new BasicNameValuePair((String) entry.getKey(), (String) entry.getValue()));
+        }		
+        httpPost.setEntity(new UrlEncodedFormEntity(params, HTTP.UTF_8));
+        HttpResponse response =httpClient.execute(httpPost);
+        HttpEntity httpEntity = response.getEntity();
+        String restext=EntityUtils.toString(httpEntity);
+        return restext;
+	}
+
 	public static String contents(URL url) throws IOException {
 		InputStream is = url.openStream();
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -149,6 +182,8 @@ https://127.0.0.1:1280/auth/internetAuth/twitterRes?oauth_token=lAqlzvHVCNNGKIXR
 	
  */
 	
+	private static Map<String,String> twitterToken=new HashMap<String,String>();
+	
 	private void twitterReq(SessionId temporaryId){
 		Twitter twitter=twitterFactory.getInstance();
 		twitter.setOAuthConsumer(CONSUMER_KEY, CONSUMER_SECRET);
@@ -158,6 +193,9 @@ https://127.0.0.1:1280/auth/internetAuth/twitterRes?oauth_token=lAqlzvHVCNNGKIXR
  			// RequestTokenとTwitterオブジェクトをセッションに保存
             temporaryId.setAttribute("RequestToken", reqToken);
             temporaryId.setAttribute("Twitter", twitter);
+            twitterToken.put(reqToken.getToken(), temporaryId.getAuthId());
+            System.out.println("token:"+reqToken.getToken());
+            System.out.println("getAuthenticationURL:"+reqToken.getAuthenticationURL());
     		redirect(reqToken.getAuthenticationURL());
     		return;
 		}catch (TwitterException e){
@@ -175,6 +213,8 @@ https://127.0.0.1:1280/auth/internetAuth/twitterRes?oauth_token=lAqlzvHVCNNGKIXR
 			System.out.println("accessToken"+accessToken.getToken());
 			System.out.println("accessToken"+accessToken.getUserId());
 			System.out.println("accessToken"+accessToken.getScreenName());
+			successAuth(temporaryId, "https://twitter.com?id="+accessToken.getUserId(),accessToken.getToken());
+			return;
 		} catch (TwitterException e) {
 			logger.error("twitterRes",e);
 		}
@@ -208,7 +248,59 @@ https://127.0.0.1:1280/auth/internetAuth/twitterRes?oauth_token=lAqlzvHVCNNGKIXR
 			JSONObject json=JSONObject.fromObject(me);
 			System.out.println("me:"+me);
 			System.out.println("id:"+json.getString("id"));
-			successAuth(temporaryId, "https://www.facebook.com?id="+json.getString("id"));
+			successAuth(temporaryId, "https://www.facebook.com?id="+json.getString("id"),accessToken);
+			return;
+		} catch (MalformedURLException e) {
+			logger.error("accessToken",e);
+		} catch (IOException e) {
+			logger.error("accessToken",e);
+		}
+		redirect(config.getPublicWebUrl());
+	}
+	
+	private static String GOOGLE_CLIENT_ID="309155241075-bkru7sj8ojtofkavof6aifuga139vubk.apps.googleusercontent.com";
+	private static String GOOGLE_CLIENT_SECRET="gxa1iP_9FZqVmPVv1QFvZH06";
+	
+	private void googleReq(SessionId temporaryId){
+		String redirectUrl="https://accounts.google.com/o/oauth2/auth?response_type=code";
+		redirectUrl+="&client_id=" + GOOGLE_CLIENT_ID;
+		redirectUrl+="&redirect_uri="+config.getAuthUrl()+"/internetAuth/googleRes";
+		redirectUrl+="&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile";
+		redirectUrl+="&state="+temporaryId.getAuthId();
+		redirect(redirectUrl);
+	}
+	
+	private void googleRes(SessionId temporaryId){
+		ParameterParser parameter = getParameterParser();
+		System.out.println(parameter.getParameterMap());
+		String code=parameter.getParameter("code");
+//		https://graph.facebook.com/oauth/access_token?client_id=YOUR_APP_ID&redirect_uri=YOUR_URL&client_secret=YOUR_APP_SECRET&code=A_CODE_GENERATED_BY_SERVER
+		
+		Map<String,String> req=new HashMap<String,String>();
+		req.put("client_id",GOOGLE_CLIENT_ID);
+		req.put("client_secret",GOOGLE_CLIENT_SECRET);
+		req.put("redirect_uri",config.getAuthUrl()+"/internetAuth/googleRes");
+		req.put("grant_type","authorization_code");
+		req.put("code",code);
+
+		/*
+		String accessTokenUrl="https://accounts.google.com/o/oauth2/token?client_id="+GOOGLE_CLIENT_ID;
+		accessTokenUrl+="&redirect_uri="+config.getAuthUrl()+"/internetAuth/googleRes";
+		accessTokenUrl+="&client_secret=" + GOOGLE_CLIENT_SECRET;
+		accessTokenUrl+="&grant_type=authorization_code";
+		accessTokenUrl+="&code=" + code;
+		*/
+		try {
+			String accessJson=contents(new URL("https://accounts.google.com/o/oauth2/token"),req);
+			JSONObject access=JSONObject.fromObject(accessJson);
+			String accessToken=access.getString("access_token");
+			System.out.println("accessToken:"+accessToken);
+			String meUrl="https://www.googleapis.com/oauth2/v1/userinfo?access_token="+accessToken;
+			String me=contents(new URL(meUrl));
+			JSONObject json=JSONObject.fromObject(me);
+			System.out.println("me:"+me);
+			System.out.println("id:"+json.getString("id"));
+			successAuth(temporaryId, "https://accounts.google.com/o/oauth2?id="+json.getString("id"),accessToken);
 			return;
 		} catch (MalformedURLException e) {
 			logger.error("accessToken",e);
@@ -284,7 +376,7 @@ https://127.0.0.1:1280/auth/internetAuth/twitterRes?oauth_token=lAqlzvHVCNNGKIXR
 //					completeResponse("200","success:"+verified.getIdentifier());
 				}
 				String openid=verified.getIdentifier();
-				successAuth(temporaryId, openid);
+				successAuth(temporaryId, openid,null);
 			}
 			return;
 		} catch (DiscoveryException e) {
@@ -306,9 +398,18 @@ https://127.0.0.1:1280/auth/internetAuth/twitterRes?oauth_token=lAqlzvHVCNNGKIXR
 		String path=mapping.getResolvePath();
 		ParameterParser parameter = getParameterParser();
 		String authId=parameter.getParameter(AuthHandler.AUTH_ID);
-		if(authId==null){
-			completeResponse("500");
-			return;
+		String oauthToken=parameter.getParameter("oauth_token");//twitterの場合
+		String state=parameter.getParameter("state");//googole oauthの場合
+		if(authId==null){//TODO きれいにする
+			//twitterResには、authIdが設定できないため
+			authId=twitterToken.remove(oauthToken);
+			if(authId==null){
+				authId=state;
+				if(authId==null){
+					completeResponse("500");
+					return;
+				}
+			}
 		}
 		SessionId temporaryId=authorizer.getTemporaryId(authId);
 		if(temporaryId==null){
@@ -333,6 +434,12 @@ https://127.0.0.1:1280/auth/internetAuth/twitterRes?oauth_token=lAqlzvHVCNNGKIXR
 			return;
 		}else if("/internetAuth/twitterRes".equals(path)){
 			twitterRes(temporaryId);
+			return;
+		}else if("/internetAuth/googleReq".equals(path)){
+			googleReq(temporaryId);
+			return;
+		}else if("/internetAuth/googleRes".equals(path)){
+			googleRes(temporaryId);
 			return;
 		}
 	}
