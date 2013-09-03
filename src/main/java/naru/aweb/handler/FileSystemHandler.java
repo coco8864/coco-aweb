@@ -103,29 +103,17 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		return fileLength;
 	}
 	
-	private boolean checkPac(MappingResult mapping,HeaderParser requestHeader,String path){
-		if(!path.equals(mapping.getOption(Mapping.OPTION_PROXY_PAC_PATH))){
-			return false;
-		}
-		String localHost=requestHeader.getHeader(HeaderParser.HOST_HEADER);
-		String pac=getConfig().getProxyPac(localHost);
-		setContentType("application/x-ns-proxy-autoconfig");
-		completeResponse("200", pac);
-		return true;
-	}
-	
 	/**
 	 * 該当するファイルがなかった、以下を探す
-	 * 1)proxy.pac
-	 * 2)phoffline.html
-	 * 3)phoffline.appcache
+	 * 1)phoffline.html
+	 * 2)phoffline.appcache
 	 * @param path
 	 */
 	private boolean fileNotFound(MappingResult mapping,HeaderParser requestHeader,String path){
 		/* proxy.pacの場合 */
-		if( checkPac(mapping, requestHeader, path)){
-			return true;
-		}
+		//if( checkPac(mapping, requestHeader, path)){
+		//	return true;
+		//}
 		/* appcacheの場合 */
 		AppcacheOption appcacheOption=(AppcacheOption)mapping.getOption(Mapping.OPTION_APPCACHE);
 		if(appcacheOption!=null){

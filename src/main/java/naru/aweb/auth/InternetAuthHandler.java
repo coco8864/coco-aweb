@@ -323,17 +323,9 @@ https://127.0.0.1:1280/auth/internetAuth/twitterRes?oauth_token=lAqlzvHVCNNGKIXR
 			System.out.println("opendpoint:"+discovered.getOPEndpoint());
 			FetchRequest fetch = FetchRequest.createFetchRequest();
 			fetch.addAttribute("nickname", "http://axschema.org/namePerson/friendly", true);
-//			fetch.addAttribute("email", "http://schema.openid.net/contact/email", true);
 			AuthRequest authReq = manager.authenticate(discovered, config.getAuthUrl()+"/internetAuth/openIdRes?"+AuthHandler.AUTH_ID +"="+temporaryId.getAuthId());
-			
 			SRegRequest sregReq = SRegRequest.createFetchRequest();
-
 			sregReq.addAttribute("nickname", true);
-////			sregReq.addAttribute("email", true);
-
-//			AuthRequest req = _consumerManager.authenticate(discovered, return_to);
-//			req.addExtension(sregReq);			
-			
 			authReq.addExtension(fetch);			
 			authReq.addExtension(sregReq);
 			redirect(authReq.getDestinationUrl(true));
@@ -346,7 +338,7 @@ https://127.0.0.1:1280/auth/internetAuth/twitterRes?oauth_token=lAqlzvHVCNNGKIXR
 		} catch (ConsumerException e) {
 			logger.error("openIdReq",e);
 		}
-		completeResponse("500");
+		redirect(config.getPublicWebUrl());
 	}
 
 	private void openIdRes(SessionId temporaryId){
@@ -361,7 +353,7 @@ https://127.0.0.1:1280/auth/internetAuth/twitterRes?oauth_token=lAqlzvHVCNNGKIXR
 			VerificationResult verification = manager.verify(receivingURL, openidResp, discovered);
 			Identifier verified = verification.getVerifiedId();
 			if(verified==null){
-				completeResponse("403");
+				redirect(config.getPublicWebUrl());
 			}else{
 				AuthSuccess authSuccess = AuthSuccess.createAuthSuccess(openidResp);
 				if (authSuccess.hasExtension(SRegMessage.OPENID_NS_SREG)){
@@ -386,7 +378,7 @@ https://127.0.0.1:1280/auth/internetAuth/twitterRes?oauth_token=lAqlzvHVCNNGKIXR
 		} catch (AssociationException e) {
 			logger.error("openIdRes",e);
 		}
-		completeResponse("500");
+		redirect(config.getPublicWebUrl());
 	}
 	
 	public void startResponseReqBody() {

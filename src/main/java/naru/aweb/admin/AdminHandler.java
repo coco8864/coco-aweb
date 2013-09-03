@@ -271,6 +271,16 @@ public class AdminHandler extends WebServerHandler{
 			setRequestAttribute(ATTRIBUTE_RESPONSE_FILE,new File(config.getPhantomHome(),"/log/" + logName));
 			setRequestAttribute(ATTRIBUTE_RESPONSE_FILE_NOT_USE_CACHE,ATTRIBUTE_RESPONSE_FILE_NOT_USE_CACHE);
 			forwardHandler(Mapping.FILE_SYSTEM_HANDLER);
+		}else if("certificate".equals(cmd)){
+			String cerFileName=parameter.getParameter("cerFileName");
+			File serFile=config.getSslContextPool().getCerFile(cerFileName);
+			if(!serFile.exists()){
+				completeResponse("404");
+				return;
+			}
+			setRequestAttribute(ATTRIBUTE_RESPONSE_CONTENT_DISPOSITION,"attachment; filename=\"" + serFile.getName()+ "\"");
+			setRequestAttribute(ATTRIBUTE_RESPONSE_FILE,serFile);
+			forwardHandler(Mapping.FILE_SYSTEM_HANDLER);
 		}else if("checkPool".equals(cmd)){
 			System.gc();
 			ChannelContext.dumpChannelContexts();
