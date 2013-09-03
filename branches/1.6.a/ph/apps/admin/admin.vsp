@@ -180,6 +180,13 @@ ph.log("tabs ajaxOptions success.index:"+index +":anchor:"+anchor);
 <input type="hidden" name="fileId" id="exportFileId"/>
 </form>
 
+##証明書ダウンロード用フォーム
+<form id="certificateForm" action="admin" style="display:none" target="uploadFrame" method="post">
+<input type="hidden" name="command" value="certificate"/>
+<input type="hidden" name="cerFileName"  id="cerFileName"/>
+<input type="hidden" name="token" value="$esc.html(${session.token})"/>
+</form>
+
 ##phlogダウンロード用フォーム
 <form id="logDownloadForm" action="admin" style="display:none" target="uploadFrame" method="post">
 <input type="hidden" name="command" value="logdownload"/>
