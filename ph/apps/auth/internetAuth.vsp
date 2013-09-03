@@ -8,22 +8,20 @@
 <meta http-equiv="Expires" content="0"> 
 </head>
 <body>
-<h1>Internet authentication</h1>
-username:<input type='text'></input>
+<h1>internet authentication</h1>
 <ul>
-<li><a href='$esc.html(${config.authUrl})/internetAuth/fbReq?authId=$esc.html(${authId})'>fasebook</a></li>
+<li><a href='$esc.html(${config.authUrl})/internetAuth/fbReq?authId=$esc.html(${authId})'>facebook</a></li>
 <li><a href='$esc.html(${config.authUrl})/internetAuth/twitterReq?authId=$esc.html(${authId})'>twitter</a></li>
 <li><a href='$esc.html(${config.authUrl})/internetAuth/googleReq?authId=$esc.html(${authId})'>googole oauth</a></li>
 <li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("https://www.google.com/accounts/o8/id")'>google</a></li>
 <li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("yahoo.co.jp")'>yahoo japan</a></li>
 <li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("https://me.yahoo.com")'>yahoo</a></li>
-<li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("http://hcb00013.myopenid.com/")'><img src='<li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("http://pip.verisignlabs.com/server")'>verisign2</a></li>
-<li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("http://www.myopenid.com/server")'>myopenid2</a></li>
-<li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("http://www.myopenid.com")'>myopenid3</a></li>
-<li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("hcb00013.pip.verisignlabs.com")'>verisign</a></li>
-<li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("http://pip.verisignlabs.com/server")'>verisign2</a></li>
-<li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("http://pip.verisignlabs.com")'>verisign3</a></li>
 <li><a href='$esc.html(${config.authUrl})/forceDigest'>admin</a></li>
+</ul>
+username:<input type='text'></input>
+<ul>
+<li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("http://hcb00013.myopenid.com/")'>myopenid</a></li>
+<li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("hcb00013.pip.verisignlabs.com")'>verisign</a></li>
 </ul>
 </body>
 </html>

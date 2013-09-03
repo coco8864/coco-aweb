@@ -101,7 +101,7 @@ function setAuth(){
   },
   function(x){
     ph.jQuery("#curSchme").text(scheme);
-    alert('認証設定完了');
+    alert('Authentication設定完了');
 ##setAuth完了
   });
 }
@@ -282,7 +282,7 @@ writeTimeout:<input type="text" id="writeTimeout" size="8" value="$!esc.html($!{
 </div>
 
 <Hr/>
-<H2 onclick="ph.jQuery('#authDiv').toggle();">+認証設定</H2>
+<H2 onclick="ph.jQuery('#authDiv').toggle();">+Authentication設定</H2>
 <div class="settingItem" id="authDiv">
 <p>ph認証:mappingとuserのrolesで認可します</p>
 認証方法<select id="authScheme" size="1">
