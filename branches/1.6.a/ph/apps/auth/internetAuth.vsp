@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja" dir="ltr" #if( $useAppcache )manifest="$esc.html($manifest)"#end>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja" dir="ltr">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta http-equiv="Pragma" content="no-cache"> 
@@ -8,7 +8,13 @@
 <meta http-equiv="Expires" content="0"> 
 </head>
 <body>
-<h1>internet authentication</h1>
+<div>
+<H1 class="mainTitle" style="float: left;">internet authentication</H1>
+<div style="float: right;">
+<span><a href="$config.publicWeb">home</a></span>
+</div>
+</div>
+<hr style="clear: both;"/>
 <ul>
 <li><a href='$esc.html(${config.authUrl})/internetAuth/fbReq?authId=$esc.html(${authId})'>facebook</a></li>
 <li><a href='$esc.html(${config.authUrl})/internetAuth/twitterReq?authId=$esc.html(${authId})'>twitter</a></li>
@@ -16,12 +22,14 @@
 <li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("https://www.google.com/accounts/o8/id")'>google</a></li>
 <li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("yahoo.co.jp")'>yahoo japan</a></li>
 <li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("https://me.yahoo.com")'>yahoo</a></li>
-<li><a href='$esc.html(${config.authUrl})/forceDigest'>admin</a></li>
 </ul>
 username:<input type='text'></input>
 <ul>
 <li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("http://hcb00013.myopenid.com/")'>myopenid</a></li>
 <li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("hcb00013.pip.verisignlabs.com")'>verisign</a></li>
+</ul>
+<ul>
+<li><a href='$esc.html(${config.authUrl})/forceDigest'>admin</a></li>
 </ul>
 </body>
 </html>
