@@ -13,7 +13,9 @@ import java.security.NoSuchProviderException;
 import java.security.Provider;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -39,6 +41,26 @@ public class SslContextPool {
 	private String caPassword;
 	private Provider sslProvider;
 	private File caDir=null;
+
+	public String getOpenssl() {
+		return openssl;
+	}
+	
+	public File getCerFile(String fileName){
+		return new File(trustStoreDir,fileName);
+	}
+	
+	public List getCers(){
+		List result=new ArrayList();
+		File[] list=trustStoreDir.listFiles();
+		for(File file:list){
+			String fileName=file.getName();
+			if(fileName!=null && fileName.endsWith(".cer")){
+				result.add(fileName);
+			}
+		}
+		return result;
+	}
 	
 	public SslContextPool(Config config,Provider sslProvider){
 		this.sslProvider=sslProvider;

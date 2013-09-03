@@ -228,6 +228,10 @@ public class Config {
 		return random;
 	}
 	
+	public SslContextPool getSslContextPool() {
+		return sslContextPool;
+	}
+	
 	public FileCache getFileCache() {
 		return FileCache.getInstance();
 	}
@@ -839,9 +843,9 @@ public class Config {
 			return null;
 		}
 	}
-
-	public String getProxyPac(String localServer) {
-		return proxyFinder.getProxyPac(localServer);
+	
+	public String getProxyPac(Map param) {
+		return proxyFinder.getProxyPac(param);
 	}
 
 	public String toJson() {

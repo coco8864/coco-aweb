@@ -172,6 +172,7 @@ public class MappingResult extends PoolBase {
 		return mapping.getOption(key);
 	}
 
+	//requestˆê‰ñ‚«‚è‚Ìoption‚ğİ’è
 	public void setOption(String key, Object value) {
 		curOption.put(key, value);
 	}

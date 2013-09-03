@@ -71,7 +71,7 @@ public class ProxyFinder extends ProxySelector{
 	private Set<String> securePhantomDomians;
 	private Map<String, ServerParser> proxyServerCash;
 	private Map<String, ServerParser> urlProxyCash;
-	private Map<String, String> phantomPacCash;
+//	private Map<String, String> phantomPacCash;
 	private String selfDomain;
 	private int proxyPort;
 
@@ -95,12 +95,16 @@ public class ProxyFinder extends ProxySelector{
 		baos.close();
 		return contents;
 	}
-
-	private String merge(String template, String localHost) {
+	
+	private String merge(String template, Map param) {
 		VelocityContext veloContext = new VelocityContext();
 		veloContext.put("proxyFinder", this);
-		veloContext.put("localHost", localHost);
-		veloContext.put("localServer", selfDomain);
+		if(param!=null){
+			for(Object key:param.keySet()){
+				Object value=param.get(key);
+				veloContext.put((String)key, value);
+			}
+		}
 		Writer out = null;
 		try {
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -108,8 +112,8 @@ public class ProxyFinder extends ProxySelector{
 			VelocityEngine ve = config.getVelocityEngine();
 			ve.mergeTemplate(template, "utf-8", veloContext, out);
 			out.close();
-			String result = new String(baos.toByteArray(), "iso8859_1");
-			logger.debug("----marge result start:template:"+ template+":localHost:"+localHost);
+			String result = new String(baos.toByteArray(), "utf-8");
+			logger.debug("----marge result start:template:"+ template);
 			logger.debug(result);
 			logger.debug("----marge result end----");
 			return result;
@@ -216,10 +220,10 @@ public class ProxyFinder extends ProxySelector{
 	}
 	
 	public boolean updatePac(File phantomHome,Set<String> httpPhantomDomians, Set<String> securePhantomDomians){
-		phantomPacCash.clear();//PhantomDomiansが変更されるとpacが変わる
+//		phantomPacCash.clear();//PhantomDomiansが変更されるとpacが変わる
 		this.httpPhantomDomians = httpPhantomDomians;
 		this.securePhantomDomians = securePhantomDomians;
-		
+		/*
 		String localPac=getProxyPac(selfDomain+":"+proxyPort);
 		OutputStream localPacOs=null;
 		try {
@@ -237,6 +241,8 @@ public class ProxyFinder extends ProxySelector{
 				}
 			}
 		}
+		*/
+		return true;
 	}
 
 	public void term(){
@@ -284,7 +290,7 @@ public class ProxyFinder extends ProxySelector{
 		this.pacScriptInvoker = null;
 		this.proxyServerCash = new HashMap<String, ServerParser>();
 		this.urlProxyCash = new HashMap<String, ServerParser>();
-		this.phantomPacCash = new HashMap<String, String>();
+//		this.phantomPacCash = new HashMap<String, String>();
 		this.selfDomain=selfDomain;
 		this.proxyPort=proxyPort;
 		if (pacUrl != null) {// pacでproxyを決める設定
@@ -320,16 +326,9 @@ public class ProxyFinder extends ProxySelector{
 
 	/*
 	 * ブラウザに返却するproxyPacを作成
-	 * proxyを提供するサーバとpacを提供するサーバは同じである必要がある。
-	 * mappingが両者同じrealhostをポイントする事が必須
 	 */
-	public String getProxyPac(String localHost) {
-		String pac = phantomPacCash.get(localHost);
-		if (pac == null) {
-			pac = merge("/template/proxy.pac", localHost);
-			phantomPacCash.put(localHost, pac);
-		}
-		return pac;
+	public String getProxyPac(Map param) {
+		return merge("/template/proxy.pac", param);
 	}
 
 	public ServerParser findProxyServer(boolean isSsl, String host) {
