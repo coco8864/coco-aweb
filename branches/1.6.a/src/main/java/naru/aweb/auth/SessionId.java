@@ -105,7 +105,7 @@ public class SessionId extends PoolBase{
 	public static SessionId createPrimaryId(AuthSession authSession) {
 		SessionId sessionId=createSessionId(Type.PRIMARY,null,null,authSession,
 				authorizer.isAuthSsl(), config.getSelfDomain()+":"+config.getInt(Config.SELF_PORT), authorizer.getAuthPath());
-		sessionId.expireTime=authSession.getSessionId().expireTime;
+		sessionId.expireTime=sessionId.lastAccessTime+authorizer.getSessionTimeout();
 		return sessionId;
 	}
 

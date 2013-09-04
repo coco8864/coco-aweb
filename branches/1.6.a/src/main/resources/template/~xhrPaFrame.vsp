@@ -25,11 +25,7 @@ function onMessageFunc(event){
   }else{
     objFromParent(msg);
   }
-  if(!timer){
-    clearTimeout(timer);
-    timer=null;
-    xhrRequest();
-  }
+  xhrRequest();
 }
 
 function objFromParent(msg){
@@ -43,37 +39,56 @@ function objFromParent(msg){
   msgs.push(msg);
 }
 
-function xhrSuccess(text){
+function waitAndXhrRequest(){
+  if(timer){
+    return;
+  }
+  ##alert('waitAndXhrRequest wait')
+  timer=setTimeout(xhrRequest,INTERVAL);
+}
+
+function xhrSuccess(text,xhr){
+  sending=false;
   errorCount=0;
   if(text){##受け取ったtextはそ・ままparentFrameに送信
     parent.postMessage(text,'*');
   }
   if(msgs.length===0){
-    timer=setTimeout(xhrRequest,INTERVAL);
+    waitAndXhrRequest();
   }else{
     xhrRequest();
   }
 }
 
 function xhrError(jqXhr,status,errorThrown){
+##alert('xhrError')
+  sending=false;
   if(jqXhr.status===403){
     sendObjToParent([{type:'close'}]);
     sendObjToParent({load:false});
     return;
   }
   errorCount++;
-  timer=setTimeout(xhrRequest,INTERVAL);
+  waitAndXhrRequest();
 }
 
+var sending=false;
 function xhrRequest(){
-  timer=null;
   if(errorCount>3){##errorが３回続いたらclose
     sendObjToParent({load:false});
     return;
   }
   if(bid===null){
-    timer=setTimeout(xhrRequest,INTERVAL);
+    waitAndXhrRequest();
     return;
+  }
+  if(sending){
+    return;
+  }
+  sending=true;
+  if(timer){
+    clearTimeout(timer);
+    timer=null;
   }
   if(msgs.length===0||msgs[0].type!=='negotiate'){
     msgs.unshift({type:'negotiate',bid:bid,token:token,needRes:false});
