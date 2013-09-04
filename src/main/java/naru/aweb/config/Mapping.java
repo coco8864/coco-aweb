@@ -1013,7 +1013,7 @@ public class Mapping{
 		if(!realHost.isBinding()){//“®ì’†‚Å‚È‚¢realHost‚Ìurl‚Í•Ô‹p‚µ‚È‚¢
 			return null;
 		}
-		if( options.indexOf("listing:false")>=0 ){
+		if( optionsJson.optBoolean("listing", true)==false ){
 			return null;
 		}
 		StringBuffer sb=new StringBuffer();
