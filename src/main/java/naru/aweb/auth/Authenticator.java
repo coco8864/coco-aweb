@@ -392,13 +392,13 @@ public class Authenticator {
 		}
 	}
 	
-	public void forceDigestAuthenticate(AuthHandler authHandler,Authorizer authorizer){
+	public void forceDigestAuthenticate(AuthHandler authHandler,Authorizer authorizer,String authId){
 		HeaderParser requestHeader=authHandler.getRequestHeader();
 		Map<String,String> authParam=parseAuthHeaders(requestHeader,HeaderParser.WWW_AUTHORIZATION_HEADER,DIGEST,realm);
 		User user=headerAuthenticate(authParam,requestHeader.getMethod(),DIGEST);
 		if(user!=null){
-			SessionId temporaryId = authorizer.createTemporaryId(null,authorizer.getAuthPath());
-			String authId=temporaryId.getAuthId();
+			//SessionId temporaryId = authorizer.createTemporaryId(null,authorizer.getAuthPath());
+			//String authId=temporaryId.getAuthId();
 			AuthSession authSession=loginUser(user);
 			authorizer.setAuthSessionToTemporaryId(authId, authSession);
 			authHandler.setRequestAttribute(AuthHandler.AUTH_ID, authId);
@@ -408,6 +408,8 @@ public class Authenticator {
 			authHandler.setRequestAttribute("cleanupPath", "cleanupAuthForceDigest");
 			authHandler.forwardAuthPage("/creanupAuthHeader.vsp");
 		}else{
+			//TODO userのロールをadminに制限,ipアドレスを指定以外を制限等
+			//authHandler.getRemoteIp()
 			authHandler.setHeader(HeaderParser.WWW_AUTHENTICATE_HEADER,createDigestAuthenticateHeader(realm));
 			authHandler.setRequestAttribute(AuthHandler.ATTRIBUTE_RESPONSE_STATUS_CODE, "401");
 			authHandler.forwardAuthPage("/webAuthenticate.vsp");
