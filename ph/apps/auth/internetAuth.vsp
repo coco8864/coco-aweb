@@ -29,7 +29,7 @@ username:<input type='text'></input>
 <li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("hcb00013.pip.verisignlabs.com")'>verisign</a></li>
 </ul>
 <ul>
-<li><a href='$esc.html(${config.authUrl})/forceDigest'>admin</a></li>
+<li><a href='$esc.html(${config.authUrl})/forceDigest?authId=$esc.html(${authId})'>admin</a></li>
 </ul>
 </body>
 </html>
