@@ -171,40 +171,16 @@ public class AuthHandler extends WebServerHandler {
 		redirect(encodeUrl);
 	}
 	
-	private void forceDigestLogin(String cookieId){
+	private void forceDigestLogin(String cookieId,String authId){
+		SessionId temporaryId=authorizer.getTemporaryId(authId);
 		User user=authorizer.getUserByPrimaryId(cookieId);
 		if(user!=null){//有効なprimaryがあれば何もしない
-			redirect(config.getPublicWebUrl());
+			redirect(temporaryId.getUrl());
 			return;
 		}
-		authenticator.forceDigestAuthenticate(this,authorizer);
+		authenticator.forceDigestAuthenticate(this,authorizer,authId);
 	}
 	
-	private void cleanupAuthforceDigestHeader(){
-		if( !authenticator.cleanupAuthForceDigest(this) ){
-			return;
-		}
-		ParameterParser parameter = getParameterParser();
-		String authId=parameter.getParameter(AUTH_ID);
-		if(authId==null){
-			forbidden("faild to get authId");
-			return;
-		}
-		//TODO 排他
-		SessionId temporaryId=authorizer.getTemporaryId(authId);
-		if(temporaryId==null){
-			forbidden("faild to get authId");
-			return;
-		}
-		AuthSession authSession=temporaryId.popAuthSession();
-		SessionId primaryId = authorizer.createPrimaryId(authSession);
-		String setCookieString = primaryId.getSetCookieString();
-		setCookie(setCookieString);
-		temporaryId.remove();
-		completeResponse("200", config.getPublicWebUrl());
-	}
-	
-	//TODO on making
 	private void crossDomainResponse(Object response,String setCookieString){
 		if(setCookieString!=null){
 			setCookie(setCookieString);
@@ -422,9 +398,16 @@ public class AuthHandler extends WebServerHandler {
 		redirect(url, setCookieString);
 	}
 	
-	private void cleanupAuthHeader(){
-		if( !authenticator.cleanupAuthHeader(this) ){
-			return;
+	private void cleanupAuthHeader(boolean force){
+		
+		if(force){
+			if(!authenticator.cleanupAuthForceDigest(this) ){
+				return;
+			}
+		}else{
+			if( !authenticator.cleanupAuthHeader(this) ){
+				return;
+			}
 		}
 		ParameterParser parameter = getParameterParser();
 		String authId=parameter.getParameter(AUTH_ID);
@@ -616,7 +599,7 @@ public class AuthHandler extends WebServerHandler {
 		 * Phase2:scriptからのリクエストでAuthenticationヘッダをダミーユーザに設定
 		 */
 		if(CLEANUP_AUTH_HEADER_PATH.equals(path)){
-			cleanupAuthHeader();
+			cleanupAuthHeader(false);
 			return;
 		}else if(AUTH_FRAME_PATH.equals(path)){
 			authFrame(cookieId);
@@ -630,15 +613,16 @@ public class AuthHandler extends WebServerHandler {
 		}else if(AJAX_LOGOUT_PATH.equals(path)){
 			ajaxLogout(cookieId);
 			return;
-		}else if(REDIRECT_PATH.equals(path)){//TODO uri制限要　for security
-			String uri=parameter.getParameter("uri");
-			redirect(uri);
-			return;
+//		}else if(REDIRECT_PATH.equals(path)){//TODO uri制限要　for security
+//			String uri=parameter.getParameter("uri");
+//			redirect(uri);
+//			return;
 		}else if(FORCE_DIGEST_LOGON_PATH.equals(path)){//InternetAuth時に管理者ように強制ログオンが必要
-			forceDigestLogin(cookieId);
+			String authId=parameter.getParameter(AUTH_ID);
+			forceDigestLogin(cookieId,authId);
 			return;
 		}else if(CLEANUP_AUTH_FORCE_DIGEST_HEADER_PATH.equals(path)){//InternetAuth時に管理者ように強制ログオンが必要
-			cleanupAuthforceDigestHeader();
+			cleanupAuthHeader(true);
 			return;
 		}else if(LOGOUT_PATH.equals(path)){
 			authorizer.logout(cookieId);
