@@ -169,12 +169,8 @@ public class InternetAuthHandler extends WebServerHandler {
 		baos.close();
 		return contents;
 	}
-
-	private static String CONSUMER_KEY="rJyJQOaHKAzqLe4PX7VHtw";
-	private static String CONSUMER_SECRET="TfIoMjsrKOqHARDDMs3W197xNIWd97zdpWdY6zhmUw";
 	
 	static TwitterFactory twitterFactory = new TwitterFactory();
-
 /*
  * http://api.twitter.com/oauth/authenticate?oauth_token=lAqlzvHVCNNGKIXRlNNs16mGvFA7kGOuXiR4whwqE
 
@@ -186,7 +182,9 @@ https://127.0.0.1:1280/auth/internetAuth/twitterRes?oauth_token=lAqlzvHVCNNGKIXR
 	
 	private void twitterReq(SessionId temporaryId){
 		Twitter twitter=twitterFactory.getInstance();
-		twitter.setOAuthConsumer(CONSUMER_KEY, CONSUMER_SECRET);
+		String consumerKey=config.getString("authTwitterConsumerKey");
+		String consumerSecret=config.getString("authTwitterConsumerSecret");
+		twitter.setOAuthConsumer(consumerKey, consumerSecret);
 		try{
 			// リクエストトークンの生成
 			RequestToken reqToken = twitter.getOAuthRequestToken();
@@ -222,23 +220,25 @@ https://127.0.0.1:1280/auth/internetAuth/twitterRes?oauth_token=lAqlzvHVCNNGKIXR
 	}
 	
 	private void fbReq(SessionId temporaryId){
+		String authFbAppId=config.getString("authFbAppId");
 		String redirectUrl="https://www.facebook.com/dialog/oauth";
-		redirectUrl+="?client_id=495791087169690";
+		redirectUrl+="?client_id=" + authFbAppId;
 		redirectUrl+="&redirect_uri="+config.getAuthUrl()+"/internetAuth/fbRes?"+AuthHandler.AUTH_ID +"="+temporaryId.getAuthId();
 		redirect(redirectUrl);
 	}
-	private static String APP_ID="495791087169690";
-	private static String APP_SECRET="07249541e046efba0611a9bc58e31f4e";
 	
 	private void fbRes(SessionId temporaryId){
+		String authFbAppId=config.getString("authFbAppId");
+		String authFbAppSecret=config.getString("authFbAppSecret");
+		
 		ParameterParser parameter = getParameterParser();
 		System.out.println(parameter.getParameterMap());
 		String code=parameter.getParameter("code");
 //		https://graph.facebook.com/oauth/access_token?client_id=YOUR_APP_ID&redirect_uri=YOUR_URL&client_secret=YOUR_APP_SECRET&code=A_CODE_GENERATED_BY_SERVER
 			
-		String accessTokenUrl="https://graph.facebook.com/oauth/access_token?client_id="+APP_ID;
+		String accessTokenUrl="https://graph.facebook.com/oauth/access_token?client_id="+authFbAppId;
 		accessTokenUrl+="&redirect_uri="+config.getAuthUrl()+"/internetAuth/fbRes?"+AuthHandler.AUTH_ID +"="+temporaryId.getAuthId();
-		accessTokenUrl+="&client_secret=" + APP_SECRET;
+		accessTokenUrl+="&client_secret=" + authFbAppSecret;
 		accessTokenUrl+="&code=" + code;
 		try {
 			String accessToken=contents(new URL(accessTokenUrl));
@@ -258,12 +258,10 @@ https://127.0.0.1:1280/auth/internetAuth/twitterRes?oauth_token=lAqlzvHVCNNGKIXR
 		redirect(config.getPublicWebUrl());
 	}
 	
-	private static String GOOGLE_CLIENT_ID="309155241075-bkru7sj8ojtofkavof6aifuga139vubk.apps.googleusercontent.com";
-	private static String GOOGLE_CLIENT_SECRET="gxa1iP_9FZqVmPVv1QFvZH06";
-	
 	private void googleReq(SessionId temporaryId){
+		String authGoogleClientId=config.getString("authGoogleClientId");
 		String redirectUrl="https://accounts.google.com/o/oauth2/auth?response_type=code";
-		redirectUrl+="&client_id=" + GOOGLE_CLIENT_ID;
+		redirectUrl+="&client_id=" + authGoogleClientId;
 		redirectUrl+="&redirect_uri="+config.getAuthUrl()+"/internetAuth/googleRes";
 		redirectUrl+="&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile";
 		redirectUrl+="&state="+temporaryId.getAuthId();
@@ -276,20 +274,16 @@ https://127.0.0.1:1280/auth/internetAuth/twitterRes?oauth_token=lAqlzvHVCNNGKIXR
 		String code=parameter.getParameter("code");
 //		https://graph.facebook.com/oauth/access_token?client_id=YOUR_APP_ID&redirect_uri=YOUR_URL&client_secret=YOUR_APP_SECRET&code=A_CODE_GENERATED_BY_SERVER
 		
+		String authGoogleClientId=config.getString("authGoogleClientId");
+		String authGoogleClientSecret=config.getString("authGoogleClientSecret");
+		
 		Map<String,String> req=new HashMap<String,String>();
-		req.put("client_id",GOOGLE_CLIENT_ID);
-		req.put("client_secret",GOOGLE_CLIENT_SECRET);
+		req.put("client_id",authGoogleClientId);
+		req.put("client_secret",authGoogleClientSecret);
 		req.put("redirect_uri",config.getAuthUrl()+"/internetAuth/googleRes");
 		req.put("grant_type","authorization_code");
 		req.put("code",code);
 
-		/*
-		String accessTokenUrl="https://accounts.google.com/o/oauth2/token?client_id="+GOOGLE_CLIENT_ID;
-		accessTokenUrl+="&redirect_uri="+config.getAuthUrl()+"/internetAuth/googleRes";
-		accessTokenUrl+="&client_secret=" + GOOGLE_CLIENT_SECRET;
-		accessTokenUrl+="&grant_type=authorization_code";
-		accessTokenUrl+="&code=" + code;
-		*/
 		try {
 			String accessJson=contents(new URL("https://accounts.google.com/o/oauth2/token"),req);
 			JSONObject access=JSONObject.fromObject(accessJson);

@@ -38,12 +38,12 @@ import naru.aweb.util.ServerParser;
  * 
  */
 public class SessionId extends PoolBase{
-	public static final long PATH_ONCE_TIMEOUT=5000;
-	public static final long TEMPORARY_FIRST_TIMEOUT=5000;//temporaryId‚Í˜A‘Å‚É‚æ‚è‘å—Ê‚Éì‚ç‚ê‚é‚Ì‚Åauth‚É“’…‚µ‚½‚çõ–½‚ğ‰„‚Î‚µ‚½‚¢
-	public static final long TEMPORARY_TIMEOUT=60000*3;
-	
 	private static Logger logger = Logger.getLogger(SessionId.class);
 	private static Config config=Config.getConfig();
+	public static final long PATH_ONCE_TIMEOUT=config.getLong("authRedirectTimeout", 5000);
+	public static final long TEMPORARY_FIRST_TIMEOUT=config.getLong("authRedirectTimeout", 5000);//temporaryId‚Í˜A‘Å‚É‚æ‚è‘å—Ê‚Éì‚ç‚ê‚é‚Ì‚Åauth‚É“’…‚µ‚½‚çõ–½‚ğ‰„‚Î‚µ‚½‚¢
+	public static final long TEMPORARY_TIMEOUT=config.getLong("authInputTimeout", 60000*3);
+	
 	public static final String SESSION_ID = config.getString("sessionCookieKey", "phId");
 	private static Pattern pathInfoPattern = Pattern.compile(";"+SESSION_ID+"=([^\\s;/?]*)");
 	private static Authorizer authorizer=config.getAuthorizer();
