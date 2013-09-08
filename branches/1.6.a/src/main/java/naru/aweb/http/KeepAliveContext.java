@@ -402,6 +402,7 @@ public class KeepAliveContext extends PoolBase {
 	public void setSpdyAcceptServer(ServerParser acceptServer,RealHost realHost,ServerParser proxyTargetServer){
 		this.acceptServer=acceptServer;
 		this.realHost=realHost;
+		//TODO SPDY接続の場合、ブラウザがproxyと思って接続しにきたのか?webサーバと思って接続に来たのか?確定する方法が不明
 		RealHost wkRealHost=config.getRealHost(proxyTargetServer);
 		if(!realHost.equals(wkRealHost)){
 			setProxyTargetServer(proxyTargetServer);

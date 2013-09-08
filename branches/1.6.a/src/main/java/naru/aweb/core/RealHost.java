@@ -158,6 +158,7 @@ public class RealHost {
 			logger.info(name + " bind ip:"+inetAdder.getHostAddress());
 			selfIp4Host=bindHost;
 		}else{
+			servers.add(new ServerParser("localhost", bindPort));
 			//ref http://www.itmedia.co.jp/enterprise/articles/0407/27/news031.html
 			java.util.Enumeration enuIfs = NetworkInterface.getNetworkInterfaces();
 			if (null != enuIfs) {
