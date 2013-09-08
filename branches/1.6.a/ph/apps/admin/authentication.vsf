@@ -155,7 +155,7 @@ checked="checked"
 /><br/>
 
 title openidIdentifier<br/>
-<textarea id="authOpenidDefArea" rows="10" cols="80">$!esc.html($!{config.getString('authOpenidDef')})</textarea>
+<textarea id="authOpenidDefArea" rows="10" cols="80">$!esc.html($!{config.getString('authOpenidDef')})</textarea><br/>
 <input type="button" value="設定"  onclick="setAuthOpenid();"/><br/>
 </div>
 
