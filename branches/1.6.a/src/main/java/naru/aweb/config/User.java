@@ -1,6 +1,5 @@
 package naru.aweb.config;
 
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -184,12 +183,6 @@ public class User {
 		JdoUtil.update(this);
 	}
 	
-//	public void delete(){
-//		logger.info("deleteUser:"+loginId);
-//		JdoUtil.delete("SELECT FROM "+ User.class.getName() + " WHERE id=="+this.id);
-//	}
-	
-	
 	@Persistent(primaryKey="true",valueStrategy = IdGeneratorStrategy.IDENTITY)
 	@Column(name="ID")
 	private Long id;
@@ -211,19 +204,8 @@ public class User {
 	private String digestAuthPassHash;
 	
 	@Persistent
-	@Column(name="ROLES",jdbcType="VARCHAR", length=1024)
-	private String roles;
-	
-	@NotPersistent
-	private List<String> rolesList=null;
-	
-	@Persistent
-	@Column(name="FIRST_NAME",jdbcType="VARCHAR", length=1024)
-	private String firstName;
-	
-	@Persistent
-	@Column(name="LAST_NAME",jdbcType="VARCHAR", length=1024)
-	private String lastName;
+	@Column(name="OFFLINE_PASS_HASH")
+	private String offlinePassHash;
 	
 	@Persistent
 	@Column(name="CREATE_DATE")
@@ -242,9 +224,33 @@ public class User {
 	private boolean revoked;//無効化
 	
 	@Persistent
+	@Column(name="ORIGIN")
+	private String origin;//fbなど他サーバで認証した結果作られた場合
+	
+	@Persistent
+	@Column(name="ROLES",jdbcType="VARCHAR", length=1024)
+	private String roles;
+	
+	@NotPersistent
+	private List<String> rolesList=null;
+	
+	
+	@Persistent
+	@Column(name="FIRST_NAME",jdbcType="VARCHAR", length=1024)
+	private String firstName;
+	
+	@Persistent
+	@Column(name="LAST_NAME",jdbcType="VARCHAR", length=1024)
+	private String lastName;
+	
+	@Persistent
 	@Column(name="FOOT_SIZE")
 	private int footSize;
 	
+	@Persistent
+	@Column(name="EMAIL_ADDRESS")
+	private String emailAdress;
+
 	@Persistent
 	@Column(name="CERTIFICATE_STORE_ID")
 	private long certificateStoreId;
@@ -252,18 +258,6 @@ public class User {
 	@Persistent
 	@Column(name="EXT_STORE_ID")
 	private long extStoreId;
-	
-	@Persistent
-	@Column(name="OFFLINE_PASS_HASH")
-	private String offlinePassHash;
-	
-	@Persistent
-	@Column(name="EMAIL_ADDRESS")
-	private String emailAdress;
-	
-	@Persistent
-	@Column(name="ORIGIN")
-	private String origin;//fbなど他サーバで認証した結果作られた場合
 	
 	@NotPersistent
 	private int errorPassCount;//失敗回数、メモリのみで管理
