@@ -25,14 +25,12 @@ import org.openid4java.association.AssociationException;
 import org.openid4java.consumer.ConsumerException;
 import org.openid4java.consumer.ConsumerManager;
 import org.openid4java.consumer.VerificationResult;
-import org.openid4java.discovery.Discovery;
 import org.openid4java.discovery.DiscoveryException;
 import org.openid4java.discovery.DiscoveryInformation;
 import org.openid4java.discovery.Identifier;
 import org.openid4java.message.AuthRequest;
 import org.openid4java.message.AuthSuccess;
 import org.openid4java.message.MessageException;
-import org.openid4java.message.MessageExtension;
 import org.openid4java.message.ParameterList;
 import org.openid4java.message.ax.AxMessage;
 import org.openid4java.message.ax.FetchRequest;
@@ -50,7 +48,6 @@ import twitter4j.auth.AccessToken;
 import twitter4j.auth.RequestToken;
 
 import naru.aweb.config.Config;
-import naru.aweb.config.Mapping;
 import naru.aweb.config.User;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.KeepAliveContext;
@@ -58,14 +55,13 @@ import naru.aweb.http.ParameterParser;
 import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.util.ServerParser;
-import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 /**
  * 設定項目
  * 1)セションタイムアウト時間
  * 2)logout後のurl
- * 3)認証方式[basic|digest|basicForm|digestForm]
+ * 3)認証方式[basic|digest|basicForm|digestForm|internetAuth]
  * 
  * googleの登録URL
  * https://cloud.google.com/console
@@ -171,13 +167,6 @@ public class InternetAuthHandler extends WebServerHandler {
 	}
 	
 	static TwitterFactory twitterFactory = new TwitterFactory();
-/*
- * http://api.twitter.com/oauth/authenticate?oauth_token=lAqlzvHVCNNGKIXRlNNs16mGvFA7kGOuXiR4whwqE
-
-https://127.0.0.1:1280/auth/internetAuth/twitterRes?oauth_token=lAqlzvHVCNNGKIXRlNNs16mGvFA7kGOuXiR4whwqE&oauth_verifier=tGASVyWV3KTBeFxjlcysQhWxato4SNpiKdoSKRZ6s
-	
- */
-	
 	private static Map<String,String> twitterToken=new HashMap<String,String>();
 	
 	private void twitterReq(SessionId temporaryId){
@@ -192,8 +181,8 @@ https://127.0.0.1:1280/auth/internetAuth/twitterRes?oauth_token=lAqlzvHVCNNGKIXR
             temporaryId.setAttribute("RequestToken", reqToken);
             temporaryId.setAttribute("Twitter", twitter);
             twitterToken.put(reqToken.getToken(), temporaryId.getAuthId());
-            System.out.println("token:"+reqToken.getToken());
-            System.out.println("getAuthenticationURL:"+reqToken.getAuthenticationURL());
+            //System.out.println("token:"+reqToken.getToken());
+            //System.out.println("getAuthenticationURL:"+reqToken.getAuthenticationURL());
     		redirect(reqToken.getAuthenticationURL());
     		return;
 		}catch (TwitterException e){
@@ -207,10 +196,10 @@ https://127.0.0.1:1280/auth/internetAuth/twitterRes?oauth_token=lAqlzvHVCNNGKIXR
 		ParameterParser parameter = getParameterParser();
 		String verifier = parameter.getParameter("oauth_verifier");
 		try {
-			AccessToken accessToken = accessToken = twitter.getOAuthAccessToken((RequestToken)temporaryId.getAttribute("RequestToken"), verifier);
-			System.out.println("accessToken"+accessToken.getToken());
-			System.out.println("accessToken"+accessToken.getUserId());
-			System.out.println("accessToken"+accessToken.getScreenName());
+			AccessToken accessToken = twitter.getOAuthAccessToken((RequestToken)temporaryId.getAttribute("RequestToken"), verifier);
+			//System.out.println("accessToken"+accessToken.getToken());
+			//System.out.println("accessToken"+accessToken.getUserId());
+			//System.out.println("accessToken"+accessToken.getScreenName());
 			successAuth(temporaryId, "https://twitter.com?id="+accessToken.getUserId(),accessToken.getToken());
 			return;
 		} catch (TwitterException e) {
@@ -232,22 +221,17 @@ https://127.0.0.1:1280/auth/internetAuth/twitterRes?oauth_token=lAqlzvHVCNNGKIXR
 		String authFbAppSecret=config.getString("authFbAppSecret");
 		
 		ParameterParser parameter = getParameterParser();
-		System.out.println(parameter.getParameterMap());
 		String code=parameter.getParameter("code");
 //		https://graph.facebook.com/oauth/access_token?client_id=YOUR_APP_ID&redirect_uri=YOUR_URL&client_secret=YOUR_APP_SECRET&code=A_CODE_GENERATED_BY_SERVER
-			
 		String accessTokenUrl="https://graph.facebook.com/oauth/access_token?client_id="+authFbAppId;
 		accessTokenUrl+="&redirect_uri="+config.getAuthUrl()+"/internetAuth/fbRes?"+AuthHandler.AUTH_ID +"="+temporaryId.getAuthId();
 		accessTokenUrl+="&client_secret=" + authFbAppSecret;
 		accessTokenUrl+="&code=" + code;
 		try {
 			String accessToken=contents(new URL(accessTokenUrl));
-			System.out.println("accessToken:"+accessToken);
 			String meUrl="https://graph.facebook.com/me?"+accessToken;
 			String me=contents(new URL(meUrl));
 			JSONObject json=JSONObject.fromObject(me);
-			System.out.println("me:"+me);
-			System.out.println("id:"+json.getString("id"));
 			successAuth(temporaryId, "https://www.facebook.com?id="+json.getString("id"),accessToken);
 			return;
 		} catch (MalformedURLException e) {
@@ -272,11 +256,9 @@ https://127.0.0.1:1280/auth/internetAuth/twitterRes?oauth_token=lAqlzvHVCNNGKIXR
 		ParameterParser parameter = getParameterParser();
 		System.out.println(parameter.getParameterMap());
 		String code=parameter.getParameter("code");
-//		https://graph.facebook.com/oauth/access_token?client_id=YOUR_APP_ID&redirect_uri=YOUR_URL&client_secret=YOUR_APP_SECRET&code=A_CODE_GENERATED_BY_SERVER
 		
 		String authGoogleClientId=config.getString("authGoogleClientId");
 		String authGoogleClientSecret=config.getString("authGoogleClientSecret");
-		
 		Map<String,String> req=new HashMap<String,String>();
 		req.put("client_id",authGoogleClientId);
 		req.put("client_secret",authGoogleClientSecret);
@@ -292,8 +274,6 @@ https://127.0.0.1:1280/auth/internetAuth/twitterRes?oauth_token=lAqlzvHVCNNGKIXR
 			String meUrl="https://www.googleapis.com/oauth2/v1/userinfo?access_token="+accessToken;
 			String me=contents(new URL(meUrl));
 			JSONObject json=JSONObject.fromObject(me);
-			System.out.println("me:"+me);
-			System.out.println("id:"+json.getString("id"));
 			successAuth(temporaryId, "https://accounts.google.com/o/oauth2?id="+json.getString("id"),accessToken);
 			return;
 		} catch (MalformedURLException e) {
@@ -304,7 +284,6 @@ https://127.0.0.1:1280/auth/internetAuth/twitterRes?oauth_token=lAqlzvHVCNNGKIXR
 		redirect(config.getPublicWebUrl());
 	}
 	
-	
 	private void openIdReq(SessionId temporaryId){
 		try {
 			ParameterParser parameter = getParameterParser();
@@ -314,7 +293,7 @@ https://127.0.0.1:1280/auth/internetAuth/twitterRes?oauth_token=lAqlzvHVCNNGKIXR
 			DiscoveryInformation discovered = manager.associate(discoveries);
 			temporaryId.setAttribute("manager", manager);
 			temporaryId.setAttribute("discovered", discovered);
-			System.out.println("opendpoint:"+discovered.getOPEndpoint());
+			//System.out.println("opendpoint:"+discovered.getOPEndpoint());
 			FetchRequest fetch = FetchRequest.createFetchRequest();
 			fetch.addAttribute("nickname", "http://axschema.org/namePerson/friendly", true);
 			AuthRequest authReq = manager.authenticate(discovered, config.getAuthUrl()+"/internetAuth/openIdRes?"+AuthHandler.AUTH_ID +"="+temporaryId.getAuthId());

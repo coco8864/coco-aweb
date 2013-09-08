@@ -207,7 +207,7 @@ public class JdoUtil {
 			tx.begin();
 			pm.makePersistent(obj);
 			tx.commit();
-//			pm.makeTransient(obj);//再利用するために必要?
+			pm.makeTransient(obj);//再利用するために必要?
 		}finally{
 			if(tx.isActive()){
 				tx.rollback();

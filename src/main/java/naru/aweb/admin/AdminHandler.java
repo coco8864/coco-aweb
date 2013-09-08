@@ -272,6 +272,8 @@ public class AdminHandler extends WebServerHandler{
 			String useAuthDirectOpenid=parameter.getParameter("useAuthDirectOpenid");
 			config.setProperty("useAuthDirectOpenid",useAuthDirectOpenid);
 			String authOpenidDef=parameter.getParameter("authOpenidDef");
+			Authenticator authenticator=config.getAuthenticator();
+			authenticator.setupOpenidDef(authOpenidDef);
 			config.setProperty("authOpenidDef",authOpenidDef);
 			responseJson(true);
 		}else if("setBroadcaster".equals(cmd)){

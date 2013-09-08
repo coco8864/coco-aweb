@@ -110,7 +110,6 @@ public class Authenticator {
 		}
 		User user=new User();
 		user.setLoginId(loginId);
-		
 		user.changePassword(this,password, realm);
 		//本物のpassowrdが漏れないようにoffline passwordは一律"password"で初期化
 		//user.setOfflinePassHash(calcPassHash(loginId,"password"));
@@ -129,11 +128,16 @@ public class Authenticator {
 	}
 	
 	public void term(){
-		TimerManager.clearInterval(interval);
-		for(User user:loginIdUserMap.values()){
-			user.update();
+		try{
+			TimerManager.clearInterval(interval);
+			for(User user:loginIdUserMap.values()){
+				user.update();
+			}
+		}catch(Throwable t){
+			logger.error("fail to authenticator.term",t);
+		}finally{
+			loginIdUserMap.clear();
 		}
-		loginIdUserMap.clear();
 	}
 
 	public String getScheme(){
@@ -248,6 +252,13 @@ public class Authenticator {
 		}
 		passSalt=config.getString(Config.PASS_SALT);
 		offlinePassSalt=config.getString(Config.OFFLINE_PASS_SALT);
+		
+		String openidDef=config.getString("authOpenidDef");
+		if(openidDef==null){
+			openidDef="googole openid,https://www.google.com/accounts/o8/id\nyahoo japan,yahoo.co.jp\nyahoo.com,https://me.yahoo.com\n";
+			config.setProperty("authOpenidDef",openidDef);
+		}
+		setupOpenidDef(openidDef);
 	}
 	
 	private static Pattern usernamePattern=Pattern.compile("(?:\\s*username\\s*=[\\s\"]*([^,\\s\"]*))",Pattern.CASE_INSENSITIVE);
@@ -538,6 +549,16 @@ public class Authenticator {
 		return sb.toString();
 	}
 	
+	private Map<String,String> openids=new HashMap<String,String>();
+	public void setupOpenidDef(String openidDef){
+		openids.clear();
+		String[] lines=openidDef.split("\n");
+		for(String line:lines){
+			String[] parts=line.split(",",2);
+			openids.put(parts[0], parts[1]);
+		}
+	}
+	
 	/**
 	 * web認証できない場合のレスポンスを生成
 	 * @param headerParser
@@ -558,6 +579,7 @@ public class Authenticator {
 			response.setRequestAttribute("nonce", getNonce());
 			response.forwardAuthPage("digestForm.vsp");
 		}else if(scheme==INTERNET_AUTH){
+			response.setRequestAttribute("openids", openids);
 			response.forwardAuthPage("internetAuth.vsp");
 		}else{//ありえない
 			response.completeResponse("500","Authorization Error");
