@@ -233,6 +233,46 @@ public class AdminHandler extends WebServerHandler{
 			String sessionTimeout=parameter.getParameter("sessionTimeout");
 			Authorizer authorizer=config.getAuthorizer();
 			authorizer.setSessionTimeout(Long.parseLong(sessionTimeout));
+			String authInputTimeout=parameter.getParameter("authInputTimeout");
+			if(authInputTimeout!=null && Long.parseLong(authInputTimeout)>0){
+				config.setProperty("authInputTimeout",authInputTimeout);
+			}
+			String authRedirectTimeout=parameter.getParameter("authRedirectTimeout");
+			if(authRedirectTimeout!=null && Long.parseLong(authRedirectTimeout)>0){
+				config.setProperty("authRedirectTimeout",authRedirectTimeout);
+			}
+			responseJson(true);
+		}else if("setAuthFb".equals(cmd)){
+			String useAuthFb=parameter.getParameter("useAuthFb");
+			config.setProperty("useAuthFb",useAuthFb);
+			String authFbAppId=parameter.getParameter("authFbAppId");
+			config.setProperty("authFbAppId",authFbAppId);
+			String authFbAppSecret=parameter.getParameter("authFbAppSecret");
+			config.setProperty("authFbAppSecret",authFbAppSecret);
+			responseJson(true);
+		}else if("setAuthGoogle".equals(cmd)){
+			String useAuthGoogle=parameter.getParameter("useAuthGoogle");
+			config.setProperty("useAuthGoogle",useAuthGoogle);
+			String authGoogleClientId=parameter.getParameter("authGoogleClientId");
+			config.setProperty("authGoogleClientId",authGoogleClientId);
+			String authGoogleClientSecret=parameter.getParameter("authGoogleClientSecret");
+			config.setProperty("authGoogleClientSecret",authGoogleClientSecret);
+			responseJson(true);
+		}else if("setAuthTwitter".equals(cmd)){
+			String useAuthTwitter=parameter.getParameter("useAuthTwitter");
+			config.setProperty("useAuthTwitter",useAuthTwitter);
+			String authTwitterConsumerKey=parameter.getParameter("authTwitterConsumerKey");
+			config.setProperty("authTwitterConsumerKey",authTwitterConsumerKey);
+			String authTwitterConsumerSecret=parameter.getParameter("authTwitterConsumerSecret");
+			config.setProperty("authTwitterConsumerSecret",authTwitterConsumerSecret);
+			responseJson(true);
+		}else if("setAuthOpenid".equals(cmd)){
+			String useAuthOpenid=parameter.getParameter("useAuthOpenid");
+			config.setProperty("useAuthOpenid",useAuthOpenid);
+			String useAuthDirectOpenid=parameter.getParameter("useAuthDirectOpenid");
+			config.setProperty("useAuthDirectOpenid",useAuthDirectOpenid);
+			String authOpenidDef=parameter.getParameter("authOpenidDef");
+			config.setProperty("authOpenidDef",authOpenidDef);
 			responseJson(true);
 		}else if("setBroadcaster".equals(cmd)){
 			String interval=parameter.getParameter("interval");
