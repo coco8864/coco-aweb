@@ -269,8 +269,8 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	
 	@Persistent
 	@Index(name="USER_ID_IDX")	
-	@Column(name="USER_ID",jdbcType="VARCHAR", length=16)
-	private String userId;//user–¼‚Í16•¶ŽšˆÈ‰º!!!
+	@Column(name="USER_ID",jdbcType="VARCHAR", length=1024)
+	private String userId;
 	
 	@Persistent
 	@Column(name="IPADDRESS",jdbcType="VARCHAR", length=16)
