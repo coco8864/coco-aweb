@@ -250,8 +250,8 @@ ph.jQuery(function(){
   ph.jQuery(".settingItem").hide();
   ##realHost一覧を表示
   ph.admin.doPramCommand('realHost','realHostList',null,realHostList);
-  var scheme=ph.jQuery("#curSchme").text();
-  ph.jQuery("#authScheme option[value='" +scheme+ "']").attr("selected","selected");
+//  var scheme=ph.jQuery("#curSchme").text();
+//  ph.jQuery("#authScheme option[value='" +scheme+ "']").attr("selected","selected");
 });
 </script> 
 <H1>設定</H1>
@@ -279,23 +279,6 @@ connectTimeout:<input type="text" id="connectTimeout" size="8" value="$!esc.html
 readTimeout:<input type="text" id="readTimeout" size="8" value="$!esc.html($!{config.readTimeout})"/>ms<br>
 writeTimeout:<input type="text" id="writeTimeout" size="8" value="$!esc.html($!{config.writeTimeout})"/>ms<br>
 <input type="button" value="設定" onclick="setTimeouts();" /><br/>
-</div>
-
-<Hr/>
-<H2 onclick="ph.jQuery('#authDiv').toggle();">+Authentication設定</H2>
-<div class="settingItem" id="authDiv">
-<p>ph認証:mappingとuserのrolesで認可します</p>
-認証方法<select id="authScheme" size="1">
-<option value="None">None</option>
-<option value="Basic">Basic</option>
-<option value="Digest">Digest</option>
-<option value="BasicForm">BasicForm</option>
-<option value="DigestForm">DigestForm</option>
-<option value="InternetAuth">InternetAuth</option>
-</select>現在:<span id="curSchme">$!esc.html($!{config.getString('authenticateScheme')})</span><br/>
-sessionTimeout:<input type="text" id="authSessionTimeout" size="12" value="$!esc.html($!{config.getString('sessionTimeout')})"/>ms<br/>
-##logoutUrl:<input type="text" id="authLogoutUrl" size="64" value="$!esc.html($!{config.getString('logoutUrl')})"/><br/>
-<input type="button" value="設定"  onclick="setAuth();"/><br/>
 </div>
 
 <Hr/>
