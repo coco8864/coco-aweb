@@ -1,7 +1,17 @@
 <script type="text/javascript"> 
+function setAuthInternet(){
+  ph.admin.doCommand('setAuthInternet',{
+    isAuthInternetSkipSelect:ph.jQuery("#isAuthInternetSkipSelect").is(':checked'),
+    authInternetAuthRole:ph.jQuery("#authInternetAuthRole").val()
+  },
+  function(x){
+    alert('internetAuth設定完了');
+  });
+}
+
 function setAuthFb(){
   ph.admin.doCommand('setAuthFb',{
-    useAuthFb:!ph.jQuery("#unuseAuthFb").is(':checked'),
+    useAuthFb:ph.jQuery("#useAuthFb").is(':checked'),
     authFbAppId:ph.jQuery("#authFbAppId").val(),
     authFbAppSecret:ph.jQuery("#authFbAppSecret").val()
   },
@@ -11,7 +21,7 @@ function setAuthFb(){
 }
 function setAuthGoogle(){
   ph.admin.doCommand('setAuthGoogle',{
-    useAuthGoogle:!ph.jQuery("#unuseAuthGoogle").is(':checked'),
+    useAuthGoogle:ph.jQuery("#useAuthGoogle").is(':checked'),
     authGoogleClientId:ph.jQuery("#authGoogleClientId").val(),
     authGoogleClientSecret:ph.jQuery("#authGoogleClientSecret").val()
   },
@@ -21,7 +31,7 @@ function setAuthGoogle(){
 }
 function setAuthTwitter(){
   ph.admin.doCommand('setAuthTwitter',{
-    useAuthTwitter:!ph.jQuery("#unuseAuthTwitter").is(':checked'),
+    useAuthTwitter:ph.jQuery("#useAuthTwitter").is(':checked'),
     authTwitterConsumerKey:ph.jQuery("#authTwitterConsumerKey").val(),
     authTwitterConsumerSecret:ph.jQuery("#authTwitterConsumerSecret").val()
   },
@@ -31,7 +41,7 @@ function setAuthTwitter(){
 }
 function setAuthOpenid(){
   ph.admin.doCommand('setAuthOpenid',{
-    useAuthOpenid:!ph.jQuery("#unuseAuthOpenid").is(':checked'),
+    useAuthOpenid:ph.jQuery("#useAuthOpenid").is(':checked'),
     useAuthDirectOpenid:ph.jQuery("#useAuthDirectOpenid").is(':checked'),
     authOpenidDef:ph.jQuery("#authOpenidDefArea").val()
   },
@@ -89,14 +99,27 @@ redirectTimeout:<input type="text" id="authRedirectTimeout" size="12" value="$!e
 </div>
 
 <Hr/>
+<H2 onclick="ph.jQuery('#internetAuthDiv').toggle();">+internetAuth設定</H2>
+<div class="internetAuthItem" id="internetAuthDiv">
+<p>InternetAuth一般の設定<br/>
+skip select:<input type="checkBox" name="isAuthInternetSkipSelect" id="isAuthInternetSkipSelect"
+#if(${config.getBoolean('isAuthInternetSkipSelect')})
+checked="checked"
+#end
+/><br/>
+role:<input type="text" id="authInternetAuthRole" size="16" value="$!esc.html($!{config.getString('authInternetAuthRole')})"/><br/>
+<input type="button" value="設定" onclick="setAuthInternet();"/><br/>
+</div>
+
+<Hr/>
 <H2 onclick="ph.jQuery('#fbDiv').toggle();">+facebook設定</H2>
 <div class="internetAuthItem" id="fbDiv">
 <p>InternetAuthの場合有効、facebook関連の設定<br/>
 参考:<a href='https://developers.facebook.com/apps' target='_blank'>Facebook Developers</a><br/>
 App Domains,ログインが可能なウェブサイトには、authUrlを参考に値を設定してしてください。
 </p>
-unuse:<input type="checkBox" name="unuseAuthFb" id="unuseAuthFb"
-#if(!${config.getBoolean('useAuthFb')})
+use:<input type="checkBox" name="useAuthFb" id="useAuthFb"
+#if(${config.getBoolean('useAuthFb')})
 checked="checked"
 #end
 /><br/>
@@ -112,8 +135,8 @@ App Secret:<input type="text" id="authFbAppSecret" size="64" value="$!esc.html($
 参考:<a href='https://code.google.com/apis/console/' target='_blank'>Google APIs Console&gt;API Access</a><br/>
 Redirect URIs: ${config.config.authUrl}/internetAuth/googleRes
 </p>
-unuse:<input type="checkBox" name="unuseAuthGoogle" id="unuseAuthGoogle"
-#if(!${config.getBoolean('useAuthGoogle')})
+use:<input type="checkBox" name="useAuthGoogle" id="useAuthGoogle"
+#if(${config.getBoolean('useAuthGoogle')})
 checked="checked"
 #end
 /><br/>
@@ -129,8 +152,8 @@ Client secret:<input type="text" id="authGoogleClientSecret" size="128" value="$
 参考:<a href='https://dev.twitter.com/apps' target='_blank'>Twitter Developpers</a><br/>
 Callback URL: ${config.config.authUrl}/internetAuth/twitterRes
 </p>
-unuse:<input type="checkBox" name="unuseAuthTwitter" id="unuseAuthTwitter"
-#if(!${config.getBoolean('useAuthTwitter')})
+use:<input type="checkBox" name="useAuthTwitter" id="useAuthTwitter"
+#if(${config.getBoolean('useAuthTwitter')})
 checked="checked"
 #end
 /><br/>
@@ -143,8 +166,8 @@ Consumer secret:<input type="text" id="authTwitterConsumerSecret" size="64" valu
 <H2 onclick="ph.jQuery('#openIdDiv').toggle();">+openId設定</H2>
 <div class="internetAuthItem" id="openIdDiv">
 <p>InternetAuthの場合有効、openId関連の設定</p>
-unuse:<input type="checkBox" name="unuseAuthOpenid" id="unuseAuthOpenid"
-#if(!${config.getBoolean('useAuthOpenid')})
+use:<input type="checkBox" name="useAuthOpenid" id="useAuthOpenid"
+#if(${config.getBoolean('useAuthOpenid')})
 checked="checked"
 #end
 /><br/>
