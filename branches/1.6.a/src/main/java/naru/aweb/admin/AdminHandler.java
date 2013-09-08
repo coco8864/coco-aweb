@@ -242,6 +242,12 @@ public class AdminHandler extends WebServerHandler{
 				config.setProperty("authRedirectTimeout",authRedirectTimeout);
 			}
 			responseJson(true);
+		}else if("setAuthInternet".equals(cmd)){
+			String isAuthInternetSkipSelect=parameter.getParameter("isAuthInternetSkipSelect");
+			config.setProperty("isAuthInternetSkipSelect",isAuthInternetSkipSelect);
+			String authInternetAuthRole=parameter.getParameter("authInternetAuthRole");
+			config.setProperty("authInternetAuthRole",authInternetAuthRole);
+			responseJson(true);
 		}else if("setAuthFb".equals(cmd)){
 			String useAuthFb=parameter.getParameter("useAuthFb");
 			config.setProperty("useAuthFb",useAuthFb);
