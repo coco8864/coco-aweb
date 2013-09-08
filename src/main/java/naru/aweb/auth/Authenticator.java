@@ -296,7 +296,6 @@ public class Authenticator {
 		return user;
 	}
 	
-	
 	//mapping@auth‚Ìê‡‚ÍAlogin‚µ‚È‚¢
 	public AuthSession createAuthSession(User user){
 		user=regUser(user);
