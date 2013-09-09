@@ -97,7 +97,10 @@ public class Mapper {
 	private void setupAuthUrl(Mapping mapping){
 		authMapping=mapping;
 		Authorizer authorizer=config.getAuthorizer();
-		String selfDomain = config.getString("selfDomain");
+		String authDomain=mapping.getSourceServer();
+		if(authDomain==null||authDomain.equals("")){
+			authDomain = config.getString("selfDomain");
+		}
 		String realHostName=mapping.getRealHostName();
 		RealHost realHost=RealHost.getRealHost(realHostName);
 		if(realHost==null){
@@ -106,7 +109,7 @@ public class Mapper {
 		}
 		authorizer.setupAuthUrl( (mapping.getSecureType()==SecureType.SSL), 
 								mapping.getSourcePath(), 
-								selfDomain,
+								authDomain,
 								realHost.getBindPort() );
 	}
 	
@@ -167,7 +170,6 @@ public class Mapper {
 			sb.append(mapping.getSourcePath());
 			publicWebUrl=sb.toString();
 		}
-		//pacは複数のmappingにあってよいが、そのrealHostは同一である事
 //		Object authHandler=mapping.getOption(OPTION_AUTH_HANDLER);
 		if(AuthHandler.class.getName().equals(mapping.getDestinationServer())){
 			setupAuthUrl(mapping);//authorizerにauthマッピング定義を教える
