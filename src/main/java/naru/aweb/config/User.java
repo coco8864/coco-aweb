@@ -234,22 +234,9 @@ public class User {
 	@NotPersistent
 	private List<String> rolesList=null;
 	
-	
 	@Persistent
-	@Column(name="FIRST_NAME",jdbcType="VARCHAR", length=1024)
-	private String firstName;
-	
-	@Persistent
-	@Column(name="LAST_NAME",jdbcType="VARCHAR", length=1024)
-	private String lastName;
-	
-	@Persistent
-	@Column(name="FOOT_SIZE")
-	private int footSize;
-	
-	@Persistent
-	@Column(name="EMAIL_ADDRESS")
-	private String emailAdress;
+	@Column(name="NICKNAME",jdbcType="VARCHAR", length=1024)
+	private String nickname;
 
 	@Persistent
 	@Column(name="CERTIFICATE_STORE_ID")
@@ -320,28 +307,6 @@ public class User {
 	}
 
 	/**
-	 * @return the firstName
-	 */
-	public String getFirstName() {
-		return firstName;
-	}
-
-	public void setFirstName(String firstName) {
-		this.firstName = firstName;
-	}
-
-	/**
-	 * @return the lastName
-	 */
-	public String getLastName() {
-		return lastName;
-	}
-
-	public void setLastName(String lastName) {
-		this.lastName = lastName;
-	}
-
-	/**
 	 * @return the createDate
 	 */
 	public Date getCreateDate() {
@@ -372,17 +337,6 @@ public class User {
 
 	public void setLastLogin(Date lastLogin) {
 		this.lastLogin = lastLogin;
-	}
-
-	/**
-	 * @return the footSize
-	 */
-	public int getFootSize() {
-		return footSize;
-	}
-
-	public void setFootSize(int footSize) {
-		this.footSize = footSize;
 	}
 
 	/**
@@ -468,12 +422,12 @@ public class User {
 		this.offlinePassHash = offlinePassHash;
 	}
 	
-	public String getEmailAdress() {
-		return emailAdress;
+	public String getNickname() {
+		return nickname;
 	}
 
-	public void setEmailAdress(String emailAdress) {
-		this.emailAdress = emailAdress;
+	public void setNickname(String nickname) {
+		this.nickname = nickname;
 	}
 
 	public String getOrigin() {

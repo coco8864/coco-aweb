@@ -237,6 +237,11 @@ public class WebServerHandler extends ServerBaseHandler {
 	public void startResponseReqBody() {
 	}
 
+	public void redirect(String location) {
+		setHeader(HeaderParser.LOCATION_HEADER, location);
+		completeResponse("302");
+	}
+	
 	/**
 	 * このメソッドを呼ぶと必ずレスポンスを完結させる、動きを変更されるといやなのでfinalに
 	 * 

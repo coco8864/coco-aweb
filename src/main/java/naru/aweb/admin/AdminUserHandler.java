@@ -42,17 +42,6 @@ public class AdminUserHandler extends WebServerHandler{
 		completeResponse("404");
 	}
 	
-	/*
-	private String calcPass(String loginId,JSONObject jsonUser){
-		String pass1=jsonUser.optString("pass1");
-		String pass2=jsonUser.optString("pass2");
-		if(pass1!=null&&pass1.length()!=0&&pass1.equals(pass2)){
-			return authenticator.calcPass(loginId, pass1);
-		}
-		return null;
-	}
-	*/
-	
 	void doObjCommand(String command,Object paramObj){
 		if("userInsert".equals(command)){
 			JSONObject jsonUser=(JSONObject)paramObj;
@@ -78,9 +67,7 @@ public class AdminUserHandler extends WebServerHandler{
 			}
 			Date now=new Date();
 			user.setCreateDate(now);
-//			user.setChangePass(now);
 			user.save();
-//			authenticator.putUserCache(user);
 			responseJson(user.toJson());
 			return;
 		}else if("userUpdate".equals(command)){
@@ -115,9 +102,7 @@ public class AdminUserHandler extends WebServerHandler{
 				}
 			}
 			user.setRoles(jsonUser.getString("roles"));
-			user.setFirstName(jsonUser.getString("firstName"));
-			user.setLastName(jsonUser.getString("lastName"));
-			user.setFootSize(jsonUser.optInt("footSize",25));
+			user.setNickname(jsonUser.getString("nickname"));
 			if(isInDb){
 				user.save();
 			}

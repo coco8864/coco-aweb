@@ -241,12 +241,10 @@ public class AdminHandler extends WebServerHandler{
 			if(authRedirectTimeout!=null && Long.parseLong(authRedirectTimeout)>0){
 				config.setProperty("authRedirectTimeout",authRedirectTimeout);
 			}
-			responseJson(true);
-		}else if("setAuthInternet".equals(cmd)){
-			String isAuthInternetSkipSelect=parameter.getParameter("isAuthInternetSkipSelect");
-			config.setProperty("isAuthInternetSkipSelect",isAuthInternetSkipSelect);
-			String authInternetAuthRole=parameter.getParameter("authInternetAuthRole");
-			config.setProperty("authInternetAuthRole",authInternetAuthRole);
+			String isAuthInternetDirect=parameter.getParameter("isAuthInternetDirect");
+			config.setProperty("isAuthInternetDirect",isAuthInternetDirect);
+			String authInternetRole=parameter.getParameter("authInternetRole");
+			config.setProperty("authInternetRole",authInternetRole);
 			responseJson(true);
 		}else if("setAuthFb".equals(cmd)){
 			String useAuthFb=parameter.getParameter("useAuthFb");

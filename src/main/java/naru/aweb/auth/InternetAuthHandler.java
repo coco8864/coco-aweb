@@ -91,10 +91,6 @@ public class InternetAuthHandler extends WebServerHandler {
 		return consumerManager;
 	}
 	
-	private void redirect(String location) {
-		setHeader(HeaderParser.LOCATION_HEADER, location);
-		completeResponse("302");
-	}
 	private void setCookie(String setCookieString){
 		if(setCookieString==null){
 			return;
@@ -104,10 +100,12 @@ public class InternetAuthHandler extends WebServerHandler {
 		setHeader(HeaderParser.SET_COOKIE_HEADER, setCookieString);
 	}
 	
-	private void successAuth(SessionId temporaryId,String userId,String accessToken){
+	private void successAuth(SessionId temporaryId,String userId,String nickname,String accessToken){
 		User user=authenticator.getUserByLoginId(userId);
 		if(user==null){
-			user=authenticator.createUser(userId,"password","admin");//TODO èâä˙íl
+			String role=config.getString("authInternetRole");
+			authenticator.createUser(userId,nickname,"password",role);
+			user=authenticator.getUserByLoginId(userId);
 		}
 		String url=temporaryId.getUrl();
 		AuthSession authSession=authenticator.loginUser(user);
@@ -200,7 +198,7 @@ public class InternetAuthHandler extends WebServerHandler {
 			//System.out.println("accessToken"+accessToken.getToken());
 			//System.out.println("accessToken"+accessToken.getUserId());
 			//System.out.println("accessToken"+accessToken.getScreenName());
-			successAuth(temporaryId, "https://twitter.com?id="+accessToken.getUserId(),accessToken.getToken());
+			successAuth(temporaryId, "https://twitter.com?id="+accessToken.getUserId(),accessToken.getScreenName(),accessToken.getToken());
 			return;
 		} catch (TwitterException e) {
 			logger.error("twitterRes",e);
@@ -232,7 +230,8 @@ public class InternetAuthHandler extends WebServerHandler {
 			String meUrl="https://graph.facebook.com/me?"+accessToken;
 			String me=contents(new URL(meUrl));
 			JSONObject json=JSONObject.fromObject(me);
-			successAuth(temporaryId, "https://www.facebook.com?id="+json.getString("id"),accessToken);
+			String nickname=null;//TODO form json
+			successAuth(temporaryId, "https://www.facebook.com?id="+json.getString("id"),nickname,accessToken);
 			return;
 		} catch (MalformedURLException e) {
 			logger.error("accessToken",e);
@@ -254,7 +253,6 @@ public class InternetAuthHandler extends WebServerHandler {
 	
 	private void googleRes(SessionId temporaryId){
 		ParameterParser parameter = getParameterParser();
-		System.out.println(parameter.getParameterMap());
 		String code=parameter.getParameter("code");
 		
 		String authGoogleClientId=config.getString("authGoogleClientId");
@@ -274,7 +272,8 @@ public class InternetAuthHandler extends WebServerHandler {
 			String meUrl="https://www.googleapis.com/oauth2/v1/userinfo?access_token="+accessToken;
 			String me=contents(new URL(meUrl));
 			JSONObject json=JSONObject.fromObject(me);
-			successAuth(temporaryId, "https://accounts.google.com/o/oauth2?id="+json.getString("id"),accessToken);
+			String nickname=null;//TODO form json
+			successAuth(temporaryId, "https://accounts.google.com/o/oauth2?id="+json.getString("id"),nickname,accessToken);
 			return;
 		} catch (MalformedURLException e) {
 			logger.error("accessToken",e);
@@ -329,19 +328,17 @@ public class InternetAuthHandler extends WebServerHandler {
 				redirect(config.getPublicWebUrl());
 			}else{
 				AuthSuccess authSuccess = AuthSuccess.createAuthSuccess(openidResp);
+				String nickname=null;
 				if (authSuccess.hasExtension(SRegMessage.OPENID_NS_SREG)){
 					SRegResponse sregResp = (SRegResponse)authSuccess.getExtension(SRegMessage.OPENID_NS_SREG);
-			        String nickName = sregResp.getAttributeValue("nickname");
-//					completeResponse("200","sreg success:"+verified.getIdentifier()+":"+nickName);
+					nickname = sregResp.getAttributeValue("nickname");
 				}else if (authSuccess.hasExtension(AxMessage.OPENID_NS_AX)){
 					FetchResponse fetchResp = (FetchResponse)authSuccess.getExtension(AxMessage.OPENID_NS_AX);
-					String nickname = fetchResp.getAttributeValue("nickname");
-//					completeResponse("200","AX success:"+verified.getIdentifier()+":"+nickname);
+					nickname = fetchResp.getAttributeValue("nickname");
 				}else{
-//					completeResponse("200","success:"+verified.getIdentifier());
 				}
 				String openid=verified.getIdentifier();
-				successAuth(temporaryId, openid,null);
+				successAuth(temporaryId,openid,nickname,null);
 			}
 			return;
 		} catch (DiscoveryException e) {
