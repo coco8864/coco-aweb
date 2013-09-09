@@ -234,13 +234,9 @@ public class AdminHandler extends WebServerHandler{
 			Authorizer authorizer=config.getAuthorizer();
 			authorizer.setSessionTimeout(Long.parseLong(sessionTimeout));
 			String authInputTimeout=parameter.getParameter("authInputTimeout");
-			if(authInputTimeout!=null && Long.parseLong(authInputTimeout)>0){
-				config.setProperty("authInputTimeout",authInputTimeout);
-			}
+			config.setProperty("authInputTimeout",authInputTimeout);
 			String authRedirectTimeout=parameter.getParameter("authRedirectTimeout");
-			if(authRedirectTimeout!=null && Long.parseLong(authRedirectTimeout)>0){
-				config.setProperty("authRedirectTimeout",authRedirectTimeout);
-			}
+			config.setProperty("authRedirectTimeout",authRedirectTimeout);
 			String isAuthInternetDirect=parameter.getParameter("isAuthInternetDirect");
 			config.setProperty("isAuthInternetDirect",isAuthInternetDirect);
 			String authInternetRole=parameter.getParameter("authInternetRole");
