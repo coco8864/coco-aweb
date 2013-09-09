@@ -1,14 +1,4 @@
 <script type="text/javascript"> 
-function setAuthInternet(){
-  ph.admin.doCommand('setAuthInternet',{
-    isAuthInternetSkipSelect:ph.jQuery("#isAuthInternetSkipSelect").is(':checked'),
-    authInternetAuthRole:ph.jQuery("#authInternetAuthRole").val()
-  },
-  function(x){
-    alert('internetAuth設定完了');
-  });
-}
-
 function setAuthFb(){
   ph.admin.doCommand('setAuthFb',{
     useAuthFb:ph.jQuery("#useAuthFb").is(':checked'),
@@ -95,22 +85,15 @@ authUrl:${config.config.authUrl}
 </select>現在:<span id="curSchme">$!esc.html($!{config.getString('authenticateScheme')})</span><br/>
 sessionTimeout:<input type="text" id="authSessionTimeout" size="12" value="$!esc.html($!{config.getString('sessionTimeout')})"/>ms<br/>
 ##logoutUrl:<input type="text" id="authLogoutUrl" size="64" value="$!esc.html($!{config.getString('logoutUrl')})"/><br/>
-inputTimeout:<input type="text" id="authInputTimeout" size="12" value="$!esc.html($!{config.getString('authInputTimeout')})"/>ms<br/>
-redirectTimeout:<input type="text" id="authRedirectTimeout" size="12" value="$!esc.html($!{config.getString('authRedirectTimeout')})"/>ms<br/>
-<input type="button" value="設定"  onclick="setAuth();"/><br/>
-</div>
-
-<Hr/>
-<H2 onclick="ph.jQuery('#internetAuthDiv').toggle();">+internetAuth設定</H2>
-<div class="internetAuthItem" id="internetAuthDiv">
-<p>InternetAuth一般の設定<br/>
-skip select:<input type="checkBox" name="isAuthInternetSkipSelect" id="isAuthInternetSkipSelect"
-#if(${config.getBoolean('isAuthInternetSkipSelect')})
+inputTimeout:<input type="text" id="authInputTimeout" size="12" value="$!esc.html($!{config.getString('authInputTimeout','180000')})"/>ms<br/>
+redirectTimeout:<input type="text" id="authRedirectTimeout" size="12" value="$!esc.html($!{config.getString('authRedirectTimeout','5000')})"/>ms<br/>
+internetAuth direct:<input type="checkBox" name="isAuthInternetDirect" id="isAuthInternetDirect"
+#if(${config.getBoolean('isAuthInternetDirect')})
 checked="checked"
 #end
 /><br/>
-role:<input type="text" id="authInternetAuthRole" size="16" value="$!esc.html($!{config.getString('authInternetAuthRole')})"/><br/>
-<input type="button" value="設定" onclick="setAuthInternet();"/><br/>
+internetAuth role:<input type="text" id="authInternetRole" size="16" value="$!esc.html($!{config.getString('authInternetRole')})"/><br/>
+<input type="button" value="設定"  onclick="setAuth();"/><br/>
 </div>
 
 <Hr/>
