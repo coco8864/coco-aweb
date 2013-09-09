@@ -38,9 +38,11 @@ public class SpdyHandler extends ServerBaseHandler {
 	private long writeLength;
 	private RealHost realHost;
 	private ServerParser acceptServer;
+	private boolean isProxy;//CONNECTの後にSPDYが始まったか否か
 	
-	public boolean onHandshaked(String protocol) {
+	public boolean onHandshaked(String protocol,boolean isProxy) {
 		logger.debug("#handshaked.cid:" + getChannelId() +":"+protocol);
+		this.isProxy=isProxy;
 		frame.init(protocol,spdyConfig.getSpdyFrameLimit());
 		inFrameCount=new long[SpdyFrame.TYPE_WINDOW_UPDATE+1];
 		outFrameCount=new long[SpdyFrame.TYPE_WINDOW_UPDATE+1];
@@ -116,7 +118,10 @@ public class SpdyHandler extends ServerBaseHandler {
 			HeaderParser requestHeader=requestContext.getRequestHeader();
 			//ヘッダの内容を設定、ここにSpdyのVLが関係してくるので、SpdyFrameの中で実行
 			frame.setupHeader(requestHeader);
-			ServerParser server=requestHeader.getServer();
+			ServerParser server=null;
+			if(isProxy){//proxyの場合は、ヘッダからproxy先を見つける
+				server=requestHeader.getServer();
+			}
 			acceptServer.ref();
 			/* spdy固有のkeepAlive初期化 */
 			keepAliveContext.setSpdyAcceptServer(acceptServer,realHost,server);
