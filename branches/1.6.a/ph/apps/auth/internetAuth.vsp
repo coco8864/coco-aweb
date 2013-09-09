@@ -7,15 +7,12 @@
 <meta http-equiv="Cache-Control" content="no-cache"> 
 <meta http-equiv="Expires" content="0"> 
 <link type="text/css" href="/pub/css/ph.css" rel="stylesheet" /> 
-<style type="text/css"><!--
-.mainTitle{ margin: 0.0em 0.5em;padding:0em 0.0em 0.0em;}
--->
 </style>
 
 </head>
 <body>
 <div>
-<H1 class="mainTitle" style="float: left;">Internet Authentication</H1>
+<H1 class="mainTitle" style="float: left;margin: 0.0em 0.5em;padding:0em 0.0em 0.0em;">Internet Authentication</H1>
 <div style="float: right;">
 <img src="/pub/images/home.gif" title="home" onclick="location='$esc.html($config.publicWebUrl)'"/>
 <img src="/pub/images/login.gif" title="force login" onclick="location='$esc.html(${config.authUrl})/forceDigest?authId=$esc.html(${authId})'"/>
@@ -23,21 +20,16 @@
 </div>
 <hr style="clear: both;"/>
 <ul>
-#set($count=0)
 #if($config.getBoolean("useAuthFb"))
 <li><a href='$esc.html(${config.authUrl})/internetAuth/fbReq?authId=$esc.html(${authId})'>facebook</a></li>
-#set($count=$count+1)
 #end
 #if($config.getBoolean("useAuthTwitter"))
 <li><a href='$esc.html(${config.authUrl})/internetAuth/twitterReq?authId=$esc.html(${authId})'>twitter</a></li>
-#set($count=$count+1)
 #end
 #if($config.getBoolean("useAuthGoogle"))
 <li><a href='$esc.html(${config.authUrl})/internetAuth/googleReq?authId=$esc.html(${authId})'>google oauth</a></li>
-#set($count=$count+1)
 #end
 #if($config.getBoolean("useAuthOpenid"))
-#set($count=$count+1)
 #foreach($openid in $openids.entrySet())
 <li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.html(${openid.value})'>$esc.html(${openid.key})</a></li>
 #end
@@ -46,13 +38,13 @@
 <form action='$esc.html(${config.authUrl})/internetAuth/openIdReq'>
 <input type='hidden' name='authId' value='$esc.html(${authId})'/>
 openid identifier:<input type='text' size='64' name='identifier'/>
-<input type='submit' value='auth'/>
+<input type='submit' value='login'/>
 </form>
 </li>
 #end
 </ul>
-
 #end
+
 ##username:<input type='text'></input>
 ##<ul>
 ##<li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("http://hcb00013.myopenid.com/")'>myopenid</a></li>

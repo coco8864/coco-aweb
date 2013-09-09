@@ -39,9 +39,7 @@ function doUserSave(){
 		}
 	}
 	user.roles=ph.jQuery("#userRoles").val();
-	user.firstName=ph.jQuery("#userFirstName").val();
-	user.lastName=ph.jQuery("#userLastName").val();
-	user.footSize=ph.jQuery("#userfootSize").val();
+	user.nickname=ph.jQuery("#userNickname").val();
 	ph.admin.doObjCommand('user',command,user,function(json){
 				ph.log('doUserSave:'+json);
 				userTableRefresh();
@@ -81,23 +79,21 @@ function userTable(lines){
 function openUserDialog(isNew,user){
 	ph.jQuery("#userPassword1").val("");
 	ph.jQuery("#userPassword2").val("");
+	ph.jQuery("#offlinePass1").val("");
+	ph.jQuery("#offlinePass2").val("");
 	if(isNew){
 		ph.jQuery(".userUpdateMode").hide();
 		ph.jQuery(".userInsertMode").show();
 		ph.jQuery("#userLoginIdEdit").val("");
 		ph.jQuery("#userRoles").val("");
-		ph.jQuery("#userFirstName").val("");
-		ph.jQuery("#userLastName").val("");
-		ph.jQuery("#userfootSize").val("");
+		ph.jQuery("#userNickname").val("");
 	}else{
 		ph.jQuery(".userUpdateMode").show();
 		ph.jQuery(".userInsertMode").hide();
 		ph.jQuery("#userId").text(user.id);
 		ph.jQuery("#userLoginIdShow").text(user.loginId);
 		ph.jQuery("#userRoles").val(user.roles);
-		ph.jQuery("#userFirstName").val(user.firstName);
-		ph.jQuery("#userLastName").val(user.lastName);
-		ph.jQuery("#userfootSize").val(user.footSize);
+		ph.jQuery("#userNickname").val(user.nickname);
 	}
 	editUser=user;
 	jQuery("#userDialog").dialog('open');
@@ -119,13 +115,9 @@ function userLine(trTag,user){
 	trTag.appendChild(tdTag);
 	tdTag=ph.admin.mkTdTag(user.loginId);
 	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(user.nickname);
+	trTag.appendChild(tdTag);
 	tdTag=ph.admin.mkTdTag(user.roles);
-	trTag.appendChild(tdTag);
-	tdTag=ph.admin.mkTdTag(user.firstName);
-	trTag.appendChild(tdTag);
-	tdTag=ph.admin.mkTdTag(user.lastName);
-	trTag.appendChild(tdTag);
-	tdTag=ph.admin.mkTdTag(user.footSize);
 	trTag.appendChild(tdTag);
 	tdTag=ph.admin.mkTdTag(ph.admin.formatYmdhm(user.lastLogin));
 	trTag.appendChild(tdTag);
@@ -146,8 +138,7 @@ userTableRefresh();
 <div style="margin: 0.4em 0.0em; padding: 0.0em 0.0em;background: #fff none; border: solid 0pt #000;">
 <table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
 <thead>
-<tr><th>ID</th><th>loginId</th><th>roles</th>
-<th>firstName</th><th>lastName</th><th>footSize</th>
+<tr><th>ID</th><th>loginId</th><th>nickname</th><th>roles</th>
 <th>lastLogin</th><th>changePass</th><th>createDate</th><th>loginCount</th>
 </tr>
 </thead>

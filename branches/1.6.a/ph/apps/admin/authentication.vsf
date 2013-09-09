@@ -60,7 +60,9 @@ function setAuth(){
 ##   logoutUrl:ph.jQuery("#authLogoutUrl").val(),
    sessionTimeout:ph.jQuery("#authSessionTimeout").val(),
    authInputTimeout:ph.jQuery("#authInputTimeout").val(),
-   authRedirectTimeout:ph.jQuery("#authRedirectTimeout").val()
+   authRedirectTimeout:ph.jQuery("#authRedirectTimeout").val(),
+   isAuthInternetDirect:ph.jQuery("#isAuthInternetDirect").is(':checked'),
+   authInternetRole:ph.jQuery("#authInternetRole").val()
   },
   function(x){
     ph.jQuery("#curSchme").text(scheme);

@@ -39,7 +39,7 @@ window.onhashchange = function(){
 	}
 	//hashが無い場合は最初のタブを選択
 	index = index ? index : 0;
-	if(index===8){//#debug
+	if(hash==='#debugTab'){//#debug
 		jQuery('#debugLi').show();
 	}
 	//現在のインデックスでタブをセレクト
@@ -130,7 +130,7 @@ ph.log("tabs ajaxOptions success.index:"+index +":anchor:"+anchor);
 </head> 
 <body> 
 <H1 class="mainTitle" style="float: left;">Phantom Server Console</H1>
-<div style="float: right;" class="welcom">$!esc.html($loginUser.loginId)さんようこそ
+<div style="float: right;" class="welcom">$!esc.html($loginUser.nickname)さんようこそ
 <img src="/pub/images/home.gif" title="home" onclick='location=ph.publicWebUrl'/>
 <img src="/pub/images/logout.gif" title="logout" onclick='location=(ph.authUrl+"/logout")'/>
 </div>
