@@ -278,6 +278,9 @@ public class User {
 		return roles;
 	}
 	public void setRoles(String roles) {
+		if(rolesList!=null &&(roles==null || (roles!=null && !roles.equals(this.roles)))){
+			rolesList=null;
+		}
 		this.roles = roles;
 	}
 

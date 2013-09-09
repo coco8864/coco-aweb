@@ -189,7 +189,7 @@ public class DispatchHandler extends ServerBaseHandler {
 			SpdyHandler handler=(SpdyHandler)forwardHandler(SpdyHandler.class);
 			if(handler!=null){
 				logger.debug("#onReadPlain.cid:" + getChannelId()+ "fowardHandler nextProtocol:"+nextProtocol );
-				handler.onHandshaked(nextProtocol);
+				handler.onHandshaked(nextProtocol,connectHeaderLength!=0);
 				handler.onReadPlain(userContext, buffers);
 				return;
 			}
