@@ -555,9 +555,15 @@ public class Authenticator {
 	private Map<String,String> openids=new HashMap<String,String>();
 	public void setupOpenidDef(String openidDef){
 		openids.clear();
+		if(openidDef==null){
+			return;
+		}
 		String[] lines=openidDef.split("\n");
 		for(String line:lines){
 			String[] parts=line.split(",",2);
+			if(parts.length<2){
+				continue;
+			}
 			openids.put(parts[0], parts[1]);
 		}
 	}
