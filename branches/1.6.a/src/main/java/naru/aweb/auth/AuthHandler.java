@@ -108,12 +108,7 @@ public class AuthHandler extends WebServerHandler {
 	
 	private void redirect(String location,String setCookieString) {
 		setCookie(setCookieString);
-		setHeader(HeaderParser.LOCATION_HEADER, location);
-		completeResponse("302");
-	}
-	
-	private void redirect(String location) {
-		redirect(location,null);
+		redirect(location);
 	}
 	
 	/*
@@ -399,7 +394,6 @@ public class AuthHandler extends WebServerHandler {
 	}
 	
 	private void cleanupAuthHeader(boolean force){
-		
 		if(force){
 			if(!authenticator.cleanupAuthForceDigest(this) ){
 				return;
@@ -613,12 +607,12 @@ public class AuthHandler extends WebServerHandler {
 		}else if(AJAX_LOGOUT_PATH.equals(path)){
 			ajaxLogout(cookieId);
 			return;
-//		}else if(REDIRECT_PATH.equals(path)){//TODO uri制限要　for security
-//			String uri=parameter.getParameter("uri");
-//			redirect(uri);
-//			return;
 		}else if(FORCE_DIGEST_LOGON_PATH.equals(path)){//InternetAuth時に管理者ように強制ログオンが必要
 			String authId=parameter.getParameter(AUTH_ID);
+			if(authId==null){
+				SessionId temporaryId = authorizer.createTemporaryId(null,authorizer.getAuthPath());
+				authId=temporaryId.getAuthId();
+			}
 			forceDigestLogin(cookieId,authId);
 			return;
 		}else if(CLEANUP_AUTH_FORCE_DIGEST_HEADER_PATH.equals(path)){//InternetAuth時に管理者ように強制ログオンが必要

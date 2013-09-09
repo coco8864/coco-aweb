@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -103,13 +105,14 @@ public class Authenticator {
 		return user;
 	}
 	
-	public User createUser(String loginId,String password,String roles){
+	public User createUser(String loginId,String nickname,String password,String roles){
 		if(DUMMY_USER_NAME.equals(loginId)){
 			//DUMMY_USER_NAMEでは登録できなくする
 			return null;
 		}
 		User user=new User();
 		user.setLoginId(loginId);
+		user.setNickname(nickname);
 		user.changePassword(this,password, realm);
 		//本物のpassowrdが漏れないようにoffline passwordは一律"password"で初期化
 		//user.setOfflinePassHash(calcPassHash(loginId,"password"));
@@ -240,7 +243,7 @@ public class Authenticator {
 			passSalt=calcSalt(Config.PASS_SALT);
 			offlinePassSalt=calcSalt(Config.OFFLINE_PASS_SALT);
 			String initAdminPass=configuration.getString("initAdminPass");
-			admin=createUser(adminId,initAdminPass,User.ROLE_ADMIN);
+			admin=createUser(adminId,adminId,initAdminPass,User.ROLE_ADMIN);
 		}
 		if(admin==null){
 			try{
@@ -559,6 +562,21 @@ public class Authenticator {
 		}
 	}
 	
+	private String internetAuthDirectLocation(String authId){
+		if(config.getBoolean("useAuthFb")){
+			return config.getAuthUrl()+"/internetAuth/fbReq?authId="+authId;
+		}else if(config.getBoolean("useAuthTwitter")){
+			return config.getAuthUrl()+"/internetAuth/twitterReq?authId="+authId;
+		}else if(config.getBoolean("useAuthGoogle")){
+			return config.getAuthUrl()+"/internetAuth/googleReq?authId="+authId;
+		}else if(config.getBoolean("useAuthOpenid") && openids.size()>=1){
+			Set<Entry<String,String>> set=openids.entrySet();
+			Entry<String,String> entry=set.iterator().next();
+			return config.getAuthUrl()+"/internetAuth/openIdReq?authId="+authId+"&identifier="+entry.getValue();
+		}
+		return null;
+	}
+	
 	/**
 	 * web認証できない場合のレスポンスを生成
 	 * @param headerParser
@@ -579,6 +597,16 @@ public class Authenticator {
 			response.setRequestAttribute("nonce", getNonce());
 			response.forwardAuthPage("digestForm.vsp");
 		}else if(scheme==INTERNET_AUTH){
+			boolean isDirect=config.getBoolean("isAuthInternetDirect", false);
+			if(isDirect){
+				String authId=(String)response.getRequestAttribute(AuthHandler.AUTH_ID);
+				String location=internetAuthDirectLocation(authId);
+				if(location!=null){
+					response.redirect(location);
+					return;
+				}
+				logger.warn("isAuthInternetDirect:true but no auth target.");
+			}
 			response.setRequestAttribute("openids", openids);
 			response.forwardAuthPage("internetAuth.vsp");
 		}else{//ありえない
