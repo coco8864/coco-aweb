@@ -88,7 +88,7 @@ ph.jQuery(function() {
 		}
 		var inout=ph.jQuery("#loginout");
 		if(user.loginId){
-			ph.jQuery("#welcome").text(user.loginId+"さん ようこそ");
+			ph.jQuery("#welcome").text(user.nickname+"さん ようこそ");
 			inout.attr("src","/pub/images/logout.gif");
 			inout.attr("title","logout");
 			inout.unbind();
