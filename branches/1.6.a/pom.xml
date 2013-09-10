@@ -145,6 +145,7 @@
 							</delete>
   							<copy todir="pack/phantom/">
 									<fileset dir="pack/phantom_tmpl/">
+										<include name="**/*" />
 										<include name="**/*.*" />
 										<exclude name="**/.svn/**/*.*" />
 									</fileset>
@@ -165,6 +166,7 @@
 									<include name="setting.vpf" />
 									<include name="trace.vpf" />
 									<include name="dialogs.vpf" />
+									<include name="authentication.vsf" />
 								</fileset>
 							</copy>
 							<copy todir="pack/phantom/ph/apps/auth/">
