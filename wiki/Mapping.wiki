@@ -2,7 +2,7 @@
 
 = mapping =
 
- Phantom Proxyは、realHostで受け付けた各種のリクエストをmapping定義に従って適切なレスポンスコンポーネントに振り分けます。リクエストを"source"と表し、レスポンスを"destination"と表現しています。
+ Phantom Serverは、realHostで受け付けた各種のリクエストをmapping定義に従って適切なレスポンスコンポーネントに振り分けます。リクエストを"source"と表し、レスポンスを"destination"と表現しています。
  sourceからdestinationを決定するのが、mappingの役割です。定義によりさまざまなサーバとして動作させることができます。[Servers 汎用サーバ]参照
 
  mappingは、Consoleの以下から設定できます。
