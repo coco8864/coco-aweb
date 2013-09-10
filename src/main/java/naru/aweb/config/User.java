@@ -61,7 +61,7 @@ public class User {
 		DatePropertyFilter dpf=new DatePropertyFilter();
 		jsonConfig.setJavaPropertyFilter(dpf);
 		jsonConfig.setJsonPropertyFilter(dpf);
-		jsonConfig.setExcludes(new String[]{"passHash","digestAuthPassHash","offlinePassHash","certificateStoreId","extStoreId","admin","guest","dummyPassword","rolesList","loginCount"});
+		jsonConfig.setExcludes(new String[]{"passHash","digestAuthPassHash","offlinePassHash","certificateStoreId","extStoreId","admin","guest","dummyPassword","rolesList"});
 		jsonConfig.setNewBeanInstanceStrategy(new UserInstanceStrategy());
 	}
 	private static final String USER_QUERY="select from " + User.class.getName() + " ";
@@ -108,8 +108,8 @@ public class User {
 		return pm.detachCopy(pm.getObjectById(User.class,id));
 	}
 	
-	public static JSON collectionToJson(Collection<User> mappings){
-		return JSONSerializer.toJSON(mappings,jsonConfig);
+	public static JSON collectionToJson(Collection<User> users){
+		return JSONSerializer.toJSON(users,jsonConfig);
 	}
 
 	public static User fromJson(String jsonString){
