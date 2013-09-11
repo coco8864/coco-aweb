@@ -34,6 +34,7 @@ public class AdminRealHostHandler extends WebServerHandler{
 					orgRealHost.setBindHost(realHost.getBindHost());
 					orgRealHost.setBindPort(realHost.getBindPort());
 					orgRealHost.setBacklog(realHost.getBacklog());
+					orgRealHost.setSslCommonName(realHost.getSslCommonName());
 					orgRealHost.setBlackPattern(realHost.getBlackPattern());
 					orgRealHost.setWhitePattern(realHost.getWhitePattern());
 					config.updateRealHosts();

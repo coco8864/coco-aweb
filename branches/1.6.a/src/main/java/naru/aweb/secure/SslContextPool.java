@@ -169,7 +169,7 @@ keytool -keystore cacerts_192.168.1.30.jks -storepass changeit -import -noprompt
 	}
 	
 	private void runCertreq(File trustStoreFile,String cn,String password){
-		File certreqFile=new File(trustStoreDir,cn+".csr");//.csr: 署名要求 (PEM-encoded X.509 Certificate Signing Request)
+		File certreqFile=new File(trustStoreDir,cn.replaceAll("\\*", "#")+".csr");//.csr: 署名要求 (PEM-encoded X.509 Certificate Signing Request)
 		String args[]={
 /*
 keytool -keystore cacerts_192.168.1.30.jks -storepass changeit -certreq -alias phantom -file 192.168.1.30_certreq.csr
@@ -186,7 +186,7 @@ keytool -keystore cacerts_192.168.1.30.jks -storepass changeit -certreq -alias p
 	}
 	
 	private void runExportCert(File trustStoreFile,String cn,String password){
-		File certFile=new File(trustStoreDir,cn+".cer");
+		File certFile=new File(trustStoreDir,cn.replaceAll("\\*", "#")+".cer");
 		String args[]={
 /*
 keytool -export -storepass changeit -keystore D:\prj\aweb\ph\security\ph.login.yahoo.co.jp.jks -alias phantom -file ph.login.yahoo.co.jp.cer
@@ -206,8 +206,8 @@ keytool -export -storepass changeit -keystore D:\prj\aweb\ph\security\ph.login.y
 		File confFile=new File(trustStoreDir,"CA/openssl-ca.cnf");
 		File keyFile=new File(trustStoreDir,"CA/private/cakey.pem");
 		File casertFile=new File(trustStoreDir,"CA/cacert.pem");
-		File certreqFile=new File(trustStoreDir,cn+".csr");//.csr: 署名要求 (PEM-encoded X.509 Certificate Signing Request)
-		File certFile=new File(trustStoreDir,cn+".crt");//.crt: 証明書(X509のPEM encoded)
+		File certreqFile=new File(trustStoreDir,cn.replaceAll("\\*", "#")+".csr");//.csr: 署名要求 (PEM-encoded X.509 Certificate Signing Request)
+		File certFile=new File(trustStoreDir,cn.replaceAll("\\*", "#")+".crt");//.crt: 証明書(X509のPEM encoded)
 		String args[]={
 /*
 openssl ca -config /home/naru/phantom3/ph/security/CA/openssl-ca.cnf -keyfile /home/naru/phantom3/ph/security/CA/private/cakey.pem -cert /home/naru/phantom3/ph/security/CA/cacert.pem -in /home/naru/phantom3/ph/security/49.212.107.199_certreq.csr -out /home/naru/phantom3/ph/security/49.212.107.199_cert.cer -passin pass:xxxxxx -batch
@@ -226,7 +226,7 @@ openssl ca -config /home/naru/phantom3/ph/security/CA/openssl-ca.cnf -keyfile /h
 	}
 	
 	private void runImportCert(File trustStoreFile,String cn,String password){
-		File certFile=new File(trustStoreDir,cn+".crt");//.crt: 証明書(X509のPEM encoded)
+		File certFile=new File(trustStoreDir,cn.replaceAll("\\*", "#")+".crt");//.crt: 証明書(X509のPEM encoded)
 		String args[]={
 /*
 keytool -keystore ph.www.google.com.jks -storepass changeit -import -noprompt -alias phantom -file D:\prj\aweb\ph\CA\ph.www.google.com_cert.csr
@@ -243,7 +243,7 @@ keytool -keystore ph.www.google.com.jks -storepass changeit -import -noprompt -a
 	}
 	
 	private InputStream createTrustStore(String cn,String trustStorePassword,String caPassword) throws FileNotFoundException{
-		File trustStoreFile=new File(trustStoreDir,cn+".jks");
+		File trustStoreFile=new File(trustStoreDir,cn.replaceAll("\\*", "#")+".jks");
 		if(trustStoreFile.exists()){
 			return new FileInputStream(trustStoreFile);
 		}
