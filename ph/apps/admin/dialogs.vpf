@@ -352,6 +352,7 @@ init:<input id="realHostInitBind" type="checkBox"><br/>
 bindHost:<input id="realHostBindHost" type="text" size="40"><br/>
 bindPort:<input id="realHostBindPort" type="text" size="40"><br/>
 backlog:<input id="realHostBacklog" type="text" size="40"><br/>
+sslCommonName:<input id="realHostSslCommonName" type="text" size="50"><br/>
 ##virtualHosts:<input id="realHostVirtualHosts" type="text" size="40"><br/>virtualHostsは使われていない
 whiteIpPattern:<input id="realHostWhitePattern" type="text" size="50"><br/>
 blackIpPattern:<input id="realHostBlackPattern" type="text" size="50"><br/>
