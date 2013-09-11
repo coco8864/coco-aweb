@@ -113,7 +113,7 @@ public class Config {
 	private File publicDocumentRoot;// 誰でも見えるところ
 	private File appsDocumentRoot;//配備先ディレクトリ
 	private File injectionDir;// 注入コンテンツを格納するディレクトリ
-	private static SSLContext sslContext;
+	private SSLContext sslContext;
 	private File phantomHome;
 	private Mapper mapper;
 	private Authenticator authenticator;

@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.Date;
 import java.util.List;
 
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
 import org.apache.log4j.Logger;
@@ -742,7 +743,13 @@ public class DispatchHandler extends ServerBaseHandler {
 	public SSLEngine getSSLEngine() {
 		KeepAliveContext keepAliveContext = getKeepAliveContext();
 		ServerParser sslServer = keepAliveContext.getProxyTargetServer();
-		SSLEngine engine=getConfig().getSslEngine(sslServer);
+		SSLEngine engine;
+		if(sslServer==null){
+			SSLContext sslContext=keepAliveContext.getRealHost().getSslContext();
+			engine=sslContext.createSSLEngine(null, 443);
+		}else{
+			engine=getConfig().getSslEngine(sslServer);
+		}
 		if(keepAliveContext.getRealHost().isSpdyAvailable()){
 			SpdyConfig spdyConfig=getConfig().getSpsyConfig();
 			spdyConfig.setNextProtocols(engine);
