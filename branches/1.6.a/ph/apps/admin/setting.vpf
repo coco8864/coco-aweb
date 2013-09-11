@@ -168,6 +168,7 @@ function realHostDialog(realHost){
 	ph.jQuery('#realHostBindHost').val(realHost.bindHost);
 	ph.jQuery('#realHostBindPort').val(realHost.bindPort);
 	ph.jQuery('#realHostBacklog').val(realHost.backlog);
+	ph.jQuery('#realHostSslCommonName').val(realHost.sslCommonName);
 	ph.jQuery('#realHostBlackPattern').val(realHost.blackPattern);
 	ph.jQuery('#realHostWhitePattern').val(realHost.whitePattern);
 	if(realHost.name=='mainHost'){//mainHostはunbind不可
@@ -213,6 +214,7 @@ function realHostCreate(){
   bindHost:ph.jQuery("#realHostBindHost").val(),
   bindPort:ph.jQuery("#realHostBindPort").val(),
   backlog:ph.jQuery("#realHostBacklog").val(),
+  sslCommonName:ph.jQuery("#realHostSslCommonName").val(),
 //  virtualHosts:ph.jQuery("#realHostVirtualHosts").val().split(",")
   virtualHosts:[],
   blackPattern:ph.jQuery("#realHostBlackPattern").val(),
