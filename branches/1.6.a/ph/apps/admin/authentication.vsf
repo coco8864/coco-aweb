@@ -158,12 +158,12 @@ checked="checked"
 /><br/>
 title,identifier<br/>
 <textarea id="authOpenidDefArea" rows="10" cols="80">$!esc.html($!{config.getString('authOpenidDef')})</textarea><br/>
-<input type="button" value="設定"  onclick="setAuthOpenid();"/><br/>
 directId:<input type="checkBox" name="useAuthDirectOpenid" id="useAuthDirectOpenid"
 #if(${config.getBoolean('useAuthDirectOpenid')})
 checked="checked"
 #end
 /><br/>
+<input type="button" value="設定"  onclick="setAuthOpenid();"/><br/>
 </div>
 
 
