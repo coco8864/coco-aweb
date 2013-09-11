@@ -11,7 +11,6 @@ import naru.async.ChannelHandler;
 import naru.async.pool.BuffersUtil;
 import naru.aweb.config.Config;
 import naru.aweb.http.HeaderParser;
-import naru.aweb.http.WebServerHandler;
 import naru.aweb.util.ServerParser;
 
 import org.apache.log4j.Logger;

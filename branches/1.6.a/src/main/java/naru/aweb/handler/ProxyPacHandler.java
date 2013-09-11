@@ -14,7 +14,6 @@ import naru.aweb.config.Mapping.SourceType;
 import naru.aweb.core.RealHost;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.KeepAliveContext;
-import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.MappingResult;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;

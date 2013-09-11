@@ -12,7 +12,6 @@ import naru.aweb.handler.ws.WsHybiFrame;
 import naru.aweb.handler.ws.WsProtocol;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.RequestContext;
-import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.MappingResult;
 
 import org.apache.log4j.Logger;

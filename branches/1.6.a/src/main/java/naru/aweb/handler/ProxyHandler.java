@@ -18,7 +18,6 @@ import naru.aweb.http.HeaderParser;
 import naru.aweb.http.KeepAliveContext;
 import naru.aweb.http.WebClient;
 import naru.aweb.http.WebClientHandler;
-import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.spdy.SpdySession;
 import naru.aweb.util.ServerParser;

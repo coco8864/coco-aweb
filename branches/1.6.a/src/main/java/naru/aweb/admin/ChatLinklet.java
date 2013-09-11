@@ -14,8 +14,8 @@ import naru.aweb.link.api.Linklet;
 import naru.aweb.link.api.LinkletCtx;
 import net.sf.json.JSONObject;
 
-public class ChatPalet implements Linklet {
-	private static Logger logger = Logger.getLogger(ChatPalet.class);
+public class ChatLinklet implements Linklet {
+	private static Logger logger = Logger.getLogger(ChatLinklet.class);
 	private static Config config=Config.getConfig();
 
 	private Map<LinkPeer,String> names=Collections.synchronizedMap(new HashMap<LinkPeer,String>());
@@ -55,9 +55,9 @@ public class ChatPalet implements Linklet {
 			return;
 		}
 		if(Boolean.TRUE.equals(data.get("echoback"))){
-			ctx.message(data, PaAdmin.SUBNAME_CHAT);
+			ctx.message(data, AdminLinklet.SUBNAME_CHAT);
 		}else{
-			ctx.message(data, PaAdmin.SUBNAME_CHAT, peer);
+			ctx.message(data, AdminLinklet.SUBNAME_CHAT, peer);
 		}
 	}
 }

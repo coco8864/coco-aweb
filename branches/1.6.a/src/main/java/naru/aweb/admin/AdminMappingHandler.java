@@ -8,8 +8,8 @@ import java.util.Collection;
 
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
+import naru.aweb.handler.WebServerHandler;
 import naru.aweb.http.ParameterParser;
-import naru.aweb.http.WebServerHandler;
 import naru.aweb.util.ServerParser;
 import naru.aweb.util.StreamUtil;
 import net.sf.json.JSON;

@@ -4,8 +4,8 @@ import java.net.UnknownHostException;
 
 import naru.aweb.config.Config;
 import naru.aweb.core.RealHost;
+import naru.aweb.handler.WebServerHandler;
 import naru.aweb.http.ParameterParser;
-import naru.aweb.http.WebServerHandler;
 import net.sf.json.JSONObject;
 
 import org.apache.log4j.Logger;

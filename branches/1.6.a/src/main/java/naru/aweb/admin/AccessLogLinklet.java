@@ -27,8 +27,8 @@ import naru.aweb.robot.Browser;
 import net.sf.json.JSON;
 import net.sf.json.JSONObject;
 
-public class AccessLogPalet implements Linklet {
-	private static Logger logger = Logger.getLogger(AccessLogPalet.class);
+public class AccessLogLinklet implements Linklet {
+	private static Logger logger = Logger.getLogger(AccessLogLinklet.class);
 	private static Config config=Config.getConfig();
 
 	private LinkletCtx ctx;

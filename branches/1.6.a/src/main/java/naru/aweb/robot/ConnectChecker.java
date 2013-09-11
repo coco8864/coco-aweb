@@ -9,7 +9,7 @@ import org.apache.log4j.Logger;
 import naru.async.Timer;
 import naru.async.cache.CacheBuffer;
 import naru.async.timer.TimerManager;
-import naru.aweb.admin.PaAdmin;
+import naru.aweb.admin.AdminLinklet;
 import naru.aweb.config.Config;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.WsClient;

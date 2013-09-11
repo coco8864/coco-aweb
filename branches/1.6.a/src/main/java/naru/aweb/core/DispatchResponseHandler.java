@@ -5,8 +5,8 @@ import naru.async.pool.PoolManager;
 import naru.aweb.auth.AuthHandler;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
+import naru.aweb.handler.WebServerHandler;
 import naru.aweb.http.HeaderParser;
-import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.MappingResult;
 import net.sf.json.JSONObject;
 
