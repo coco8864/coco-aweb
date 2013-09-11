@@ -12,11 +12,11 @@ import naru.async.BufferGetter;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.async.store.Store;
+import naru.aweb.handler.WebServerHandler;
 import naru.aweb.http.ChunkContext;
 import naru.aweb.http.GzipContext;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.ParameterParser;
-import naru.aweb.http.WebServerHandler;
 import naru.aweb.util.CodeConverter;
 import net.sf.json.JSONObject;
 

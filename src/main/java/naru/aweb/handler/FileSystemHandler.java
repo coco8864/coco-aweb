@@ -18,7 +18,6 @@ import naru.aweb.config.AppcacheOption;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping; //import naru.aweb.config.FileCache.FileCacheInfo;
 import naru.aweb.http.HeaderParser;
-import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.util.ServerParser;
 

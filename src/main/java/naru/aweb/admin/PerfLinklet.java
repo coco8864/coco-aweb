@@ -25,8 +25,8 @@ import naru.aweb.util.StringConverter;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
-public class PerfPalet implements Linklet,Event {
-	private static Logger logger = Logger.getLogger(PerfPalet.class);
+public class PerfLinklet implements Linklet,Event {
+	private static Logger logger = Logger.getLogger(PerfLinklet.class);
 	private static Config config=Config.getConfig();
 
 	private LinkletCtx ctx;

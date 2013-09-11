@@ -10,14 +10,14 @@ import naru.aweb.link.api.LinkPeer;
 import naru.aweb.link.api.Linklet;
 import naru.aweb.link.api.LinkletCtx;
 
-public class PaAdmin implements Linklet {
+public class AdminLinklet implements Linklet {
 	public static final String QNAME = "admin";
 	public static final String SUBNAME_CHAT = "chat";
 	public static final String SUBNAME_PERF = "perf";
 	public static final String SUBNAME_ACCESS_LOG = "accessLog";
 	public static final String SUBNAME_STASTICS="stastics";
 	
-	private static Logger logger = Logger.getLogger(PaAdmin.class);
+	private static Logger logger = Logger.getLogger(AdminLinklet.class);
 	private static Config config=Config.getConfig();
 	
 	private LinkletCtx ctx;

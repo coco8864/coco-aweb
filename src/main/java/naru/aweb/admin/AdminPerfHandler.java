@@ -9,9 +9,9 @@ import java.util.Collection;
 
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Performance;
+import naru.aweb.handler.WebServerHandler;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.ParameterParser;
-import naru.aweb.http.WebServerHandler;
 import naru.aweb.robot.ConnectChecker;
 import naru.aweb.robot.Scenario;
 import naru.aweb.robot.ServerChecker;

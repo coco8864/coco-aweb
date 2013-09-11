@@ -31,7 +31,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
 import naru.async.cache.FileCache;
-import naru.aweb.admin.PaAdmin;
+import naru.aweb.admin.AdminLinklet;
 import naru.aweb.auth.Authenticator;
 import naru.aweb.auth.Authorizer;
 import naru.aweb.core.Main;
@@ -493,7 +493,7 @@ public class Config {
 	private boolean isAleadyTerm = false;
 
 	public void term() {
-		paManager.undeploy(PaAdmin.QNAME);
+		paManager.undeploy(AdminLinklet.QNAME);
 		if (isAleadyTerm) {
 			return;
 		}
@@ -763,11 +763,11 @@ public class Config {
 		//TODO 動的に設定できるようにする
 		paManager = LinkManager.getInstance("/admin");
 		JSONObject subscribers=JSONObject.fromObject(
-				"{accessLog:'naru.aweb.admin.AccessLogPalet'," +
-				"chat:'naru.aweb.admin.ChatPalet'," +
-				"perf:'naru.aweb.admin.PerfPalet'" +
+				"{accessLog:'naru.aweb.admin.AccessLogLinklet'," +
+				"chat:'naru.aweb.admin.ChatLinklet'," +
+				"perf:'naru.aweb.admin.PerfLinklet'" +
 				"}");
-		paManager.deploy(PaAdmin.QNAME, "naru.aweb.admin.PaAdmin",subscribers);
+		paManager.deploy(AdminLinklet.QNAME, "naru.aweb.admin.AdminLinklet",subscribers);
 		paManager.setNextHandler(Mapping.ADMIN_HANDLER);
 		broadcaster=new Broadcaster(this,paManager);//統計情報監視の開始
 	}

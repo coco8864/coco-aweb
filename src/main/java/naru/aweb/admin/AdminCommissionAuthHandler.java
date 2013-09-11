@@ -11,8 +11,8 @@ import javax.jdo.PersistenceManager;
 
 import naru.aweb.config.CommissionAuthRole;
 import naru.aweb.config.CommissionAuthUrl;
+import naru.aweb.handler.WebServerHandler;
 import naru.aweb.http.ParameterParser;
-import naru.aweb.http.WebServerHandler;
 import naru.aweb.portal.PortalHandler;
 import naru.aweb.util.JdoUtil;
 import net.sf.json.JSON;

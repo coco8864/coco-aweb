@@ -16,7 +16,7 @@ import naru.aweb.config.CommissionAuth;
 import naru.aweb.config.Config;
 import naru.aweb.config.User;
 import naru.aweb.core.ServerBaseHandler;
-import naru.aweb.http.WebServerHandler;
+import naru.aweb.handler.WebServerHandler;
 import naru.aweb.util.ServerParser;
 import net.sf.json.JSON;
 

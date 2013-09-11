@@ -15,7 +15,6 @@ import naru.async.store.Store;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.http.HeaderParser;
-import naru.aweb.http.WebServerHandler;
 import naru.aweb.util.ServerParser;
 
 import org.apache.log4j.Logger;

@@ -12,7 +12,6 @@ import java.util.Map;
 import naru.aweb.config.Config;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.RequestContext;
-import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.MappingResult;
 
 import org.apache.commons.configuration.Configuration;

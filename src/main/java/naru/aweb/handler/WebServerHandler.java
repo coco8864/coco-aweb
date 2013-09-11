@@ -1,4 +1,4 @@
-package naru.aweb.http;
+package naru.aweb.handler;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -20,6 +20,11 @@ import naru.aweb.config.Mapping;
 import naru.aweb.core.DispatchHandler;
 import naru.aweb.core.ServerBaseHandler;
 import naru.aweb.handler.ws.WsProtocol;
+import naru.aweb.http.ChunkContext;
+import naru.aweb.http.GzipContext;
+import naru.aweb.http.HeaderParser;
+import naru.aweb.http.KeepAliveContext;
+import naru.aweb.http.ParameterParser;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.spdy.SpdySession;
 
