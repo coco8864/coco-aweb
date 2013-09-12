@@ -26,7 +26,8 @@ ph.jQuery(function() {
 	ph.jQuery("#crossDocument").text("necessary");
 	ph.jQuery("#websocket").text("optional");
 	ph.jQuery("#hashChange").text("optional");
-	ph.jQuery("#boboBuilder").text("optional");
+	ph.jQuery("#blob").text("optional");
+	ph.jQuery("#appCache").text("optional");
 	
 	var available=true;
 	if(ph.useWebSocket){
@@ -59,12 +60,20 @@ ph.jQuery(function() {
 	}
 	ph.jQuery("#useSessionStorage").text(useText);
 
-	if(ph.useBlobBuilder){
+	if(ph.useBlob){
 		useText="available";
 	}else{
 		useText="unavailable";
 	}
-	ph.jQuery("#useBlobBuilder").text(useText);
+	ph.jQuery("#useBlob").text(useText);
+
+	if(ph.useAppCache){
+		useText="available";
+	}else{
+		useText="unavailable";
+	}
+	ph.jQuery("#useAppCache").text(useText);
+
 
 	if(!available){
 		ph.jQuery("#welcome").text("このブラウザでは利用できません。");
@@ -72,8 +81,15 @@ ph.jQuery(function() {
 		return;
 	}
 	ph.authInfo(function(res){
+		if(ph.isOffline){
+			ph.jQuery("#isOnline").text("offline");
+		}else{
+			ph.jQuery("#isOnline").text("online");
+		}
 		if(!res.result){
-			alert('fail to auth.info.'+res.reason);
+			var liTag="<li>offline</li>"
+			ph.jQuery("#links").append(liTag);
+			ph.jQuery("#loadicon").remove();
 			return;
 		}
 		var user=res.user;
@@ -149,7 +165,9 @@ function checkGo(url){
 <tr><td>Cross-document messaging</td><td id="crossDocument"></td><td id="useCrossDocument"></td></tr>
 <tr><td>HashChange event</td><td id="hashChange"></td><td id="useHashChange"></td></tr>
 <tr><td>WebSocket API</td><td id="websocket"></td><td id="useWebsocket"></td></tr>
-<tr><td>BlobBuilder</td><td id="boboBuilder"></td><td id="useBlobBuilder"></td></tr>
+<tr><td>Blob</td><td id="blob"></td><td id="useBlob"></td></tr>
+<tr><td>AppCache</td><td id="appCache"></td><td id="useAppCache"></td></tr>
+<tr><td>network</td><td>-</td><td id="isOnline">checking...</td></tr>
 </table>
 <hr/>
 <H2>Version:<span id="version">checking...</span></H2>
