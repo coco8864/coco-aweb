@@ -258,7 +258,7 @@ public class Authenticator {
 		
 		String openidDef=config.getString("authOpenidDef");
 		if(openidDef==null){
-			openidDef="googole openid,https://www.google.com/accounts/o8/id\nyahoo japan,yahoo.co.jp\nyahoo.com,https://me.yahoo.com\n";
+			openidDef="googole(openid),https://www.google.com/accounts/o8/id\nyahoo japan,yahoo.co.jp\nyahoo.com,https://me.yahoo.com\n";
 			config.setProperty("authOpenidDef",openidDef);
 		}
 		setupOpenidDef(openidDef);

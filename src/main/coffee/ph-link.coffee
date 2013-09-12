@@ -245,6 +245,7 @@ ph.link=(aplUrl,useOffline,useConnection,useWs)->
 
 ph.authInfo=(cb,authUrl)->
  ph.onLoad(->authInfo(cb,authUrl))
+ ph.onUnload(->cb(false))
 
 ph.wfsec=0 #workFrame名のシーケンス番号
 authInfo=(cb,authUrl)->

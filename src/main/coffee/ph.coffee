@@ -256,8 +256,8 @@ class Ph extends Deferred
     ph.load()
     ph.isOffline=false
    error: (xhr)->
-    ph.unload()
     ph.isOffline=true
+    ph.unload()
   })
   ph.jQuery(window).on('message',(ev)->window.ph.trigger('message',ev))
   ph.jQuery(window).on('storage',(ev)->window.ph.trigger('storage',ev))

@@ -230,7 +230,7 @@ public class InternetAuthHandler extends WebServerHandler {
 			String meUrl="https://graph.facebook.com/me?"+accessToken;
 			String me=contents(new URL(meUrl));
 			JSONObject json=JSONObject.fromObject(me);
-			String nickname=null;//TODO form json
+			String nickname=json.optString("first_name");
 			successAuth(temporaryId, "https://www.facebook.com?id="+json.getString("id"),nickname,accessToken);
 			return;
 		} catch (MalformedURLException e) {
@@ -268,12 +268,11 @@ public class InternetAuthHandler extends WebServerHandler {
 			String accessJson=contents(new URL("https://accounts.google.com/o/oauth2/token"),req);
 			JSONObject access=JSONObject.fromObject(accessJson);
 			String accessToken=access.getString("access_token");
-			System.out.println("accessToken:"+accessToken);
 			String meUrl="https://www.googleapis.com/oauth2/v1/userinfo?access_token="+accessToken;
 			String me=contents(new URL(meUrl));
-			JSONObject json=JSONObject.fromObject(me);
-			String nickname=null;//TODO form json
-			successAuth(temporaryId, "https://accounts.google.com/o/oauth2?id="+json.getString("id"),nickname,accessToken);
+			JSONObject profile=JSONObject.fromObject(me);
+			String nickname=profile.optString("given_name");
+			successAuth(temporaryId, "https://accounts.google.com?id="+profile.getString("id"),nickname,accessToken);
 			return;
 		} catch (MalformedURLException e) {
 			logger.error("accessToken",e);
@@ -295,7 +294,16 @@ public class InternetAuthHandler extends WebServerHandler {
 			//System.out.println("opendpoint:"+discovered.getOPEndpoint());
 			FetchRequest fetch = FetchRequest.createFetchRequest();
 			fetch.addAttribute("nickname", "http://axschema.org/namePerson/friendly", true);
-			AuthRequest authReq = manager.authenticate(discovered, config.getAuthUrl()+"/internetAuth/openIdRes?"+AuthHandler.AUTH_ID +"="+temporaryId.getAuthId());
+			//returnToUrlÇ…ÇÕportÇ‡ä‹ÇﬂÇ»Ç¢Ç∆openid4javaÇ™verifyÉGÉâÅ[ÇìäÇ∞ÇÈ
+			String authUrl=config.getAuthUrl();
+			if(authUrl.indexOf(":",6)<0){
+				if(authUrl.startsWith("https://")){
+					authUrl=authUrl.replaceFirst("(https://[^/]*)/", "$1:443/");
+				}else{
+					authUrl=authUrl.replaceFirst("(http://[^/]*)/)", "$1:80/");
+				}
+			}
+			AuthRequest authReq = manager.authenticate(discovered, authUrl+"/internetAuth/openIdRes?"+AuthHandler.AUTH_ID +"="+temporaryId.getAuthId());
 			SRegRequest sregReq = SRegRequest.createFetchRequest();
 			sregReq.addAttribute("nickname", true);
 			authReq.addExtension(fetch);			
