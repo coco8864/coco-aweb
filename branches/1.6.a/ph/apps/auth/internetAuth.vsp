@@ -27,7 +27,7 @@
 <li><a href='$esc.html(${config.authUrl})/internetAuth/twitterReq?authId=$esc.html(${authId})'>twitter</a></li>
 #end
 #if($config.getBoolean("useAuthGoogle"))
-<li><a href='$esc.html(${config.authUrl})/internetAuth/googleReq?authId=$esc.html(${authId})'>google oauth</a></li>
+<li><a href='$esc.html(${config.authUrl})/internetAuth/googleReq?authId=$esc.html(${authId})'>google(oauth)</a></li>
 #end
 #if($config.getBoolean("useAuthOpenid"))
 #foreach($openid in $openids.entrySet())
