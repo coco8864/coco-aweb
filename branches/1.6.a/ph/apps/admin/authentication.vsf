@@ -2,6 +2,7 @@
 function setAuthFb(){
   ph.admin.doCommand('setAuthFb',{
     useAuthFb:ph.jQuery("#useAuthFb").is(':checked'),
+    authFbLabel:ph.jQuery("#authFbLabel").val(),
     authFbAppId:ph.jQuery("#authFbAppId").val(),
     authFbAppSecret:ph.jQuery("#authFbAppSecret").val()
   },
@@ -9,24 +10,26 @@ function setAuthFb(){
     alert('fasebook設定完了');
   });
 }
-function setAuthGoogle(){
-  ph.admin.doCommand('setAuthGoogle',{
-    useAuthGoogle:ph.jQuery("#useAuthGoogle").is(':checked'),
-    authGoogleClientId:ph.jQuery("#authGoogleClientId").val(),
-    authGoogleClientSecret:ph.jQuery("#authGoogleClientSecret").val()
-  },
-  function(x){
-    alert('google設定完了');
-  });
-}
 function setAuthTwitter(){
   ph.admin.doCommand('setAuthTwitter',{
     useAuthTwitter:ph.jQuery("#useAuthTwitter").is(':checked'),
+    authTwitterLabel:ph.jQuery("#authTwitterLabel").val(),
     authTwitterConsumerKey:ph.jQuery("#authTwitterConsumerKey").val(),
     authTwitterConsumerSecret:ph.jQuery("#authTwitterConsumerSecret").val()
   },
   function(x){
     alert('Twitter設定完了');
+  });
+}
+function setAuthGoogle(){
+  ph.admin.doCommand('setAuthGoogle',{
+    useAuthGoogle:ph.jQuery("#useAuthGoogle").is(':checked'),
+    authGoogleLabel:ph.jQuery("#authGoogleLabel").val(),
+    authGoogleClientId:ph.jQuery("#authGoogleClientId").val(),
+    authGoogleClientSecret:ph.jQuery("#authGoogleClientSecret").val()
+  },
+  function(x){
+    alert('google設定完了');
   });
 }
 function setAuthOpenid(){
@@ -71,7 +74,7 @@ ph.jQuery(function(){
 </script> 
 <H1>Authentication</H1>
 <Hr/>
-<H2 onclick="ph.jQuery('#authDiv').toggle();">+Basic設定</H2>
+<H2 onclick="ph.jQuery('#authDiv').toggle();">+認証設定</H2>
 <div id="authDiv">
 <p>ph認証:mappingとuserのrolesで認可します</br>
 authUrl:${config.config.authUrl}
@@ -110,26 +113,10 @@ use:<input type="checkBox" name="useAuthFb" id="useAuthFb"
 checked="checked"
 #end
 /><br/>
+label:<input type="text" id="authFbLabel" size="32" value="$!esc.html($!{config.getString('authFbLabel','facebook')})"/><br/>
 App ID:<input type="text" id="authFbAppId" size="32" value="$!esc.html($!{config.getString('authFbAppId')})"/><br/>
 App Secret:<input type="text" id="authFbAppSecret" size="64" value="$!esc.html($!{config.getString('authFbAppSecret')})"/><br/>
 <input type="button" value="設定"  onclick="setAuthFb();"/><br/>
-</div>
-
-<Hr/>
-<H2 onclick="ph.jQuery('#googleDiv').toggle();">+google設定</H2>
-<div class="internetAuthItem" id="googleDiv">
-<p>InternetAuthの場合有効、google関連の設定<br/>
-参考:<a href='https://code.google.com/apis/console/' target='_blank'>Google APIs Console&gt;API Access</a><br/>
-Redirect URIs: ${config.config.authUrl}/internetAuth/googleRes
-</p>
-use:<input type="checkBox" name="useAuthGoogle" id="useAuthGoogle"
-#if(${config.getBoolean('useAuthGoogle')})
-checked="checked"
-#end
-/><br/>
-Client ID:<input type="text" id="authGoogleClientId" size="128" value="$!esc.html($!{config.getString('authGoogleClientId')})"/><br/>
-Client secret:<input type="text" id="authGoogleClientSecret" size="128" value="$!esc.html($!{config.getString('authGoogleClientSecret')})"/><br/>
-<input type="button" value="設定"  onclick="setAuthGoogle();"/><br/>
 </div>
 
 <Hr/>
@@ -144,9 +131,29 @@ use:<input type="checkBox" name="useAuthTwitter" id="useAuthTwitter"
 checked="checked"
 #end
 /><br/>
+label:<input type="text" id="authTwitterLabel" size="32" value="$!esc.html($!{config.getString('authTwitterLabel','twitter')})"/><br/>
 Consumer key:<input type="text" id="authTwitterConsumerKey" size="32" value="$!esc.html($!{config.getString('authTwitterConsumerKey')})"/><br/>
 Consumer secret:<input type="text" id="authTwitterConsumerSecret" size="64" value="$!esc.html($!{config.getString('authTwitterConsumerSecret')})"/><br/>
 <input type="button" value="設定"  onclick="setAuthTwitter();"/><br/>
+</div>
+
+
+<Hr/>
+<H2 onclick="ph.jQuery('#googleDiv').toggle();">+google設定</H2>
+<div class="internetAuthItem" id="googleDiv">
+<p>InternetAuthの場合有効、google関連の設定<br/>
+参考:<a href='https://code.google.com/apis/console/' target='_blank'>Google APIs Console&gt;API Access</a><br/>
+Redirect URIs: ${config.authUrl}/internetAuth/googleRes
+</p>
+use:<input type="checkBox" name="useAuthGoogle" id="useAuthGoogle"
+#if(${config.getBoolean('useAuthGoogle')})
+checked="checked"
+#end
+/><br/>
+label:<input type="text" id="authGoogleLabel" size="32" value="$!esc.html($!{config.getString('authGoogleLabel','google(oauth)')})"/><br/>
+Client ID:<input type="text" id="authGoogleClientId" size="128" value="$!esc.html($!{config.getString('authGoogleClientId')})"/><br/>
+Client secret:<input type="text" id="authGoogleClientSecret" size="128" value="$!esc.html($!{config.getString('authGoogleClientSecret')})"/><br/>
+<input type="button" value="設定"  onclick="setAuthGoogle();"/><br/>
 </div>
 
 <Hr/>
@@ -158,7 +165,7 @@ use:<input type="checkBox" name="useAuthOpenid" id="useAuthOpenid"
 checked="checked"
 #end
 /><br/>
-title,identifier<br/>
+label,identifier<br/>
 <textarea id="authOpenidDefArea" rows="10" cols="80">$!esc.html($!{config.getString('authOpenidDef')})</textarea><br/>
 directId:<input type="checkBox" name="useAuthDirectOpenid" id="useAuthDirectOpenid"
 #if(${config.getBoolean('useAuthDirectOpenid')})
