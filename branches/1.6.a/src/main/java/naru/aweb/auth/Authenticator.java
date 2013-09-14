@@ -569,11 +569,11 @@ public class Authenticator {
 	}
 	
 	private String internetAuthDirectLocation(String authId){
-		if(config.getBoolean("useAuthFb")){
+		if(config.getBoolean("useAuthFb")){//facebook
 			return config.getAuthUrl()+"/internetAuth/fbReq?authId="+authId;
-		}else if(config.getBoolean("useAuthTwitter")){
+		}else if(config.getBoolean("useAuthTwitter")){//twitter
 			return config.getAuthUrl()+"/internetAuth/twitterReq?authId="+authId;
-		}else if(config.getBoolean("useAuthGoogle")){
+		}else if(config.getBoolean("useAuthGoogle")){//google
 			return config.getAuthUrl()+"/internetAuth/googleReq?authId="+authId;
 		}else if(config.getBoolean("useAuthOpenid") && openids.size()>=1){
 			Set<Entry<String,String>> set=openids.entrySet();

@@ -55,7 +55,7 @@ class PhAuth
       t._frame[0].src='about:blank'
       req.timerId=null
       return)
-      ,1000)
+      ,ph.authFrameTiemout)
     return
   _requestCallback:(res)->
     reqestCb=@_processReq.cb

@@ -241,30 +241,38 @@ public class AdminHandler extends WebServerHandler{
 			config.setProperty("isAuthInternetDirect",isAuthInternetDirect);
 			String authInternetRole=parameter.getParameter("authInternetRole");
 			config.setProperty("authInternetRole",authInternetRole);
+			String authFrameTimeout=parameter.getParameter("authFrameTimeout");
+			config.setProperty("authFrameTimeout",authFrameTimeout);
 			responseJson(true);
 		}else if("setAuthFb".equals(cmd)){
 			String useAuthFb=parameter.getParameter("useAuthFb");
 			config.setProperty("useAuthFb",useAuthFb);
+			String authFbLabel=parameter.getParameter("authFbLabel");
+			config.setProperty("authFbLabel",authFbLabel);
 			String authFbAppId=parameter.getParameter("authFbAppId");
 			config.setProperty("authFbAppId",authFbAppId);
 			String authFbAppSecret=parameter.getParameter("authFbAppSecret");
 			config.setProperty("authFbAppSecret",authFbAppSecret);
 			responseJson(true);
-		}else if("setAuthGoogle".equals(cmd)){
-			String useAuthGoogle=parameter.getParameter("useAuthGoogle");
-			config.setProperty("useAuthGoogle",useAuthGoogle);
-			String authGoogleClientId=parameter.getParameter("authGoogleClientId");
-			config.setProperty("authGoogleClientId",authGoogleClientId);
-			String authGoogleClientSecret=parameter.getParameter("authGoogleClientSecret");
-			config.setProperty("authGoogleClientSecret",authGoogleClientSecret);
-			responseJson(true);
 		}else if("setAuthTwitter".equals(cmd)){
 			String useAuthTwitter=parameter.getParameter("useAuthTwitter");
 			config.setProperty("useAuthTwitter",useAuthTwitter);
+			String authTwitterLabel=parameter.getParameter("authTwitterLabel");
+			config.setProperty("authTwitterLabel",authTwitterLabel);
 			String authTwitterConsumerKey=parameter.getParameter("authTwitterConsumerKey");
 			config.setProperty("authTwitterConsumerKey",authTwitterConsumerKey);
 			String authTwitterConsumerSecret=parameter.getParameter("authTwitterConsumerSecret");
 			config.setProperty("authTwitterConsumerSecret",authTwitterConsumerSecret);
+			responseJson(true);
+		}else if("setAuthGoogle".equals(cmd)){
+			String useAuthGoogle=parameter.getParameter("useAuthGoogle");
+			config.setProperty("useAuthGoogle",useAuthGoogle);
+			String authGoogleLabel=parameter.getParameter("authGoogleLabel");
+			config.setProperty("authGoogleLabel",authGoogleLabel);
+			String authGoogleClientId=parameter.getParameter("authGoogleClientId");
+			config.setProperty("authGoogleClientId",authGoogleClientId);
+			String authGoogleClientSecret=parameter.getParameter("authGoogleClientSecret");
+			config.setProperty("authGoogleClientSecret",authGoogleClientSecret);
 			responseJson(true);
 		}else if("setAuthOpenid".equals(cmd)){
 			String useAuthOpenid=parameter.getParameter("useAuthOpenid");
@@ -456,9 +464,8 @@ public class AdminHandler extends WebServerHandler{
 			mapping.setResolvePath(path);
 		}
 		ParameterParser parameter=getParameterParser();
-		if(path.endsWith(".vsp")||path.endsWith(".vsf")){
-//			mapping.setDesitinationFile(config.getAdminDocumentRoot());
-			forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
+		if(path.endsWith(".vsp")||path.endsWith(".vsf")||path.endsWith(".html")){
+			forwardHandler(Mapping.FILE_SYSTEM_HANDLER);
 			return;
 		}else if(path.startsWith("/storeDownload")){
 			forwardHandler(Mapping.STORE_HANDLER);

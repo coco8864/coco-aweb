@@ -265,7 +265,11 @@ public class WebServerHandler extends ServerBaseHandler {
 	 */
 	public final void completeResponse(String statusCode, String body) {
 		try {
-			completeResponse(statusCode, body.getBytes(ENCODE));
+			if(body==null){
+				completeResponse(statusCode,(ByteBuffer)null);
+			}else{
+				completeResponse(statusCode, body.getBytes(ENCODE));
+			}
 		} catch (UnsupportedEncodingException e) {
 			logger.error("fail to getBytes().", e);
 		}
@@ -294,8 +298,6 @@ public class WebServerHandler extends ServerBaseHandler {
 		if (body != null) {
 			responseContentLengthApl = (long) body.remaining();
 			setContentLength(responseContentLengthApl);
-//			setHeader(HeaderParser.CONTENT_LENGTH_HEADER, Long
-//					.toString(responseContentLengthApl));
 			responseBody(body);
 		}
 		responseEnd();

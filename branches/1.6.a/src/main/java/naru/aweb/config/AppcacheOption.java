@@ -102,13 +102,14 @@ public class AppcacheOption {
 	
 	private void forwardAppcacheTemplate(WebServerHandler handler,String phappcache,String template){
 		boolean useAppcache=!"unused".equals(phappcache);
-		boolean off="off".equals(phappcache);
+		boolean appcacheMode=!"off".equals(phappcache);
 		List<String> cachePaths=NON_PATHS;
-		if(useAppcache && off==false ){
+		if(useAppcache && appcacheMode ){
 			cachePaths=this.cachePaths;
 		}
 		handler.setRequestAttribute("manifest", manifestAbsPath);
 		handler.setRequestAttribute("useAppcache", useAppcache);
+		handler.setRequestAttribute("appcacheMode", appcacheMode);
 		handler.setRequestAttribute("cachePaths", cachePaths);
 		config.forwardVelocityTemplate(handler,template);
 	}
