@@ -110,7 +110,9 @@ public class ProxyFinder extends ProxySelector{
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			out = new OutputStreamWriter(baos, "utf-8");
 			VelocityEngine ve = config.getVelocityEngine();
-			ve.mergeTemplate(template, "utf-8", veloContext, out);
+			synchronized(ve){
+				ve.mergeTemplate(template, "utf-8", veloContext, out);
+			}
 			out.close();
 			String result = new String(baos.toByteArray(), "utf-8");
 			logger.debug("----marge result start:template:"+ template);

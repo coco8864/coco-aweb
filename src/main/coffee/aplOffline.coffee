@@ -53,7 +53,7 @@ onlineCheckAuthInfoSuccess=(res)->
  loadAuthFrame(res.authUrl)
 
 onlineCheckAuthInfoError=(res)->
- #xhr呼び出しに失敗した、offlineでの接続を試す
+ #xhr呼び出しに失敗した.offlineでの接続を試みる
  aplInfo.isOffline=true
  authUrl=localStorage.getItem(AUTH_URL_LS_KEY)
  if authUrl
@@ -135,12 +135,12 @@ onlineAuthAuthUrlRes=(res)->
   onlineAuthResponse(res)
 
 onlineAuthAplUrlRes=(res)=>
- if res.result=='redirect' ##apl未認証の場合authUrlにリダイレクト
+ if res.result=='redirect' ##apl未認証の場合uthUrlにリダイレクト
   loadWorkFrame(res.location+'&originUrl='+encodeURIComponent(@originUrl),onlineAuthAuthUrlRes)
  else
   onlineAuthResponse(res)
 
-onlineAuth=(isWs,originUrl)-> ##aplUrlをチェック
+onlineAuth=(isWs,originUrl)-> ##aplUrlをチェ繝?
  if isWs
   url=aplInfo.aplUrl+CHECK_WS_QUERY
  else
@@ -176,12 +176,16 @@ response=(msg)->
 
 _response=(msg)->
  jsonMsg=ph.JSON.stringify(msg)
- if window==parent #テスト時に自分には投げない処理
+ if window==parent #自分にはpostしない対処
   alert('aplOffline response:'+jsonMsg)
  else
   parent.postMessage(jsonMsg,'*')
 
 jQuery(->
+ if window==parent #直接呼び出された場合は、appcache controle画面
+  return
+ #子として呼び出された場合認証用
+ jQuery('body').text('')
  href=location.href
  pos=href.lastIndexOf('/')
  aplInfo.aplUrl=href.substring(0,pos)
@@ -197,6 +201,5 @@ jQuery(->
  jQuery("body").append(workFrame)
  jQuery("body").append(authFrame)
  onlineCheckAuthInfo()
-
  window.onlineAuth=onlineAuth
 )

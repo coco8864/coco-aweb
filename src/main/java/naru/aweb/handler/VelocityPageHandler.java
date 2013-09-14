@@ -163,7 +163,9 @@ public class VelocityPageHandler extends WebServerHandler {
 			return;
 		}
 		try {
-			velocityEngine.mergeTemplate(veloPage, "utf-8", veloContext, out);
+			synchronized(velocityEngine){
+				velocityEngine.mergeTemplate(veloPage, "utf-8", veloContext, out);
+			}
 		} catch (ResourceNotFoundException e) {
 			logger.error("Velocity.mergeTemplate ResourceNotFoundException." + veloPage,e);
 		} catch (ParseErrorException e) {

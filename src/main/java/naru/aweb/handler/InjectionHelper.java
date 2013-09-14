@@ -52,7 +52,9 @@ public class InjectionHelper {
 		try {
 			File tmpFile=File.createTempFile("inj", ".tmp", config.getTmpDir());
 			out=new OutputStreamWriter(new FileOutputStream(tmpFile),"utf-8");
-			velocityEngine.mergeTemplate(injectionFileName, "utf-8", veloContext, out);
+			synchronized(velocityEngine){
+				velocityEngine.mergeTemplate(injectionFileName, "utf-8", veloContext, out);
+			}
 			out.close();
 			ByteBuffer buffer=readToBuffer(tmpFile);
 			tmpFile.delete();
