@@ -292,8 +292,6 @@ public class InternetAuthHandler extends WebServerHandler {
 			temporaryId.setAttribute("manager", manager);
 			temporaryId.setAttribute("discovered", discovered);
 			//System.out.println("opendpoint:"+discovered.getOPEndpoint());
-			FetchRequest fetch = FetchRequest.createFetchRequest();
-			fetch.addAttribute("nickname", "http://axschema.org/namePerson/friendly", true);
 			//returnToUrl‚É‚Íport‚àŠÜ‚ß‚È‚¢‚Æopenid4java‚ªverifyƒGƒ‰[‚ğ“Š‚°‚é
 			String authUrl=config.getAuthUrl();
 			if(authUrl.indexOf(":",6)<0){
@@ -305,9 +303,14 @@ public class InternetAuthHandler extends WebServerHandler {
 			}
 			AuthRequest authReq = manager.authenticate(discovered, authUrl+"/internetAuth/openIdRes?"+AuthHandler.AUTH_ID +"="+temporaryId.getAuthId());
 			SRegRequest sregReq = SRegRequest.createFetchRequest();
-			sregReq.addAttribute("nickname", true);
-			authReq.addExtension(fetch);			
+			sregReq.addAttribute("nickname", false);
+//			sregReq.addAttribute("fullname", false);
 			authReq.addExtension(sregReq);
+			FetchRequest fetch = FetchRequest.createFetchRequest();
+			fetch.addAttribute("nickname", "http://axschema.org/namePerson/friendly", false);
+//			fetch.addAttribute("first", "http://axschema.org/namePerson/first", false);
+//			fetch.addAttribute("email", "http://axschema.org/contact/email", false); googole openid‚Å‚Í‚Ç‚ê‚àæ‚ê‚È‚¢H
+			authReq.addExtension(fetch);			
 			redirect(authReq.getDestinationUrl(true));
 			temporaryId.setLastAccessTime();
 			return;
@@ -343,6 +346,9 @@ public class InternetAuthHandler extends WebServerHandler {
 				}else if (authSuccess.hasExtension(AxMessage.OPENID_NS_AX)){
 					FetchResponse fetchResp = (FetchResponse)authSuccess.getExtension(AxMessage.OPENID_NS_AX);
 					nickname = fetchResp.getAttributeValue("nickname");
+					if(nickname==null){
+						nickname = fetchResp.getAttributeValue("first");
+					}
 				}else{
 				}
 				String openid=verified.getIdentifier();
