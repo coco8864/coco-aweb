@@ -51,6 +51,7 @@ function setAuth(){
    sessionTimeout:ph.jQuery("#authSessionTimeout").val(),
    authInputTimeout:ph.jQuery("#authInputTimeout").val(),
    authRedirectTimeout:ph.jQuery("#authRedirectTimeout").val(),
+   authFrameTimeout:ph.jQuery("#authFrameTimeout").val(),
    isAuthInternetDirect:ph.jQuery("#isAuthInternetDirect").is(':checked'),
    authInternetRole:ph.jQuery("#authInternetRole").val()
   },
@@ -87,6 +88,7 @@ sessionTimeout:<input type="text" id="authSessionTimeout" size="12" value="$!esc
 ##logoutUrl:<input type="text" id="authLogoutUrl" size="64" value="$!esc.html($!{config.getString('logoutUrl')})"/><br/>
 inputTimeout:<input type="text" id="authInputTimeout" size="12" value="$!esc.html($!{config.getString('authInputTimeout','180000')})"/>ms<br/>
 redirectTimeout:<input type="text" id="authRedirectTimeout" size="12" value="$!esc.html($!{config.getString('authRedirectTimeout','5000')})"/>ms<br/>
+frameTimeout:<input type="text" id="authFrameTimeout" size="12" value="$!esc.html($!{config.getString('authFrameTimeout','5000')})"/>ms<br/>
 internetAuth direct:<input type="checkBox" name="isAuthInternetDirect" id="isAuthInternetDirect"
 #if(${config.getBoolean('isAuthInternetDirect')})
 checked="checked"
