@@ -325,8 +325,7 @@ public class AuthHandler extends WebServerHandler {
 		}
 		crossDomainResponse(response,null);
 	}
-	
-	
+		
 	/**
 	 * 1)任意のmappingで認可が求められたが、未認可の場合
 	 * 2)認可後authIdつきのurlに戻ってきた
@@ -508,6 +507,23 @@ public class AuthHandler extends WebServerHandler {
 		forwardAuthPage("/crossDomainFrame.vsp");
 	}
 	
+	private void userprofile(String cookieId,ParameterParser parameter){
+		String nickname=parameter.getParameter("nickname");
+		User user=authorizer.getUserByPrimaryId(cookieId);
+		if(user==null){
+		}
+		String orgPassword=parameter.getParameter("orgPassword");
+		String password1=parameter.getParameter("password1");
+		String password2=parameter.getParameter("password2");
+		String offlinePass1=parameter.getParameter("offlinePass1");
+		String offlinePass2=parameter.getParameter("offlinePass2");
+		
+		
+		setRequestAttribute("nickname", user.getNickname());
+		forwardAuthPage("/useprofile.vsp");
+	}
+	
+	
 	//ajaxLogout
 	private void ajaxLogout(String cookieId){
 		boolean result=authorizer.logout(cookieId);
@@ -606,6 +622,9 @@ public class AuthHandler extends WebServerHandler {
 			return;
 		}else if(AJAX_LOGOUT_PATH.equals(path)){
 			ajaxLogout(cookieId);
+			return;
+		}else if("/userprofile".equals(path)){
+			userprofile(cookieId,parameter);
 			return;
 		}else if(FORCE_DIGEST_LOGON_PATH.equals(path)){//InternetAuth時に管理者ように強制ログオンが必要
 			String authId=parameter.getParameter(AUTH_ID);
