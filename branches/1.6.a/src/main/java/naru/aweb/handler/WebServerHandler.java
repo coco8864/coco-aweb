@@ -241,6 +241,17 @@ public class WebServerHandler extends ServerBaseHandler {
 	 */
 	public void startResponseReqBody() {
 	}
+	
+	//admin/auth配下のコンテンツを返却する。
+	public void forwardPage(String fileName){
+		MappingResult mapping=getRequestMapping();
+		if(fileName.startsWith("/")){
+			mapping.setResolvePath(fileName);
+		}else{
+			mapping.setResolvePath("/" +fileName);
+		}
+		forwardHandler(Mapping.FILE_SYSTEM_HANDLER);
+	}
 
 	public void redirect(String location) {
 		setHeader(HeaderParser.LOCATION_HEADER, location);

@@ -440,5 +440,4 @@ public class User {
 	public void setOrigin(String origin) {
 		this.origin = origin;
 	}
-
 }

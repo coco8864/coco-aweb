@@ -419,13 +419,13 @@ public class Authenticator {
 			authHandler.setRequestAttribute("username", user.getLoginId());
 			authHandler.setRequestAttribute("dummyPassword", user.getDummyPassword());
 			authHandler.setRequestAttribute("cleanupPath", "cleanupAuthForceDigest");
-			authHandler.forwardAuthPage("/creanupAuthHeader.vsp");
+			authHandler.forwardPage("/creanupAuthHeader.vsp");
 		}else{
 			//TODO userのロールをadminに制限,ipアドレスを指定以外を制限等
 			//authHandler.getRemoteIp()
 			authHandler.setHeader(HeaderParser.WWW_AUTHENTICATE_HEADER,createDigestAuthenticateHeader(realm));
 			authHandler.setRequestAttribute(AuthHandler.ATTRIBUTE_RESPONSE_STATUS_CODE, "401");
-			authHandler.forwardAuthPage("/webAuthenticate.vsp");
+			authHandler.forwardPage("/webAuthenticate.vsp");
 		}
 	}
 	
@@ -441,7 +441,7 @@ public class Authenticator {
 		}
 		authHandler.setHeader(HeaderParser.WWW_AUTHENTICATE_HEADER,createDigestAuthenticateHeader(realm));
 		authHandler.setRequestAttribute(AuthHandler.ATTRIBUTE_RESPONSE_STATUS_CODE, "401");
-		authHandler.forwardAuthPage("/webAuthenticate.vsp");
+		authHandler.forwardPage("/webAuthenticate.vsp");
 		return false;
 	}
 	
@@ -511,7 +511,7 @@ public class Authenticator {
 		//1)cookieOnceのid
 		//2)username:user.getLoginId()
 		//3)password:間違ったpassword..乱数からシークアンドトライ
-		authHandler.forwardAuthPage("/creanupAuthHeader.vsp");
+		authHandler.forwardPage("/creanupAuthHeader.vsp");
 		return true;
 	}
 	
@@ -592,16 +592,16 @@ public class Authenticator {
 		if(scheme==BASIC){//isBasic
 			response.setHeader(HeaderParser.WWW_AUTHENTICATE_HEADER, createBasicAuthenticateHeader(realm));
 			response.setRequestAttribute(AuthHandler.ATTRIBUTE_RESPONSE_STATUS_CODE, "401");
-			response.forwardAuthPage("/webAuthenticate.vsp");
+			response.forwardPage("/webAuthenticate.vsp");
 		}else if(scheme==DIGEST){
 			response.setHeader(HeaderParser.WWW_AUTHENTICATE_HEADER,createDigestAuthenticateHeader(realm));
 			response.setRequestAttribute(AuthHandler.ATTRIBUTE_RESPONSE_STATUS_CODE, "401");
-			response.forwardAuthPage("webAuthenticate.vsp");
+			response.forwardPage("webAuthenticate.vsp");
 		}else if(scheme==BASIC_FORM){
-			response.forwardAuthPage("basicForm.vsp");
+			response.forwardPage("basicForm.vsp");
 		}else if(scheme==DIGEST_FORM){
 			response.setRequestAttribute("nonce", getNonce());
-			response.forwardAuthPage("digestForm.vsp");
+			response.forwardPage("digestForm.vsp");
 		}else if(scheme==INTERNET_AUTH){
 			boolean isDirect=config.getBoolean("isAuthInternetDirect", false);
 			if(isDirect){
@@ -614,7 +614,7 @@ public class Authenticator {
 				logger.warn("isAuthInternetDirect:true but no auth target.");
 			}
 			response.setRequestAttribute("openids", openids);
-			response.forwardAuthPage("internetAuth.vsp");
+			response.forwardPage("internetAuth.vsp");
 		}else{//ありえない
 			response.completeResponse("500","Authorization Error");
 		}

@@ -100,12 +100,13 @@ public class InternetAuthHandler extends WebServerHandler {
 		setHeader(HeaderParser.SET_COOKIE_HEADER, setCookieString);
 	}
 	
-	private void successAuth(SessionId temporaryId,String userId,String nickname,String accessToken){
+	private void successAuth(SessionId temporaryId,String userId,String nickname,String accessToken,String origin){
 		User user=authenticator.getUserByLoginId(userId);
 		if(user==null){
 			String role=config.getString("authInternetRole");
 			authenticator.createUser(userId,nickname,"password",role);
 			user=authenticator.getUserByLoginId(userId);
+			user.setOrigin(origin);
 		}
 		String url=temporaryId.getUrl();
 		AuthSession authSession=authenticator.loginUser(user);
@@ -198,7 +199,11 @@ public class InternetAuthHandler extends WebServerHandler {
 			//System.out.println("accessToken"+accessToken.getToken());
 			//System.out.println("accessToken"+accessToken.getUserId());
 			//System.out.println("accessToken"+accessToken.getScreenName());
-			successAuth(temporaryId, "https://twitter.com?id="+accessToken.getUserId(),accessToken.getScreenName(),accessToken.getToken());
+			successAuth(temporaryId,
+					"https://twitter.com?id="+accessToken.getUserId(),
+					accessToken.getScreenName(),
+					accessToken.getToken(),
+					"https://twitter.com");
 			return;
 		} catch (TwitterException e) {
 			logger.error("twitterRes",e);
@@ -231,7 +236,11 @@ public class InternetAuthHandler extends WebServerHandler {
 			String me=contents(new URL(meUrl));
 			JSONObject json=JSONObject.fromObject(me);
 			String nickname=json.optString("first_name");
-			successAuth(temporaryId, "https://www.facebook.com?id="+json.getString("id"),nickname,accessToken);
+			successAuth(temporaryId, 
+					"https://www.facebook.com?id="+json.getString("id"),
+					nickname,
+					accessToken,
+					"https://www.facebook.com");
 			return;
 		} catch (MalformedURLException e) {
 			logger.error("accessToken",e);
@@ -272,7 +281,11 @@ public class InternetAuthHandler extends WebServerHandler {
 			String me=contents(new URL(meUrl));
 			JSONObject profile=JSONObject.fromObject(me);
 			String nickname=profile.optString("given_name");
-			successAuth(temporaryId, "https://accounts.google.com?id="+profile.getString("id"),nickname,accessToken);
+			successAuth(temporaryId,
+					"https://accounts.google.com?id="+profile.getString("id"),
+					nickname,
+					accessToken,
+					"https://accounts.google.com");
 			return;
 		} catch (MalformedURLException e) {
 			logger.error("accessToken",e);
@@ -352,7 +365,7 @@ public class InternetAuthHandler extends WebServerHandler {
 				}else{
 				}
 				String openid=verified.getIdentifier();
-				successAuth(temporaryId,openid,nickname,null);
+				successAuth(temporaryId,openid,nickname,null,discovered.getOPEndpoint().toString());
 			}
 			return;
 		} catch (DiscoveryException e) {
