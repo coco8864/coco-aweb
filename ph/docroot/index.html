@@ -120,6 +120,7 @@ ph.jQuery(function() {
 			inout.bind("click",function(){checkGo(ph.authUrl);});
 			var liTag="<li><a href='#' onclick='checkGo(\"" +ph.authUrl+ "\")'>Phantom Server Login</a></li>"
 			ph.jQuery("#links").append(liTag);
+			ph.jQuery("#profile").hide();
 
 		}
 		//ph.jQuery("#loadicon").attr("src","favicon.ico");
@@ -149,6 +150,7 @@ function checkGo(url){
 <H1 class="mainTitle" style="float: left;">Phantom Server Home</H1>
 <div style="float: right;">
 <span id="welcome"></span>
+<img id="profile" src='/pub/images/profile.gif' onclick='location="/auth/userprofile";' title='user profile'/>
 <img id="loginout"/>
 </div>
 </div>
