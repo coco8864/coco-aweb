@@ -19,32 +19,41 @@
 <hr style="clear: both;"/>
 <form method='POST'>
 <p>
-$message
+<b>$!esc.html($!message)</b>
 </p>
 <div>
-userid:$userid
+loginId:<b>$!esc.html($!loginId)</b>
+</div>
+#if($origin)
+<div>
+origin:<b>$!esc.html($!origin)</b>
+</div>
+#end
+<div>
+nickname:<b><input type='text' name='nickname' value='$!esc.html($!nickname)' autocomplete='off'></b></input>
+</div>
+#if($origin)
+#else
+<div>
+orgPassword:<input type='password' name='orgPassword' autocomplete='off'></input>
 </div>
 <div>
-nickname:<input type='text' name="nickname" value='$nickname'></input>
+password1:<input type='password' name='password1' autocomplete='off'></input>
 </div>
 <div>
-orgPassword:<input type='password' name="orgPassowrd"></input>
+password2:<input type='password' name='password2' autocomplete='off'></input></br>
+</div>
+#end
+<div>
+offlinePass1:<input type='password' name='offlinePass1' autocomplete='off'></input>
 </div>
 <div>
-password1:<input type='password' name="password1"></input>
-</div>
-<div>
-password2:<input type='password' name="password2"></input></br>
-</div>
-<div>
-offlinePass1:<input type='password' name="offlinePass1"></input>
-</div>
-<div>
-offlinePass2:<input type='password' name="offlinePass2"></input>
+offlinePass2:<input type='password' name='offlinePass2' autocomplete='off'></input>
 </div>
 <div>
 <input type='submit' value='change'></input>
 </div>
+<input type='hidden' name='token' value='$!esc.html($!token)'></input>
 </form>
 </body>
 </html>
