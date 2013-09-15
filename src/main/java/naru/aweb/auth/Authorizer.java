@@ -320,7 +320,7 @@ public class Authorizer implements Timer{
 		return CHECK_SECONDARY_OK;
 	}
 	
-	public User getUserByPrimaryId(String id){
+	public AuthSession getPrimarySession(String id){
 		if(id==null){
 			return null;
 		}
@@ -333,11 +333,16 @@ public class Authorizer implements Timer{
 				return null;
 			}
 			AuthSession authSession=primaryId.getAuthSession();
-			if(authSession==null){
-				return null;
-			}
-			return authSession.getUser();
+			return authSession;
 		}
+	}
+	
+	public User getUserByPrimaryId(String id){
+		AuthSession authSession=getPrimarySession(id);
+		if(authSession==null){
+			return null;
+		}
+		return authSession.getUser();
 	}
 	
 	public boolean isSecondaryId(String id,StringBuffer appSid){

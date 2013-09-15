@@ -62,19 +62,6 @@ public class AuthHandler extends WebServerHandler {
 	public static String QUERY_CD_SET="__PH_AUTH__=__CD_SET__";
 	public static String QUERY_CD_WS_SET="__PH_AUTH__=__CD_WS_SET__";
 	
-	
-	//admin/auth配下のコンテンツを返却する。
-	public void forwardAuthPage(String fileName){
-		MappingResult mapping=getRequestMapping();
-		if(fileName.startsWith("/")){
-			mapping.setResolvePath(fileName);
-		}else{
-			mapping.setResolvePath("/" +fileName);
-		}
-//		mapping.setDesitinationFile(config.getAdminDocumentRoot());
-		forwardHandler(Mapping.FILE_SYSTEM_HANDLER);
-	}
-	
 	private void forbidden(String message) {
 		completeResponse("403", message);
 	}
@@ -181,7 +168,7 @@ public class AuthHandler extends WebServerHandler {
 			setCookie(setCookieString);
 		}
 		setRequestAttribute("response", response);
-		forwardAuthPage("/crossDomainFrame.vsp");
+		forwardPage("/crossDomainFrame.vsp");
 	}
 	
 	private void crossDomainRedirect(String location,String setCookieString){
@@ -475,7 +462,7 @@ public class AuthHandler extends WebServerHandler {
 		}else{
 			setRequestAttribute("offlinePassHash", "");
 		}
-		forwardAuthPage("/authFrame.vsp");
+		forwardPage("/authFrame.vsp");
 	}
 	
 	//userInfo
@@ -504,25 +491,82 @@ public class AuthHandler extends WebServerHandler {
 		User user=authorizer.getUserByPrimaryId(cookieId);
 		JSONObject response=infoObject(user);
 		setRequestAttribute("response", response.toString());
-		forwardAuthPage("/crossDomainFrame.vsp");
+		forwardPage("/crossDomainFrame.vsp");
+	}
+	
+	private boolean changetOfflinePass(User user,String offlinePass1,String offlinePass2){
+		if(offlinePass1==null || "".equals(offlinePass1)){
+			return true;//変更なし
+		}
+		if(!offlinePass1.equals(offlinePass2)){
+			setRequestAttribute("message", "offline password not match");
+			return false;
+		}
+		user.changeOfflinePassword(offlinePass1);
+		return true;
+	}
+	
+	private boolean changetPass(User user,String orgPassword,String password1,String password2){
+		if(orgPassword==null || "".equals(orgPassword) || password1==null || "".equals(password1)){
+			return true;//変更なし
+		}
+		if(!password1.equals(password2)){
+			setRequestAttribute("message", "password not match");
+			return false;
+		}
+		String calcPassHash=authenticator.calcPassHash(user.getLoginId(), orgPassword);
+		if(!calcPassHash.equals(user.getPassHash())){
+			setRequestAttribute("message", "wrong orgPassword");
+			return false;
+		}
+		user.changePassword(password1,authenticator.getRealm());
+		return true;
+	}
+	
+	private void forwardUserProfile(AuthSession session){
+		if(session!=null){
+			User user=session.getUser();
+			setRequestAttribute("token", session.getToken());
+			setRequestAttribute("loginId", user.getLoginId());
+			setRequestAttribute("nickname", user.getNickname());
+			setRequestAttribute("origin", user.getOrigin());
+		}
+		forwardPage("/userprofile.vsp");
 	}
 	
 	private void userprofile(String cookieId,ParameterParser parameter){
+		AuthSession session=authorizer.getPrimarySession(cookieId);
+		if(session==null){
+			setRequestAttribute("message", "not login");
+			forwardUserProfile(session);
+			return;
+		}
 		String nickname=parameter.getParameter("nickname");
-		User user=authorizer.getUserByPrimaryId(cookieId);
-		if(user==null){
+		String token=parameter.getParameter("token");
+		String sessionToken=session.getToken();
+		setRequestAttribute("message", "please enter your profile");
+		if(!sessionToken.equals(token)){
+			forwardUserProfile(session);
+			return;
 		}
 		String orgPassword=parameter.getParameter("orgPassword");
 		String password1=parameter.getParameter("password1");
 		String password2=parameter.getParameter("password2");
 		String offlinePass1=parameter.getParameter("offlinePass1");
 		String offlinePass2=parameter.getParameter("offlinePass2");
-		
-		
-		setRequestAttribute("nickname", user.getNickname());
-		forwardAuthPage("/useprofile.vsp");
+		setRequestAttribute("message", "change your profile");
+		User user=session.getUser();
+		if( changetOfflinePass(user, offlinePass1, offlinePass2)==false ){
+			forwardUserProfile(session);
+			return;
+		}
+		if( changetPass(user, orgPassword,password1, password2)==false ){
+			forwardUserProfile(session);
+			return;
+		}
+		user.setNickname(nickname);
+		forwardUserProfile(session);
 	}
-	
 	
 	//ajaxLogout
 	private void ajaxLogout(String cookieId){
@@ -594,7 +638,7 @@ public class AuthHandler extends WebServerHandler {
 		String path=mapping.getResolvePath();
 		//authFrame等のコンテンツ処理
 		if(path.endsWith(".html")||path.endsWith(".vsp")||path.endsWith(".vsf")){
-			forwardAuthPage(path);
+			forwardPage(path);
 			return;
 		}
 		if(path.startsWith("/internetAuth")){
@@ -667,7 +711,7 @@ public class AuthHandler extends WebServerHandler {
 		String authId=parameter.getParameter(AUTH_ID);
 //		String url = authorizer.getUrlFromCookieOnceAuthId(authId);
 		if(authId==null){//authIdが付加されていない,単に認証を求めてきた場合
-			if(authorizer.getUserByPrimaryId(cookieId)!=null){//login中かチェック
+			if(authorizer.getPrimarySession(cookieId)!=null){//login中かチェック
 				//既にlogin中なので認証処理は必要ない
 				redirect(config.getPublicWebUrl());
 				return;
