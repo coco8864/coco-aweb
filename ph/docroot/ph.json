@@ -10,5 +10,6 @@
 "isSpdyAvailable":${config.getSpsyConfig().spdyAvailable},
 "spdyProtocols":"$esc.javascript(${config.getSpsyConfig().spdyProtocols})",
 "spdyInfo":"$esc.javascript(${handler.getSpdySession().spdyInfo()})",
-"cid":${handler.channelId}
+"cid":${handler.channelId},
+"authFrameTimeout":$esc.javascript(${config.getString('authFrameTimeout','5000')})
 }

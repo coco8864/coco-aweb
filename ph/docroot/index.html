@@ -78,19 +78,27 @@ ph.jQuery(function() {
 		ph.jQuery("#loginout").attr("src","/pub/images/logout.gif");
 		return;
 	}
-	window.link=ph.link({aplUrl:null,useOffline:false,useConnection:false,useWs:false});
-	ph.authInfo(function(res){
+	var link=ph.link({aplUrl:null,useOffline:false,useConnection:false,useWs:false});
+	link.onUnload(function(x){
+			var liTag="<li>offline</li>"
+			ph.jQuery("#links").append(liTag);
+			ph.jQuery("#loadicon").remove();
+		});
+	link.onLoad(function(){
+//	link.on('auth',function(x){
+//	ph.authInfo(function(res){
 		if(ph.isOffline){
 			ph.jQuery("#isOnline").text("offline");
 		}else{
 			ph.jQuery("#isOnline").text("online");
 		}
-		if(!res.result){
-			var liTag="<li>offline</li>"
-			ph.jQuery("#links").append(liTag);
-			ph.jQuery("#loadicon").remove();
-			return;
-		}
+		res=link.authInfo;
+		//if(!res.result){
+		//	var liTag="<li>offline</li>"
+		//	ph.jQuery("#links").append(liTag);
+		//	ph.jQuery("#loadicon").remove();
+		//	return;
+		//}
 		var user=res.user;
 		var allowUrls=res.allowUrls;
 		var len=allowUrls.length;
