@@ -1,5 +1,5 @@
 CACHE MANIFEST
-#appcacheMode:$appcacheMode
+#appcacheMode:$appcacheMode,phappcacheCookieKey:$phappcacheCookieKey
 CACHE:
 #foreach($file in $cachePaths)
 ${file}

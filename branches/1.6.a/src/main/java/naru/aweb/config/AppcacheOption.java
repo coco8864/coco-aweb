@@ -74,6 +74,12 @@ public class AppcacheOption {
 			}
 			cachePaths.add(path);
 		}
+		cachePaths.add("/pub/js/jquery-1.8.3.min.js");
+		cachePaths.add("/pub/js/ph-json2.js");
+		cachePaths.add("/pub/js/aes.js");
+		cachePaths.add("/pub/js/aplOffline.js");
+		cachePaths.add("/pub/js/sha256.js");
+		cachePaths.add("/pub/js/authOffline.js");
 	}
 	
 	private void collectFile(File file,Set<String>files,Pattern pattern){
@@ -90,23 +96,24 @@ public class AppcacheOption {
 		}
 	}
 	
-	private void checkAppcacheManifest(WebServerHandler handler,String phappcache){
+	private void checkAppcacheManifest(WebServerHandler handler,String phappcache,String cookieKey){
 		if("unused".equals(phappcache)){
 			handler.completeResponse("404", "file not exists");
 		}else{
-			forwardAppcacheTemplate(handler, phappcache, "~ph.appcache");
+			forwardAppcacheTemplate(handler, phappcache, "~ph.appcache",cookieKey);
 		}
 	}
 	
 	private static List<String> NON_PATHS=new ArrayList<String>();
 	
-	private void forwardAppcacheTemplate(WebServerHandler handler,String phappcache,String template){
+	private void forwardAppcacheTemplate(WebServerHandler handler,String phappcache,String template,String cookieKey){
 		boolean useAppcache=!"unused".equals(phappcache);
 		boolean appcacheMode=!"off".equals(phappcache);
 		List<String> cachePaths=NON_PATHS;
 		if(useAppcache && appcacheMode ){
 			cachePaths=this.cachePaths;
 		}
+		handler.setRequestAttribute("phappcacheCookieKey", cookieKey);
 		handler.setRequestAttribute("manifest", manifestAbsPath);
 		handler.setRequestAttribute("useAppcache", useAppcache);
 		handler.setRequestAttribute("appcacheMode", appcacheMode);
@@ -126,18 +133,19 @@ public class AppcacheOption {
 	 * @param path
 	 * @return
 	 */
-	public boolean checkAndForward(WebServerHandler handler,String path){
+	public boolean checkAndForward(WebServerHandler handler,String path,String sourcePath){
 		if(!enabled){
 			return false;
 		}
+		String cookieKey="phappcache"+sourcePath.replaceAll("/", "_");
 		String cookie=handler.getRequestHeader().getHeader(HeaderParser.COOKIE_HEADER);
-		String phappcache=Cookie.parseHeader(cookie, "phappcache", null);
+		String phappcache=Cookie.parseHeader(cookie, cookieKey, null);
 		if(path.equals(manifestPath)){
-			checkAppcacheManifest(handler,phappcache);
+			checkAppcacheManifest(handler,phappcache,cookieKey);
 			return true;
 		}
 		if(path.equals(cacheHtmlPath)){
-			forwardAppcacheTemplate(handler,phappcache,path.substring(1));//êÊì™ÇÃ"/"ÇçÌèú
+			forwardAppcacheTemplate(handler,phappcache,path.substring(1),cookieKey);//êÊì™ÇÃ"/"ÇçÌèú
 			return true;
 		}
 		return false;
