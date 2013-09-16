@@ -73,13 +73,12 @@ ph.jQuery(function() {
 		useText="unavailable";
 	}
 	ph.jQuery("#useAppCache").text(useText);
-
-
 	if(!available){
 		ph.jQuery("#welcome").text("このブラウザでは利用できません。");
 		ph.jQuery("#loginout").attr("src","/pub/images/logout.gif");
 		return;
 	}
+	window.link=ph.link({aplUrl:null,useOffline:false,useConnection:false,useWs:false});
 	ph.authInfo(function(res){
 		if(ph.isOffline){
 			ph.jQuery("#isOnline").text("offline");
