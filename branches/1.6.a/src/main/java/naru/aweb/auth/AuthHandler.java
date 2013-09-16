@@ -475,6 +475,7 @@ public class AuthHandler extends WebServerHandler {
 		JSONObject response=new JSONObject();
 		if(check!=Authorizer.CHECK_SECONDARY_OK){
 			response.element("result", false);
+			response.element("authInfo",infoObject(null));
 		}else{
 			response.element("result", true);
 			User user=authorizer.getUserByPrimaryId(cookieId);

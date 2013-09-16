@@ -37,8 +37,7 @@ getUserInfo=(cb)->
  })
  userInfoDfd.done((x)->
    userInfo=null
-   if x.result
-    userInfo=x
+   userInfo=x
    if cb
     cb()
    saveUserInfo())

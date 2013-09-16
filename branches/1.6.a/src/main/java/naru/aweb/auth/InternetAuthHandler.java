@@ -304,6 +304,7 @@ public class InternetAuthHandler extends WebServerHandler {
 			DiscoveryInformation discovered = manager.associate(discoveries);
 			temporaryId.setAttribute("manager", manager);
 			temporaryId.setAttribute("discovered", discovered);
+			temporaryId.setAttribute("reqIdentifier", identifier);
 			//System.out.println("opendpoint:"+discovered.getOPEndpoint());
 			//returnToUrl‚É‚Íport‚àŠÜ‚ß‚È‚¢‚Æopenid4java‚ªverifyƒGƒ‰[‚ğ“Š‚°‚é
 			String authUrl=config.getAuthUrl();
@@ -364,8 +365,9 @@ public class InternetAuthHandler extends WebServerHandler {
 					}
 				}else{
 				}
+				String reqIdentifier=(String)temporaryId.getAttribute("reqIdentifier");
 				String openid=verified.getIdentifier();
-				successAuth(temporaryId,openid,nickname,null,discovered.getOPEndpoint().toString());
+				successAuth(temporaryId,openid,nickname,null,reqIdentifier);
 			}
 			return;
 		} catch (DiscoveryException e) {
