@@ -78,7 +78,7 @@ ph.jQuery(function() {
 		ph.jQuery("#loginout").attr("src","/pub/images/logout.gif");
 		return;
 	}
-	var link=ph.link({aplUrl:null,useOffline:false,useConnection:false,useWs:false});
+	var link=ph.link();
 	link.onUnload(function(x){
 			var liTag="<li>offline</li>"
 			ph.jQuery("#links").append(liTag);
