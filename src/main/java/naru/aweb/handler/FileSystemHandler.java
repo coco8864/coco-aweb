@@ -116,7 +116,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		/* appcache�̏ꍇ */
 		AppcacheOption appcacheOption=(AppcacheOption)mapping.getOption(Mapping.OPTION_APPCACHE);
 		if(appcacheOption!=null){
-			if(appcacheOption.checkAndForward(this,path)){
+			if(appcacheOption.checkAndForward(this,path,mapping.getSourcePath())){
 				return false;
 			}
 		}

@@ -16,7 +16,7 @@ var authFrameTimeout=$esc.javascript(${config.getString("authFrameTimeout","5000
 <script>
 ##サーバが認識しているモード
 var appcacheMode=$appcacheMode;
-var COOKIE_KEY='phappcache=';
+var COOKIE_KEY='$phappcacheCookieKey=';
 
 ##appcacheのon/offがしたいのであれば必要
 function appcache(flg){

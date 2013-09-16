@@ -21,20 +21,23 @@ class Link extends ph.Deferred
      return
     )
   ph.on('message',@_onMessage)
-  @_frame=ph.jQuery(
-    "<iframe " +
-    "style='frameborder:no;background-color:#CFCFCF;overflow:auto;height:0px;width:0px;position:absolute;top:0%;left:0%;' " +
-    "name='AplFrame#{@keyUrl}' " +
-    "src='#{@keyUrl}/~ph.vsp'>" + 
-    "</iframe>")
-  ph.jQuery("body").append(@_frame)
-  @_frameTimerId=setTimeout((->
-    link._frameTimerId=null
-    link._frame.remove()
-    link.trigger('failToAuth',link)
-    link.unload(link)
-    return)
-   ,10000
+  link=@
+  ph.onLoad(->
+   link._frame=ph.jQuery(
+     "<iframe " +
+     "style='frameborder:no;background-color:#CFCFCF;overflow:auto;height:0px;width:0px;position:absolute;top:0%;left:0%;' " +
+     "name='AplFrame#{link.keyUrl}' " +
+     "src='#{link.keyUrl}/~ph.vsp'>" + 
+     "</iframe>")
+   ph.jQuery("body").append(link._frame)
+   link._frameTimerId=setTimeout((->
+     link._frameTimerId=null
+     link._frame.remove()
+     link.trigger('failToAuth',link)
+     link.unload(link)
+     return)
+    ,ph.authFrameTimeout*2
+    )
    )
   @
  _connect:->
@@ -44,7 +47,10 @@ class Link extends ph.Deferred
   @ppStorage.onUnload(->link._logout())
   if @param.useConnection==false
    @isConnect=false
-   @ppStorage.onLoad(->link.trigger('ppStorage',link))
+   @ppStorage.onLoad(->
+    link.trigger('ppStorage',link)
+    link.load()
+   )
    return
   @isConnect=true
   isWs=@param.useWs
@@ -272,7 +278,7 @@ authInfo=(cb,authUrl)->
     workFrame.remove()
     cb({result:false})
     return
-   ,1000
+   ,ph.authFrameTimeout
   )
  ph.on('message',eh)
 # dfd=ph.jQuery.ajax({

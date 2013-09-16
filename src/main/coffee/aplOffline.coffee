@@ -27,7 +27,7 @@ loadAuthFrame=(authUrl)->
  authFrameTimerId=setTimeout((->
    authFrameTimerId=null
    _response({type:'loadAplFrame',result:false,cause:'frameTimeout'}))
-  ,1000
+  ,authFrameTimeout
   )
 
 requestToAuthFrame=(msg)->
@@ -40,7 +40,7 @@ loadWorkFrame=(url,cb)->
  workFrameTimerId=setTimeout((->
   workFrameTimerId=null
   alert('aplOffline workFrameTimeout'))
-  ,1000
+  ,authFrameTimeout
  )
 
 onlineCheckAuthInfoSuccess=(res)->
