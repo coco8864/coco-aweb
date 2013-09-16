@@ -211,7 +211,8 @@ ph.link=(aplUrl,useOffline,useConnection,useWs)->
  if ph.jQuery.isPlainObject(aplUrl)
   param=aplUrl
   if !param.aplUrl
-    throw 'illegal argument'
+    pos=location.href.lastIndexOf("/")
+    param.aplUrl=location.href.substring(0,pos)
   aplUrl=param.aplUrl
  else
   param={aplUrl:aplUrl,useOffline:useOffline,useConnection:useConnection,useWs:useWs}
