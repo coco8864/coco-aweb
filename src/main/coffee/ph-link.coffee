@@ -214,11 +214,16 @@ ph._links=[]
 # useConnection:onlineの場合有効 true=必ずconnectする,false=必ずconnectしない,undefined=connectして失敗すればそのまま
 # useWs:connect成功した場合、true=必ずwebsocketを使う,false=必ずxhrを使う、undefined=websocketに失敗すればxhr
 ph.link=(aplUrl,useOffline,useConnection,useWs)->
+ if !aplUrl
+  pos=location.href.lastIndexOf("/")
+  aplUrl=location.href.substring(0,pos)
+  useOffline=false
+  useConnection=false
+  useWs=false
  if ph.jQuery.isPlainObject(aplUrl)
   param=aplUrl
   if !param.aplUrl
-    pos=location.href.lastIndexOf("/")
-    param.aplUrl=location.href.substring(0,pos)
+    throw 'aplUrl is null'
   aplUrl=param.aplUrl
  else
   param={aplUrl:aplUrl,useOffline:useOffline,useConnection:useConnection,useWs:useWs}
