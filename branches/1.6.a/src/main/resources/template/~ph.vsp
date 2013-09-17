@@ -24,8 +24,12 @@ function appcache(flg){
   var date=new Date();
   date.setTime(0);
   document.cookie=COOKIE_KEY+'on;expires='+date.toGMTString();
+  jQuery('#appcacheOff').show();
+  jQuery('#appcacheOn').hide();
  }else{
   document.cookie=COOKIE_KEY+'off';
+  jQuery('#appcacheOff').hide();
+  jQuery('#appcacheOn').show();
  }
  var appCache = window.applicationCache;
  if(appCache){
@@ -42,6 +46,15 @@ function calcStatus(){
  case appCache.UNCACHED: // UNCACHED == 0
   return 'UNCACHED';
  case appCache.IDLE: // IDLE == 1
+  var cm=cookieMode()
+##serverÇ™cookieÇÃéwé¶Ç…è]Ç§ÇÊÇ§Ç…Ç∑ÇÈ
+  if(appcacheMode && !cm && !errorOccur){
+   location.reload(true);
+   return;
+  }else if(!appcacheMode && cm && !errorOccur){
+   location.reload(true);
+   return;
+  }
   return 'IDLE';
  case appCache.CHECKING: // CHECKING == 2
   return 'CHECKING';
@@ -49,7 +62,6 @@ function calcStatus(){
   return 'DOWNLOADING';
  case appCache.UPDATEREADY:  // UPDATEREADY == 4
   appCache.swapCache();
-  cookieMode();
   return 'UPDATEREADY';
  case appCache.OBSOLETE: // OBSOLETE == 5
   return 'OBSOLETE';
@@ -58,9 +70,10 @@ function calcStatus(){
  }
 }
 
+var errorOccur=false;
 function onError(){
- var appCashStatus=calcStatus();
- jQuery('#cacheStatus').text('error occured.cacheStatus:'+appCashStatus);
+ errorOccur=true;
+ jQuery('#cacheStatus').text('error occured');
 }
 
 function onStatusChange(e){
@@ -85,13 +98,9 @@ function cookieMode(){
   var end=cookie.indexOf(';',start);
   var value=cookie.substring(start,end);
   if('off'===value){
-   jQuery('#appcacheOff').hide();
-   jQuery('#appcacheOn').show();
    return false;
   }
  }
- jQuery('#appcacheOff').show();
- jQuery('#appcacheOn').hide();
  return true;
 }
 
@@ -109,14 +118,13 @@ jQuery(function() {
  }
  onStatusChange();
  onOnlineChange();
- var cm=cookieMode()
-##serverÇ™cookieÇÃéwé¶Ç…è]Ç§ÇÊÇ§Ç…Ç∑ÇÈ
- if(appcacheMode && !cm){
-  location.reload(true);
-  return;
- }else if(!appcacheMode && cm){
-  location.reload(true);
-  return;
+ cm=cookieMode()
+ if(cm){
+  jQuery('#appcacheOff').show();
+  jQuery('#appcacheOn').hide();
+ }else{
+  jQuery('#appcacheOff').hide();
+  jQuery('#appcacheOn').show();
  }
 });
 </script>

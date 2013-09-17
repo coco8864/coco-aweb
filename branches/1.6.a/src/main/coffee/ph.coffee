@@ -132,6 +132,7 @@ class Ph extends Deferred
  version:'$esc.javascript(${config.getString("phantomVersion")})'
  isSsl:'$esc.javascript(${handler.isSsl()})'=='true'
  domain:'$esc.javascript(${handler.getRequestHeader().getServer()})'
+ authFrameTimeout:parseInt("$esc.javascript(${config.getString('authFrameTimeout','5000')})",10)
  scriptBase:''
  scripts:['jquery-1.8.3.min.js','ph-jqnoconflict.js','ph-json2.js','ph-link.js']
  useWebSocket:typeof window.WebSocket != 'undefined' || typeof window.MozWebSocket !='undefined' ## WebSocket‚ðŽg‚¤‚©”Û‚©?
@@ -241,8 +242,8 @@ class Ph extends Deferred
 #ph-jqnoconflict.js‚ÅloadŽž‚Éph.onPhLoad‚ªŒÄ‚Ño‚³‚ê‚é‚æ‚¤‚É‚µ‚Ä‚¢‚é
  onPhLoad:->
   if !navigator.onLine
-    ph.unload()
     ph.isOffline=true
+    ph.load()
     return
   ph.jQuery.ajax({
    type: 'GET',
@@ -253,11 +254,11 @@ class Ph extends Deferred
      ph[key]=value
     if ph.useWebSocket && !ph.websocketSpec
      ph.useWebSocket=false
-    ph.load()
     ph.isOffline=false
+    ph.load()
    error: (xhr)->
     ph.isOffline=true
-    ph.unload()
+    ph.load()
   })
   ph.jQuery(window).on('message',(ev)->window.ph.trigger('message',ev))
   ph.jQuery(window).on('storage',(ev)->window.ph.trigger('storage',ev))

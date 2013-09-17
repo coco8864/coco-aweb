@@ -546,13 +546,18 @@ public class Mapping{
 				optionsObj.put(OPTION_FILE_WELCOME_FILES,welcomFiles.split(","));
 			}
 			JSONObject appcacheObj=optionsJson.optJSONObject(OPTION_APPCACHE);
-			if(destinationFile!=null && appcacheObj!=null){
-				AppcacheOption appcacheOption=new AppcacheOption(destinationFile,sourcePath,appcacheObj);
+			if(appcacheObj!=null){
+				File baseDir=null;
+				/* role指定がないものだけが配下のコンテンツをappcacheすることができる */
+				if(roles==null || "".equals(roles)){
+					baseDir=destinationFile;
+				}
+				AppcacheOption appcacheOption=new AppcacheOption(baseDir,sourcePath,appcacheObj);
 				optionsObj.put(OPTION_APPCACHE, appcacheOption);
 			}
 		}
 		rolesList.clear();
-		if(roles!=null && roles.length()!=0){
+		if(roles!=null && !"".equals(roles)){
 			String[] rolesArray=roles.split(",");
 			for(int i=0;i<rolesArray.length;i++){
 				rolesList.add(rolesArray[i]);

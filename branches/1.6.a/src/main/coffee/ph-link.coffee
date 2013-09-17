@@ -106,15 +106,15 @@ class Link extends ph.Deferred
 #    @trigger('onlineAuth',@)
 #    @trigger('auth',@)
 #    @_connect()
-   else if res.isOffline==false && @param.useOffline==true
+   else if res.aplInfo.isOffline==false && @param.useOffline==true
     @cause='cannot use offline'
     @trigger('failToAuth',@)
     @unload()
-   else if res.isOffline==true && @param.useOffline==false
+   else if res.aplInfo.isOffline==true && @param.useOffline==false
     @cause='cannot use online'
     @trigger('failToAuth',@)
     @unload()
-   else if res.isOffline==true || @param.useOffline==true
+   else if res.aplInfo.isOffline==true || @param.useOffline==true
     @isOffline=true
     @_requestToAplFrame({type:'offlineAuth'})
    else
