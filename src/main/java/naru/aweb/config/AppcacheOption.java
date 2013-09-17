@@ -53,6 +53,18 @@ public class AppcacheOption {
 	}
 	
 	private void setup(){
+		/* TODO 必須コンテンツ */
+		cachePaths.add("/pub/js/jquery-1.8.3.min.js");
+		cachePaths.add("/pub/js/ph-json2.js");
+		cachePaths.add("/pub/js/aes.js");
+		cachePaths.add("/pub/js/aplOffline.js");
+		cachePaths.add("/pub/js/sha256.js");
+		cachePaths.add("/pub/js/authOffline.js");
+		if(destinationFile==null){
+			return;
+		}
+		cachePaths.add("");
+		cachePaths.add("/");
 		Pattern pattern=Pattern.compile(cacheFilePattern);
 		Set<String>files=new HashSet<String>();
 		collectFile(destinationFile,files,pattern);
@@ -74,12 +86,6 @@ public class AppcacheOption {
 			}
 			cachePaths.add(path);
 		}
-		cachePaths.add("/pub/js/jquery-1.8.3.min.js");
-		cachePaths.add("/pub/js/ph-json2.js");
-		cachePaths.add("/pub/js/aes.js");
-		cachePaths.add("/pub/js/aplOffline.js");
-		cachePaths.add("/pub/js/sha256.js");
-		cachePaths.add("/pub/js/authOffline.js");
 	}
 	
 	private void collectFile(File file,Set<String>files,Pattern pattern){
