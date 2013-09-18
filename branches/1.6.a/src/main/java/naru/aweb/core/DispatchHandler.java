@@ -115,6 +115,10 @@ public class DispatchHandler extends ServerBaseHandler {
 	}
 
 	public void onAccepted(Object userContext) {
+		if(getConfig().getBoolean("phantomSuspend", false)){
+			asyncClose(null);//ˆê’â~
+			return;
+		}
 		setReadTimeout(getConfig().getAcceptTimeout());// Connection Flood UŒ‚‘Î‰‚Å”äŠr“I’Z‚­İ’è
 		logger.debug("#accepted.cid:" + getChannelId());
 		isFirstRead = true;
