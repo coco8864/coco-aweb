@@ -80,25 +80,30 @@ ph.jQuery(function() {
 	}
 	var link=ph.link();
 	link.onUnload(function(x){
-			var liTag="<li>offline</li>"
+			var liTag="<li>error:" + link.cause + "</li>"
 			ph.jQuery("#links").append(liTag);
 			ph.jQuery("#loadicon").remove();
 		});
-	link.onLoad(function(){
-//	link.on('auth',function(x){
-//	ph.authInfo(function(res){
+	link.on('suspendAuth',function(){
+			ph.jQuery("#isOnline").text("offline");
+			var liTag="<li>offline</li>"
+			ph.jQuery("#links").append(liTag);
+			ph.jQuery("#loadicon").remove();
+			ph.jQuery("#profile").hide();
+			var inout=ph.jQuery("#loginout");
+			inout.attr("src","/pub/images/login.gif");
+			inout.attr("title","login");
+			inout.unbind();
+			inout.bind("click",function(){link.offlineAuth();});
+
+		});
+	link.on('auth',function(){
 		if(ph.isOffline){
 			ph.jQuery("#isOnline").text("offline");
 		}else{
 			ph.jQuery("#isOnline").text("online");
 		}
 		res=link.authInfo;
-		//if(!res.result){
-		//	var liTag="<li>offline</li>"
-		//	ph.jQuery("#links").append(liTag);
-		//	ph.jQuery("#loadicon").remove();
-		//	return;
-		//}
 		var user=res.user;
 		var allowUrls=res.allowUrls;
 		var len=allowUrls.length;
@@ -115,7 +120,11 @@ ph.jQuery(function() {
 			inout.attr("src","/pub/images/logout.gif");
 			inout.attr("title","logout");
 			inout.unbind();
-			inout.bind("click",function(){location=ph.authUrl+'/logout';});
+			if(ph.isOffline){
+				inout.bind("click",function(){location=ph.authUrl+'/logout';});
+			}else{
+				inout.bind("click",function(){link.unlink();});
+			}
 			var liTag="<li><a href='#' onclick='checkGo(\"" +ph.authUrl+ "/logout\")'>Phantom Server Logout</a></li>"
 			ph.jQuery("#links").append(liTag);
 //				ph.jQuery("#loginout")[0].href=ph.authUrl+'/logout';
@@ -130,7 +139,6 @@ ph.jQuery(function() {
 			ph.jQuery("#profile").hide();
 
 		}
-		//ph.jQuery("#loadicon").attr("src","favicon.ico");
 		ph.jQuery("#loadicon").remove();
 	});
 });
