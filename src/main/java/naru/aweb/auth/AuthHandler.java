@@ -639,7 +639,7 @@ public class AuthHandler extends WebServerHandler {
 		MappingResult mapping=getRequestMapping();
 		String path=mapping.getResolvePath();
 		//authFrame“™‚ÌƒRƒ“ƒeƒ“ƒcˆ—
-		if(path.endsWith(".html")||path.endsWith(".vsp")||path.endsWith(".vsf")){
+		if(path.endsWith(".html")||path.endsWith(".vsp")||path.endsWith(".vsf")||path.endsWith(".appcache")){
 			forwardPage(path);
 			return;
 		}

@@ -3,11 +3,10 @@ class Link extends ph.Deferred
  constructor:(@param)->
   super
   @keyUrl=@param.keyUrl
-  @status='init'
   @reqseq=0
   @reqcb={}
   link=@
-  if !@param.useOffline && !@param.useConnection
+  if @param.useConnection
    @connection=new Connection(@)
    @connection.onLoad(->
      link.load(link)
@@ -106,18 +105,16 @@ class Link extends ph.Deferred
 #    @trigger('onlineAuth',@)
 #    @trigger('auth',@)
 #    @_connect()
-   else if res.aplInfo.isOffline==false && @param.useOffline==true
-    @cause='cannot use offline'
-    @trigger('failToAuth',@)
-    @unload()
-   else if res.aplInfo.isOffline==true && @param.useOffline==false
-    @cause='cannot use online'
-    @trigger('failToAuth',@)
-    @unload()
-   else if res.aplInfo.isOffline==true || @param.useOffline==true
+   else if res.aplInfo.isOffline==true && @param.useOffline=='never'
+## offlineなのにofflineは絶対使うな指定
+    @isOffline=true
+    @trigger('suspendAuth',@)
+   else if @param.useOffline=='must' || res.aplInfo.isOffline==true
+## 必ずofflineを使う指定、もしくは実際にoffline
     @isOffline=true
     @_requestToAplFrame({type:'offlineAuth'})
    else
+## online
     @isOffline=false
 ##isWsは、wsでチェックするかhttpでチェックするかだが、mappingに両者登録しないとlinkアプリは正しく動かない
 ##あまり意味はない
@@ -174,6 +171,8 @@ class Link extends ph.Deferred
     if cb
      cb(encText)
     )
+ offlineAuth:()->
+  @_requestToAplFrame({type:'offlineAuth'})
  subscribe:(qname,subname,cb)->
   @connection.subscribe(qname,subname,cb)
  publish:(qname,msg)->
@@ -205,9 +204,10 @@ class Link extends ph.Deferred
    @connection.close()
    return
   @ppStorage.close()
+  unload()
 
 URL_PTN=/^(?:([^:\/]+:))?(?:\/\/([^\/]*))?(.*)/
-ph._links=[]
+ph._links={}
 
 # aplUrl:
 # useOffline:ture=必ずoffline,false=必ずonline,undefined=onlineで試してだめならoffline
@@ -217,7 +217,7 @@ ph.link=(aplUrl,useOffline,useConnection,useWs)->
  if !aplUrl
   pos=location.href.lastIndexOf("/")
   aplUrl=location.href.substring(0,pos)
-  useOffline=false
+  useOffline='never'
   useConnection=false
   useWs=false
  if ph.jQuery.isPlainObject(aplUrl)
@@ -226,6 +226,10 @@ ph.link=(aplUrl,useOffline,useConnection,useWs)->
     throw 'aplUrl is null'
   aplUrl=param.aplUrl
  else
+  if !useOffline
+   useOffline='can'
+  if useConnection!=false
+   useConnection=true
   param={aplUrl:aplUrl,useOffline:useOffline,useConnection:useConnection,useWs:useWs}
  aplUrl.match(URL_PTN)
  protocol=RegExp.$1
@@ -255,45 +259,6 @@ ph.link=(aplUrl,useOffline,useConnection,useWs)->
   )
  return link
 
-ph.authInfo=(cb,authUrl)->
- ph.onLoad(->authInfo(cb,authUrl))
- ph.onUnload(->cb(false))
-
-ph.wfsec=0 #workFrame名のシーケンス番号
-authInfo=(cb,authUrl)->
- if !authUrl
-  authUrl=ph.authUrl
- ph.wfsec++
- workFrame=ph.jQuery(
-      "<iframe width='0' height='0' frameborder='no' "+
-      "src='#{authUrl}/info' " +
-      "name='authInfoFrame#{ph.wfsec}' >"+
-      "</iframe>")
- ph.jQuery("body").append(workFrame)
- eh=(qjev)->
-  ev=qjev.originalEvent
-  if ev.source!=workFrame[0].contentWindow
-   return
-  workFrame.remove()
-  ph.off('message',eh)
-  clearTimeout(timerId)
-  cb(ph.JSON.parse(ev.data))
- timerId=setTimeout(->
-    ph.off('message',eh)
-    workFrame.remove()
-    cb({result:false})
-    return
-   ,ph.authFrameTimeout
-  )
- ph.on('message',eh)
-# dfd=ph.jQuery.ajax({
-#  url:authUrl+'/authInfo',
-#  dataType:'json'
-# })
-# dfd.done((res)->cb(res))
-# dfd.fail(->cb({result:false}))
-# return
-
 #strage scope
 #  SCOPE_PAGE_PRIVATE:'pagePrivate' ...そのページだけ、reloadを挟んで情報を維持するため
 #  SCOPE_SESSION_PRIVATE:'sessionPrivate'...開いている同一セションのwindow間で情報を共有
@@ -307,7 +272,6 @@ authInfo=(cb,authUrl)->
 class PrivateSessionStorage extends ph.Deferred
  constructor:(@link)->
   super
-  @status='init'
   aplInfo=@link.aplInfo
   @_paPss="_paPss:#{@link.keyUrl}:#{aplInfo.loginId}:#{aplInfo.appSid}"
   ##不要なsessionStorageの刈り取り

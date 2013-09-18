@@ -125,9 +125,9 @@ class Ph extends Deferred
  _KEEP_MSG_BEFORE_SUBSCRIBE:true
  _KEEP_MSG_MAX:64
  _DEFAULT_SUB_ID:'@'
- _DOWNLOAD_FRAME_NAME_PREFIX:'__pa_dl_'
- _XHR_FRAME_NAME_PREFIX:'__pa_xhr_' #xhrPaFrame.vsp‚É“¯‚¶’è‹`‚ ‚è
- _XHR_FRAME_URL:'/~xhrPaFrame'
+ _DOWNLOAD_FRAME_NAME_PREFIX:'__ph_dl_'
+ _XHR_FRAME_NAME_PREFIX:'__ph_xhr_' #xhrPhFrame.vsp‚É“¯‚¶’è‹`‚ ‚è
+ _XHR_FRAME_URL:'/~xhrPhFrame'
 
  version:'$esc.javascript(${config.getString("phantomVersion")})'
  isSsl:'$esc.javascript(${handler.isSsl()})'=='true'
