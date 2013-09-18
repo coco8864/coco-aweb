@@ -30,8 +30,19 @@ public class AdminLinklet implements Linklet {
 	public void term(String reason) {
 	}
 
+	boolean isSuspend=false;
+	long suspendTime=0;
 	@Override
 	public void onTimer() {
+		synchronized(this){
+			if(isSuspend==false){
+				return;
+			}
+			if(System.currentTimeMillis()-suspendTime>=3000){
+				config.setProperty("phantomSuspend",false);
+				isSuspend=false;
+			}
+		}
 	}
 
 	@Override
@@ -76,6 +87,18 @@ public class AdminLinklet implements Linklet {
 			ctx.message(parameter, subname);
 		}else if("setting".equals(subname)){
 			setting(peer,parameter);
+		}else{
+			boolean isSuspend=parameter.getBoolean("suspend");
+			synchronized(this){
+				config.setProperty("phantomSuspend",isSuspend);
+				this.isSuspend=isSuspend;
+			}
+			if(isSuspend){
+				ctx.setInterval(1000);
+			}else{
+				ctx.setInterval(-1);
+			}
+			suspendTime=System.currentTimeMillis();
 		}
 	}
 

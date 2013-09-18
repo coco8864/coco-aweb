@@ -255,7 +255,7 @@ public class LinkletWrapper implements LinkletCtx,Timer{
 	
 	public boolean setInterval(long interval){
 		if(intervalObj!=null){
-			TimerManager.clearInterval(interval);
+			TimerManager.clearInterval(intervalObj);
 		}
 		if(interval<0){
 			return false;
