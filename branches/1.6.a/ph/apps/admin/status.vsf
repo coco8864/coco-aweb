@@ -105,6 +105,26 @@ function terminate(){
   });
 }
 
+function suspending(){
+ if(suspendState){
+  ph.admin.con.publish("admin",{suspend:true});
+  setTimeout(suspending,1000);
+ }else{
+  ph.admin.con.publish("admin",{suspend:false});
+ }
+}
+
+var suspendState=false;
+function suspend(){
+ suspendState=!suspendState;
+ if(suspendState){
+  ph.jQuery("#suspend").val("一時停止解除");
+ }else{
+  ph.jQuery("#suspend").val("一時停止");
+ }
+ suspending();
+}
+
 function restart(){
  var isCleanup=ph.jQuery("#restartCleanup").attr('checked');
  if(isCleanup){
@@ -140,6 +160,7 @@ function certificate(){
 #else
 restartCount:${config.restartCount} heapSize:${config.javaHeapSize}m<br>
 初期化:<input type="checkBox" id="restartCleanup"/> heapSize:<input type="text" size="4" id="restartHeapSize" value="${config.javaHeapSize}"/>m<input type="button" value="再起動"  onclick="restart();"/>
+<input type="button" value="一時停止" onclick="suspend();" id="suspend"/>
 <input type="button" value="停止" onclick="terminate();"/>
 #end
 
