@@ -1,5 +1,5 @@
-<!DOCTYPE html> 
-<html lang="jp"> 
+<!DOCTYPE html>
+<html manifest="/~ph.appcache">
 <head> 
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta charset="UTF-8" /> 
@@ -121,9 +121,9 @@ ph.jQuery(function() {
 			inout.attr("title","logout");
 			inout.unbind();
 			if(ph.isOffline){
-				inout.bind("click",function(){location=ph.authUrl+'/logout';});
-			}else{
 				inout.bind("click",function(){link.unlink();});
+			}else{
+				inout.bind("click",function(){location=ph.authUrl+'/logout';});
 			}
 			var liTag="<li><a href='#' onclick='checkGo(\"" +ph.authUrl+ "/logout\")'>Phantom Server Logout</a></li>"
 			ph.jQuery("#links").append(liTag);
