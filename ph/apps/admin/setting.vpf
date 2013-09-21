@@ -74,6 +74,13 @@ function setFileCache(){
   });
 }
 
+function updateAppCache(){
+  ph.admin.doCommand('updateAppCache',{},
+  function(x){
+    alert('AppCache更新依頼完了');
+  });
+}
+
 function setSpdy(){
   var isSpdy2=ph.jQuery("#spdy2").is(':checked');
   var isSpdy3=ph.jQuery("#spdy3").is(':checked');
@@ -432,13 +439,15 @@ spdyFrameLimit:<input type="text" name="spdyFrameLimit" id="spdyFrameLimit" valu
 </div>
 
 <Hr/>
-<H2 onclick="ph.jQuery('#fileCache').toggle();">+FileCache設定</H2>
+<H2 onclick="ph.jQuery('#fileCache').toggle();">+Cache設定</H2>
 <div class="settingItem" id="fileCache">
 file cache:<input type="checkBox" name="isFileCache" id="isFileCache"
 #if(${config.fileCache.useCache()})
 checked="checked"
 #end
- onclick='setFileCache();' /><br>
+ onclick='setFileCache();' /><br/>
+appCache:<input type="button" name="appCache" id="appCache" value="update" onclick='updateAppCache();'/><br/>
+
 </div>
 
 <Hr/>
