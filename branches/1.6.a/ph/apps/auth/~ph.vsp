@@ -21,19 +21,39 @@ function loginIdsOnchange(){
 // --></script>
 </head>
 <body>
+######################################################
 <div id='offlineLogon'>
 <h1>offline logon</h1>
 <div>
 nickname:<select id="loginIds" size="1" onchange="loginIdsOnchange();">
 </select>
 </div>
-<div>loginId:<input id='loginId' disabled='disabled'></div>
+<div>loginId:<input type='text' id='loginId' disabled='disabled' style='width: 300px;'></div>
 <div>offline password:<input type='password' id='password'></div>
 <div>
 <input type='button' value='logon' id='logonBtn' />
 <input type='button' value='cancel' id='cancelBtn' />
 </div>
+</div>##end of offlineLogon
+######################################################
+<div id='userProfile'>
+<h1>user profile</h1>
+<p id='pfMessage'></p>
+<div>nickname:<input type='text' id='pfNickname' autocomplete='off'></input></div>
+<div>loginId:<input type='text' id='pfLoginId' disabled='disabled' style='width: 400px;'></div>
+<div id='passwordInputs'>
+<div>original password:<input type='password' id='orgPassword' autocomplete='off'></input></div>
+<div>password1:<input type='password' id='password1' autocomplete='off'></input></div>
+<div>password2:<input type='password' id='password2' autocomplete='off'></input></div>
 </div>
-
+<div id='offlinePassInputs'>
+<div>original offline password:<input type='password' id='orgOfflinePass' autocomplete='off'></input></div>
+<div>offlinePass1:<input type='password' id='offlinePass1' autocomplete='off'></input></div>
+<div>offlinePass2:<input type='password' id='offlinePass2' autocomplete='off'></input></div>
+</div>
+<div>
+<input type='button' value='update' id='pfUpdateBtn' />
+<input type='button' value='cancel' id='pfCancelBtn' />
+</div>
 </body>
 </html>
