@@ -102,6 +102,8 @@ ph.jQuery(function() {
 			inout.bind("click",function(){link.offlineAuth();});
 			var liTag="<li><a href='#' onclick='link.offlineAuth();'>Phantom Server offline Login</a></li>"
 			listTag.append(liTag);
+			var profile=ph.jQuery("#profile");
+			profile.hide();
 
 		});
 	link.on('offlineAuth',function(){
@@ -114,9 +116,14 @@ ph.jQuery(function() {
 			inout.attr("title","logout");
 			inout.unbind();
 			inout.bind("click",function(){link.offlineLogout();});
-			inout.bind("click",function(){location=ph.authUrl+'/logout';});
 			var liTag="<li><a href='#' onclick='link.offlineLogout();'>Phantom Server offline Logout</a></li>"
 			listTag.append(liTag);
+
+			var profile=ph.jQuery("#profile");
+			profile.attr("src","/pub/images/profile.gif");
+			profile.unbind();
+			profile.bind("click",function(){link.userProfile();});
+			profile.show();
 
 		});
 	link.on('onlineAuth',function(){
@@ -133,6 +140,7 @@ ph.jQuery(function() {
 			listTag.append(liTag);
 		}
 		var inout=ph.jQuery("#loginout");
+		var profile=ph.jQuery("#profile");
 		if(user.loginId){
 			ph.jQuery("#welcome").text(user.nickname+"さん ようこそ");
 			inout.attr("src","/pub/images/logout.gif");
@@ -141,6 +149,12 @@ ph.jQuery(function() {
 			inout.bind("click",function(){location=ph.authUrl+'/logout';});
 			var liTag="<li><a href='#' onclick='checkGo(\"" +ph.authUrl+ "/logout\")'>Phantom Server Logout</a></li>"
 			listTag.append(liTag);
+
+			profile.attr("src","/pub/images/profile.gif");
+			profile.unbind();
+			profile.bind("click",function(){link.userProfile();});
+			profile.show();
+
 		}else{
 			ph.jQuery("#welcome").text("Welcome to Phantom Server");
 			inout.attr("src","/pub/images/login.gif");
@@ -149,7 +163,7 @@ ph.jQuery(function() {
 			inout.bind("click",function(){checkGo(ph.authUrl);});
 			var liTag="<li><a href='#' onclick='checkGo(\"" +ph.authUrl+ "\")'>Phantom Server Login</a></li>"
 			listTag.append(liTag);
-			ph.jQuery("#profile").hide();
+			profile.hide();
 
 		}
 		ph.jQuery("#loadicon").remove();
@@ -178,7 +192,7 @@ function checkGo(url){
 <H1 class="mainTitle" style="float: left;">Phantom Server Home</H1>
 <div style="float: right;">
 <span id="welcome"></span>
-<img id="profile" src='/pub/images/profile.gif' onclick='location="/auth/userprofile";' title='user profile'/>
+<img id="profile" title='user profile'/>
 <img id="loginout"/>
 </div>
 </div>
