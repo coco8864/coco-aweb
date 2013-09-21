@@ -18,7 +18,9 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 .welcome{ margin: 0.0em 1.0em;font-size: 125.0%;}
 -->
 </style>
-<script type="text/javascript"> 
+<script type="text/javascript">
+var link;
+var listTag;
 ph.jQuery(function() {
 	ph.jQuery("#version").text(ph.version);
 	ph.jQuery("#status").text('running');
@@ -78,43 +80,57 @@ ph.jQuery(function() {
 		ph.jQuery("#loginout").attr("src","/pub/images/logout.gif");
 		return;
 	}
-	var link=ph.link();
+	link=ph.link();
+	listTag=ph.jQuery("#list");
+	
 	link.onUnload(function(x){
-			ph.jQuery("#links").empty();
+			listTag.empty();
 			var liTag="<li>error:" + link.cause + "</li>"
-			ph.jQuery("#links").append(liTag);
+			listTag.append(liTag);
 			ph.jQuery("#loadicon").remove();
 		});
 	link.on('suspendAuth',function(){
-			ph.jQuery("#links").empty();
+			listTag.empty();
 			ph.jQuery("#isOnline").text("offline");
-			var liTag="<li>offline</li>"
-			ph.jQuery("#links").append(liTag);
 			ph.jQuery("#loadicon").remove();
 			ph.jQuery("#profile").hide();
+			ph.jQuery("#welcome").text("Welcome to Phantom Server(offline)");
 			var inout=ph.jQuery("#loginout");
 			inout.attr("src","/pub/images/login.gif");
-			inout.attr("title","login");
+			inout.attr("title","offline login");
 			inout.unbind();
 			inout.bind("click",function(){link.offlineAuth();});
+			var liTag="<li><a href='#' onclick='link.offlineAuth();'>Phantom Server offline Login</a></li>"
+			listTag.append(liTag);
 
 		});
 	link.on('offlineAuth',function(){
+			listTag.empty();
 			ph.jQuery("#isOnline").text("offline");
-		});
+			var user=link.authInfo.user;
+			ph.jQuery("#welcome").text(user.nickname+"さん ようこそ(offline)");
+			var inout=ph.jQuery("#loginout");
+			inout.attr("src","/pub/images/logout.gif");
+			inout.attr("title","logout");
+			inout.unbind();
+			inout.bind("click",function(){link.offlineLogout();});
+			inout.bind("click",function(){location=ph.authUrl+'/logout';});
+			var liTag="<li><a href='#' onclick='link.offlineLogout();'>Phantom Server offline Logout</a></li>"
+			listTag.append(liTag);
 
+		});
 	link.on('onlineAuth',function(){
+		listTag.empty();
 		ph.jQuery("#isOnline").text("online");
-		res=link.authInfo;
-		var user=res.user;
-		var allowUrls=res.allowUrls;
+		var user=link.authInfo.user;
+		var allowUrls=link.authInfo.allowUrls;
 		var len=allowUrls.length;
 		for(var i=0;i<len;i++){
 			if(allowUrls[i].url.lastIndexOf('http',0)!=0){
 				continue;
 			}
 			var liTag="<li><a href='#' onclick='checkGo(\"" +allowUrls[i].url+ "\")'>"+allowUrls[i].notes+"</a></li>"
-			ph.jQuery("#links").append(liTag);
+			listTag.append(liTag);
 		}
 		var inout=ph.jQuery("#loginout");
 		if(user.loginId){
@@ -122,14 +138,9 @@ ph.jQuery(function() {
 			inout.attr("src","/pub/images/logout.gif");
 			inout.attr("title","logout");
 			inout.unbind();
-			if(ph.isOffline){
-				inout.bind("click",function(){link.unlink();});
-			}else{
-				inout.bind("click",function(){location=ph.authUrl+'/logout';});
-			}
+			inout.bind("click",function(){location=ph.authUrl+'/logout';});
 			var liTag="<li><a href='#' onclick='checkGo(\"" +ph.authUrl+ "/logout\")'>Phantom Server Logout</a></li>"
-			ph.jQuery("#links").append(liTag);
-//				ph.jQuery("#loginout")[0].href=ph.authUrl+'/logout';
+			listTag.append(liTag);
 		}else{
 			ph.jQuery("#welcome").text("Welcome to Phantom Server");
 			inout.attr("src","/pub/images/login.gif");
@@ -137,7 +148,7 @@ ph.jQuery(function() {
 			inout.unbind();
 			inout.bind("click",function(){checkGo(ph.authUrl);});
 			var liTag="<li><a href='#' onclick='checkGo(\"" +ph.authUrl+ "\")'>Phantom Server Login</a></li>"
-			ph.jQuery("#links").append(liTag);
+			listTag.append(liTag);
 			ph.jQuery("#profile").hide();
 
 		}
@@ -173,7 +184,7 @@ function checkGo(url){
 </div>
 <hr style="clear: both;"/>
 <H2>Available web link list</H2>
-<ul id="links">
+<ul id="list">
 <img src="pub/images/loading.gif" id="loadicon"/>
 </ul>
 <hr/>
