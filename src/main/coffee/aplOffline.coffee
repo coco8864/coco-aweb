@@ -1,5 +1,4 @@
-
-AUTH_URL_LS_KEY='aplOfflineAuthUrl'
+AUTH_URL_KEY='LinkOffAuthUrl'
 CHECK_XHR_QUERY='?__PH_AUTH__=__XHR_CHECK__'
 CHECK_QUERY='?__PH_AUTH__=__CD_CHECK__'
 CHECK_WS_QUERY='?__PH_AUTH__=__CD_WS_CHECK__'
@@ -40,7 +39,7 @@ loadWorkFrame=(url,cb)->
  workFrameTimerId=setTimeout((->
   workFrameTimerId=null
   alert('aplOffline workFrameTimeout'))
-  ,authFrameTimeout
+ ,authFrameTimeout
  )
 
 onlineCheckAuthInfoSuccess=(res)->
@@ -49,13 +48,13 @@ onlineCheckAuthInfoSuccess=(res)->
  aplInfo.authUrl=res.authUrl
  aplInfo.loginId=res.loginId
  aplInfo.token=res.token
- localStorage.setItem(AUTH_URL_LS_KEY,res.authUrl)
+ localStorage.setItem(AUTH_URL_KEY,res.authUrl)
  loadAuthFrame(res.authUrl)
 
 onlineCheckAuthInfoError=(res)->
  #xhr呼び出しに失敗した.offlineでの接続を試みる
  aplInfo.isOffline=true
- authUrl=localStorage.getItem(AUTH_URL_LS_KEY)
+ authUrl=localStorage.getItem(AUTH_URL_KEY)
  if authUrl
   loadAuthFrame(authUrl)
  else
@@ -140,7 +139,7 @@ onlineAuthAplUrlRes=(res)=>
  else
   onlineAuthResponse(res)
 
-onlineAuth=(isWs,originUrl)-> ##aplUrlをチェ繝?
+onlineAuth=(isWs,originUrl)-> ##aplUrlをチェック
  if isWs
   url=aplInfo.aplUrl+CHECK_WS_QUERY
  else
@@ -159,7 +158,9 @@ onRequest=(req)->
  if req.type=='onlineAuth'
   onlineAuth(req.isWs,req.originUrl)
  else if req.type=='offlineAuth'
-  _response({type:'showFrame',height:document.height});
+  _response({type:'showFrame',height:document.body.clientHeight});
+  authFrame.focus()
+  requestToAuthFrame({type:'offlineAuth'})
  else if req.type=='encrypt'
   requestToAuthFrame(req)
  else if req.type=='decrypt'

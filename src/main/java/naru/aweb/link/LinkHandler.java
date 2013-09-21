@@ -37,12 +37,12 @@ import org.apache.log4j.Logger;
  *
  */
 public class LinkHandler extends WebSocketHandler implements Timer{
-	private static final String PA_SESSIONS_KEY = "PaSessions";
-	private static final String XHR_FRAME_PATH = "/~xhrPaFrame";
-	private static final String XHR_FRAME_TEMPLATE = "~xhrPaFrame.vsp";
+	private static final String LINK_SESSIONS_KEY = "LinkSessions";
+	private static final String XHR_FRAME_PATH = "/~xhrPhFrame";
+	private static final String XHR_FRAME_TEMPLATE = "~xhrPhFrame.vsp";
 	private static final String XHR_POLLING_PATH="/~xhrPolling";
-	private static final String DOWNLOAD_PATH="/~paDownload";
-	private static final String UPLOAD_PATH="/~paUpload";
+	private static final String DOWNLOAD_PATH="/~download";
+	private static final String UPLOAD_PATH="/~upload";
 	private static int XHR_SLEEP_TIME=1000;
 	private static Config config = Config.getConfig();
 	private static Logger logger=Logger.getLogger(LinkHandler.class);
@@ -91,7 +91,7 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 			AuthSession authSession=getAuthSession();
 			PaSessions paSessions=null;
 			synchronized(authSession){
-				paSessions=(PaSessions)authSession.getAttribute(PA_SESSIONS_KEY);
+				paSessions=(PaSessions)authSession.getAttribute(LINK_SESSIONS_KEY);
 				paSessions.sessions.remove(bid);
 				isNegotiated=false;
 				bid=0;
@@ -177,10 +177,10 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 	private PaSessions getPaSessions(AuthSession authSession){
 		PaSessions paSessions=null;
 		synchronized(authSession){
-			paSessions=(PaSessions)authSession.getAttribute(PA_SESSIONS_KEY);
+			paSessions=(PaSessions)authSession.getAttribute(LINK_SESSIONS_KEY);
 			if(paSessions==null){
 				paSessions=new PaSessions();
-				authSession.setAttribute(PA_SESSIONS_KEY, paSessions);
+				authSession.setAttribute(LINK_SESSIONS_KEY, paSessions);
 			}
 			return paSessions;
 		}
