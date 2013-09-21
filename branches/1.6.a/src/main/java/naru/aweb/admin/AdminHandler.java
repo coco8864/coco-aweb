@@ -17,6 +17,7 @@ import naru.aweb.auth.Authenticator;
 import naru.aweb.auth.Authorizer;
 import naru.aweb.auth.LogoutEvent;
 import naru.aweb.config.AccessLog;
+import naru.aweb.config.AppcacheOption;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
 import naru.aweb.core.Main;
@@ -201,6 +202,11 @@ public class AdminHandler extends WebServerHandler{
 		}else if("setFileCache".equals(cmd)){
 			String isChache=parameter.getParameter("isChache");
 			config.setUseFileCache("true".equalsIgnoreCase(isChache));
+			responseJson(true);
+		}else if("updateAppCache".equals(cmd)){
+			int version=config.getInt(AppcacheOption.APPCACHE_KEY,0);
+			version++;
+			config.setProperty(AppcacheOption.APPCACHE_KEY, version);
 			responseJson(true);
 		}else if("setSpdy".equals(cmd)){
 			SpdyConfig spdyConfig=config.getSpsyConfig();

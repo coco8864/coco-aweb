@@ -88,6 +88,7 @@ class Link extends ph.Deferred
    return
   if res.type=='showFrame'
    @_frame.css({'height':"#{res.height}px",'width':'500px','top':'100px','left':'50%','margin-top':'0px','margin-left':'-250px'})
+#   @_frame.focus()
    return
   if res.type=='hideFrame'
    @_frame.css({'height':'0px','width':'0px','top':'0%','left':'0%'})
@@ -204,7 +205,7 @@ class Link extends ph.Deferred
    @connection.close()
    return
   @ppStorage.close()
-  unload()
+  @unload()
 
 URL_PTN=/^(?:([^:\/]+:))?(?:\/\/([^\/]*))?(.*)/
 ph._links={}

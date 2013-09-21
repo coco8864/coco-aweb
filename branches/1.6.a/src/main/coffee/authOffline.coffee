@@ -1,4 +1,5 @@
-OFFLINE_KEY='PaOfflineAuth:'
+OFFLINE_KEY='LinkOffInfo:'
+OFFLINE_USERS_KEY='LinkOffUsers'
 parentOrigin=null
 aplInfo=null
 userInfo=null ##{authInfo:{},offlinePassHash:''}
@@ -20,13 +21,27 @@ checkPassword=(loginId,password)->
  userInfo=ph.JSON.parse(plainText)
  return true
 
+getUsers=->
+ usersText=localStorage.getItem(OFFLINE_USERS_KEY)
+ users={}
+ if usersText
+  users=ph.JSON.parse(usersText)
+ return users
+
 saveUserInfo=->
  if !userInfo
+  return
+ #publicの場合localstorageに覚える必要なし
+ if !userInfo.authInfo.user.loginId
   return
  loginId=userInfo.authInfo.user.loginId
  text=ph.JSON.stringify(userInfo)
  encText=encPlainText(text,userInfo.offlinePassHash)
  localStorage.setItem(OFFLINE_KEY+loginId,encText)
+ users=getUsers()
+ users[loginId]=userInfo.authInfo.user.nickname
+ usersText=ph.JSON.stringify(users)
+ localStorage.setItem(OFFLINE_USERS_KEY,usersText)
 
 getUserInfo=(cb)->
  userInfoDfd=jQuery.ajax({
@@ -106,8 +121,19 @@ onRequest=(req)->
   else
    getUserInfo(responseAuthInfo)
  else if req.type=="offlineAuth"
+  users=getUsers()
+  count=0
+  for loginid of users
+   nickname=users[loginid]
+
+
+  if count==0
+   alert('there is no offline authentication user')
+   response({type:'offlineAuth',result:false})
+   return
+  jQuery('#loginId').focus()
  else
-   throw 'unkown type:'+req.type
+  throw 'unkown type:'+req.type
 
 onMsg=(qjev)->
  ev=qjev.originalEvent
@@ -129,6 +155,10 @@ offlineLogon=->
  password=jQuery('#password').val()
  if !checkPassword(loginId,password)
   alert(loginId+':認証情報に誤りがあります')
+  if(loginId)
+   jQuery('#password').focus()
+  else
+   jQuery('#loginId').focus()
   return
  response({type:'offlineAuth',result:true,authInfo:userInfo.authInfo})
  jQuery('logonId').val('')
@@ -138,7 +168,8 @@ offlineLogon=->
 offlineCancel=->
  jQuery('logonId').val('')
  jQuery('password').val('')
- response({type:'offlineAuth',result:false})
+ #authInfoが無いことでcancelを表現
+ response({type:'offlineAuth',result:true})
  return
 
 jQuery(->

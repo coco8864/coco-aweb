@@ -24,7 +24,7 @@ class Subscription extends ph.Deferred
       throw 'not form tag id'
     form.attr("method","POST")
     form.attr("enctype","multipart/form-data")
-    form.attr("action","#{@_con.connectXhrUrl}/~paUpload")
+    form.attr("action","#{@_con.connectXhrUrl}/~upload")
     form.attr("target","#{@_con._downloadFrameName}")
     bidInput=ph.jQuery("<input type='hidden' name='bid' value='#{@_con._getBid()}'/>")
     tokenInput=ph.jQuery("<input type='hidden' name='token' value='#{@_con._token}'/>")

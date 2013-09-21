@@ -21,6 +21,7 @@ import net.sf.json.JSONObject;
  *
  */
 public class AppcacheOption {
+	public static final String APPCACHE_KEY="appcacheVersion";
 	private static final String DEFAULT_CACHE_FILE_PATTERN=".*\\.html$|.*\\.htm$|.*\\.css$|.*\\.js$|.*\\.jpg$|.*\\.png$|.*\\.gif$";
 	private static final String DEFAULT_MANIFEST_PATH="/~ph.appcache";
 	private static final String DEFAULT_CACHE_HTML_PATH="/~ph.vsp";
@@ -35,6 +36,7 @@ public class AppcacheOption {
 	private String sourcePath;
 	private String cacheFilePattern;
 	private List<String> cachePaths=new ArrayList<String>();
+	private int currentAppacheVersion=0;
 	
 	public AppcacheOption(File destinationFile,String sourcePath,JSONObject options){
 		this.destinationFile=destinationFile;
@@ -43,17 +45,18 @@ public class AppcacheOption {
 		this.manifestPath=options.optString("manifestPath",DEFAULT_MANIFEST_PATH);
 		this.cacheHtmlPath=options.optString("cacheHtmlPath",DEFAULT_CACHE_HTML_PATH);
 		this.cacheFilePattern=options.optString("cacheFilePattern",DEFAULT_CACHE_FILE_PATTERN);
-		
 		if("/".equals(sourcePath)){
 			manifestAbsPath=manifestPath;
 		}else{
 			manifestAbsPath=sourcePath+manifestPath;
 		}
+		currentAppacheVersion=config.getInt(APPCACHE_KEY, 0);
 		setup();
 	}
 	
 	private void setup(){
 		/* TODO 必須コンテンツ */
+		cachePaths.clear();
 		cachePaths.add("/pub/js/jquery-1.8.3.min.js");
 		cachePaths.add("/pub/js/ph-json2.js");
 		cachePaths.add("/pub/js/aes.js");
@@ -63,7 +66,6 @@ public class AppcacheOption {
 		if(destinationFile==null){
 			return;
 		}
-		cachePaths.add("");
 		cachePaths.add("/");
 		Pattern pattern=Pattern.compile(cacheFilePattern);
 		Set<String>files=new HashSet<String>();
@@ -102,17 +104,17 @@ public class AppcacheOption {
 		}
 	}
 	
-	private void checkAppcacheManifest(WebServerHandler handler,String phappcache,String cookieKey){
+	private void checkAppcacheManifest(WebServerHandler handler,String phappcache,String cookieKey,int appcacheVersion){
 		if("unused".equals(phappcache)){
 			handler.completeResponse("404", "file not exists");
 		}else{
-			forwardAppcacheTemplate(handler, phappcache, "~ph.appcache",cookieKey);
+			forwardAppcacheTemplate(handler, phappcache, "~ph.appcache",cookieKey,appcacheVersion);
 		}
 	}
 	
 	private static List<String> NON_PATHS=new ArrayList<String>();
 	
-	private void forwardAppcacheTemplate(WebServerHandler handler,String phappcache,String template,String cookieKey){
+	private void forwardAppcacheTemplate(WebServerHandler handler,String phappcache,String template,String cookieKey,int appcacheVersion){
 		boolean useAppcache=!"unused".equals(phappcache);
 		boolean appcacheMode=!"off".equals(phappcache);
 		List<String> cachePaths=NON_PATHS;
@@ -124,6 +126,7 @@ public class AppcacheOption {
 		handler.setRequestAttribute("useAppcache", useAppcache);
 		handler.setRequestAttribute("appcacheMode", appcacheMode);
 		handler.setRequestAttribute("cachePaths", cachePaths);
+		handler.setRequestAttribute(APPCACHE_KEY, appcacheVersion);
 		config.forwardVelocityTemplate(handler,template);
 	}
 	
@@ -143,15 +146,20 @@ public class AppcacheOption {
 		if(!enabled){
 			return false;
 		}
+		int appcacheVersion=config.getInt(APPCACHE_KEY, 0);
+		if(currentAppacheVersion!=appcacheVersion){
+			setup();
+			currentAppacheVersion=appcacheVersion;
+		}
 		String cookieKey="phappcache"+sourcePath.replaceAll("/", "_");
 		String cookie=handler.getRequestHeader().getHeader(HeaderParser.COOKIE_HEADER);
 		String phappcache=Cookie.parseHeader(cookie, cookieKey, null);
 		if(path.equals(manifestPath)){
-			checkAppcacheManifest(handler,phappcache,cookieKey);
+			checkAppcacheManifest(handler,phappcache,cookieKey,appcacheVersion);
 			return true;
 		}
 		if(path.equals(cacheHtmlPath)){
-			forwardAppcacheTemplate(handler,phappcache,path.substring(1),cookieKey);//先頭の"/"を削除
+			forwardAppcacheTemplate(handler,phappcache,path.substring(1),cookieKey,appcacheVersion);//先頭の"/"を削除
 			return true;
 		}
 		return false;

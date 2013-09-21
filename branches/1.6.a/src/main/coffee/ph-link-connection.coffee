@@ -224,7 +224,7 @@ class Connection extends ph.Deferred
       @__onClose(msg)
     else if msg.type==ph.TYPE_DOWNLOAD
       ph.log('download.msg.key:'+msg.key)
-      form=ph.jQuery("<form method='POST' target='#{@_downloadFrameName}' action='#{@connectXhrUrl}/~paDownload'>" +
+      form=ph.jQuery("<form method='POST' target='#{@_downloadFrameName}' action='#{@connectXhrUrl}/~download'>" +
          "<input type='hidden' name='bid' value='#{@_getBid()}'/>" +
          "<input type='hidden' name='token' value='#{@_token}'/>" +
          "<input type='hidden' name='key' value='#{msg.key}'/>" +
