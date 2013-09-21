@@ -13,15 +13,27 @@
 <script  type="text/javascript"><!--
 var offlinePassSalt='$esc.javascript(${config.getString("offlinePassSalt")})';
 var authFrameTimeout=$esc.javascript(${config.getString("authFrameTimeout","5000")});
+function loginIdsOnchange(){
+ var loginId=jQuery('#loginIds').val();
+ jQuery('#loginId').val(loginId);
+}
+
 // --></script>
 </head>
 <body>
+<div id='offlineLogon'>
 <h1>offline logon</h1>
-<div>loginId:<input id='loginId'></div>
+<div>
+nickname:<select id="loginIds" size="1" onchange="loginIdsOnchange();">
+</select>
+</div>
+<div>loginId:<input id='loginId' disabled='disabled'></div>
 <div>offline password:<input type='password' id='password'></div>
 <div>
 <input type='button' value='logon' id='logonBtn' />
 <input type='button' value='cancel' id='cancelBtn' />
 </div>
+</div>
+
 </body>
 </html>
