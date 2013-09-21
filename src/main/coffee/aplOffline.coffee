@@ -106,6 +106,11 @@ onAuthResponse=(res)->
  else if res.type=='authInfo'
   authInfo=res.authInfo
   response({type:'onlineAuth',result:res.result,aplInfo:aplInfo,authInfo:res.authInfo})
+ else if res.type=='offlineLogout'
+  response(res)
+ else if res.type=='userProfile'
+  _response({type:'hideFrame'});
+  response(res)
 
 onWorkResponse=(res)->
  clearTimeout(workFrameTimerId)
@@ -158,9 +163,15 @@ onRequest=(req)->
  if req.type=='onlineAuth'
   onlineAuth(req.isWs,req.originUrl)
  else if req.type=='offlineAuth'
+  requestToAuthFrame({type:'offlineAuth'})
   _response({type:'showFrame',height:document.body.clientHeight});
   authFrame.focus()
-  requestToAuthFrame({type:'offlineAuth'})
+ else if req.type=='offlineLogout'
+  requestToAuthFrame({type:'offlineLogout'})
+ else if req.type=='userProfile'
+  requestToAuthFrame({type:'userProfile'})
+  _response({type:'showFrame',height:document.body.clientHeight});
+  authFrame.focus()
  else if req.type=='encrypt'
   requestToAuthFrame(req)
  else if req.type=='decrypt'
