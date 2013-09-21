@@ -80,11 +80,13 @@ ph.jQuery(function() {
 	}
 	var link=ph.link();
 	link.onUnload(function(x){
+			ph.jQuery("#links").empty();
 			var liTag="<li>error:" + link.cause + "</li>"
 			ph.jQuery("#links").append(liTag);
 			ph.jQuery("#loadicon").remove();
 		});
 	link.on('suspendAuth',function(){
+			ph.jQuery("#links").empty();
 			ph.jQuery("#isOnline").text("offline");
 			var liTag="<li>offline</li>"
 			ph.jQuery("#links").append(liTag);
@@ -97,12 +99,12 @@ ph.jQuery(function() {
 			inout.bind("click",function(){link.offlineAuth();});
 
 		});
-	link.on('auth',function(){
-		if(ph.isOffline){
+	link.on('offlineAuth',function(){
 			ph.jQuery("#isOnline").text("offline");
-		}else{
-			ph.jQuery("#isOnline").text("online");
-		}
+		});
+
+	link.on('onlineAuth',function(){
+		ph.jQuery("#isOnline").text("online");
 		res=link.authInfo;
 		var user=res.user;
 		var allowUrls=res.allowUrls;
