@@ -145,7 +145,7 @@ class Link extends ph.Deferred
     link=@
     @ppStorage.onLoad(->
       link.trigger('ppStorage',link)
-      link.trigger('onfflineAuth',link)
+      link.trigger('offlineAuth',link)
       link.trigger('auth',link)
       link.load(link)
       link.trigger('linked',link)
@@ -159,6 +159,10 @@ class Link extends ph.Deferred
     @_frame[0].src='about:blank'
     @_frame.remove()
     @unload()
+  if res.type=='offlineLogout'
+   if res.result==true
+    @trigger('suspendAuth',link)
+
   return
  _storDecrypt:(storage,key,cb)->
   encText=storage.getItem(key)
@@ -174,6 +178,10 @@ class Link extends ph.Deferred
     )
  offlineAuth:()->
   @_requestToAplFrame({type:'offlineAuth'})
+ offlineLogout:()->
+  @_requestToAplFrame({type:'offlineLogout'})
+ userProfile:()->
+  @_requestToAplFrame({type:'userProfile'})
  subscribe:(qname,subname,cb)->
   @connection.subscribe(qname,subname,cb)
  publish:(qname,msg)->

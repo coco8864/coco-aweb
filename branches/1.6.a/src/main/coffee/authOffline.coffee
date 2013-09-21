@@ -4,8 +4,11 @@ parentOrigin=null
 aplInfo=null
 userInfo=null ##{authInfo:{},offlinePassHash:''}
 userInfoDfd=null
+isOffline=false
+isAuth=false
 
 checkPassword=(loginId,password)->
+ userInfo=null
  encryptText=localStorage.getItem(OFFLINE_KEY+loginId)
  if !encryptText
   return false
@@ -55,12 +58,17 @@ getUserInfo=(cb)->
    userInfo=x
    if cb
     cb()
-   saveUserInfo())
+   isOffline=false
+   isAuth=true
+   saveUserInfo()
+  )
    
  userInfoDfd.fail((x)->
    userInfo=null
    if cb
-    cb())
+    cb()
+   isAuth=false
+  )
 
 encPlainText=(plainText,passHash)->
  if passHash
@@ -123,15 +131,53 @@ onRequest=(req)->
  else if req.type=="offlineAuth"
   users=getUsers()
   count=0
+  select=jQuery('#loginIds')
+  select.empty()
   for loginid of users
    nickname=users[loginid]
-
-
+   select.append('<option value="'+loginid+'">' + nickname+'</option>')
+   count++
   if count==0
    alert('there is no offline authentication user')
-   response({type:'offlineAuth',result:false})
+   response({type:'offlineAuth',result:false,cause:'no user'})
    return
-  jQuery('#loginId').focus()
+  select.focus()
+  jQuery('#offlineLogon').show()
+  jQuery('#userProfile').hide()
+  jQuery('#loginId').val(select.val())
+ else if req.type=="offlineLogout"
+  result=false
+  if userInfo
+   result=true
+  userInfo=null
+  isOffline=true
+  isAuth=false
+  response({type:'offlineLogout',result:result})
+ else if req.type=="userProfile"
+  if !isAuth
+   response({type:'userProfile',result:false,cause:'not login'})
+   return
+  user=userInfo.authInfo.user
+  jQuery('#pfLoginId').val(user.loginId)
+  jQuery('#pfNickname').val(user.nickname)
+  jQuery('#passwordInputs').show()
+  jQuery('#offlinePassInputs').show()
+  jQuery('#pfNickname').attr('readonly', false)
+  jQuery('#pfUpdateBtn').show()
+  jQuery('#pfCancelBtn').show()
+  if isOffline
+   jQuery('#passwordInputs').hide()
+   jQuery('#offlinePassInputs').hide()
+   jQuery('#pfMessage').text('now offline refrence only')
+   jQuery('#pfNickname').attr('readonly', true)
+   jQuery('#pfUpdateBtn').hide()
+  else if user.origin
+   jQuery('#pfMessage').text('please update your profile')
+   jQuery('#passwordInputs').hide()
+  else
+   jQuery('#pfMessage').text('please update your profile')
+  jQuery('#offlineLogon').hide()
+  jQuery('#userProfile').show()
  else
   throw 'unkown type:'+req.type
 
@@ -153,13 +199,13 @@ response=(msg)->
 offlineLogon=->
  loginId=jQuery('#loginId').val()
  password=jQuery('#password').val()
+ isOffline=true
  if !checkPassword(loginId,password)
   alert(loginId+':認証情報に誤りがあります')
-  if(loginId)
-   jQuery('#password').focus()
-  else
-   jQuery('#loginId').focus()
+  jQuery('#loginIds').focus()
+  isAuth=false
   return
+ isAuth=true
  response({type:'offlineAuth',result:true,authInfo:userInfo.authInfo})
  jQuery('logonId').val('')
  jQuery('password').val('')
@@ -168,14 +214,43 @@ offlineLogon=->
 offlineCancel=->
  jQuery('logonId').val('')
  jQuery('password').val('')
- #authInfoが無いことでcancelを表現
- response({type:'offlineAuth',result:true})
+ response({type:'offlineAuth',result:false,cause:'cancel'})
+ return
+
+profileUpdate=->
+ if isOffline
+  response({type:'userProfile',result:false,cause:'offline'})
+  return
+ user=userInfo.authInfo.user
+ req={}
+ req.nickname=jQuery('#pfNickname').val()
+ if !user.origin
+  req.orgPassword=jQuery('#orgPassword').val()
+  req.password1=jQuery('#password1').val()
+  req.password2=jQuery('#password2').val()
+ req.orgOfflinePass=jQuery('#orgOfflinePass').val()
+ req.offlinePass1=jQuery('#offlinePass1').val()
+ req.offlinePass2=jQuery('#offlinePass2').val()
+ userInfoDfd=jQuery.ajax({
+  type:'POST',
+  url:'updateUserProfile',
+  dataType:'json',
+  data:req
+ })
+ return
+
+profileCancel=->
+ response({type:'userProfile',result:false,cause:'cancel'})
  return
 
 jQuery(->
  parentOrigin=decodeURIComponent(location.search.substring('?origin='.length))
  jQuery('#logonBtn').on('click',offlineLogon)
  jQuery('#cancelBtn').on('click',offlineCancel)
+
+ jQuery('#pfUpdateBtn').on('click',profileUpdate)
+ jQuery('#pfCancelBtn').on('click',profileCancel)
+
  if parentOrigin=='file://'
   parentOrigin='*'
  jQuery(window).on('message',onMsg)
