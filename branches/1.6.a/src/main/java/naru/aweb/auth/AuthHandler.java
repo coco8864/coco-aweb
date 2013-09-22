@@ -25,6 +25,7 @@ import net.sf.json.JSONObject;
  *
  */
 public class AuthHandler extends WebServerHandler {
+	private static final String UPDATE_USER_PROFILE_PATH = "/updateUserProfile";
 	private static Logger logger = Logger.getLogger(AuthHandler.class);
 	private static Config config = Config.getConfig();
 	private static Authenticator authenticator = config.getAuthenticator();
@@ -419,7 +420,7 @@ public class AuthHandler extends WebServerHandler {
 		}
 	}
 	
-	private JSONObject infoObject(User user){
+	private JSONObject infoObject(User user,String token){
 		JSONObject response=new JSONObject();
 		response.element("result", true);
 		List<String> userRoles=null;
@@ -431,6 +432,7 @@ public class AuthHandler extends WebServerHandler {
 			userRoles=null;
 			userJson=new JSONObject();
 		}
+		response.element("token",token);
 		response.element("roles",userRoles);
 		response.element("user",userJson);
 		
@@ -453,6 +455,7 @@ public class AuthHandler extends WebServerHandler {
 	}
 	
 	//authFrame将来的に削除
+	/*
 	private void authFrame(String cookieId){
 		User user=authorizer.getUserByPrimaryId(cookieId);
 		JSONObject response=infoObject(user);
@@ -464,37 +467,45 @@ public class AuthHandler extends WebServerHandler {
 		}
 		forwardPage("/authFrame.vsp");
 	}
+	*/
 	
 	//userInfo
 	private void userInfo(String cookieId,ParameterParser parameter){
 		String aplUrl=parameter.getParameter(APL_URL);
 		String appSid=parameter.getParameter(APP_SID);
-		String token=parameter.getParameter(TOKEN);
+		String token=parameter.getParameter(TOKEN);//aplのtoken
 		//passHashを返却するので厳密にチェック
 		int check=authorizer.checkSecondarySessionByPrimaryId(cookieId, aplUrl, appSid, token);
+		AuthSession session=authorizer.getPrimarySession(cookieId);
+		String authToken=null;
+		if(session!=null){
+			authToken=session.getToken();
+		}
 		JSONObject response=new JSONObject();
 		if(check!=Authorizer.CHECK_SECONDARY_OK){
 			response.element("result", false);
 			User user=authorizer.getUserByPrimaryId(cookieId);
-			response.element("authInfo",infoObject(user));
+			response.element("authInfo",infoObject(user,authToken));
 		}else{
 			response.element("result", true);
 			User user=authorizer.getUserByPrimaryId(cookieId);
 			if(user!=null){
 				response.element("offlinePassHash", user.getOfflinePassHash());
 			}
-			response.element("authInfo",infoObject(user));
+			response.element("authInfo",infoObject(user,authToken));
 		}
 		responseJson(response);
 	}
 	
 	//info
+	/*
 	private void info(String cookieId){
 		User user=authorizer.getUserByPrimaryId(cookieId);
 		JSONObject response=infoObject(user);
 		setRequestAttribute("response", response.toString());
 		forwardPage("/crossDomainFrame.vsp");
 	}
+	*/
 	
 	private boolean changetOfflinePass(User user,String offlinePass1,String offlinePass2){
 		if(offlinePass1==null || "".equals(offlinePass1)){
@@ -536,6 +547,77 @@ public class AuthHandler extends WebServerHandler {
 		forwardPage("/userprofile.vsp");
 	}
 	
+	private void updateUserProfile(String cookieId,ParameterParser parameter){
+		AuthSession session=authorizer.getPrimarySession(cookieId);
+		JSONObject response=new JSONObject();
+		response.element("type","updateUserProfile");
+		response.element("result", false);
+		if(session==null){
+			response.element("cause", "no session");
+			responseJson(response);
+			return;
+		}
+		String nickname=parameter.getParameter("nickname");
+		String token=parameter.getParameter("token");
+		String sessionToken=session.getToken();
+		if(!sessionToken.equals(token)){
+			response.element("cause", "no session");
+			responseJson(response);
+			return;
+		}
+		User user=session.getUser();
+		boolean isPasswordUpdate=false;
+		boolean isOfflinePasswordUpdate=false;
+		
+		String orgPassword=parameter.getParameter("orgPassword");
+		String password1=parameter.getParameter("password1");
+		String password2=parameter.getParameter("password2");
+		if(password1!=null && !"".equals(password1)){
+			if(!password1.equals(password2)){
+				response.element("cause", "not equal password");
+				responseJson(response);
+				return;
+			}
+			String calcPassHash=authenticator.calcPassHash(user.getLoginId(), orgPassword);
+			if(!calcPassHash.equals(user.getPassHash())){
+				response.element("cause", "worng orginal password");
+				responseJson(response);
+				return;
+			}
+			isPasswordUpdate=true;
+		}
+		
+		String orgOfflinePass=parameter.getParameter("orgOfflinePass");
+		String offlinePass1=parameter.getParameter("offlinePass1");
+		String offlinePass2=parameter.getParameter("offlinePass2");
+		if(offlinePass1!=null && !"".equals(offlinePass1)){
+			if(!offlinePass1.equals(offlinePass2)){
+				response.element("cause", "not equal offline password");
+				responseJson(response);
+				return;
+			}
+			String offlineHash=user.getOfflinePassHash();
+			String calcOfflineHash=authenticator.calcOfflinePassHash(user.getLoginId(), orgOfflinePass);
+			if(!calcOfflineHash.equals(offlineHash) && (offlineHash!=null||!"".equals(orgOfflinePass))){
+				response.element("cause", "worng orginal offoine password");
+				responseJson(response);
+				return;
+			}
+			isOfflinePasswordUpdate=true;
+		}
+		if(isPasswordUpdate){
+			user.changePassword(password1,authenticator.getRealm());
+		}
+		if(isOfflinePasswordUpdate){
+			user.changeOfflinePassword(offlinePass1);
+			response.element("offlinePassHash", user.getOfflinePassHash());
+		}
+		user.setNickname(nickname);
+		response.element("result", true);
+		response.element("user", user.toJson());
+		responseJson(response);
+	}
+	
 	private void userprofile(String cookieId,ParameterParser parameter){
 		AuthSession session=authorizer.getPrimarySession(cookieId);
 		if(session==null){
@@ -569,6 +651,7 @@ public class AuthHandler extends WebServerHandler {
 		user.setNickname(nickname);
 		forwardUserProfile(session);
 	}
+	
 	
 	//ajaxLogout
 	private void ajaxLogout(String cookieId){
@@ -657,17 +740,20 @@ public class AuthHandler extends WebServerHandler {
 		if(CLEANUP_AUTH_HEADER_PATH.equals(path)){
 			cleanupAuthHeader(false);
 			return;
-		}else if(AUTH_FRAME_PATH.equals(path)){
-			authFrame(cookieId);
-			return;
+//		}else if(AUTH_FRAME_PATH.equals(path)){
+//			authFrame(cookieId);
+//			return;
 		}else if(USER_INFO_PATH.equals(path)){
 			userInfo(cookieId,parameter);
 			return;
-		}else if(INFO_PATH.equals(path)){
-			info(cookieId);
-			return;
+//		}else if(INFO_PATH.equals(path)){
+//			info(cookieId);
+//			return;
 		}else if(AJAX_LOGOUT_PATH.equals(path)){
 			ajaxLogout(cookieId);
+			return;
+		}else if(UPDATE_USER_PROFILE_PATH.equals(path)){
+			updateUserProfile(cookieId,parameter);
 			return;
 		}else if("/userprofile".equals(path)){
 			userprofile(cookieId,parameter);
