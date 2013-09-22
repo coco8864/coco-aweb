@@ -154,6 +154,12 @@ onRequest=(req)->
   isAuth=false
   response({type:'offlineLogout',result:result})
  else if req.type=="userProfile"
+  jQuery('#orgPassword').val('')
+  jQuery('#password1').val('')
+  jQuery('#password2').val('')
+  jQuery('#orgOfflinePass').val('')
+  jQuery('#offlinePass1').val('')
+  jQuery('#offlinePass2').val('')
   if !isAuth
    response({type:'userProfile',result:false,cause:'not login'})
    return
@@ -222,7 +228,7 @@ profileUpdate=->
   response({type:'userProfile',result:false,cause:'offline'})
   return
  user=userInfo.authInfo.user
- req={}
+ req={token:userInfo.authInfo.token}
  req.nickname=jQuery('#pfNickname').val()
  if !user.origin
   req.orgPassword=jQuery('#orgPassword').val()
@@ -231,12 +237,25 @@ profileUpdate=->
  req.orgOfflinePass=jQuery('#orgOfflinePass').val()
  req.offlinePass1=jQuery('#offlinePass1').val()
  req.offlinePass2=jQuery('#offlinePass2').val()
- userInfoDfd=jQuery.ajax({
+
+ updateUserProfileDfd=jQuery.ajax({
   type:'POST',
   url:'updateUserProfile',
   dataType:'json',
   data:req
  })
+ updateUserProfileDfd.done((res)->
+   if res.result
+    userInfo.authInfo.user=res.user
+    if res.offlinePassHash
+     userInfo.offlinePassHash=res.offlinePassHash
+    response({type:'userProfile',result:true})
+   else
+    jQuery('#pfMessage').text(res.cause)
+  )
+ updateUserProfileDfd.fail((res)->
+   jQuery('#pfMessage').text('communication error')
+  )
  return
 
 profileCancel=->
