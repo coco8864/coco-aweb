@@ -595,6 +595,7 @@ public class DispatchHandler extends ServerBaseHandler {
 		List<String> mappingRoles = mapping.getRolesList();
 		if (mappingRoles.size() == 0) {// ”FØ‚ğ•K—v‚Æ‚µ‚È‚¢,/pub,/proxy.pac,/auth
 			if(authMark!=null){
+				mapping.unref();
 				return authMarkResponse(authMark,AUTH_STAT.PUBLIC,null);
 			}
 			return mapping;

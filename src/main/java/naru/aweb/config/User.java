@@ -86,6 +86,7 @@ public class User {
 			if(pm.currentTransaction().isActive()){
 				pm.currentTransaction().rollback();
 			}
+			JdoUtil.close();//need?
 		}
 	}
 	
@@ -94,6 +95,7 @@ public class User {
 		Query query=pm.newQuery(User.class);
 		query.setFilter("loginId==:loginId && revoked==false");
 		Collection<User>users=pm.detachCopyAll((Collection<User>)query.execute(loginId));
+		JdoUtil.close();//need?
 		if(users==null){
 			return null;
 		}
@@ -105,7 +107,9 @@ public class User {
 
 	public static User getById(Long id) {
 		PersistenceManager pm=JdoUtil.currentPm();
-		return pm.detachCopy(pm.getObjectById(User.class,id));
+		User user=pm.detachCopy(pm.getObjectById(User.class,id));
+		JdoUtil.close();//need?
+		return user;
 	}
 	
 	public static JSON collectionToJson(Collection<User> users){
@@ -133,6 +137,7 @@ public class User {
 			if(pm.currentTransaction().isActive()){
 				pm.currentTransaction().rollback();
 			}
+			JdoUtil.close();//need?
 		}
 	}
 	
