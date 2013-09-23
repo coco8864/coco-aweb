@@ -45,6 +45,7 @@ window.onhashchange = function(){
 	//現在のインデックスでタブをセレクト
 	jQuery('#tabs').tabs("option", "active", index);
 };
+var link=null;
 ph.jQuery(function() {
 	ph.setShowDebug(ph.showDebug);
 	jQuery("#textEditTextArea").resizable({
@@ -52,7 +53,7 @@ ph.jQuery(function() {
 	});
 ##ph.useWebSocket=false;
 	ph.jQuery('#dialogs').hide();
-	ph.admin.con=ph.link('/admin');
+	link=ph.admin.con=ph.link('/admin');
     ph.admin.con.on('linked',function(){
 		ph.jQuery('#dialogs').show();
 		var stor=ph.admin.storage=ph.admin.con.storage();
@@ -131,6 +132,7 @@ ph.log("tabs ajaxOptions success.index:"+index +":anchor:"+anchor);
 <body> 
 <H1 class="mainTitle" style="float: left;">Phantom Server Console</H1>
 <div style="float: right;" class="welcom">$!esc.html($loginUser.nickname)さんようこそ
+<img src="/pub/images/profile.gif" title="profile" onclick='link.userProfile();'/>
 <img src="/pub/images/home.gif" title="home" onclick='location=ph.publicWebUrl'/>
 <img src="/pub/images/logout.gif" title="logout" onclick='location=(ph.authUrl+"/logout")'/>
 </div>
