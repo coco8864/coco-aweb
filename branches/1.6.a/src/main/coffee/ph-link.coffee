@@ -154,7 +154,6 @@ class Link extends ph.Deferred
    else
     @cause='fail to offlineAuth'
     @trigger('failToAuth',@)
-    @unload()
   if res.type=='logout'
     @_frame[0].src='about:blank'
     @_frame.remove()
