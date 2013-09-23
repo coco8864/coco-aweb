@@ -146,6 +146,7 @@ onRequest=(req)->
   jQuery('#offlineLogon').show()
   jQuery('#userProfile').hide()
   jQuery('#loginId').val(select.val())
+  response({type:'showFrame',height:document.body.clientHeight});
  else if req.type=="offlineLogout"
   result=false
   if userInfo
@@ -185,6 +186,7 @@ onRequest=(req)->
    jQuery('#pfMessage').text('please update your profile')
   jQuery('#offlineLogon').hide()
   jQuery('#userProfile').show()
+  response({type:'showFrame',height:document.body.clientHeight});
  else
   throw 'unkown type:'+req.type
 
