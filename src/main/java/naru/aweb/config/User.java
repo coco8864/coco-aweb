@@ -132,7 +132,7 @@ public class User {
 			}
 			pm.deletePersistent(user);
 			pm.currentTransaction().commit();
-			logger.info("deleteUser:"+user.getLoginId());
+			logger.info("deleteUser:"+id);
 		} finally {
 			if(pm.currentTransaction().isActive()){
 				pm.currentTransaction().rollback();
