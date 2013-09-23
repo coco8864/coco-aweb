@@ -130,6 +130,7 @@ onRequest=(req)->
   else
    getUserInfo(responseAuthInfo)
  else if req.type=="offlineAuth"
+  jQuery('#password').val('')
   users=getUsers()
   count=0
   select=jQuery('#loginIds')
