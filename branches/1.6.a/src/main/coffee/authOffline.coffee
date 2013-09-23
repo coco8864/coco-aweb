@@ -21,7 +21,10 @@ checkPassword=(loginId,password)->
   return false
  if !plainText
   return false
- userInfo=ph.JSON.parse(plainText)
+ try
+  userInfo=ph.JSON.parse(plainText)
+ catch error
+  return false
  return true
 
 getUsers=->
@@ -54,7 +57,6 @@ getUserInfo=(cb)->
   data:aplInfo
  })
  userInfoDfd.done((x)->
-   userInfo=null
    userInfo=x
    if cb
     cb()
@@ -62,7 +64,6 @@ getUserInfo=(cb)->
    isAuth=true
    saveUserInfo()
   )
-   
  userInfoDfd.fail((x)->
    userInfo=null
    if cb

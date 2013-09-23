@@ -56,12 +56,20 @@ public class VelocityPageHandler extends WebServerHandler {
 	
 	private static ToolManager getToolManager(){
 		if(toolManager==null){
-			ToolManager tm = new ToolManager();
-			/*
-			EasyFactoryConfiguration efConfig = new EasyFactoryConfiguration();		
-			efConfig.tool("esc", EscapeTool.class);
-			tm.configure(efConfig);
-			*/
+			ToolManager tm=null;
+			synchronized(VelocityPageHandler.class){
+				tm = new ToolManager();
+			}
+			/* “¯‚ÉToolManager‚ğì¬‚·‚é‚ÆˆÈ‰º‚É‚È‚é–Í—l
+			 * 2013-09-23 16:05:26,802 [thread-dispatch:2] ERROR org.apache.commons.digester.Digester - Begin event threw exception
+org.apache.commons.beanutils.ConversionException: Error converting from 'String' to 'Class' loader (instance of  naru/queuelet/loader/QueueletLoader): attempted  duplicate class definition for name: "org/apache/velocity/tools/generic/AlternatorTool"
+	at org.apache.commons.beanutils.converters.AbstractConverter.handleError(AbstractConverter.java:267)
+	at org.apache.commons.beanutils.converters.AbstractConverter.convert(AbstractConverter.java:164)
+...
+Caused by: java.lang.LinkageError: loader (instance of  naru/queuelet/loader/QueueletLoader): attempted  duplicate class definition for name: "org/apache/velocity/tools/generic/AlternatorTool"
+	at java.lang.ClassLoader.defineClass1(Native Method)
+			 * QueueletLoader‚Ìˆê”Ê“I‚È–â‘è‚©‚à‚µ‚ê‚È‚¢‚ª
+			 */
 			File settingDir=getConfig().getSettingDir();
 			File configFile=new File(settingDir,"velocityTool.xml");
 			tm.configure(configFile.getAbsolutePath());

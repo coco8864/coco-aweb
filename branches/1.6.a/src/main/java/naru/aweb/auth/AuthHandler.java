@@ -485,6 +485,9 @@ public class AuthHandler extends WebServerHandler {
 		if(check!=Authorizer.CHECK_SECONDARY_OK){
 			response.element("result", false);
 			User user=authorizer.getUserByPrimaryId(cookieId);
+			if(user!=null){
+				response.element("offlinePassHash", user.getOfflinePassHash());
+			}
 			response.element("authInfo",infoObject(user,authToken));
 		}else{
 			response.element("result", true);
