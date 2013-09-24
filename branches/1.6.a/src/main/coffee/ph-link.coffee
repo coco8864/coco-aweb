@@ -100,25 +100,25 @@ class Link extends ph.Deferred
     @cause='fail to onlineAuth'
     @trigger('failToAuth',@)
     @unload()
-#   else if res.aplInfo.loginId #TODO:”FØÏ‚İ‚È‚ç,Å“K‰»
+#   else if res.aplInfo.loginId #TODO:èªè¨¼æ¸ˆã¿ãªã‚‰,æœ€é©åŒ–
 #    @aplInfo=res.aplInfo
 #    @authInfo=res.authInfo
 #    @trigger('onlineAuth',@)
 #    @trigger('auth',@)
 #    @_connect()
    else if res.aplInfo.isOffline==true && @param.useOffline=='never'
-## offline‚È‚Ì‚Éoffline‚Íâ‘Îg‚¤‚Èw’è
+## offlineãªã®ã«offlineã¯çµ¶å¯¾ä½¿ã†ãªæŒ‡å®š
     @isOffline=true
     @trigger('suspendAuth',@)
    else if @param.useOffline=='must' || res.aplInfo.isOffline==true
-## •K‚¸offline‚ğg‚¤w’èA‚à‚µ‚­‚ÍÀÛ‚Éoffline
+## å¿…ãšofflineã‚’ä½¿ã†æŒ‡å®šã€ã‚‚ã—ãã¯å®Ÿéš›ã«offline
     @isOffline=true
     @_requestToAplFrame({type:'offlineAuth'})
    else
 ## online
     @isOffline=false
-##isWs‚ÍAws‚Åƒ`ƒFƒbƒN‚·‚é‚©http‚Åƒ`ƒFƒbƒN‚·‚é‚©‚¾‚ªAmapping‚É—¼Ò“o˜^‚µ‚È‚¢‚ÆlinkƒAƒvƒŠ‚Í³‚µ‚­“®‚©‚È‚¢
-##‚ ‚Ü‚èˆÓ–¡‚Í‚È‚¢
+##isWsã¯ã€wsã§ãƒã‚§ãƒƒã‚¯ã™ã‚‹ã‹httpã§ãƒã‚§ãƒƒã‚¯ã™ã‚‹ã‹ã ãŒã€mappingã«ä¸¡è€…ç™»éŒ²ã—ãªã„ã¨linkã‚¢ãƒ—ãƒªã¯æ­£ã—ãå‹•ã‹ãªã„
+##ã‚ã¾ã‚Šæ„å‘³ã¯ãªã„
     isWs=!(@param.useWs==false) && ph.useWebSocket
     @_requestToAplFrame({type:'onlineAuth',isWs:isWs,originUrl:location.href})
   if res.type=='onlineAuth'
@@ -218,9 +218,9 @@ URL_PTN=/^(?:([^:\/]+:))?(?:\/\/([^\/]*))?(.*)/
 ph._links={}
 
 # aplUrl:
-# useOffline:ture=•K‚¸offline,false=•K‚¸online,undefined=online‚Å‚µ‚Ä‚¾‚ß‚È‚çoffline
-# useConnection:online‚Ìê‡—LŒø true=•K‚¸connect‚·‚é,false=•K‚¸connect‚µ‚È‚¢,undefined=connect‚µ‚Ä¸”s‚·‚ê‚Î‚»‚Ì‚Ü‚Ü
-# useWs:connect¬Œ÷‚µ‚½ê‡Atrue=•K‚¸websocket‚ğg‚¤,false=•K‚¸xhr‚ğg‚¤Aundefined=websocket‚É¸”s‚·‚ê‚Îxhr
+# useOffline:ture=å¿…ãšoffline,false=å¿…ãšonline,undefined=onlineã§è©¦ã—ã¦ã ã‚ãªã‚‰offline
+# useConnection:onlineã®å ´åˆæœ‰åŠ¹ true=å¿…ãšconnectã™ã‚‹,false=å¿…ãšconnectã—ãªã„,undefined=connectã—ã¦å¤±æ•—ã™ã‚Œã°ãã®ã¾ã¾
+# useWs:connectæˆåŠŸã—ãŸå ´åˆã€true=å¿…ãšwebsocketã‚’ä½¿ã†,false=å¿…ãšxhrã‚’ä½¿ã†ã€undefined=websocketã«å¤±æ•—ã™ã‚Œã°xhr
 ph.link=(aplUrl,useOffline,useConnection,useWs)->
  if !aplUrl
   pos=location.href.lastIndexOf("/")
@@ -268,10 +268,10 @@ ph.link=(aplUrl,useOffline,useConnection,useWs)->
  return link
 
 #strage scope
-#  SCOPE_PAGE_PRIVATE:'pagePrivate' ...‚»‚Ìƒy[ƒW‚¾‚¯Areload‚ğ‹²‚ñ‚Åî•ñ‚ğˆÛ‚·‚é‚½‚ß
-#  SCOPE_SESSION_PRIVATE:'sessionPrivate'...ŠJ‚¢‚Ä‚¢‚é“¯ˆêƒZƒVƒ‡ƒ“‚ÌwindowŠÔ‚Åî•ñ‚ğ‹¤—L
-#  SCOPE_APL_PRIVATE:'aplPrivate'...“–ŠYapl“–ŠYuser‚Ìî•ñ‚ğ•Û
-#  SCOPE_APL_LOCAL:'aplLocal'...“–ŠYapl‚Ìî•ñ‚ğ•Û
+#  SCOPE_PAGE_PRIVATE:'pagePrivate' ...ãã®ãƒšãƒ¼ã‚¸ã ã‘ã€reloadã‚’æŒŸã‚“ã§æƒ…å ±ã‚’ç¶­æŒã™ã‚‹ãŸã‚
+#  SCOPE_SESSION_PRIVATE:'sessionPrivate'...é–‹ã„ã¦ã„ã‚‹åŒä¸€ã‚»ã‚·ãƒ§ãƒ³ã®windowé–“ã§æƒ…å ±ã‚’å…±æœ‰
+#  SCOPE_APL_PRIVATE:'aplPrivate'...å½“è©²aplå½“è©²userã®æƒ…å ±ã‚’ä¿æŒ
+#  SCOPE_APL_LOCAL:'aplLocal'...å½“è©²aplã®æƒ…å ±ã‚’ä¿æŒ
 #  SCOPE_APL:'apl'
 #  SCOPE_QNAME:'qname'
 #  SCOPE_SUBNAME:'subname'
@@ -282,7 +282,7 @@ class PrivateSessionStorage extends ph.Deferred
   super
   aplInfo=@link.aplInfo
   @_paPss="_paPss:#{@link.keyUrl}:#{aplInfo.loginId}:#{aplInfo.appSid}"
-  ##•s—v‚ÈsessionStorage‚ÌŠ ‚èæ‚è
+  ##ä¸è¦ãªsessionStorageã®åˆˆã‚Šå–ã‚Š
   sameLoginIdKey="_paPss:#{@link.keyUrl}:"
   i=sessionStorage.length
   while (i-=1) >=0
@@ -297,7 +297,7 @@ class PrivateSessionStorage extends ph.Deferred
      s.data={}
     s.load()
   )
-  ph.one('unload',@_unload) #page‚ªunload‚³‚ê‚é‚Æ‚«sessionStorage‚Éc‚·
+  ph.one('unload',@_unload) #pageãŒunloadã•ã‚Œã‚‹ã¨ãsessionStorageã«æ®‹ã™
   @onUnload(@_unload)
  getItem:(key)->
   @data[key]
