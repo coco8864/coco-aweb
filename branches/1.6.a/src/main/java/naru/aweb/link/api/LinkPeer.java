@@ -17,52 +17,52 @@ import net.sf.json.JSONObject;
  * !!要チェック!!
  */
 public class LinkPeer extends PoolBase{
-	public static LinkPeer create(LinkManager paManager,LinkSession paSession,String qname,String subname){
+	public static LinkPeer create(LinkManager linkManager,LinkSession linkSession,String qname,String subname){
 		LinkPeer peer=(LinkPeer)PoolManager.getInstance(LinkPeer.class);
-		peer.paSession=paSession;
-		peer.paManager=paManager;
-		if(paSession!=null){
-			peer.paSessionId=paSession.getPoolId();
+		peer.linkSession=linkSession;
+		peer.linkManager=linkManager;
+		if(linkSession!=null){
+			peer.linkSessionId=linkSession.getPoolId();
 		}else{
-			peer.paSessionId=0;
+			peer.linkSessionId=0;
 		}
 		peer.qname=qname;
 		peer.subname=subname;
 		return peer;
 	}
 	
-	private LinkManager paManager;
-	private LinkSession paSession;
-	private long paSessionId;
+	private LinkManager linkManager;
+	private LinkSession linkSession;
+	private long linkSessionId;
 	private String qname;//queue名
 	private String subname;//クライアントid(認証idが同じでもブラウザの違い等により、clientは別のpeerで接続できる)
 	
 	public void releaseSession(){
-		paSession=null;
+		linkSession=null;
 	}
 	
 	public String getPath() {
-		return paSession.getPath();
+		return linkSession.getPath();
 	}
 
 	public String getAppSid() {
-		return paSession.getAppSid();
+		return linkSession.getAppSid();
 	}
 
 	public String getLoginId() {
-		return paSession.getLoginId();
+		return linkSession.getLoginId();
 	}
 
 	public List<String> getRoles() {
-		return paSession.getRoles();
+		return linkSession.getRoles();
 	}
 
 	public Integer getBid() {
-		return paSession.getBid();
+		return linkSession.getBid();
 	}
 
 	public boolean isWs() {
-		return paSession.isWs();
+		return linkSession.isWs();
 	}
 	
 	/**
@@ -70,14 +70,14 @@ public class LinkPeer extends PoolBase{
 	 * server側のアプリからpublishされた場合は、falseを返却
 	 * @return
 	 */
-	public boolean isPaSession(){
-		return (paSession!=null);
+	public boolean isLinkSession(){
+		return (linkSession!=null);
 	}
 	
 	/* API */
 	public boolean message(Object message){
-		if(paSession==null){
-			paManager.publish(qname, subname, message);
+		if(linkSession==null){
+			linkManager.publish(qname, subname, message);
 			return true;
 		}
 		JSONObject json=new JSONObject();
@@ -88,16 +88,16 @@ public class LinkPeer extends PoolBase{
 		//subnameだけはここでは決められない
 		Envelope envelope=Envelope.pack(json);
 		if(envelope.isBinary()){
-			paSession.sendBinary(envelope.createSendAsyncBuffer(null));
+			linkSession.sendBinary(envelope.createSendAsyncBuffer(null));
 		}else{
-			paSession.sendJson(envelope.getSendJson(null));
+			linkSession.sendJson(envelope.getSendJson(null));
 		}
 		envelope.unref(true);
 		return true;
 	}
 	
 	public void sendBinary(AsyncBuffer data){
-		paSession.sendBinary(data);
+		linkSession.sendBinary(data);
 	}
 	
 	/* API */
@@ -113,17 +113,17 @@ public class LinkPeer extends PoolBase{
 		json.put(LinkSession.KEY_KEY, getDownloadKey());
 		json.put(LinkSession.KEY_QNAME, qname);
 		json.put(LinkSession.KEY_SUBNAME, subname);
-		paSession.download(json,blob);
+		linkSession.download(json,blob);
 		return true;
 	}
 	
 	public boolean download(JSONObject message,Blob blob){
-		paSession.download(message,blob);
+		linkSession.download(message,blob);
 		return true;
 	}
 	
 	public void sendJson(JSONObject data){
-		paSession.sendJson(data);
+		linkSession.sendJson(data);
 	}
 	
 	public String getQname() {
@@ -141,9 +141,9 @@ public class LinkPeer extends PoolBase{
 	
 	public boolean unsubscribe(String reason){
 		/* clientにunsubscribe(subscribe失敗)を通知する */
-		if( paSession!=null && paSession.unsubscribeByPeer(this) ){
+		if( linkSession!=null && linkSession.unsubscribeByPeer(this) ){
 			/* paletにonUnsubscribeを通知する */
-			LinkletWrapper paletWrapper=paManager.getPaletWrapper(qname);
+			LinkletWrapper paletWrapper=linkManager.getPaletWrapper(qname);
 			return paletWrapper.onUnubscribe(this,reason);
 		}else{
 			return false;
@@ -155,7 +155,7 @@ public class LinkPeer extends PoolBase{
 	public int hashCode() {
 		final int prime = 31;
 		int result = 0;//super.hashCode();
-		result = prime * result	+ (int)paSessionId;
+		result = prime * result	+ (int)linkSessionId;
 		result = prime * result + ((qname == null) ? 0 : qname.hashCode());
 		result = prime * result + ((subname == null) ? 0 : subname.hashCode());
 		return result;
@@ -170,7 +170,7 @@ public class LinkPeer extends PoolBase{
 		if (getClass() != obj.getClass())
 			return false;
 		LinkPeer other = (LinkPeer) obj;
-		if (paSessionId != other.paSessionId)
+		if (linkSessionId != other.linkSessionId)
 			return false;
 		if (qname == null) {
 			if (other.qname != null)
