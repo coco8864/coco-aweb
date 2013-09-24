@@ -23,11 +23,33 @@
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
+					<source>1.7</source>
+					<target>1.7</target>
 				</configuration>
 			</plugin>
-
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.9.1</version>
+        <configuration>
+                    <show>public</show>
+                    <nohelp>true</nohelp>
+                    <nodeprecated>true</nodeprecated>
+                    <nodeprecatedlist>true</nodeprecatedlist>
+                    <sourceFileIncludes>
+			<include>handler/WebServerHandler.java</include>
+			<include>handler/WebSocketHandler.java</include>
+			<include>link/api/Blob.java</include>
+			<include>link/api/Linklet.java</include>
+			<include>link/api/LinkletCtx.java</include>
+			<include>link/api/LinkPeer.java</include>
+			<include>link/api/LinkMsg.java</include>
+			<include>http/HeaderParser.java</include>
+			<include>http/ParameterParser.java</include>
+                    </sourceFileIncludes>
+		<sourcepath>${basedir}/src/main/java/naru/aweb</sourcepath>
+        </configuration>
+      </plugin>
     <plugin>
       <groupId>com.theoryinpractise</groupId>
       <artifactId>coffee-maven-plugin</artifactId>
