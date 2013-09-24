@@ -59,7 +59,7 @@ public class PerfLinklet implements Linklet,Event {
 //		if(data instanceof JSONObject){
 //			parameter=(JSONObject)data;
 //		}
-		if(!peer.isPaSession()){
+		if(!peer.isLinkSession()){
 			if( parameter.getBoolean("isComplete")==true){
 				if(scenario!=null){
 					scenario.unref();

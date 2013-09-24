@@ -53,7 +53,7 @@ public class AccessLogLinklet implements Linklet {
 			if(parameter==null){
 				continue;
 			}
-			if(peer.isPaSession()==false){
+			if(peer.isLinkSession()==false){
 				watchsMap.remove(peer);
 				peer.unref();
 				parameter.unref();

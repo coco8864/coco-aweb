@@ -28,7 +28,10 @@ import naru.aweb.util.JdoUtil;
 import naru.aweb.util.ServerParser;
 
 import org.apache.log4j.Logger;
-
+/**
+ * @author naru
+ *
+ */
 public class FilterHelper {
 	private static Logger logger = Logger.getLogger(FilterHelper.class);
 	private static Config config=Config.getConfig();
