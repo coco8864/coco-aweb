@@ -55,5 +55,6 @@ nickname:<select id="loginIds" size="1" onchange="loginIdsOnchange();">
 <input type='button' value='update' id='pfUpdateBtn' />
 <input type='button' value='cancel' id='pfCancelBtn' />
 </div>
+</div>
 </body>
 </html>
