@@ -219,7 +219,7 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 	 * 2)json形式でPOSTされる場合-->parameterにjsonオブジェクトがあるか否か
 	 * 3)クエリにパラメタをしてしてリクエストされる場合　--> 上記以外
 	 */
-	public void startResponseReqBody() {
+	public void onRequestBody() {
 		Store store=(Store)getAttribute("Store");
 		if(store!=null){//fowardされてきた場合
 			setAttribute("Store",null);//削除しないとstoreのライフサイクルが狂う

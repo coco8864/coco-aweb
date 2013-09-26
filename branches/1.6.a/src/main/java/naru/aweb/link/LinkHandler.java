@@ -17,7 +17,7 @@ import naru.async.timer.TimerManager;
 import naru.aweb.auth.AuthSession;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
-import naru.aweb.handler.WebSocketHandler;
+import naru.aweb.handler.ws.WebSocketHandler;
 import naru.aweb.http.ParameterParser;
 import naru.aweb.link.api.Blob;
 import naru.aweb.link.api.LinkMsg;
@@ -89,10 +89,10 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 		}else if(LinkSession.TYPE_CLOSE.equals(type)){
 			paSession.close();
 			AuthSession authSession=getAuthSession();
-			PaSessions paSessions=null;
+			LinkSessions linkSessions=null;
 			synchronized(authSession){
-				paSessions=(PaSessions)authSession.getAttribute(LINK_SESSIONS_KEY);
-				paSessions.sessions.remove(bid);
+				linkSessions=(LinkSessions)authSession.getAttribute(LINK_SESSIONS_KEY);
+				linkSessions.sessions.remove(bid);
 				isNegotiated=false;
 				bid=0;
 			}
@@ -174,15 +174,15 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 		}
 	}
 	
-	private PaSessions getPaSessions(AuthSession authSession){
-		PaSessions paSessions=null;
+	private LinkSessions getLinkSessions(AuthSession authSession){
+		LinkSessions linkSessions=null;
 		synchronized(authSession){
-			paSessions=(PaSessions)authSession.getAttribute(LINK_SESSIONS_KEY);
-			if(paSessions==null){
-				paSessions=new PaSessions();
-				authSession.setAttribute(LINK_SESSIONS_KEY, paSessions);
+			linkSessions=(LinkSessions)authSession.getAttribute(LINK_SESSIONS_KEY);
+			if(linkSessions==null){
+				linkSessions=new LinkSessions();
+				authSession.setAttribute(LINK_SESSIONS_KEY, linkSessions);
 			}
-			return paSessions;
+			return linkSessions;
 		}
 	}
 	
@@ -218,7 +218,7 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 		
 		bid=negoreq.getInt(LinkSession.KEY_BID);
 		boolean needRes=negoreq.getBoolean("needRes");
-		PaSessions paSessions=getPaSessions(authSession);
+		LinkSessions paSessions=getLinkSessions(authSession);
 		paSession=paSessions.sessions.get(bid);
 		if(paSession==null && needRes==false){
 			bid=-1;
@@ -244,7 +244,7 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 	}
 	
 	/* authSessionに乗せるPaSession管理Class */
-	private static class PaSessions{
+	private static class LinkSessions{
 		Map<Integer,LinkSession> sessions=new HashMap<Integer,LinkSession>();
 		Integer bidSeq=0;
 	}
@@ -269,7 +269,7 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 			return;
 		}
 		int bid=Integer.parseInt(parameter.getParameter(LinkSession.KEY_BID));
-		PaSessions paSessions=getPaSessions(authSession);
+		LinkSessions paSessions=getLinkSessions(authSession);
 		paSession=paSessions.sessions.get(bid);
 		if(paSession==null){
 			completeResponse("404");
@@ -313,7 +313,7 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 		}
 		int bid=Integer.parseInt(parameter.getParameter(LinkSession.KEY_BID));
 		String key=parameter.getParameter("key");
-		PaSessions paSessions=getPaSessions(authSession);
+		LinkSessions paSessions=getLinkSessions(authSession);
 		paSession=paSessions.sessions.get(bid);
 		if(paSession==null){
 			completeResponse("404");
@@ -354,7 +354,7 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 	 * HTTP(s)として動作した場合ここでリクエストを受ける
 	@Override
 	*/
-	public void startResponseReqBody() {
+	public void onRequestBody() {
 		ParameterParser parameter=getParameterParser();
 		MappingResult mapping=getRequestMapping();
 		String path=mapping.getResolvePath();

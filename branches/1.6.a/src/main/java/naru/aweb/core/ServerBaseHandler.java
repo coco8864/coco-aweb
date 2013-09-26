@@ -12,10 +12,11 @@ import naru.async.ssl.SslHandler;
 import naru.aweb.auth.AuthSession;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
+import naru.aweb.config.Mapping;
+import naru.aweb.handler.KeepAliveContext;
 import naru.aweb.handler.WebServerHandler;
 import naru.aweb.http.GzipContext;
 import naru.aweb.http.HeaderParser;
-import naru.aweb.http.KeepAliveContext;
 import naru.aweb.http.ParameterParser;
 import naru.aweb.http.RequestContext;
 import naru.aweb.mapping.MappingResult;
@@ -47,10 +48,10 @@ public abstract class ServerBaseHandler extends SslHandler {
 		HANDLER,
 		REQUEST,
 		KEEP_ALIVE,
-		BROWSER,/* リクエストすべてにbidを振る必要がある、awebの機能としては提供しない */
+		BROWSER,/* リクエストすべてにbidを振る必要がある、linkの機能として提供、awebの機能としては提供しない */
 		SESSION,
 		AUTH_SESSION,
-		APPLICATION,
+		MAPPING,/* mapping定義単位つまり、applicationスコープ */
 		CONFIG
 	}
 	
@@ -84,18 +85,22 @@ public abstract class ServerBaseHandler extends SslHandler {
 		}
 		return requestContext.getRequestHeader();
 	}
-	
+	/*
 	public void setRequestAttribute(String name,Object value){
-		getRequestContext().setAttribute(name, value);
+		setAttribute(SCOPE.REQUEST,name,value);
+		//getRequestContext().setAttribute(name, value);
 	}
 	
 	public Object getRequestAttribute(String name){
-		return getRequestContext().getAttribute(name);
+		return getAttribute(SCOPE.REQUEST,name);
+//		return getRequestContext().getAttribute(name);
 	}
 	
 	public Iterator<String> getRequestAttributeNames(){
-		return getRequestContext().getAttributeNames();
+		return getAttributeNames(SCOPE.REQUEST);
+//		return getRequestContext().getAttributeNames();
 	}
+	*/
 	
 	private AuthSession getRootAuthSession(){
 		AuthSession session=getAuthSession();
@@ -105,67 +110,99 @@ public abstract class ServerBaseHandler extends SslHandler {
 		return session.getSessionId().getPrimaryId().getAuthSession();
 	}
 	
-	public void setAttr(SCOPE scope,String name,Object value){
+	public void setAttribute(SCOPE scope,String name,Object value){
 		AuthSession session=null;
 		switch(scope){
 		case HANDLER:
 			setAttribute(name, value);
+			break;
 		case REQUEST:
-			getRequestContext().setAttribute(name, value);
+			RequestContext requestContext=getRequestContext();
+			if(requestContext!=null){
+				requestContext.setAttribute(name, value);
+			}
+			break;
 		case SESSION:
 			session=getAuthSession();
 			if(session!=null){
 				session.setAttribute(name, value);
 			}
+			break;
 		case AUTH_SESSION:
 			session=getRootAuthSession();
 			if(session!=null){
 				session.setAttribute(name, value);
 			}
+			break;
+		case MAPPING:
+			MappingResult mappingResult=getRequestMapping();
+			Mapping mapping=mappingResult.getMapping();
+			mapping.setAttribute(name,value);
+			break;
 		default:
 			break;
 		}
 	}
 	
-	public Object getAttr(SCOPE scope,String name){
+	public Object getAttribute(SCOPE scope,String name){
 		AuthSession session=null;
 		switch(scope){
 		case HANDLER:
 			return getAttribute(name);
 		case REQUEST:
-			return getRequestContext().getAttribute(name);
+			RequestContext requestContext=getRequestContext();
+			if(requestContext!=null){
+				return requestContext.getAttribute(name);
+			}
+			return null;
 		case SESSION:
 			session=getAuthSession();
 			if(session!=null){
 				return session.getAttribute(name);
 			}
+			return null;
 		case AUTH_SESSION:
 			session=getRootAuthSession();
 			if(session!=null){
 				return session.getAttribute(name);
 			}
+			return null;
+		case MAPPING:
+			MappingResult mappingResult=getRequestMapping();
+			Mapping mapping=mappingResult.getMapping();
+			return mapping.getAttribute(name);
 		default:
 			break;
 		}
 		return null;
 	}
 	
-	public Iterator<String> getAttrNames(SCOPE scope){
+	public Iterator<String> getAttributeNames(SCOPE scope){
 		switch(scope){
 		case HANDLER:
 			throw new UnsupportedOperationException("handler scope getAttrNames");
 		case REQUEST:
-			return getRequestContext().getAttributeNames();
+			RequestContext requestContext=getRequestContext();
+			if(requestContext!=null){
+				return requestContext.getAttributeNames();
+			}
+			return null;
 		case SESSION:
 			AuthSession session=getAuthSession();
 			if(session!=null){
 				return session.getAttributeNames();
 			}
+			return null;
 		case AUTH_SESSION:
 			session=getRootAuthSession();
 			if(session!=null){
 				return session.getAttributeNames();
 			}
+			return null;
+		case MAPPING:
+			MappingResult mappingResult=getRequestMapping();
+			Mapping mapping=mappingResult.getMapping();
+			return mapping.getAttributeNames();
 		default:
 			break;
 		}
@@ -230,11 +267,7 @@ public abstract class ServerBaseHandler extends SslHandler {
 	}
 
 	public SpdySession getSpdySession() {
-		RequestContext requestContext=getRequestContext();
-		if(requestContext==null){
-			return null;
-		}
-		return (SpdySession)requestContext.getAttribute(ATTRIBUTE_SPDY_SESSION);
+		return (SpdySession)getAttribute(SCOPE.REQUEST, ATTRIBUTE_SPDY_SESSION);
 	}
 
 	@Override

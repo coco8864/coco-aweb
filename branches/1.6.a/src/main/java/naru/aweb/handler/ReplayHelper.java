@@ -10,6 +10,7 @@ import naru.async.store.Store;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
+import naru.aweb.core.ServerBaseHandler.SCOPE;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.util.ServerParser;
@@ -129,7 +130,7 @@ public class ReplayHelper {
 //			bodyPage.recycle();
 			accessLog.setDestinationType(AccessLog.DESTINATION_TYPE_REPLAY);
 			logger.debug("response from file.file:"+file.getAbsolutePath());
-			handler.setRequestAttribute(ProxyHandler.ATTRIBUTE_RESPONSE_FILE,file);
+			handler.setAttribute(SCOPE.REQUEST,ProxyHandler.ATTRIBUTE_RESPONSE_FILE,file);
 			WebServerHandler response=(WebServerHandler) handler.forwardHandler(Mapping.FILE_SYSTEM_HANDLER);
 			PoolManager.poolBufferInstance(body);//TODO ‚¿‚á‚ñ‚ÆŽg‚¨‚¤
 			return true;

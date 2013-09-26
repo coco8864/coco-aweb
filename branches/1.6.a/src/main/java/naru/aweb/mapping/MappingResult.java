@@ -422,6 +422,10 @@ public class MappingResult extends PoolBase {
 	}
 
 	public Object getAttribute(String name) {
+		Object result=mapping.getAttribute(name);
+		if(result!=null){
+			return result;
+		}
 		return attribute.get(name);
 	}
 }

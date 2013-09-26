@@ -21,6 +21,7 @@ import naru.aweb.config.FilterEntry;
 import naru.aweb.config.FilterRole;
 import naru.aweb.config.User;
 import naru.aweb.core.ServerBaseHandler;
+import naru.aweb.core.ServerBaseHandler.SCOPE;
 import naru.aweb.http.Cookie;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.mapping.MappingResult;
@@ -136,7 +137,7 @@ public class FilterHelper {
 	 */
 	public boolean doFilter(ProxyHandler handler){
 		logger.debug("#doFilter cid:"+handler.getChannelId());
-		User user=(User)handler.getRequestAttribute(ServerBaseHandler.ATTRIBUTE_USER);
+		User user=(User)handler.getAttribute(SCOPE.REQUEST,ServerBaseHandler.ATTRIBUTE_USER);
 		List<String> roles=user.getRolesList();
 		if(roles==null){
 			return false;

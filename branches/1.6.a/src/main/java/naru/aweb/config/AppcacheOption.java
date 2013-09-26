@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 
+import naru.aweb.core.ServerBaseHandler.SCOPE;
 import naru.aweb.handler.WebServerHandler;
 import naru.aweb.http.Cookie;
 import naru.aweb.http.HeaderParser;
@@ -121,12 +122,12 @@ public class AppcacheOption {
 		if(useAppcache && appcacheMode ){
 			cachePaths=this.cachePaths;
 		}
-		handler.setRequestAttribute("phappcacheCookieKey", cookieKey);
-		handler.setRequestAttribute("manifest", manifestAbsPath);
-		handler.setRequestAttribute("useAppcache", useAppcache);
-		handler.setRequestAttribute("appcacheMode", appcacheMode);
-		handler.setRequestAttribute("cachePaths", cachePaths);
-		handler.setRequestAttribute(APPCACHE_KEY, appcacheVersion);
+		handler.setAttribute(SCOPE.REQUEST,"phappcacheCookieKey", cookieKey);
+		handler.setAttribute(SCOPE.REQUEST,"manifest", manifestAbsPath);
+		handler.setAttribute(SCOPE.REQUEST,"useAppcache", useAppcache);
+		handler.setAttribute(SCOPE.REQUEST,"appcacheMode", appcacheMode);
+		handler.setAttribute(SCOPE.REQUEST,"cachePaths", cachePaths);
+		handler.setAttribute(SCOPE.REQUEST,APPCACHE_KEY, appcacheVersion);
 		config.forwardVelocityTemplate(handler,template);
 	}
 	

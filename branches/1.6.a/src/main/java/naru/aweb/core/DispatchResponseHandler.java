@@ -5,6 +5,7 @@ import naru.async.pool.PoolManager;
 import naru.aweb.auth.AuthHandler;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
+import naru.aweb.core.ServerBaseHandler.SCOPE;
 import naru.aweb.handler.WebServerHandler;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.mapping.MappingResult;
@@ -78,13 +79,6 @@ public class DispatchResponseHandler extends WebServerHandler {
 		return mapping;
 	}
 
-	public static MappingResult redirectOrgPath(String location,String setCookieString) {
-		MappingResult mapping=createDispatchMapping(Type.REDIRECT);
-		mapping.setAttribute(HeaderParser.LOCATION_HEADER, location);
-		mapping.setAttribute(HeaderParser.SET_COOKIE_HEADER, setCookieString);
-		return mapping;
-	}
-
 	private static MappingResult createDispatchMapping(Type type) {
 		MappingResult mapping = (MappingResult) PoolManager.getInstance(MappingResult.class);
 		mapping.setHandlerClass(DispatchResponseHandler.class);
@@ -98,7 +92,7 @@ public class DispatchResponseHandler extends WebServerHandler {
 		return mapping;
 	}
 
-	public void startResponseReqBody() {
+	public void onRequestBody() {
 		MappingResult mapping = getRequestMapping();
 		Type type = (Type) mapping.getAttribute(TYPE);
 		String message;
@@ -139,7 +133,7 @@ public class DispatchResponseHandler extends WebServerHandler {
 		case CROSS_DOMAIN_FRAME:
 			mapping.setResolvePath("/crossDomainFrame.vsp");
 			mapping.setDesitinationFile(config.getAuthDocumentRoot());
-			setRequestAttribute(RESPONSE, mapping.getAttribute(RESPONSE));
+			setAttribute(SCOPE.REQUEST,RESPONSE, mapping.getAttribute(RESPONSE));
 			forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
 			break;
 		case JSON_RESPONSE:

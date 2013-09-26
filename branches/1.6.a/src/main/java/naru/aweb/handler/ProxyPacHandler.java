@@ -13,7 +13,6 @@ import naru.aweb.config.Mapping;
 import naru.aweb.config.Mapping.SourceType;
 import naru.aweb.core.RealHost;
 import naru.aweb.http.HeaderParser;
-import naru.aweb.http.KeepAliveContext;
 import naru.aweb.mapping.MappingResult;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -102,7 +101,7 @@ public class ProxyPacHandler extends WebServerHandler {
 		return pac;
 	}
 
-	public void startResponseReqBody(){
+	public void onRequestBody(){
 		HeaderParser requestHeader=getRequestHeader();
 		String selfHost=requestHeader.getHeader(HeaderParser.HOST_HEADER);
 		int pos=selfHost.indexOf(":");
@@ -111,10 +110,12 @@ public class ProxyPacHandler extends WebServerHandler {
 		}
 		MappingResult mapping=getRequestMapping();
 		String mapKey=PAC_TEXT+selfHost;
-		String pac=(String)mapping.getMapping().getOption(mapKey);
+		String pac=(String)getAttribute(SCOPE.MAPPING, mapKey);
+//		String pac=(String)mapping.getMapping().getOption(mapKey);
 		if(pac==null){
 			pac=createPac(mapping,selfHost);
-			mapping.getMapping().setOption(mapKey,pac);
+			setAttribute(SCOPE.MAPPING, mapKey,pac);
+//			mapping.getMapping().setOption(mapKey,pac);
 		}
 		setContentType("application/x-ns-proxy-autoconfig");
 		completeResponse("200", pac);

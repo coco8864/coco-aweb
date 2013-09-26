@@ -21,6 +21,7 @@ import naru.aweb.config.AppcacheOption;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
 import naru.aweb.core.Main;
+import naru.aweb.core.ServerBaseHandler.SCOPE;
 import naru.aweb.handler.WebServerHandler;
 import naru.aweb.handler.ws.WsProtocol;
 import naru.aweb.http.HeaderParser;
@@ -323,9 +324,9 @@ public class AdminHandler extends WebServerHandler{
 			if(!"0".equals(logNumber)){
 				logName=logName +"."+logNumber;
 			}
-			setRequestAttribute(ATTRIBUTE_RESPONSE_CONTENT_DISPOSITION,"attachment; filename=\"" + logName + "\"");
-			setRequestAttribute(ATTRIBUTE_RESPONSE_FILE,new File(config.getPhantomHome(),"/log/" + logName));
-			setRequestAttribute(ATTRIBUTE_RESPONSE_FILE_NOT_USE_CACHE,ATTRIBUTE_RESPONSE_FILE_NOT_USE_CACHE);
+			setAttribute(SCOPE.REQUEST,ATTRIBUTE_RESPONSE_CONTENT_DISPOSITION,"attachment; filename=\"" + logName + "\"");
+			setAttribute(SCOPE.REQUEST,ATTRIBUTE_RESPONSE_FILE,new File(config.getPhantomHome(),"/log/" + logName));
+			setAttribute(SCOPE.REQUEST,ATTRIBUTE_RESPONSE_FILE_NOT_USE_CACHE,ATTRIBUTE_RESPONSE_FILE_NOT_USE_CACHE);
 			forwardHandler(Mapping.FILE_SYSTEM_HANDLER);
 		}else if("certificate".equals(cmd)){
 			String cerFileName=parameter.getParameter("cerFileName");
@@ -334,8 +335,8 @@ public class AdminHandler extends WebServerHandler{
 				completeResponse("404");
 				return;
 			}
-			setRequestAttribute(ATTRIBUTE_RESPONSE_CONTENT_DISPOSITION,"attachment; filename=\"" + serFile.getName()+ "\"");
-			setRequestAttribute(ATTRIBUTE_RESPONSE_FILE,serFile);
+			setAttribute(SCOPE.REQUEST,ATTRIBUTE_RESPONSE_CONTENT_DISPOSITION,"attachment; filename=\"" + serFile.getName()+ "\"");
+			setAttribute(SCOPE.REQUEST,ATTRIBUTE_RESPONSE_FILE,serFile);
 			forwardHandler(Mapping.FILE_SYSTEM_HANDLER);
 		}else if("checkPool".equals(cmd)){
 			System.gc();
@@ -445,7 +446,7 @@ public class AdminHandler extends WebServerHandler{
 		return false;
 	}
 
-	public void startResponseReqBody(){
+	public void onRequestBody(){
 		try{
 			doAdmin();
 		}catch(RuntimeException e){

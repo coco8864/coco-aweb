@@ -213,7 +213,7 @@ public class AdminPerfHandler extends WebServerHandler{
 		completeResponse("404");
 	}
 	
-	public void startResponseReqBody(){
+	public void onRequestBody(){
 		try{
 			ParameterParser parameter=getParameterParser();
 			String command=parameter.getParameter("command");

@@ -11,6 +11,7 @@ import naru.async.pool.PoolManager;
 import naru.aweb.auth.AuthSession;
 import naru.aweb.auth.LogoutEvent;
 import naru.aweb.config.AccessLog;
+import naru.aweb.handler.KeepAliveContext;
 import naru.aweb.mapping.MappingResult;
 /**
  * 

@@ -45,7 +45,7 @@ public class LinkletWrapper implements LinkletCtx,Timer{
 		isTerminate=false;
 	}
 	
-	private Linklet getPalet(LinkPeer peer){
+	private Linklet getLinklet(LinkPeer peer){
 		String subname=peer.getSubname();
 		Linklet palet=null;
 		if(subname!=null){
@@ -72,7 +72,7 @@ public class LinkletWrapper implements LinkletCtx,Timer{
 			}
 			subnamePeers.add(peer);
 		}
-		Linklet palet=getPalet(peer);
+		Linklet palet=getLinklet(peer);
 		palet.onSubscribe(peer);
 	}
 	
@@ -87,7 +87,7 @@ public class LinkletWrapper implements LinkletCtx,Timer{
 			}
 		}
 		if(exist){
-			Linklet palet=getPalet(peer);
+			Linklet palet=getLinklet(peer);
 			palet.onUnsubscribe(peer,reason);
 			return true;
 		}else{
@@ -96,7 +96,7 @@ public class LinkletWrapper implements LinkletCtx,Timer{
 	}
 	
 	void onPublish(LinkPeer peer,Object data){
-		Linklet palet=getPalet(peer);
+		Linklet palet=getLinklet(peer);
 		LinkMsg msg=null;
 		if(data instanceof LinkMsg){
 			msg=(LinkMsg)data;
@@ -301,7 +301,7 @@ public class LinkletWrapper implements LinkletCtx,Timer{
 	 * “¯‚¶qnameŠÔ‚Åî•ñ‹¤—L‚·‚éd‘g‚İ
 	 */
 	@Override
-	public Linklet getPalet(String subname) {
+	public Linklet getLinklet(String subname) {
 		if(subname==null){
 			return rootPalet;
 		}

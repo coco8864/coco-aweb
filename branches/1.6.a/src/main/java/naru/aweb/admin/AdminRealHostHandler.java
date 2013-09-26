@@ -66,7 +66,7 @@ public class AdminRealHostHandler extends WebServerHandler{
 		completeResponse("404");
 	}
 	
-	public void startResponseReqBody(){
+	public void onRequestBody(){
 		ParameterParser parameter=getParameterParser();
 		String command=parameter.getParameter("command");
 		if(command!=null){

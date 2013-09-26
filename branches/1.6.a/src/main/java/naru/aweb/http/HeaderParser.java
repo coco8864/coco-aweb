@@ -29,6 +29,7 @@ import naru.async.store.DataUtil;
 import naru.async.store.Page;
 import naru.async.store.Store;
 import naru.aweb.util.ServerParser;
+import naru.aweb.util.StreamUtil;
 
 import org.apache.log4j.Logger;
 
@@ -279,7 +280,7 @@ public class HeaderParser extends PoolBase {
 	}
 
 	public void addRawHeader(byte[] header, int pos, int end) {
-		int sep = indexOfByte(header, pos, end, ':');
+		int sep = StreamUtil.indexOfByte(header, pos, end, ':');
 		String headerName;
 		String headerValue;
 		if (sep > 0) {
@@ -369,29 +370,6 @@ public class HeaderParser extends PoolBase {
 		}
 	}
 
-	public static int indexOfByte(byte bytes[], int off, int end, char qq) {
-		// Works only for UTF
-		while (off < end) {
-			byte b = bytes[off];
-			if (b == qq)
-				return off;
-			off++;
-		}
-		return -1;
-	}
-
-	public static int lastIndexOfByte(byte bytes[], int off, int end, char qq) {
-		// Works only for UTF
-		end--;
-		while (off < end) {
-			byte b = bytes[end];
-			if (b == qq)
-				return end;
-			end--;
-		}
-		return -1;
-	}
-
 	public boolean isParseEnd() {
 		return parseSt == ST.OK || parseSt == ST.ERROR;
 	}
@@ -410,7 +388,7 @@ public class HeaderParser extends PoolBase {
 	// X[st0]\r[st1]\n[st2]\r[st3]\n[st4]
 	// X[st0]\r[st1]\n[st2]X[st0]
 	private int parseHeader(byte[] headers, int begin, int end) {
-		int posR = indexOfByte(headers, begin, end, '\r');
+		int posR = StreamUtil.indexOfByte(headers, begin, end, '\r');
 		if (posR >= 0) {
 			addLine(headers, begin, posR);
 			parseSt = ST.R;
@@ -433,7 +411,7 @@ public class HeaderParser extends PoolBase {
 		case INIT:
 			return parseHeader(headers, position, end);
 		case LEST:
-			posR = indexOfByte(headers, position, end, '\r');
+			posR = StreamUtil.indexOfByte(headers, position, end, '\r');
 			if (posR >= 0) {
 				concatLestOfHeader(headers, position, posR);
 				addLine(lestOfHeader, 0, lestOfHeader.length);

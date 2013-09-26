@@ -6,6 +6,7 @@ userInfo=null ##{authInfo:{},offlinePassHash:''}
 userInfoDfd=null
 isOffline=false
 isAuth=false
+isDisplay=false
 
 checkPassword=(loginId,password)->
  userInfo=null
@@ -130,6 +131,9 @@ onRequest=(req)->
   else
    getUserInfo(responseAuthInfo)
  else if req.type=="offlineAuth"
+  if isDisplay
+   response({type:'offlineAuth',result:false,cause:'aleady display'})
+   return
   jQuery('#password').val('')
   users=getUsers()
   count=0
@@ -147,6 +151,7 @@ onRequest=(req)->
   jQuery('#offlineLogon').show()
   jQuery('#userProfile').hide()
   jQuery('#loginId').val(select.val())
+  isDisplay=true
   response({type:'showFrame',height:document.body.clientHeight});
  else if req.type=="offlineLogout"
   result=false
@@ -157,6 +162,9 @@ onRequest=(req)->
   isAuth=false
   response({type:'offlineLogout',result:result})
  else if req.type=="userProfile"
+  if isDisplay
+   response({type:'userProfile',result:false,cause:'aleady display'})
+   return
   jQuery('#orgPassword').val('')
   jQuery('#password1').val('')
   jQuery('#password2').val('')
@@ -187,6 +195,7 @@ onRequest=(req)->
    jQuery('#pfMessage').text('please update your profile')
   jQuery('#offlineLogon').hide()
   jQuery('#userProfile').show()
+  isDisplay=true
   response({type:'showFrame',height:document.body.clientHeight});
  else
   throw 'unkown type:'+req.type
@@ -217,6 +226,7 @@ offlineLogon=->
   return
  isAuth=true
  response({type:'offlineAuth',result:true,authInfo:userInfo.authInfo})
+ isDisplay=false
  jQuery('logonId').val('')
  jQuery('password').val('')
  return
@@ -225,6 +235,8 @@ offlineCancel=->
  jQuery('logonId').val('')
  jQuery('password').val('')
  response({type:'offlineAuth',result:false,cause:'cancel'})
+ response({type:'hideFrame'})
+ isDisplay=false
  return
 
 profileUpdate=->
@@ -241,7 +253,6 @@ profileUpdate=->
  req.orgOfflinePass=jQuery('#orgOfflinePass').val()
  req.offlinePass1=jQuery('#offlinePass1').val()
  req.offlinePass2=jQuery('#offlinePass2').val()
-
  updateUserProfileDfd=jQuery.ajax({
   type:'POST',
   url:'updateUserProfile',
@@ -254,6 +265,8 @@ profileUpdate=->
     if res.offlinePassHash
      userInfo.offlinePassHash=res.offlinePassHash
     response({type:'userProfile',result:true})
+    response({type:'hideFrame'})
+    isDisplay=false
    else
     jQuery('#pfMessage').text(res.cause)
   )
@@ -264,6 +277,8 @@ profileUpdate=->
 
 profileCancel=->
  response({type:'userProfile',result:false,cause:'cancel'})
+ response({type:'hideFrame'})
+ isDisplay=false
  return
 
 jQuery(->

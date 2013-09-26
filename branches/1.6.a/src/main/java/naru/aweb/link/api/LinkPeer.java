@@ -143,7 +143,7 @@ public class LinkPeer extends PoolBase{
 		/* client‚Éunsubscribe(subscribeŽ¸”s)‚ð’Ê’m‚·‚é */
 		if( linkSession!=null && linkSession.unsubscribeByPeer(this) ){
 			/* palet‚ÉonUnsubscribe‚ð’Ê’m‚·‚é */
-			LinkletWrapper paletWrapper=linkManager.getPaletWrapper(qname);
+			LinkletWrapper paletWrapper=linkManager.getLinkletWrapper(qname);
 			return paletWrapper.onUnubscribe(this,reason);
 		}else{
 			return false;

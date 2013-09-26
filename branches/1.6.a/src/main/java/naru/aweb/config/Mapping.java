@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -326,8 +327,8 @@ public class Mapping{
 	private JSONObject optionsJson=new JSONObject();
 	
 	//Mapping毎にoptionsから変換したruntimeに使う作業オブジェクトを保持する。mappingResultからgetOptionで参照する
-	@NotPersistent
-	private Map optionsObj=new HashMap();
+	//@NotPersistent
+	//private Map optionsObj=new HashMap();
 	
 	@NotPersistent
 	private boolean isSourceMatchEntry;//正規表現でマッチさせるまでdestinationが決まらないEntry
@@ -405,6 +406,9 @@ public class Mapping{
 	//ph-auth.jsを取り込めるサイト列、省略した場合はどこからでも可
 	@NotPersistent
 	private Set<String> allowOrigins=null;
+	
+	@NotPersistent
+	private Map<String,Object> attribute=new HashMap<String,Object>();
 	
 	public JSON toJson(){
 		JSONObject json=(JSONObject)JSONSerializer.toJSON(this,jsonConfig);
@@ -535,7 +539,7 @@ public class Mapping{
 				velocityPattern=".*\\.vsp$|.*\\.vsf$";
 			}
 			if(!"".equals(velocityPattern)){//空白だったらvelocity拒否
-				optionsObj.put(OPTION_VELOCITY_PATTERN,Pattern.compile(velocityPattern));
+				attribute.put(OPTION_VELOCITY_PATTERN,Pattern.compile(velocityPattern));
 			}
 			
 			String welcomFiles = optionsJson.optString(OPTION_FILE_WELCOME_FILES,null);
@@ -543,7 +547,7 @@ public class Mapping{
 				welcomFiles="index.html,index.htm,index.vsp";
 			}
 			if(!"".equals(welcomFiles)){//空白だったらwelcomFilesなし
-				optionsObj.put(OPTION_FILE_WELCOME_FILES,welcomFiles.split(","));
+				attribute.put(OPTION_FILE_WELCOME_FILES,welcomFiles.split(","));
 			}
 			JSONObject appcacheObj=optionsJson.optJSONObject(OPTION_APPCACHE);
 			if(appcacheObj!=null){
@@ -553,7 +557,7 @@ public class Mapping{
 					baseDir=destinationFile;
 				}
 				AppcacheOption appcacheOption=new AppcacheOption(baseDir,sourcePath,appcacheObj);
-				optionsObj.put(OPTION_APPCACHE, appcacheOption);
+				attribute.put(OPTION_APPCACHE, appcacheOption);
 			}
 		}
 		rolesList.clear();
@@ -941,10 +945,10 @@ public class Mapping{
 	}
 
 	public Object getOption(String key) {
-		Object attr=optionsObj.get(key);
-		if(attr!=null){
-			return attr;
-		}
+//		Object attr=optionsObj.get(key);
+//		if(attr!=null){
+//			return attr;
+//		}
 		return optionsJson.opt(key);
 	}
 
@@ -1059,5 +1063,17 @@ public class Mapping{
 		}
 		sb.append(sourcePath);
 		return sb.toString();
+	}
+	
+	public void setAttribute(String name, Object value) {
+		attribute.put(name, value);
+	}
+
+	public Object getAttribute(String name) {
+		return attribute.get(name);
+	}
+	
+	public Iterator<String> getAttributeNames(){
+		return attribute.keySet().iterator();
 	}
 }
