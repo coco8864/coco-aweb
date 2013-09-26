@@ -14,6 +14,18 @@
     <queuelet-system.version>1.2.3</queuelet-system.version>
   </properties>
 
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <charset>UTF-8</charset>
+        </configuration>
+      </plugin>
+    </plugins>
+  </reporting>
+
 	<build>
 		<plugins>
 			<plugin>
@@ -37,8 +49,11 @@
                     <nodeprecated>true</nodeprecated>
                     <nodeprecatedlist>true</nodeprecatedlist>
                     <sourceFileIncludes>
+			<include>core/ServerBaseHandler.java</include>
+			<include>mapping/MappingResult.java</include>
+			<include>config/Mapping.java</include>
 			<include>handler/WebServerHandler.java</include>
-			<include>handler/WebSocketHandler.java</include>
+			<include>handler/ws/WebSocketHandler.java</include>
 			<include>link/api/Blob.java</include>
 			<include>link/api/Linklet.java</include>
 			<include>link/api/LinkletCtx.java</include>
@@ -46,6 +61,7 @@
 			<include>link/api/LinkMsg.java</include>
 			<include>http/HeaderParser.java</include>
 			<include>http/ParameterParser.java</include>
+			<include>util/ServerParser.java</include>
                     </sourceFileIncludes>
 		<sourcepath>${basedir}/src/main/java/naru/aweb</sourcepath>
         </configuration>
