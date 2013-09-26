@@ -52,7 +52,7 @@ public class SslPeekProxyHandler extends WebServerHandler {
 		super.recycle();
 	}
 	
-	public void startResponse(){
+	public void onRequestHeader(){
 		logger.debug("#doResponse.id:"+getChannelId());
 		this.client=this;
 		HeaderParser requestHeader=getRequestHeader();

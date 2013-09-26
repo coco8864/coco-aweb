@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import naru.aweb.config.Config;
+import naru.aweb.core.ServerBaseHandler.SCOPE;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.RequestContext;
 import naru.aweb.mapping.MappingResult;
@@ -102,22 +103,22 @@ Caused by: java.lang.LinkageError: loader (instance of  naru/queuelet/loader/Que
 	}
 	
 	private String getContentType(String name) {
-		String contentType = (String) getRequestAttribute(ATTRIBUTE_RESPONSE_CONTENT_TYPE);
+		String contentType = (String) getAttribute(SCOPE.REQUEST,ATTRIBUTE_RESPONSE_CONTENT_TYPE);
 		if (contentType != null) {
 			return contentType;
 		}
 		return calcContentType(name);
 	}
 	
-	public void startResponseReqBody(){
+	public void onRequestBody(){
 		MappingResult mapping=getRequestMapping();
-		VelocityEngine velocityEngine=(VelocityEngine)getRequestAttribute(ATTRIBUTE_VELOCITY_ENGINE);
-		String veloPage=(String)getRequestAttribute(ATTRIBUTE_VELOCITY_TEMPLATE);
+		VelocityEngine velocityEngine=(VelocityEngine)getAttribute(SCOPE.REQUEST,ATTRIBUTE_VELOCITY_ENGINE);
+		String veloPage=(String)getAttribute(SCOPE.REQUEST,ATTRIBUTE_VELOCITY_TEMPLATE);
 		if(veloPage==null){
 			veloPage=mapping.getResolvePath();
 		}
 		if(velocityEngine==null){
-			File veloRep=(File)getRequestAttribute(ATTRIBUTE_VELOCITY_REPOSITORY);
+			File veloRep=(File)getAttribute(SCOPE.REQUEST,ATTRIBUTE_VELOCITY_REPOSITORY);
 			if(veloRep==null){
 				veloRep=mapping.getDestinationFile();
 			}
@@ -139,10 +140,10 @@ Caused by: java.lang.LinkageError: loader (instance of  naru/queuelet/loader/Que
 		RequestContext requestContext=getRequestContext();
 		veloContext.put("session", requestContext.getAuthSession());
 		veloContext.put("config", getConfig());
-		Iterator<String> itr=getRequestAttributeNames();
+		Iterator<String> itr=getAttributeNames(SCOPE.REQUEST);
 		while(itr.hasNext()){
 			String key=itr.next();
-			Object value=getRequestAttribute(key);
+			Object value=getAttribute(SCOPE.REQUEST,key);
 			veloContext.put(key, value);
 		}
 		return veloContext;
@@ -151,13 +152,13 @@ Caused by: java.lang.LinkageError: loader (instance of  naru/queuelet/loader/Que
 	private void merge(VelocityEngine velocityEngine,String veloPage){
 		setNoCacheResponseHeaders();//動的コンテンツなのでキャッシュさせない
 		Context veloContext=createVeloContext();
-		String contentDisposition=(String)getRequestAttribute(ATTRIBUTE_RESPONSE_CONTENT_DISPOSITION);
+		String contentDisposition=(String)getAttribute(SCOPE.REQUEST,ATTRIBUTE_RESPONSE_CONTENT_DISPOSITION);
 		if( contentDisposition!=null){
 			setHeader(HeaderParser.CONTENT_DISPOSITION_HEADER, contentDisposition);
 		}
 		String contentType=getContentType(veloPage);
 		setContentType(contentType);
-		String statusCode=(String)getRequestAttribute(ATTRIBUTE_RESPONSE_STATUS_CODE);
+		String statusCode=(String)getAttribute(SCOPE.REQUEST,ATTRIBUTE_RESPONSE_STATUS_CODE);
 		if(statusCode==null){
 			statusCode="200";
 		}

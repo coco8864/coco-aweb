@@ -43,7 +43,7 @@ public class SslProxyHandler extends WebServerHandler {
 		super.recycle();
 	}
 	
-	public void startResponse(){
+	public void onRequestHeader(){
 		logger.debug("#doResponse client.cid:"+getChannelId());
 		this.client=this;
 		HeaderParser requestHeader=getRequestHeader();

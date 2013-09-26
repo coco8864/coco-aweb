@@ -16,6 +16,28 @@ import org.apache.log4j.Logger;
 public class StreamUtil {
 	private static Logger logger=Logger.getLogger(StreamUtil.class);
 	
+	public static int  indexOfByte( byte bytes[], int off, int end, char qq ){
+        // Works only for UTF 
+        while( off < end ) {
+            byte b=bytes[off];
+            if( b==qq )
+                return off;
+            off++;
+        }
+        return -1;
+    }
+	public static int  lastIndexOfByte( byte bytes[], int off, int end, char qq ){
+        // Works only for UTF 
+		end--;
+        while( off < end ) {
+            byte b=bytes[end];
+            if( b==qq )
+                return end;
+            end--;
+        }
+        return -1;
+    }
+	
 	/**
 	 * InputStreamにあるデータを一気に読み込む
 	 * 主にテスト用

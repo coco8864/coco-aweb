@@ -49,9 +49,9 @@ import twitter4j.auth.RequestToken;
 
 import naru.aweb.config.Config;
 import naru.aweb.config.User;
+import naru.aweb.handler.KeepAliveContext;
 import naru.aweb.handler.WebServerHandler;
 import naru.aweb.http.HeaderParser;
-import naru.aweb.http.KeepAliveContext;
 import naru.aweb.http.ParameterParser;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.util.ServerParser;
@@ -380,7 +380,7 @@ public class InternetAuthHandler extends WebServerHandler {
 		redirect(config.getPublicWebUrl());
 	}
 	
-	public void startResponseReqBody() {
+	public void onRequestBody() {
 		KeepAliveContext keepAliveContext=getKeepAliveContext();
 		keepAliveContext.setKeepAlive(false);
 		//keepAliveさせない,IEは、同一のポートでhttpとhttpsをやるとおかしな動きをするため

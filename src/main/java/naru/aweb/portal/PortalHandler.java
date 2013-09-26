@@ -21,6 +21,7 @@ import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
 import naru.aweb.config.User;
 import naru.aweb.core.ServerBaseHandler;
+import naru.aweb.core.ServerBaseHandler.SCOPE;
 import naru.aweb.handler.WebServerHandler;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.ParameterParser;
@@ -326,8 +327,8 @@ public class PortalHandler extends WebServerHandler{
 		return;
 	}
 	
-	public void startResponseReqBody(){
-		User user=(User)getRequestAttribute(ServerBaseHandler.ATTRIBUTE_USER);
+	public void onRequestBody(){
+		User user=(User)getAttribute(SCOPE.REQUEST,ServerBaseHandler.ATTRIBUTE_USER);
 		PortalSession portalSession=PortalSession.getPortalSession(this);
 		MappingResult mapping=getRequestMapping();
 		//portal画面からのリクエスト、画面
@@ -387,7 +388,7 @@ public class PortalHandler extends WebServerHandler{
 			}
 			setRequestAttribute("CommissionAuthUrls",authUrlList);
 			*/
-			setRequestAttribute("portalSession",portalSession);
+			setAttribute(SCOPE.REQUEST,"portalSession",portalSession);
 		}
 		//uriから、controllerUrlをとって、controllerRootの後ろにくっつける
 		//でfileSystemに送る

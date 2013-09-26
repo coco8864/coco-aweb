@@ -7,9 +7,10 @@ import org.apache.log4j.Logger;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
 import naru.aweb.config.User;
+import naru.aweb.core.ServerBaseHandler.SCOPE;
+import naru.aweb.handler.KeepAliveContext;
 import naru.aweb.handler.WebServerHandler;
 import naru.aweb.http.HeaderParser;
-import naru.aweb.http.KeepAliveContext;
 import naru.aweb.http.ParameterParser;
 import naru.aweb.mapping.MappingResult;
 import net.sf.json.JSONArray;
@@ -108,7 +109,7 @@ public class AuthHandler extends WebServerHandler {
 	private SessionId authenticate(String url,String authId){
 		// authentication header or parameterで認証
 		//form認証の場合、cleanupAuthPathの場合、authIdをformに埋め込む必要がある
-		setRequestAttribute(AUTH_ID, authId);
+		setAttribute(SCOPE.REQUEST,AUTH_ID, authId);
 		User user = authenticator.webAuthenticate(this);
 		if (user == null) {
 			return null;
@@ -168,7 +169,7 @@ public class AuthHandler extends WebServerHandler {
 		if(setCookieString!=null){
 			setCookie(setCookieString);
 		}
-		setRequestAttribute("response", response);
+		setAttribute(SCOPE.REQUEST,"response", response);
 		forwardPage("/crossDomainFrame.vsp");
 	}
 	
@@ -515,7 +516,7 @@ public class AuthHandler extends WebServerHandler {
 			return true;//変更なし
 		}
 		if(!offlinePass1.equals(offlinePass2)){
-			setRequestAttribute("message", "offline password not match");
+			setAttribute(SCOPE.REQUEST,"message", "offline password not match");
 			return false;
 		}
 		user.changeOfflinePassword(offlinePass1);
@@ -527,12 +528,12 @@ public class AuthHandler extends WebServerHandler {
 			return true;//変更なし
 		}
 		if(!password1.equals(password2)){
-			setRequestAttribute("message", "password not match");
+			setAttribute(SCOPE.REQUEST,"message", "password not match");
 			return false;
 		}
 		String calcPassHash=authenticator.calcPassHash(user.getLoginId(), orgPassword);
 		if(!calcPassHash.equals(user.getPassHash())){
-			setRequestAttribute("message", "wrong orgPassword");
+			setAttribute(SCOPE.REQUEST,"message", "wrong orgPassword");
 			return false;
 		}
 		user.changePassword(password1,authenticator.getRealm());
@@ -542,10 +543,10 @@ public class AuthHandler extends WebServerHandler {
 	private void forwardUserProfile(AuthSession session){
 		if(session!=null){
 			User user=session.getUser();
-			setRequestAttribute("token", session.getToken());
-			setRequestAttribute("loginId", user.getLoginId());
-			setRequestAttribute("nickname", user.getNickname());
-			setRequestAttribute("origin", user.getOrigin());
+			setAttribute(SCOPE.REQUEST,"token", session.getToken());
+			setAttribute(SCOPE.REQUEST,"loginId", user.getLoginId());
+			setAttribute(SCOPE.REQUEST,"nickname", user.getNickname());
+			setAttribute(SCOPE.REQUEST,"origin", user.getOrigin());
 		}
 		forwardPage("/userprofile.vsp");
 	}
@@ -624,14 +625,14 @@ public class AuthHandler extends WebServerHandler {
 	private void userprofile(String cookieId,ParameterParser parameter){
 		AuthSession session=authorizer.getPrimarySession(cookieId);
 		if(session==null){
-			setRequestAttribute("message", "not login");
+			setAttribute(SCOPE.REQUEST,"message", "not login");
 			forwardUserProfile(session);
 			return;
 		}
 		String nickname=parameter.getParameter("nickname");
 		String token=parameter.getParameter("token");
 		String sessionToken=session.getToken();
-		setRequestAttribute("message", "please enter your profile");
+		setAttribute(SCOPE.REQUEST,"message", "please enter your profile");
 		if(!sessionToken.equals(token)){
 			forwardUserProfile(session);
 			return;
@@ -641,7 +642,7 @@ public class AuthHandler extends WebServerHandler {
 		String password2=parameter.getParameter("password2");
 		String offlinePass1=parameter.getParameter("offlinePass1");
 		String offlinePass2=parameter.getParameter("offlinePass2");
-		setRequestAttribute("message", "change your profile");
+		setAttribute(SCOPE.REQUEST,"message", "change your profile");
 		User user=session.getUser();
 		if( changetOfflinePass(user, offlinePass1, offlinePass2)==false ){
 			forwardUserProfile(session);
@@ -664,18 +665,18 @@ public class AuthHandler extends WebServerHandler {
 		responseJson(response);
 	}
 	
-	public void startResponseReqBody() {
+	public void onRequestBody() {
 		KeepAliveContext keepAliveContext=getKeepAliveContext();
 		keepAliveContext.setKeepAlive(false);
 		//keepAliveさせない,IEは、同一のポートでhttpとhttpsをやるとおかしな動きをするため
 		
-		String cookieId=(String)getRequestAttribute(SessionId.SESSION_ID);
+		String cookieId=(String)getAttribute(SCOPE.REQUEST,SessionId.SESSION_ID);
 		HeaderParser requestHeader = getRequestHeader();
 		ParameterParser parameter = getParameterParser();
 		
 		//1)他のmappingを使おうとしたが認可が必要だったのでdispatchされた場合
 		//2)認可が終了してsecondaryIdを作成する場合
-		String authMark=(String)getRequestAttribute(AUTHORIZE_MARK);
+		String authMark=(String)getAttribute(SCOPE.REQUEST,AUTHORIZE_MARK);
 		if(authMark!=null){
 			//認可(authorize)処理
 			MappingResult mapping=getRequestMapping();

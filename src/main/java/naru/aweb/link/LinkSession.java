@@ -226,7 +226,7 @@ public class LinkSession extends PoolBase implements LogoutEvent{
 	public void subscribe(JSONObject msg){
 		String qname=msg.getString(KEY_QNAME);
 		String subname=msg.optString(KEY_SUBNAME,null);
-		LinkletWrapper paletWrapper=paManager.getPaletWrapper(qname);
+		LinkletWrapper paletWrapper=paManager.getLinkletWrapper(qname);
 		if(paletWrapper==null){
 			sendError(TYPE_SUBSCRIBE,qname, subname,null);
 			return;
@@ -279,7 +279,7 @@ public class LinkSession extends PoolBase implements LogoutEvent{
 		message.ref();
 		msg.unref();
 		LinkPeer keyPeer=LinkPeer.create(paManager,this, qname, subname);
-		LinkletWrapper paletWrapper=paManager.getPaletWrapper(qname);
+		LinkletWrapper paletWrapper=paManager.getLinkletWrapper(qname);
 		if(subname==null){//ëóêMå≥Ç™Ç»Ç¢Publish ï÷ãXìIÇ»Peer
 			paletWrapper.onPublish(keyPeer, message);
 			keyPeer.unref();
@@ -299,7 +299,7 @@ public class LinkSession extends PoolBase implements LogoutEvent{
 	
 	/* PaletWrapperÇ©ÇÁÇÃunsubcribe */
 	private boolean unsubscribeFromWrapper(LinkPeer peer){
-		LinkletWrapper paletWrapper=paManager.getPaletWrapper(peer.getQname());
+		LinkletWrapper paletWrapper=paManager.getLinkletWrapper(peer.getQname());
 		if(paletWrapper==null){
 			return false;
 		}

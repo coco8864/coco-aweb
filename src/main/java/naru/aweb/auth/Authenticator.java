@@ -23,6 +23,7 @@ import naru.async.store.DataUtil;
 import naru.async.timer.TimerManager;
 import naru.aweb.config.Config;
 import naru.aweb.config.User;
+import naru.aweb.core.ServerBaseHandler.SCOPE;
 import naru.aweb.handler.WebServerHandler;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.ParameterParser;
@@ -414,17 +415,17 @@ public class Authenticator {
 			//String authId=temporaryId.getAuthId();
 			AuthSession authSession=loginUser(user);
 			authorizer.setAuthSessionToTemporaryId(authId, authSession);
-			authHandler.setRequestAttribute(AuthHandler.AUTH_ID, authId);
-			authHandler.setRequestAttribute("dummyname", DUMMY_USER_NAME);
-			authHandler.setRequestAttribute("username", user.getLoginId());
-			authHandler.setRequestAttribute("dummyPassword", user.getDummyPassword());
-			authHandler.setRequestAttribute("cleanupPath", "cleanupAuthForceDigest");
+			authHandler.setAttribute(SCOPE.REQUEST,AuthHandler.AUTH_ID, authId);
+			authHandler.setAttribute(SCOPE.REQUEST,"dummyname", DUMMY_USER_NAME);
+			authHandler.setAttribute(SCOPE.REQUEST,"username", user.getLoginId());
+			authHandler.setAttribute(SCOPE.REQUEST,"dummyPassword", user.getDummyPassword());
+			authHandler.setAttribute(SCOPE.REQUEST,"cleanupPath", "cleanupAuthForceDigest");
 			authHandler.forwardPage("/creanupAuthHeader.vsp");
 		}else{
 			//TODO userのロールをadminに制限,ipアドレスを指定以外を制限等
 			//authHandler.getRemoteIp()
 			authHandler.setHeader(HeaderParser.WWW_AUTHENTICATE_HEADER,createDigestAuthenticateHeader(realm));
-			authHandler.setRequestAttribute(AuthHandler.ATTRIBUTE_RESPONSE_STATUS_CODE, "401");
+			authHandler.setAttribute(SCOPE.REQUEST,AuthHandler.ATTRIBUTE_RESPONSE_STATUS_CODE, "401");
 			authHandler.forwardPage("/webAuthenticate.vsp");
 		}
 	}
@@ -440,7 +441,7 @@ public class Authenticator {
 			}
 		}
 		authHandler.setHeader(HeaderParser.WWW_AUTHENTICATE_HEADER,createDigestAuthenticateHeader(realm));
-		authHandler.setRequestAttribute(AuthHandler.ATTRIBUTE_RESPONSE_STATUS_CODE, "401");
+		authHandler.setAttribute(SCOPE.REQUEST,AuthHandler.ATTRIBUTE_RESPONSE_STATUS_CODE, "401");
 		authHandler.forwardPage("/webAuthenticate.vsp");
 		return false;
 	}
@@ -503,9 +504,9 @@ public class Authenticator {
 		if(scheme!=BASIC && scheme!=DIGEST){
 			return false;
 		}
-		authHandler.setRequestAttribute("dummyname", DUMMY_USER_NAME);
-		authHandler.setRequestAttribute("username", user.getLoginId());
-		authHandler.setRequestAttribute("dummyPassword", user.getDummyPassword());
+		authHandler.setAttribute(SCOPE.REQUEST,"dummyname", DUMMY_USER_NAME);
+		authHandler.setAttribute(SCOPE.REQUEST,"username", user.getLoginId());
+		authHandler.setAttribute(SCOPE.REQUEST,"dummyPassword", user.getDummyPassword());
 		//basic digestの場合は、authヘッダをcleanupする必要がある
 		//cookieOnceにauthSessionを詰め込んで以下の情報をcreanupAuthHeader.vspに渡す
 		//1)cookieOnceのid
@@ -591,21 +592,21 @@ public class Authenticator {
 	private void forwardWebAuthenication(AuthHandler response){
 		if(scheme==BASIC){//isBasic
 			response.setHeader(HeaderParser.WWW_AUTHENTICATE_HEADER, createBasicAuthenticateHeader(realm));
-			response.setRequestAttribute(AuthHandler.ATTRIBUTE_RESPONSE_STATUS_CODE, "401");
+			response.setAttribute(SCOPE.REQUEST,AuthHandler.ATTRIBUTE_RESPONSE_STATUS_CODE, "401");
 			response.forwardPage("/webAuthenticate.vsp");
 		}else if(scheme==DIGEST){
 			response.setHeader(HeaderParser.WWW_AUTHENTICATE_HEADER,createDigestAuthenticateHeader(realm));
-			response.setRequestAttribute(AuthHandler.ATTRIBUTE_RESPONSE_STATUS_CODE, "401");
+			response.setAttribute(SCOPE.REQUEST,AuthHandler.ATTRIBUTE_RESPONSE_STATUS_CODE, "401");
 			response.forwardPage("webAuthenticate.vsp");
 		}else if(scheme==BASIC_FORM){
 			response.forwardPage("basicForm.vsp");
 		}else if(scheme==DIGEST_FORM){
-			response.setRequestAttribute("nonce", getNonce());
+			response.setAttribute(SCOPE.REQUEST,"nonce", getNonce());
 			response.forwardPage("digestForm.vsp");
 		}else if(scheme==INTERNET_AUTH){
 			boolean isDirect=config.getBoolean("isAuthInternetDirect", false);
 			if(isDirect){
-				String authId=(String)response.getRequestAttribute(AuthHandler.AUTH_ID);
+				String authId=(String)response.getAttribute(SCOPE.REQUEST,AuthHandler.AUTH_ID);
 				String location=internetAuthDirectLocation(authId);
 				if(location!=null){
 					response.redirect(location);
@@ -613,7 +614,7 @@ public class Authenticator {
 				}
 				logger.warn("isAuthInternetDirect:true but no auth target.");
 			}
-			response.setRequestAttribute("openids", openids);
+			response.setAttribute(SCOPE.REQUEST,"openids", openids);
 			response.forwardPage("internetAuth.vsp");
 		}else{//ありえない
 			response.completeResponse("500","Authorization Error");

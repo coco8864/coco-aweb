@@ -27,6 +27,7 @@ import naru.async.pool.PoolManager;
 import naru.async.store.Page;
 import naru.aweb.config.Config;
 import naru.aweb.util.ByteBufferInputStream;
+import naru.aweb.util.StreamUtil;
 import net.sf.json.JSON;
 import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
@@ -81,28 +82,6 @@ public class ParameterParser extends PoolBase{
 	private long readPointer;
 	private boolean isParseQuery=false;//queryをparameterに加えたか否か?(forwardのたびにparseしないように)
 	
-	public static int  indexOfByte( byte bytes[], int off, int end, char qq ){
-        // Works only for UTF 
-        while( off < end ) {
-            byte b=bytes[off];
-            if( b==qq )
-                return off;
-            off++;
-        }
-        return -1;
-    }
-	public static int  lastIndexOfByte( byte bytes[], int off, int end, char qq ){
-        // Works only for UTF 
-		end--;
-        while( off < end ) {
-            byte b=bytes[end];
-            if( b==qq )
-                return end;
-            end--;
-        }
-        return -1;
-    }
-	
 	private void processParameters(byte[] body, String enc) {
 		processParameters(body,0,body.length,enc);
 	}
@@ -114,9 +93,9 @@ public class ParameterParser extends PoolBase{
 			int valEnd = -1;
 
 			int nameStart = pos;
-			int nameEnd = indexOfByte(body, nameStart, end, '=');
+			int nameEnd = StreamUtil.indexOfByte(body, nameStart, end, '=');
 			// Workaround for a&b&c encoding
-			int nameEnd2 = indexOfByte(body, nameStart, end, '&');
+			int nameEnd2 = StreamUtil.indexOfByte(body, nameStart, end, '&');
 			if ((nameEnd2 != -1) && (nameEnd == -1 || nameEnd > nameEnd2)) {
 				nameEnd = nameEnd2;
 				noEq = true;
@@ -128,7 +107,7 @@ public class ParameterParser extends PoolBase{
 
 			if (!noEq) {
 				valStart = (nameEnd < end) ? nameEnd + 1 : end;
-				valEnd = indexOfByte(body, valStart, end, '&');
+				valEnd = StreamUtil.indexOfByte(body, valStart, end, '&');
 				if (valEnd == -1)
 					valEnd = (valStart < end) ? end : valStart;
 			}
@@ -318,7 +297,7 @@ public class ParameterParser extends PoolBase{
 		byte[] body=buffer.array();
 		//前回の残りがあるか？
 		if(lestOfBody!=null){
-			int firstAnp=indexOfByte(body,position,end,'&');
+			int firstAnp=StreamUtil.indexOfByte(body,position,end,'&');
 			if(firstAnp>=0){
 				concatLestOfBody(body,position,firstAnp);
 				parseLestOfBody();//&で終わっているからparseしてよし
@@ -335,7 +314,7 @@ public class ParameterParser extends PoolBase{
 			processParameters(body,position,end,encoding);
 		}else{
 			//body全体がbufferにない
-			int lastAnp=lastIndexOfByte(body,position,end,'&');
+			int lastAnp=StreamUtil.lastIndexOfByte(body,position,end,'&');
 			if(lastAnp>=0){
 				parseLestOfBody();
 				processParameters(body,position,lastAnp,encoding);

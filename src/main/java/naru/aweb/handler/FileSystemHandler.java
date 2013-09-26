@@ -17,6 +17,7 @@ import naru.async.cache.FileInfo;
 import naru.aweb.config.AppcacheOption;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping; //import naru.aweb.config.FileCache.FileCacheInfo;
+import naru.aweb.core.ServerBaseHandler.SCOPE;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.util.ServerParser;
@@ -71,7 +72,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		if (!mapping.getBooleanOption(Mapping.OPTION_VELOCITY_USE,true)) {
 			return false;
 		}
-		Pattern pattern=(Pattern)mapping.getOption(Mapping.OPTION_VELOCITY_PATTERN);
+		Pattern pattern=(Pattern)getAttribute(SCOPE.MAPPING,Mapping.OPTION_VELOCITY_PATTERN);
 		if(pattern==null){
 			return false;
 		}
@@ -86,7 +87,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 	}
 
 	private String getContentType(File file) {
-		String contentType = (String) getRequestAttribute(ATTRIBUTE_RESPONSE_CONTENT_TYPE);
+		String contentType = (String) getAttribute(SCOPE.REQUEST,ATTRIBUTE_RESPONSE_CONTENT_TYPE);
 		if (contentType != null) {
 			return contentType;
 		}
@@ -95,7 +96,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 	}
 
 	private long getContentLength(long fileLength) {
-		Long length = (Long) getRequestAttribute(ATTRIBUTE_RESPONSE_CONTENT_LENGTH);
+		Long length = (Long) getAttribute(SCOPE.REQUEST,ATTRIBUTE_RESPONSE_CONTENT_LENGTH);
 		if (length != null) {
 			return length.longValue();
 		}
@@ -114,7 +115,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		//	return true;
 		//}
 		/* appcacheの場合 */
-		AppcacheOption appcacheOption=(AppcacheOption)mapping.getOption(Mapping.OPTION_APPCACHE);
+		AppcacheOption appcacheOption=(AppcacheOption)getAttribute(SCOPE.MAPPING,Mapping.OPTION_APPCACHE);
 		if(appcacheOption!=null){
 			if(appcacheOption.checkAndForward(this,path,mapping.getSourcePath())){
 				return false;
@@ -127,7 +128,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 
 	private void responseBodyFromFile(CacheBuffer asyncFile) {
 		logger.debug("FileSystemHandler#responseBodyFromFile cid:"+getChannelId()+":"+asyncFile.getFileInfo().getCanonicalFile().toString());
-		Long offset = (Long) getRequestAttribute(ATTRIBUTE_STORE_OFFSET);
+		Long offset = (Long) getAttribute(SCOPE.REQUEST,ATTRIBUTE_STORE_OFFSET);
 		if (offset != null) {
 			asyncFile.position(offset);
 		}
@@ -151,14 +152,14 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		if (!uri.endsWith("/")) {
 			uri = uri + "/";
 		}
-		setRequestAttribute("isBase", isBase);
-		setRequestAttribute("base", uri);
+		setAttribute(SCOPE.REQUEST,"isBase", isBase);
+		setAttribute(SCOPE.REQUEST,"base", uri);
 		try {
-			setRequestAttribute("source", dir.getCanonicalFile());
+			setAttribute(SCOPE.REQUEST,"source", dir.getCanonicalFile());
 		} catch (IOException e) {
-			setRequestAttribute("source", null);
+			setAttribute(SCOPE.REQUEST,"source", null);
 		}
-		setRequestAttribute("fileList", dir.listFiles());
+		setAttribute(SCOPE.REQUEST,"fileList", dir.listFiles());
 		getConfig().forwardVelocityTemplate(this, LISTING_TEMPLATE);
 		return false;// 委譲
 	}
@@ -197,7 +198,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		setHeader(HeaderParser.LAST_MODIFIED_HEADER, lastModified);
 		long contentLength = getContentLength(fileInfo.length());
 		setContentLength(contentLength);
-		String contentDisposition = (String) getRequestAttribute(ATTRIBUTE_RESPONSE_CONTENT_DISPOSITION);
+		String contentDisposition = (String) getAttribute(SCOPE.REQUEST,ATTRIBUTE_RESPONSE_CONTENT_DISPOSITION);
 		if (contentDisposition != null) {
 			setHeader(HeaderParser.CONTENT_DISPOSITION_HEADER,
 					contentDisposition);
@@ -209,7 +210,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		return false;
 	}
 
-	public void startResponseReqBody() {
+	public void onRequestBody() {
 		MappingResult mapping=getRequestMapping();
 		if(mapping.getBooleanOption(Mapping.OPTION_REPLAY)){
 			ReplayHelper helper=Config.getConfig().getReplayHelper();
@@ -240,11 +241,11 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		String selfPath = requestHeader.getRequestUri();
 
 		MappingResult mapping = getRequestMapping();
-		File file = (File) getRequestAttribute(ATTRIBUTE_RESPONSE_FILE);
+		File file = (File) getAttribute(SCOPE.REQUEST,ATTRIBUTE_RESPONSE_FILE);
 		if (file != null) {// レスポンスするファイルが、直接指定された場合
 		// FileCacheInfo fileCacheInfo=null;
 			boolean useCache = true;
-			if (getRequestAttribute(ATTRIBUTE_RESPONSE_FILE_NOT_USE_CACHE) == null) {
+			if (getAttribute(SCOPE.REQUEST,ATTRIBUTE_RESPONSE_FILE_NOT_USE_CACHE) == null) {
 				useCache = false;
 			}
 			CacheBuffer asyncFile = CacheBuffer.open(file, useCache);
@@ -289,7 +290,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 			return fileNotFound(mapping,requestHeader,path);
 		}
 		// welcomefile処理
-		String[] welcomeFiles = (String[])mapping.getOption(Mapping.OPTION_FILE_WELCOME_FILES);
+		String[] welcomeFiles = (String[])getAttribute(SCOPE.MAPPING,Mapping.OPTION_FILE_WELCOME_FILES);
 		if (info.isDirectory() && welcomeFiles != null) {
 			File dir=info.getCanonicalFile();
 			asyncFile.close();

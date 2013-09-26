@@ -91,10 +91,9 @@ onAuthResponse=(res)->
   authFrameTimerId=null
   res.type='loadAplFrame'
   res.aplInfo=aplInfo
-##  authFrame.height(res.offsetHeight)
   _response(res)
  if res.type=='offlineAuth' #offlineAuth
-  _response({type:'hideFrame'})
+##  _response({type:'hideFrame'})
   if res.result
    aplInfo.loginId=res.authInfo.user.loginId
    aplInfo.maxAge=30
@@ -109,11 +108,13 @@ onAuthResponse=(res)->
  else if res.type=='offlineLogout'
   response(res)
  else if res.type=='userProfile'
-  _response({type:'hideFrame'})
+##  _response({type:'hideFrame'})
   response(res)
  else if res.type=='showFrame'
   authFrame.height(res.height+20)
   res.height=document.body.clientHeight
+  _response(res)
+ else if res.type=='hideFrame'
   _response(res)
 
 onWorkResponse=(res)->
@@ -168,13 +169,11 @@ onRequest=(req)->
   onlineAuth(req.isWs,req.originUrl)
  else if req.type=='offlineAuth'
   requestToAuthFrame({type:'offlineAuth'})
-##  _response({type:'showFrame',height:document.body.clientHeight});
   authFrame.focus()
  else if req.type=='offlineLogout'
   requestToAuthFrame({type:'offlineLogout'})
  else if req.type=='userProfile'
   requestToAuthFrame({type:'userProfile'})
-##  _response({type:'showFrame',height:document.body.clientHeight});
   authFrame.focus()
  else if req.type=='encrypt'
   requestToAuthFrame(req)

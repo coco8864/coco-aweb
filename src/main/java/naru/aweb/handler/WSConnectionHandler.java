@@ -4,6 +4,7 @@ import naru.async.AsyncBuffer;
 import naru.async.cache.CacheBuffer;
 import naru.async.pool.PoolBase;
 import naru.aweb.config.Config;
+import naru.aweb.handler.ws.WebSocketHandler;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.mapping.MappingResult;
 
@@ -20,13 +21,13 @@ public class WSConnectionHandler extends WebSocketHandler {
 	private static Config config=Config.getConfig();
 	
 	@Override
-	public 	void startWebSocketResponse(HeaderParser requestHeader,String subprotocol){
+	public 	void onWebSocket(HeaderParser requestHeader,String subprotocol){
 		MappingResult mapping=getRequestMapping();
 		String ip=(String)mapping.getOption("ip");
 		if(ip!=null){
 			String remoteIp=getRemoteIp();
 			if(ip.equals(remoteIp)){
-				closeWebSocket("403");
+				completeResponse("422");//422 Protocol Extension Refused
 				return;
 			}
 		}

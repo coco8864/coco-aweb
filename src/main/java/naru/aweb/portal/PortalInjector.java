@@ -7,6 +7,7 @@ import java.util.regex.Pattern;
 import naru.async.pool.PoolBase;
 import naru.aweb.config.CommissionAuth;
 import naru.aweb.config.Config;
+import naru.aweb.core.ServerBaseHandler.SCOPE;
 import naru.aweb.handler.InjectionHelper;
 import naru.aweb.handler.ProxyHandler;
 import naru.aweb.handler.ProxyInjector;
@@ -49,7 +50,7 @@ public class PortalInjector extends PoolBase implements ProxyInjector {
 			path=sb.toString();
 			mapping.setResolvePath(path);
 			requestHeader.setRequestUri(mapping.getResolvePath());
-			proxyHandler.setRequestAttribute(PORTAL_PATHINFO_KEY, portalPathInfo);
+			proxyHandler.setAttribute(SCOPE.REQUEST,PORTAL_PATHINFO_KEY, portalPathInfo);
 		}
 		/*
 		 * proxyÇ≈AuthrizationÉwÉbÉ_Çïtâ¡Ç∑ÇÈçÏêÌÇÃèÍçá

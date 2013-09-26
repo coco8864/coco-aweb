@@ -15,7 +15,6 @@ import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
 import naru.aweb.http.HeaderParser;
-import naru.aweb.http.KeepAliveContext;
 import naru.aweb.http.WebClient;
 import naru.aweb.http.WebClientHandler;
 import naru.aweb.mapping.MappingResult;
@@ -153,7 +152,7 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 	}
 	
 	//ブラウザからのリクエストヘッダは受信しきった、さあレスポンしてください...ってメソッド
-	public void startResponse(){
+	public void onRequestHeader(){
 		MappingResult mapping=getRequestMapping();
 		if(mapping.getBooleanOption(Mapping.OPTION_FILTER)){
 			FilterHelper helper=config.getFilterHelper();
@@ -197,7 +196,7 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 	 * replayの場合、処理を開始する
 	 * 
 	 */
-	public void startResponseReqBody(){
+	public void onRequestBody(){
 		if(!isReplay){
 			return;
 		}
@@ -355,7 +354,7 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 		}
 		if(isTryAgain){
 			isTryAgain=false;
-			startResponse();
+			onRequestHeader();
 			return;//再実行時レスポンスbodyは捨てる
 		}
 		//contents追加処理

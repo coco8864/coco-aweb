@@ -6,6 +6,7 @@ package naru.aweb.handler;
 
 import naru.async.cache.CacheBuffer;
 import naru.aweb.config.Config;
+import naru.aweb.handler.ws.WebSocketHandler;
 import naru.aweb.http.HeaderParser;
 import naru.aweb.http.WsClient;
 import naru.aweb.http.WsClientHandler;
@@ -28,7 +29,7 @@ public class WsProxyHandler extends  WebSocketHandler implements WsClient{
 	private WsClientHandler wsClientHandler;
 	
 	@Override
-	public void startWebSocketResponse(HeaderParser requestHeader,String subProtocols){
+	public void onWebSocket(HeaderParser requestHeader,String subProtocols){
 		MappingResult mapping=getRequestMapping();
 		ServerParser targetHostServer=mapping.getResolveServer();
 		String path=mapping.getResolvePath();

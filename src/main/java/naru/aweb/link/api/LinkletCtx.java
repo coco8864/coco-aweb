@@ -62,7 +62,7 @@ public interface LinkletCtx{
 	 * @param subname
 	 * @returnÅ@palet
 	 */
-	public Linklet getPalet(String subname);
+	public Linklet getLinklet(String subname);
 	
 	public Object getAttribute(String name);
 	public void setAttribute(String name, Object value);

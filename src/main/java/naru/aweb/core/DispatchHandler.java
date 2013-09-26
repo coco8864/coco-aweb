@@ -24,9 +24,10 @@ import naru.aweb.config.AppcacheOption;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
 import naru.aweb.config.User;
+import naru.aweb.core.ServerBaseHandler.SCOPE;
+import naru.aweb.handler.KeepAliveContext;
 import naru.aweb.handler.WebServerHandler;
 import naru.aweb.http.HeaderParser;
-import naru.aweb.http.KeepAliveContext;
 import naru.aweb.http.RequestContext;
 import naru.aweb.mapping.Mapper;
 import naru.aweb.mapping.MappingResult;
@@ -366,7 +367,7 @@ public class DispatchHandler extends ServerBaseHandler {
 		if (auth != null) {
 			user = auth.getUser();
 		}
-		setRequestAttribute(ServerBaseHandler.ATTRIBUTE_USER, user);
+		setAttribute(SCOPE.REQUEST,ServerBaseHandler.ATTRIBUTE_USER, user);
 		// 処理の起点がaccessLogの中に採られる
 		setupTraceLog(realHostName, requestHeader, mapping, user,isWs);
 		setRequestMapping(mapping);
@@ -378,7 +379,7 @@ public class DispatchHandler extends ServerBaseHandler {
 			return;
 		}
 		logger.debug("responseObject:cid:" + getChannelId() + ":" + responseHandler + ":" + this);
-		responseHandler.startResponse();
+		responseHandler.onRequestHeader();
 	}
 
 	private static final String SSL_PROXY_OK_CONTEXT = "sslProxyOkContext";
@@ -542,9 +543,9 @@ public class DispatchHandler extends ServerBaseHandler {
 			KeepAliveContext keepAliveContext,RequestContext requestContext, 
 			MappingResult mapping) {
 		String path = mapping.getResolvePath();
-		AppcacheOption appcacheOption=(AppcacheOption)mapping.getOption(Mapping.OPTION_APPCACHE);
-		String authMark=(String)getRequestAttribute(AuthHandler.AUTH_MARK);
-		String cookieId=(String)getRequestAttribute(SessionId.SESSION_ID);
+		AppcacheOption appcacheOption=(AppcacheOption)mapping.getAttribute(Mapping.OPTION_APPCACHE);
+		String authMark=(String)getAttribute(SCOPE.REQUEST,AuthHandler.AUTH_MARK);
+		String cookieId=(String)getAttribute(SCOPE.REQUEST,SessionId.SESSION_ID);
 		if(authMark!=null && (authMark.equals(AuthHandler.QUERY_XHR_CHECK)||authMark.equals(AuthHandler.QUERY_XHR_WS_CHECK))){
 			//XHR経由で認証チェックが来た場合
 			AuthSession authSession=null;
@@ -605,7 +606,7 @@ public class DispatchHandler extends ServerBaseHandler {
 			authMark=AuthHandler.AUTHORIZE_MARK;
 		}
 		//認可処理
-		setRequestAttribute(AuthHandler.AUTHORIZE_MARK,authMark);
+		setAttribute(SCOPE.REQUEST,AuthHandler.AUTHORIZE_MARK,authMark);
 		mapping.forwardAuth();
 		return mapping;
 	}
@@ -678,24 +679,24 @@ public class DispatchHandler extends ServerBaseHandler {
 		/* cookieIdは切り取ってrequestAttributeに移し変える */
 		String cookieId=requestHeader.getAndRemoveCookieHeader(SessionId.SESSION_ID);
 		if(cookieId!=null){
-			setRequestAttribute(SessionId.SESSION_ID, cookieId);
+			setAttribute(SCOPE.REQUEST,SessionId.SESSION_ID, cookieId);
 		}
 		String query=requestHeader.getQuery();
 		if(isWs==false && query!=null){
 			if(query.startsWith(AuthHandler.QUERY_CD_CHECK)){
-				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_CHECK);
+				setAttribute(SCOPE.REQUEST,AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_CHECK);
 			}else if(query.startsWith(AuthHandler.QUERY_CD_WS_CHECK)){
-				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_WS_CHECK);
+				setAttribute(SCOPE.REQUEST,AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_WS_CHECK);
 				isWs=true;
 			}else if(query.startsWith(AuthHandler.QUERY_CD_SET)){
-				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_SET);
+				setAttribute(SCOPE.REQUEST,AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_SET);
 			}else if(query.startsWith(AuthHandler.QUERY_CD_WS_SET)){
-				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_WS_SET);
+				setAttribute(SCOPE.REQUEST,AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_WS_SET);
 				isWs=true;
 			}else if(query.startsWith(AuthHandler.QUERY_XHR_CHECK)){
-				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.QUERY_XHR_CHECK);
+				setAttribute(SCOPE.REQUEST,AuthHandler.AUTH_MARK, AuthHandler.QUERY_XHR_CHECK);
 			}else if(query.startsWith(AuthHandler.QUERY_XHR_WS_CHECK)){
-				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.QUERY_XHR_WS_CHECK);
+				setAttribute(SCOPE.REQUEST,AuthHandler.AUTH_MARK, AuthHandler.QUERY_XHR_WS_CHECK);
 				isWs=true;
 //			}else if(query.startsWith("__PH_AUTH_AUTHORIZE__")){
 //				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_AUTHORIZE);

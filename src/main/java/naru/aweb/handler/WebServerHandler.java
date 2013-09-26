@@ -23,7 +23,6 @@ import naru.aweb.handler.ws.WsProtocol;
 import naru.aweb.http.ChunkContext;
 import naru.aweb.http.GzipContext;
 import naru.aweb.http.HeaderParser;
-import naru.aweb.http.KeepAliveContext;
 import naru.aweb.http.ParameterParser;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.spdy.SpdySession;
@@ -37,7 +36,7 @@ import naru.aweb.spdy.SpdySession;
  */
 public class WebServerHandler extends ServerBaseHandler {
 	/* ここで指定した属性は、Velocityテンプレートから参照できる */
-	public static final String ENCODE = "utf-8";
+	private static final String ENCODE = "utf-8";
 	private static final String WRITE_CONTEXT_BODY = "writeContextBody";
 	private static final String WRITE_CONTEXT_BODY_INTERNAL = "writeContextBodyInternal";
 	private static final String WRITE_CONTEXT_HEADER = "writeContextHeader";
@@ -76,6 +75,8 @@ public class WebServerHandler extends ServerBaseHandler {
 	
 
 	/**
+	 * このオブジェクトを再利用する際に呼び出される。<br/>
+	 * overrideした場合は、必ず元メソッドも呼び出してください。
 	 */
 	public void recycle() {
 		logger.debug("#recycle :"+hashCode());
@@ -91,81 +92,83 @@ public class WebServerHandler extends ServerBaseHandler {
 	}
 
 	/**
-	 * proxyもしくはreverse proxyの時、バックサーバが返却したbufferをパースするためのメソッド
-	 * そのまま、ブラウザのレスポンスに利用できる。
+	 * 保存されていたbuffer情報でレスポンス用ヘッダを組み立てます。
 	 * 
-	 * @param buffers
-	 * @return
+	 * @param buffers ヘッダ情報が格納されたByteBuffer配列
+	 * @return　指定されたbuffersがヘッダとして完結していない場合false
 	 */
-	public final boolean parseResponseHeader(ByteBuffer[] buffers) {
+	public boolean parseResponseHeader(ByteBuffer[] buffers) {
 		for (int i = 0; i < buffers.length; i++) {
 			responseHeader.parse(buffers[i]);
 		}
 		PoolManager.poolArrayInstance(buffers);
 		return responseHeader.isParseEnd();
 	}
+	
+	protected void setResponseHeader(HeaderParser header) {
+		responseHeader.setStatusCode(header.getStatusCode(), header.getReasonPhrase());
+		responseHeader.setResHttpVersion(header.getResHttpVersion());
+		responseHeader.setAllHeaders(header);
+	}
 
-	public final boolean isReponseParseError() {
+	/*
+	public boolean isReponseParseError() {
 		return responseHeader.isParseError();
 	}
+	*/
 
-	public final void setStatusCode(String statusCode) {
+	public void setStatusCode(String statusCode) {
 		responseHeader.setStatusCode(statusCode);
 	}
-	public final void setStatusCode(String statusCode,String reasonPhrase) {
+	public void setStatusCode(String statusCode,String reasonPhrase) {
 		responseHeader.setStatusCode(statusCode,reasonPhrase);
 	}
 
-	public final String getStatusCode() {
+	public String getStatusCode() {
 		return responseHeader.getStatusCode();
 	}
 
-	public final void setHttpVersion(String httpVersion) {
+	public void setHttpVersion(String httpVersion) {
 		responseHeader.setResHttpVersion(httpVersion);
 	}
 
-	public final void setHeader(String name, String value) {
+	public void setHeader(String name, String value) {
 		responseHeader.setHeader(name, value);
 	}
 
-	public final void removeHeader(String name) {
+	public void removeHeader(String name) {
 		responseHeader.removeHeader(name);
 	}
-	public final void removeContentLength() {
+	
+	public void removeContentLength() {
 		responseHeader.removeContentLength();
 	}
 
-	public final void setContentLength(long contentLength) {
+	public void setContentLength(long contentLength) {
 		responseHeader.setContentLength(contentLength);
 	}
 
-	public final void setContentType(String contentType) {
+	public void setContentType(String contentType) {
 		responseHeader.setContentType(contentType);
 	}
 	
-	public final String getHeader(String name) {
+	public String getHeader(String name) {
 		return responseHeader.getHeader(name);
 	}
-	public final String getResponseStatusCode() {
+	public String getResponseStatusCode() {
 		return responseHeader.getStatusCode();
 	}
 
-	public final void setNoCacheResponseHeaders() {
+	public void setNoCacheResponseHeaders() {
 		responseHeader.setHeader("Pragma", "no-cache");
 		responseHeader.setHeader("Cache-Control", "no-cache");
 		responseHeader.setHeader("Expires", "Thu, 01 Dec 1994 16:00:00 GMT");
 	}
 
-	public final void setResponseHeader(HeaderParser header) {
-		responseHeader.setStatusCode(header.getStatusCode(), header.getReasonPhrase());
-		responseHeader.setResHttpVersion(header.getResHttpVersion());
-		responseHeader.setAllHeaders(header);
-	}
-	
 	/**
 	 * ボディの解析処理を開始します。 doResponse呼び出し時には、read要求を出していないので、黙っているとbodyは到着しない。
 	 */
-	public final void startParseRequestBody() {
+	public void startParseRequestBody() {
 		HeaderParser requestHeader = getRequestHeader();
 		if(requestHeader==null){
 			asyncClose(null);
@@ -188,7 +191,7 @@ public class WebServerHandler extends ServerBaseHandler {
 				return;
 			}
 			accessLog.setTimeCheckPint(AccessLog.TimePoint.requestBody);
-			startResponseReqBody();// パラメタ読み込み完了を通知
+			onRequestBody();// パラメタ読み込み完了を通知
 			return;
 		}
 		String transferEncoding=requestHeader.getHeader(HeaderParser.TRANSFER_ENCODING_HEADER);
@@ -208,10 +211,8 @@ public class WebServerHandler extends ServerBaseHandler {
 	 * 独自にレスポンスを返却したい人は、このメソッドをオーバライドする
 	 * このメソッド呼び出し時点では、ヘッダ解析時に読み込んでしまったbody部分はrequestHeader内部に残っている点に注意
 	 * startParseBodyメソッドでは、その部分について明示的にonReadPlainメソッドを呼び出す。
-	 * 
-	 * @param requestParser
 	 */
-	public void startResponse() {
+	public void onRequestHeader() {
 		startParseRequestBody();
 	}
 
@@ -237,11 +238,12 @@ public class WebServerHandler extends ServerBaseHandler {
 	}
 
 	/**
-	 * リクエストデータを通知しきった事を通知 パラメタ到着を待って処理したい人はこのメソッドをオーバライドして使う
+	 * リクエストデータを受信したことを通知
+	 * 受信データは、getParameterParserで取得
 	 * 
 	 * @param buffers
 	 */
-	public void startResponseReqBody() {
+	public void onRequestBody() {
 	}
 	
 	//admin/auth配下のコンテンツを返却する。
@@ -261,22 +263,21 @@ public class WebServerHandler extends ServerBaseHandler {
 	}
 	
 	/**
-	 * このメソッドを呼ぶと必ずレスポンスを完結させる、動きを変更されるといやなのでfinalに
+	 * このメソッドを呼ぶと必ずレスポンスを完結させる
 	 * 
-	 * @param requestParser
 	 * @param statusCode
 	 */
-	public final void completeResponse(String statusCode) {
+	public void completeResponse(String statusCode) {
 		completeResponse(statusCode, (ByteBuffer) null);
 	}
 
 	/**
-	 * このメソッドを呼ぶと必ずレスポンスを完結させる、動きを変更されるといやなのでfinalに
+	 * このメソッドを呼ぶと必ずレスポンスを完結させる
 	 * 
-	 * @param requestParser
 	 * @param statusCode
+	 * @param body
 	 */
-	public final void completeResponse(String statusCode, String body) {
+	public void completeResponse(String statusCode, String body) {
 		try {
 			if(body==null){
 				completeResponse(statusCode,(ByteBuffer)null);
@@ -289,22 +290,22 @@ public class WebServerHandler extends ServerBaseHandler {
 	}
 
 	/**
-	 * このメソッドを呼ぶと必ずレスポンスを完結させる、動きを変更されるといやなのでfinalに
+	 * レスポンスを完結させる
 	 * 
 	 * @param requestParser
-	 * @param statusCode
+	 * @param body
 	 */
-	public final void completeResponse(String statusCode, byte[] body) {
+	public void completeResponse(String statusCode, byte[] body) {
 		completeResponse(statusCode, ByteBuffer.wrap(body));
 	}
 
 	/**
-	 * このメソッドを呼ぶと必ずレスポンスを完結させる、動きを変更されるといやなのでfinalに
+	 * レスポンスを完結させる
 	 * 
 	 * @param requestParser
-	 * @param statusCode
+	 * @param body
 	 */
-	public final void completeResponse(String statusCode, ByteBuffer body) {
+	public void completeResponse(String statusCode, ByteBuffer body) {
 		if (statusCode != null) {
 			setStatusCode(statusCode);
 		}
@@ -316,7 +317,8 @@ public class WebServerHandler extends ServerBaseHandler {
 		responseEnd();
 	}
 
-	public final void responseHeaderAndRestBody() {
+	/*
+	public void responseHeaderAndRestBody() {
 		// setupResponseHeader();//body長は確定していない
 		// responseContentLengthApl=responseHeader.getContentLength();
 		// body長を確定する。
@@ -331,13 +333,14 @@ public class WebServerHandler extends ServerBaseHandler {
 			responseBody(body);
 		}
 	}
+	*/
 
 	/**
 	 * コンテンツ長分レスポンスしたらfalseを復帰。
 	 * 
 	 * @return
 	 */
-	public final boolean needMoreResponse() {
+	private boolean needMoreResponse() {
 		// responseBody呼び出し後に有効に動作
 		// その前に呼び出した場合、例外するのが親切
 		if (responseContentLengthApl < 0) {
@@ -380,9 +383,11 @@ public class WebServerHandler extends ServerBaseHandler {
 	}
 
 	/* レスポンスヘッダの変更が可能か否かを判断するメソッド */
+	/*
 	public boolean isCommitted() {
 		return !isFlushFirstResponse;
 	}
+	*/
 
 	/* WebHandler継承クラスがレスポンス終了を知らせるメソッド */
 	// TODO keepAliveでfowardした後responseEndが呼び出される事がある。
@@ -508,11 +513,11 @@ public class WebServerHandler extends ServerBaseHandler {
 	}
 
 	// SSL Proxy系は、直接レスポンスするがアクセスログのレスポンス長表示のため、長さを加算する。
-	public final void responseBodyLength(long length) {
+	protected void responseBodyLength(long length) {
 		responseWriteBodyApl += length;
 	}
 
-	public final void responseBody(ByteBuffer buffer) {
+	public void responseBody(ByteBuffer buffer) {
 		responseBody(BuffersUtil.toByteBufferArray(buffer));
 	}
 
@@ -671,7 +676,7 @@ public class WebServerHandler extends ServerBaseHandler {
 	/**
 	 * WebSocket用にheaderを即座にflushするメソッド
 	 */
-	public void flushHeaderForWebSocket(String spec,String subprotocol) {
+	protected void flushHeaderForWebSocket(String spec,String subprotocol) {
 		ByteBuffer[] headerBuffer = responseHeader.getHeaderBuffer();
 		if (headerBuffer == null) {// ヘッダが確定していない..
 			logger.warn("flushHeader fail to getHeaderBuffer.cid:"+ getChannelId());
@@ -871,7 +876,7 @@ public class WebServerHandler extends ServerBaseHandler {
 	
 	/* 短いリクエストの場合には、contentLengthを設定しなるべくKeepAliveが有効になるように制御 
 	 * そのためにfirstBufferは即座に送信せずいちど持ちこたえる */
-	public final void responseBody(ByteBuffer[] buffers) {
+	public void responseBody(ByteBuffer[] buffers) {
 		// bodyとしてwrite要求した長さを加算、write完了した長さは、SSLの場合もあるので難しい
 		responseWriteBodyApl += BuffersUtil.remaining(buffers);
 		SpdySession spdySession=getSpdySession();
@@ -946,14 +951,15 @@ public class WebServerHandler extends ServerBaseHandler {
 			return;
 		}
 		accessLog.setTimeCheckPint(AccessLog.TimePoint.requestBody);
-		startResponseReqBody();
+		onRequestBody();
 	}
 
 	public ChannelHandler forwardHandler(Class handlerClass) {
-		return forwardHandler(handlerClass, true);
-	}
-
-	public ChannelHandler forwardHandler(Class handlerClass,boolean callStartMethod) {
+//		return forwardHandler(handlerClass, true);
+//	}
+//
+//	public ChannelHandler forwardHandler(Class handlerClass,boolean callStartMethod) {
+		boolean callStartMethod=true;
 		logger.debug("#forwardHandler cid:" + getChannelId() + ":"+ handlerClass.getName());
 		WebServerHandler handler = (WebServerHandler)super.allocHandler(handlerClass);
 		handler.responseHeader.setAllHeaders(responseHeader);
@@ -966,15 +972,15 @@ public class WebServerHandler extends ServerBaseHandler {
 		if (callStartMethod) {
 			if (handler.requestContentLength > 0
 					&& handler.requestContentLength <= handler.requestReadBody) {
-				handler.startResponseReqBody();
+				handler.onRequestBody();
 			} else {
-				handler.startResponse();
+				handler.onRequestHeader();
 			}
 		}
 		return handler;
 	}
 
-	public void waitForNextRequest() {
+	protected void waitForNextRequest() {
 		logger.debug("#waitForNextRequest cid:" + getChannelId());
 		DispatchHandler handler = (DispatchHandler) super.forwardHandler(DispatchHandler.class);
 		if(handler==null){//既にcloseされていた
@@ -1082,7 +1088,7 @@ public class WebServerHandler extends ServerBaseHandler {
 		}
 	}
 
-	public final OutputStream getResponseBodyStream() {
+	public OutputStream getResponseBodyStream() {
 		if (responseBodyStream != null) {
 			return responseBodyStream;
 		}
@@ -1090,7 +1096,7 @@ public class WebServerHandler extends ServerBaseHandler {
 		return responseBodyStream;
 	}
 
-	public final Writer getResponseBodyWriter(String enc)
+	public Writer getResponseBodyWriter(String enc)
 			throws UnsupportedEncodingException {
 		if (responseBodyWriter != null) {
 			return responseBodyWriter;
@@ -1115,6 +1121,7 @@ public class WebServerHandler extends ServerBaseHandler {
 	 * 
 	 * @param json　toStringがjsonとなるオブジェクト
 	 * @param callback callbackメソッド名
+	 * @deprecated
 	 */
 	public void responseJson(Object json,String callback){
 		setNoCacheResponseHeaders();//動的コンテンツなのでキャッシュさせない

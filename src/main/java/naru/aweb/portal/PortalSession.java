@@ -16,6 +16,7 @@ import naru.aweb.config.CommissionAuth;
 import naru.aweb.config.Config;
 import naru.aweb.config.User;
 import naru.aweb.core.ServerBaseHandler;
+import naru.aweb.core.ServerBaseHandler.SCOPE;
 import naru.aweb.handler.WebServerHandler;
 import naru.aweb.util.ServerParser;
 import net.sf.json.JSON;
@@ -144,7 +145,7 @@ public class PortalSession extends PoolBase{
 		AuthSession authSession=handler.getAuthSession();
 		PortalSession portalSession=(PortalSession)authSession.getAttribute(PORTAL_SESSION_KEY);
 		if(portalSession==null){
-			User user=(User)handler.getRequestAttribute(ServerBaseHandler.ATTRIBUTE_USER);
+			User user=(User)handler.getAttribute(SCOPE.REQUEST,ServerBaseHandler.ATTRIBUTE_USER);
 			portalSession=(PortalSession)PoolManager.getInstance(PortalSession.class);
 			portalSession.init(user);
 			authSession.setAttribute(PORTAL_SESSION_KEY,portalSession);

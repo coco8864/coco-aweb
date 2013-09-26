@@ -20,7 +20,7 @@ public class LinkManager {
 		return manager;
 	}
 	
-	private Map<String,LinkletWrapper> paletWrappers=new HashMap<String,LinkletWrapper>();//qname->palet
+	private Map<String,LinkletWrapper> linkletWrappers=new HashMap<String,LinkletWrapper>();//qname->palet
 	public LinkletWrapper deploy(String qname,String paletName){
 		return deploy(qname, paletName,null);
 	}
@@ -42,7 +42,7 @@ public class LinkManager {
 	
 	public synchronized LinkletWrapper deploy(String qname,String paletName,Map subscriberNames){
 		try {
-			if(paletWrappers.get(qname)!=null){
+			if(linkletWrappers.get(qname)!=null){
 				return null;
 			}
 			Class clazz = Class.forName(paletName);
@@ -58,7 +58,7 @@ public class LinkManager {
 				}
 			}
 			LinkletWrapper paletWrapper = new LinkletWrapper(qname, rootPalet,subscrivers);
-			paletWrappers.put(qname, paletWrapper);
+			linkletWrappers.put(qname, paletWrapper);
 			return paletWrapper;
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -66,29 +66,29 @@ public class LinkManager {
 	}
 	
 	public synchronized LinkletWrapper undeploy(String qname){
-		LinkletWrapper paletWrapper=paletWrappers.get(qname);
-		if(paletWrapper!=null){
-			paletWrapper.terminate();
+		LinkletWrapper linkletWrapper=linkletWrappers.get(qname);
+		if(linkletWrapper!=null){
+			linkletWrapper.terminate();
 		}
-		paletWrappers.remove(qname);
-		return paletWrapper;
+		linkletWrappers.remove(qname);
+		return linkletWrapper;
 	}
 	
-	public LinkletWrapper getPaletWrapper(String qname){
-		return paletWrappers.get(qname);
+	public LinkletWrapper getLinkletWrapper(String qname){
+		return linkletWrappers.get(qname);
 	}
 	
 	public synchronized Set<String> qnames(){
-		return paletWrappers.keySet();
+		return linkletWrappers.keySet();
 	}
 	
 	public void publish(String qname,String subname,Object data){
-		LinkletWrapper palet=getPaletWrapper(qname);
-		if(palet==null){
+		LinkletWrapper linklet=getLinkletWrapper(qname);
+		if(linklet==null){
 			return;
 		}
 		LinkPeer peer=LinkPeer.create(this,null, qname, subname);
-		palet.onPublish(peer, data);
+		linklet.onPublish(peer, data);
 		peer.unref(true);
 	}
 }

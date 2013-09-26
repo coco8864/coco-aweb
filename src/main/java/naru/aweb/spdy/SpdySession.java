@@ -8,10 +8,10 @@ import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.async.store.Store;
 import naru.aweb.core.ServerBaseHandler;
+import naru.aweb.handler.KeepAliveContext;
 import naru.aweb.handler.WebServerHandler;
 import naru.aweb.http.ChunkContext;
 import naru.aweb.http.HeaderParser;
-import naru.aweb.http.KeepAliveContext;
 import naru.aweb.http.RequestContext;
 
 public class SpdySession extends PoolBase{

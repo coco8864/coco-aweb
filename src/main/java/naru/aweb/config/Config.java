@@ -37,6 +37,7 @@ import naru.aweb.auth.Authorizer;
 import naru.aweb.core.Main;
 import naru.aweb.core.RealHost;
 import naru.aweb.core.ServerBaseHandler;
+import naru.aweb.core.ServerBaseHandler.SCOPE;
 import naru.aweb.handler.FilterHelper;
 import naru.aweb.handler.InjectionHelper;
 import naru.aweb.handler.ReplayHelper;
@@ -1303,11 +1304,11 @@ public class Config {
 	public void forwardVelocityTemplate(ServerBaseHandler handler,String template,Map param){
 		if(param!=null){
 			for(Object key:param.keySet()){
-				handler.setRequestAttribute((String)key,param.get(key));
+				handler.setAttribute(SCOPE.REQUEST,(String)key,param.get(key));
 			}
 		}
-		handler.setRequestAttribute(ServerBaseHandler.ATTRIBUTE_VELOCITY_ENGINE,getVelocityEngine());
-		handler.setRequestAttribute(ServerBaseHandler.ATTRIBUTE_VELOCITY_TEMPLATE,"/template/" +template);
+		handler.setAttribute(SCOPE.REQUEST,ServerBaseHandler.ATTRIBUTE_VELOCITY_ENGINE,getVelocityEngine());
+		handler.setAttribute(SCOPE.REQUEST,ServerBaseHandler.ATTRIBUTE_VELOCITY_TEMPLATE,"/template/" +template);
 		handler.forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
 	}
 	
