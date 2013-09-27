@@ -21,9 +21,9 @@ import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
 import naru.aweb.config.Mapping.LogType;
-import naru.aweb.http.HeaderParser;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.util.CodeConverter;
+import naru.aweb.util.HeaderParser;
 
 /**
  *1)userHandlerの以下メソッドの呼び出し

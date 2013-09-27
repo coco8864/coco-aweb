@@ -13,10 +13,10 @@ import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.core.DispatchHandler;
 import naru.aweb.core.RealHost;
-import naru.aweb.core.ServerBaseHandler;
 import naru.aweb.handler.KeepAliveContext;
-import naru.aweb.http.HeaderParser;
+import naru.aweb.handler.ServerBaseHandler;
 import naru.aweb.http.RequestContext;
+import naru.aweb.util.HeaderParser;
 import naru.aweb.util.ServerParser;
 
 /**

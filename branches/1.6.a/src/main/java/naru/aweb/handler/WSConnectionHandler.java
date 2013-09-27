@@ -5,8 +5,8 @@ import naru.async.cache.CacheBuffer;
 import naru.async.pool.PoolBase;
 import naru.aweb.config.Config;
 import naru.aweb.handler.ws.WebSocketHandler;
-import naru.aweb.http.HeaderParser;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.util.HeaderParser;
 
 import org.apache.log4j.Logger;
 

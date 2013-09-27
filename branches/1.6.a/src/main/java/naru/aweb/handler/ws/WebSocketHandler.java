@@ -9,8 +9,8 @@ import naru.async.AsyncBuffer;
 import naru.async.cache.CacheBuffer;
 import naru.aweb.auth.LogoutEvent;
 import naru.aweb.handler.WebServerHandler;
-import naru.aweb.http.HeaderParser;
 import naru.aweb.http.RequestContext;
+import naru.aweb.util.HeaderParser;
 
 import org.apache.log4j.Logger;
 

@@ -1,4 +1,4 @@
-package naru.aweb.http;
+package naru.aweb.util;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,8 +28,6 @@ import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
 import naru.async.store.Page;
 import naru.async.store.Store;
-import naru.aweb.util.ServerParser;
-import naru.aweb.util.StreamUtil;
 
 import org.apache.log4j.Logger;
 

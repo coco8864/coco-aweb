@@ -1,4 +1,4 @@
-package naru.aweb.http;
+package naru.aweb.util;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -26,8 +26,7 @@ import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.async.store.Page;
 import naru.aweb.config.Config;
-import naru.aweb.util.ByteBufferInputStream;
-import naru.aweb.util.StreamUtil;
+import naru.aweb.http.FileuploadRequestContext;
 import net.sf.json.JSON;
 import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;

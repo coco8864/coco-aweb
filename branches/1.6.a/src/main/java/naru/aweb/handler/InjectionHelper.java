@@ -14,7 +14,7 @@ import java.util.Map;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.aweb.config.Config;
-import naru.aweb.http.HeaderParser;
+import naru.aweb.util.HeaderParser;
 
 import org.apache.log4j.Logger;
 import org.apache.velocity.VelocityContext;

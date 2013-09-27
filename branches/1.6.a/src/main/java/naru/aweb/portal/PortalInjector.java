@@ -7,12 +7,12 @@ import java.util.regex.Pattern;
 import naru.async.pool.PoolBase;
 import naru.aweb.config.CommissionAuth;
 import naru.aweb.config.Config;
-import naru.aweb.core.ServerBaseHandler.SCOPE;
 import naru.aweb.handler.InjectionHelper;
 import naru.aweb.handler.ProxyHandler;
 import naru.aweb.handler.ProxyInjector;
-import naru.aweb.http.HeaderParser;
+import naru.aweb.handler.ServerBaseHandler.SCOPE;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.util.HeaderParser;
 
 public class PortalInjector extends PoolBase implements ProxyInjector {
 	private static Pattern portalPathInfoPattern=Pattern.compile(";phportal=([^\\s;/?]*)");

@@ -17,13 +17,13 @@ import naru.async.store.Store;
 import naru.async.store.StoreManager;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
-import naru.aweb.http.HeaderParser;
 import naru.aweb.link.api.Blob;
 import naru.aweb.link.api.LinkMsg;
 import naru.aweb.link.api.LinkPeer;
 import naru.aweb.link.api.Linklet;
 import naru.aweb.link.api.LinkletCtx;
 import naru.aweb.robot.Browser;
+import naru.aweb.util.HeaderParser;
 import net.sf.json.JSON;
 import net.sf.json.JSONObject;
 

@@ -13,6 +13,7 @@ import org.apache.log4j.Logger;
 
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
+import naru.aweb.util.HeaderParser;
 
 public class ChunkContext {
 	static private Logger logger=Logger.getLogger(ChunkContext.class);

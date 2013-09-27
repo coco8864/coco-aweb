@@ -22,6 +22,7 @@ import naru.async.timer.TimerManager;
 import naru.aweb.config.Config;
 import naru.aweb.handler.ws.WsHybiFrame;
 import naru.aweb.util.CodeConverter;
+import naru.aweb.util.HeaderParser;
 
 public class WsClientHandler extends SslHandler implements Timer {
 	private static final int STAT_INIT = 0;

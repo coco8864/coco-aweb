@@ -10,10 +10,10 @@ import java.util.Iterator;
 import java.util.Map;
 
 import naru.aweb.config.Config;
-import naru.aweb.core.ServerBaseHandler.SCOPE;
-import naru.aweb.http.HeaderParser;
+import naru.aweb.handler.ServerBaseHandler.SCOPE;
 import naru.aweb.http.RequestContext;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.util.HeaderParser;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;

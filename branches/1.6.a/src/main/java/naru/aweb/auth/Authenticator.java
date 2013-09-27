@@ -23,10 +23,10 @@ import naru.async.store.DataUtil;
 import naru.async.timer.TimerManager;
 import naru.aweb.config.Config;
 import naru.aweb.config.User;
-import naru.aweb.core.ServerBaseHandler.SCOPE;
 import naru.aweb.handler.WebServerHandler;
-import naru.aweb.http.HeaderParser;
-import naru.aweb.http.ParameterParser;
+import naru.aweb.handler.ServerBaseHandler.SCOPE;
+import naru.aweb.util.HeaderParser;
+import naru.aweb.util.ParameterParser;
 
 /*
  * 注意：認証が必要ない場合もPROXY_AUTHORIZATION_HEADERやCookieヘッダを削除する必要がある。

@@ -14,11 +14,11 @@ import naru.async.store.Page;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
-import naru.aweb.http.HeaderParser;
 import naru.aweb.http.WebClient;
 import naru.aweb.http.WebClientHandler;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.spdy.SpdySession;
+import naru.aweb.util.HeaderParser;
 import naru.aweb.util.ServerParser;
 
 import org.apache.log4j.Logger;

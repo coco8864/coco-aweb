@@ -11,7 +11,7 @@ import org.apache.log4j.Logger;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.aweb.config.Config;
-import naru.aweb.http.HeaderParser;
+import naru.aweb.util.HeaderParser;
 
 /**
  * http://dev.chromium.org/spdy/spdy-protocol/spdy-protocol-draft3

@@ -11,10 +11,10 @@ import naru.async.cache.CacheBuffer;
 import naru.async.timer.TimerManager;
 import naru.aweb.admin.AdminLinklet;
 import naru.aweb.config.Config;
-import naru.aweb.http.HeaderParser;
 import naru.aweb.http.WsClient;
 import naru.aweb.http.WsClientHandler;
 import naru.aweb.link.api.LinkPeer;
+import naru.aweb.util.HeaderParser;
 import net.sf.json.JSONObject;
 
 /* そのサーバでいくつconnectionが張れるかをチェックする */
