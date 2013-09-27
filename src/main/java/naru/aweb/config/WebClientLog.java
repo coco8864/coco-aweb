@@ -3,7 +3,7 @@ package naru.aweb.config;
 import java.util.Arrays;
 
 import naru.async.pool.PoolBase;
-import naru.aweb.http.HeaderParser;
+import naru.aweb.util.HeaderParser;
 
 public class WebClientLog extends PoolBase {
 	public static final int CHECK_POINT_START=0;

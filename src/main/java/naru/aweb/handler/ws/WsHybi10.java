@@ -12,7 +12,7 @@ import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
-import naru.aweb.http.HeaderParser;
+import naru.aweb.util.HeaderParser;
 
 public class WsHybi10 extends WsProtocol implements BufferGetter{
 	private static Logger logger=Logger.getLogger(WsHybi10.class);

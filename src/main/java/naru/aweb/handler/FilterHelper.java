@@ -20,11 +20,10 @@ import naru.aweb.config.FilterCategory;
 import naru.aweb.config.FilterEntry;
 import naru.aweb.config.FilterRole;
 import naru.aweb.config.User;
-import naru.aweb.core.ServerBaseHandler;
-import naru.aweb.core.ServerBaseHandler.SCOPE;
+import naru.aweb.handler.ServerBaseHandler.SCOPE;
 import naru.aweb.http.Cookie;
-import naru.aweb.http.HeaderParser;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.util.HeaderParser;
 import naru.aweb.util.JdoUtil;
 import naru.aweb.util.ServerParser;
 

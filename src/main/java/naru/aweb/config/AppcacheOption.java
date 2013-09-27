@@ -10,10 +10,10 @@ import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 
-import naru.aweb.core.ServerBaseHandler.SCOPE;
 import naru.aweb.handler.WebServerHandler;
+import naru.aweb.handler.ServerBaseHandler.SCOPE;
 import naru.aweb.http.Cookie;
-import naru.aweb.http.HeaderParser;
+import naru.aweb.util.HeaderParser;
 import net.sf.json.JSONObject;
 
 /**

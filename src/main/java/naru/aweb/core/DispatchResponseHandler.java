@@ -5,10 +5,10 @@ import naru.async.pool.PoolManager;
 import naru.aweb.auth.AuthHandler;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
-import naru.aweb.core.ServerBaseHandler.SCOPE;
 import naru.aweb.handler.WebServerHandler;
-import naru.aweb.http.HeaderParser;
+import naru.aweb.handler.ServerBaseHandler.SCOPE;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.util.HeaderParser;
 import net.sf.json.JSONObject;
 
 import org.apache.log4j.Logger;

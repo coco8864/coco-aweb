@@ -15,9 +15,9 @@ import naru.async.store.Store;
 import naru.aweb.handler.WebServerHandler;
 import naru.aweb.http.ChunkContext;
 import naru.aweb.http.GzipContext;
-import naru.aweb.http.HeaderParser;
-import naru.aweb.http.ParameterParser;
 import naru.aweb.util.CodeConverter;
+import naru.aweb.util.HeaderParser;
+import naru.aweb.util.ParameterParser;
 import net.sf.json.JSONObject;
 
 import org.apache.log4j.Logger;

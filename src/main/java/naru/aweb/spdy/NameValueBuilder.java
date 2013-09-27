@@ -10,7 +10,7 @@ import java.util.zip.Deflater;
 
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
-import naru.aweb.http.HeaderParser;
+import naru.aweb.util.HeaderParser;
 
 public class NameValueBuilder {
 	private short version;

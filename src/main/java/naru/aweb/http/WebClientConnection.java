@@ -13,6 +13,7 @@ import naru.async.pool.PoolManager;
 import naru.aweb.auth.SessionId;
 import naru.aweb.config.Config;
 import naru.aweb.handler.KeepAliveContext;
+import naru.aweb.util.HeaderParser;
 import naru.aweb.util.ServerParser;
 
 public class WebClientConnection extends PoolBase {

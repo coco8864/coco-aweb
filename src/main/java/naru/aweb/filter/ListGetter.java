@@ -12,10 +12,10 @@ import naru.async.Timer;
 import naru.async.pool.PoolManager;
 import naru.async.timer.TimerManager;
 import naru.aweb.config.Config;
-import naru.aweb.http.HeaderParser;
 import naru.aweb.http.WebClient;
 import naru.aweb.http.WebClientConnection;
 import naru.aweb.http.WebClientHandler;
+import naru.aweb.util.HeaderParser;
 
 public class ListGetter implements WebClient,Timer {
 	private static Config config=Config.getConfig();

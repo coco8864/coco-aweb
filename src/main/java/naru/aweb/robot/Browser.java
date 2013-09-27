@@ -17,10 +17,10 @@ import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
 import naru.async.timer.TimerManager;
 import naru.aweb.config.AccessLog;
-import naru.aweb.http.HeaderParser;
 import naru.aweb.http.WebClientConnection;
 import naru.aweb.http.WebClientHandler;
 import naru.aweb.link.api.LinkPeer;
+import naru.aweb.util.HeaderParser;
 //import naru.aweb.queue.QueueManager;
 import naru.aweb.util.ServerParser;
 

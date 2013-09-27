@@ -1,4 +1,4 @@
-package naru.aweb.core;
+package naru.aweb.handler;
 
 import java.util.Iterator;
 
@@ -13,14 +13,12 @@ import naru.aweb.auth.AuthSession;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
-import naru.aweb.handler.KeepAliveContext;
-import naru.aweb.handler.WebServerHandler;
 import naru.aweb.http.GzipContext;
-import naru.aweb.http.HeaderParser;
-import naru.aweb.http.ParameterParser;
 import naru.aweb.http.RequestContext;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.spdy.SpdySession;
+import naru.aweb.util.HeaderParser;
+import naru.aweb.util.ParameterParser;
 import naru.aweb.util.ServerParser;
 
 public abstract class ServerBaseHandler extends SslHandler {

@@ -7,12 +7,12 @@ import org.apache.log4j.Logger;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
 import naru.aweb.config.User;
-import naru.aweb.core.ServerBaseHandler.SCOPE;
 import naru.aweb.handler.KeepAliveContext;
 import naru.aweb.handler.WebServerHandler;
-import naru.aweb.http.HeaderParser;
-import naru.aweb.http.ParameterParser;
+import naru.aweb.handler.ServerBaseHandler.SCOPE;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.util.HeaderParser;
+import naru.aweb.util.ParameterParser;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 

@@ -10,9 +10,9 @@ import naru.async.store.Store;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
-import naru.aweb.core.ServerBaseHandler.SCOPE;
-import naru.aweb.http.HeaderParser;
+import naru.aweb.handler.ServerBaseHandler.SCOPE;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.util.HeaderParser;
 import naru.aweb.util.ServerParser;
 
 import org.apache.log4j.Logger;

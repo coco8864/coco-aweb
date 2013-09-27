@@ -17,9 +17,9 @@ import naru.async.cache.FileInfo;
 import naru.aweb.config.AppcacheOption;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping; //import naru.aweb.config.FileCache.FileCacheInfo;
-import naru.aweb.core.ServerBaseHandler.SCOPE;
-import naru.aweb.http.HeaderParser;
+import naru.aweb.handler.ServerBaseHandler.SCOPE;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.util.HeaderParser;
 import naru.aweb.util.ServerParser;
 
 import org.apache.log4j.Logger;

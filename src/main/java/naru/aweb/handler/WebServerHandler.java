@@ -18,14 +18,13 @@ import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.config.Mapping;
 import naru.aweb.core.DispatchHandler;
-import naru.aweb.core.ServerBaseHandler;
 import naru.aweb.handler.ws.WsProtocol;
 import naru.aweb.http.ChunkContext;
 import naru.aweb.http.GzipContext;
-import naru.aweb.http.HeaderParser;
-import naru.aweb.http.ParameterParser;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.spdy.SpdySession;
+import naru.aweb.util.HeaderParser;
+import naru.aweb.util.ParameterParser;
 
 /**
  * HTTPプロトコルを基本に、主にレスポンスをハンドリングする。 HTTPプロトコルのスキームに入らないプロトコルをハンドリングする場合には、

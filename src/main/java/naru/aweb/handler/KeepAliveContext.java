@@ -10,9 +10,9 @@ import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.aweb.config.Config;
 import naru.aweb.core.RealHost;
-import naru.aweb.http.HeaderParser;
 import naru.aweb.http.RequestContext;
 import naru.aweb.http.WebClientHandler;
+import naru.aweb.util.HeaderParser;
 import naru.aweb.util.ServerParser;
 /**
  * HTTP KeeyALive‚É‘Î‚·‚éî•ñ‚ğŠÇ—‚·‚é
