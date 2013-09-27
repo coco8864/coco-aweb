@@ -60,7 +60,7 @@ public class LinkSession extends PoolBase implements LogoutEvent{
 	static LinkSession create(String path,Integer bid,boolean isWs,AuthSession authSession){
 		LinkSession paSession=(LinkSession)PoolManager.getInstance(LinkSession.class);
 		paSession.path=path;
-		paSession.paManager=LinkManager.getInstance(path);
+		paSession.linkManager=LinkManager.getInstance(path);
 		paSession.bid=bid;
 		paSession.isWs=isWs;
 		
@@ -84,7 +84,7 @@ public class LinkSession extends PoolBase implements LogoutEvent{
 		isWs=false;
 		super.recycle();
 	}
-	private LinkManager paManager;
+	private LinkManager linkManager;
 	
 	private String path;//ê⁄ë±path
 	
@@ -226,12 +226,12 @@ public class LinkSession extends PoolBase implements LogoutEvent{
 	public void subscribe(JSONObject msg){
 		String qname=msg.getString(KEY_QNAME);
 		String subname=msg.optString(KEY_SUBNAME,null);
-		LinkletWrapper paletWrapper=paManager.getLinkletWrapper(qname);
+		LinkletWrapper paletWrapper=linkManager.getLinkletWrapper(qname);
 		if(paletWrapper==null){
 			sendError(TYPE_SUBSCRIBE,qname, subname,null);
 			return;
 		}
-		LinkPeer keyPeer=LinkPeer.create(paManager,this, qname, subname);
+		LinkPeer keyPeer=LinkPeer.create(linkManager,this, qname, subname);
 		synchronized(peers){
 			LinkPeer peer=peers.get(keyPeer);
 			if(peer!=null){//Ç∑Ç≈Ç…subscribeçœÇ›èàóùÇÕÇ»Ç¢
@@ -246,7 +246,7 @@ public class LinkSession extends PoolBase implements LogoutEvent{
 	public void unsubscribe(JSONObject msg){
 		String qname=msg.getString(KEY_QNAME);
 		String subname=msg.optString(KEY_SUBNAME,null);
-		LinkPeer keyPeer=LinkPeer.create(paManager,this, qname, subname);
+		LinkPeer keyPeer=LinkPeer.create(linkManager,this, qname, subname);
 		if( !unsubscribeFromWrapper(keyPeer) ){
 			sendError(TYPE_UNSUBSCRIBE,qname, subname,"not found peer");
 			keyPeer.unref(true);
@@ -278,8 +278,8 @@ public class LinkSession extends PoolBase implements LogoutEvent{
 		LinkMsg message=msg.getMap(KEY_MESSAGE);
 		message.ref();
 		msg.unref();
-		LinkPeer keyPeer=LinkPeer.create(paManager,this, qname, subname);
-		LinkletWrapper paletWrapper=paManager.getLinkletWrapper(qname);
+		LinkPeer keyPeer=LinkPeer.create(linkManager,this, qname, subname);
+		LinkletWrapper paletWrapper=linkManager.getLinkletWrapper(qname);
 		if(subname==null){//ëóêMå≥Ç™Ç»Ç¢Publish ï÷ãXìIÇ»Peer
 			paletWrapper.onPublish(keyPeer, message);
 			keyPeer.unref();
@@ -299,7 +299,7 @@ public class LinkSession extends PoolBase implements LogoutEvent{
 	
 	/* PaletWrapperÇ©ÇÁÇÃunsubcribe */
 	private boolean unsubscribeFromWrapper(LinkPeer peer){
-		LinkletWrapper paletWrapper=paManager.getLinkletWrapper(peer.getQname());
+		LinkletWrapper paletWrapper=linkManager.getLinkletWrapper(peer.getQname());
 		if(paletWrapper==null){
 			return false;
 		}
@@ -335,7 +335,7 @@ public class LinkSession extends PoolBase implements LogoutEvent{
 	}
 	
 	public void qname(JSONObject req){
-		Set<String> qnames=paManager.qnames();
+		Set<String> qnames=linkManager.qnames();
 		sendSuccess(TYPE_QNAMES,null, null,JSONSerializer.toJSON(qnames));
 	}
 	
@@ -346,7 +346,7 @@ public class LinkSession extends PoolBase implements LogoutEvent{
 		}
 		String qname=req.getString(KEY_QNAME);
 		String paletClassName=req.getString(KEY_PALET_CLASS_NAME);
-		if(paManager.deploy(qname, paletClassName)!=null){
+		if(linkManager.deploy(qname, paletClassName)!=null){
 			sendSuccess(TYPE_DEPLOY,qname, null, null);
 		}else{
 			sendError(TYPE_DEPLOY,qname, null,"aleady deployed");
@@ -359,7 +359,7 @@ public class LinkSession extends PoolBase implements LogoutEvent{
 			return;
 		}
 		String qname=req.getString(KEY_QNAME);
-		if( paManager.undeploy(qname)!=null){
+		if( linkManager.undeploy(qname)!=null){
 			sendSuccess(TYPE_UNDEPLOY,qname, null,null);
 		}else{
 			sendError(TYPE_UNDEPLOY,qname, null,"not found");

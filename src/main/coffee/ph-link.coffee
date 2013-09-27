@@ -126,6 +126,10 @@ class Link extends ph.Deferred
      location.href=res.location
      return
    else if res.result==true
+    ##jQuery UIでdialogをopenするとaplFrameがreloadされる。http://bugs.jqueryui.com/ticket/9166
+    ##その延長でonlineAuthが再度通知される動作に対応
+    if @aplInfo
+     return
     @isOffline=false
     @aplInfo=res.aplInfo
     @authInfo=res.authInfo

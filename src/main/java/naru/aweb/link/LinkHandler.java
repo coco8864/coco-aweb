@@ -48,7 +48,7 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 	private static Logger logger=Logger.getLogger(LinkHandler.class);
 	
 	private Integer bid;
-	private LinkSession paSession;
+	private LinkSession linkSession;
 	private boolean isNegotiated=false;
 	
 	@Override
@@ -80,14 +80,14 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 	private void dispatchMessage(JSONObject msg){
 		String type=msg.getString("type");
 		if(LinkSession.TYPE_SUBSCRIBE.equals(type)){
-			paSession.subscribe(msg);
+			linkSession.subscribe(msg);
 		}else if(LinkSession.TYPE_UNSUBSCRIBE.equals(type)){
-			paSession.unsubscribe(msg);
+			linkSession.unsubscribe(msg);
 		}else if(LinkSession.TYPE_PUBLISH.equals(type)){
 			LinkMsg realMessage=Envelope.unpack(msg, null);
-			paSession.publish(realMessage);
+			linkSession.publish(realMessage);
 		}else if(LinkSession.TYPE_CLOSE.equals(type)){
-			paSession.close();
+			linkSession.close();
 			AuthSession authSession=getAuthSession();
 			LinkSessions linkSessions=null;
 			synchronized(authSession){
@@ -97,18 +97,18 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 				bid=0;
 			}
 		}else if(LinkSession.TYPE_QNAMES.equals(type)){
-			paSession.qname(msg);
+			linkSession.qname(msg);
 		}else if(LinkSession.TYPE_DEPLOY.equals(type)){
-			paSession.deploy(msg);
+			linkSession.deploy(msg);
 		}else if(LinkSession.TYPE_UNDEPLOY.equals(type)){
-			paSession.undeploy(msg);
+			linkSession.undeploy(msg);
 		}else if(LinkSession.TYPE_NEGOTIATE.equals(type)){
 			if(!negotiation(msg)){
-				paSession.sendError(type,null, null,"fail to negotiation");
+				linkSession.sendError(type,null, null,"fail to negotiation");
 				return;
 			}
 		}else{
-			paSession.sendError(type,null, null,"unsuppoerted type");
+			linkSession.sendError(type,null, null,"unsuppoerted type");
 			logger.warn("unsuppoerted type:"+type);
 		}
 	}
@@ -146,7 +146,7 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 				//negotiation失敗,致命的回線断
 				return;
 			}
-			paSession.setupWsHandler(null,this);
+			linkSession.setupWsHandler(null,this);
 			return;
 		}
 		dispatchMessage(req);
@@ -163,14 +163,14 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 			//negotiation失敗,致命的回線断
 			return;
 		}
-		paSession.publish(Envelope.unpack(prot));
+		linkSession.publish(Envelope.unpack(prot));
 	}
 	
 	
 	@Override
 	public void onWsClose(short code,String reason) {
-		if(paSession!=null){
-			paSession.setupWsHandler(this,null);
+		if(linkSession!=null){
+			linkSession.setupWsHandler(this,null);
 		}
 	}
 	
@@ -197,7 +197,7 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 		negores.put(LinkSession.KEY_SESSION_TIME_LIMIT, ((lastAccess+timeout)-now));
 //		User user=authSession.getUser();
 //		negores.put(PaSession.KEY_OFFLINE_PASS_HASH,user.getOfflinePassHash());
-		paSession.sendJson(negores);
+		linkSession.sendJson(negores);
 	}
 	
 	/**
@@ -219,13 +219,13 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 		bid=negoreq.getInt(LinkSession.KEY_BID);
 		boolean needRes=negoreq.getBoolean("needRes");
 		LinkSessions paSessions=getLinkSessions(authSession);
-		paSession=paSessions.sessions.get(bid);
-		if(paSession==null && needRes==false){
+		linkSession=paSessions.sessions.get(bid);
+		if(linkSession==null && needRes==false){
 			bid=-1;
 			return false;
 		}
 		isNegotiated=true;
-		if(paSession!=null){
+		if(linkSession!=null){
 			if(needRes){
 				sendNegotiation();
 			}
@@ -235,11 +235,11 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 		synchronized(paSessions){
 			paSessions.bidSeq++;
 			bid=paSessions.bidSeq;
-			paSession=LinkSession.create(path,bid, isWs, authSession);
-			paSessions.sessions.put(bid, paSession);
+			linkSession=LinkSession.create(path,bid, isWs, authSession);
+			paSessions.sessions.put(bid, linkSession);
 			sendNegotiation();
 		}
-		authSession.addLogoutEvent(paSession);//ログアウト時に通知を受ける
+		authSession.addLogoutEvent(linkSession);//ログアウト時に通知を受ける
 		return true;
 	}
 	
@@ -270,8 +270,8 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 		}
 		int bid=Integer.parseInt(parameter.getParameter(LinkSession.KEY_BID));
 		LinkSessions paSessions=getLinkSessions(authSession);
-		paSession=paSessions.sessions.get(bid);
-		if(paSession==null){
+		linkSession=paSessions.sessions.get(bid);
+		if(linkSession==null){
 			completeResponse("404");
 			return;
 		}
@@ -299,7 +299,7 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 				message.put(name, value);
 			}
 		}
-		paSession.publish(msg);
+		linkSession.publish(msg);
 		completeResponse("204");
 		return;
 	}
@@ -314,12 +314,12 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 		int bid=Integer.parseInt(parameter.getParameter(LinkSession.KEY_BID));
 		String key=parameter.getParameter("key");
 		LinkSessions paSessions=getLinkSessions(authSession);
-		paSession=paSessions.sessions.get(bid);
-		if(paSession==null){
+		linkSession=paSessions.sessions.get(bid);
+		if(linkSession==null){
 			completeResponse("404");
 			return;
 		}
-		Blob blob=paSession.popDownloadBlob(key);
+		Blob blob=linkSession.popDownloadBlob(key);
 		if(blob==null){
 			completeResponse("404");
 			return;
@@ -343,7 +343,7 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 		}else{
 			processMessages(reqs);
 		}
-		paSession.setupXhrHandler(this);
+		linkSession.setupXhrHandler(this);
 		if(!doneXhr){
 			ref();
 			TimerManager.setTimeout(XHR_SLEEP_TIME, this,null);
@@ -399,7 +399,7 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 	
 	/* xhrから利用する場合、メッセージなければしばらく待ってから復帰したいため */
 	public void onTimer(Object userContext) {
-		paSession.xhrResponse(this);
+		linkSession.xhrResponse(this);
 		unref();
 	}
 }
