@@ -30,8 +30,6 @@ public class AdminMappingHandler extends WebServerHandler{
 	
 	void doCommand(String command,ParameterParser parameter){
 		if("mappingList".equals(command)){
-//			List<String>userRoles=getAuthSession().getUser().getRolesList();
-//			List<Mapping> allowMappings=config.getMapper().getRoleMappings(userRoles);
 			String order=parameter.getParameter("order");
 			Collection<Mapping> mappings=Mapping.query(null, -1, 0, order);
 			JSON mappingsJson=Mapping.collectionToJson(mappings);

@@ -226,6 +226,7 @@ offlineLogon=->
   return
  isAuth=true
  response({type:'offlineAuth',result:true,authInfo:userInfo.authInfo})
+ response({type:'hideFrame'})
  isDisplay=false
  jQuery('logonId').val('')
  jQuery('password').val('')

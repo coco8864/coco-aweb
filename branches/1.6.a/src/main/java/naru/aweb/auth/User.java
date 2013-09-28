@@ -28,7 +28,7 @@ import net.sf.json.util.NewBeanInstanceStrategy;
 import org.apache.log4j.Logger;
 
 /**
- * @author naru hayashi
+ * @author naru
  */
 @PersistenceCapable(identityType = IdentityType.APPLICATION,table="PH_USER",detachable="true")
 public class User {
