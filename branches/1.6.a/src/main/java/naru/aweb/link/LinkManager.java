@@ -4,9 +4,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import naru.aweb.config.Mapping;
 import naru.aweb.link.api.LinkPeer;
 import naru.aweb.link.api.Linklet;
+import naru.aweb.mapping.Mapping;
 
 public class LinkManager {
 	

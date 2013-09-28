@@ -5,11 +5,10 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import naru.aweb.config.Config;
-import naru.aweb.config.Mapping;
-import naru.aweb.config.User;
 import naru.aweb.handler.KeepAliveContext;
 import naru.aweb.handler.WebServerHandler;
 import naru.aweb.handler.ServerBaseHandler.SCOPE;
+import naru.aweb.mapping.Mapping;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.util.HeaderParser;
 import naru.aweb.util.ParameterParser;

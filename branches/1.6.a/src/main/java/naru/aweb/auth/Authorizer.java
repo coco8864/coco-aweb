@@ -12,8 +12,7 @@ import naru.async.store.DataUtil;
 import naru.async.timer.TimerManager;
 import naru.aweb.auth.SessionId.Type;
 import naru.aweb.config.Config;
-import naru.aweb.config.Mapping;
-import naru.aweb.config.User;
+import naru.aweb.mapping.Mapping;
 import naru.aweb.util.ServerParser;
 
 import org.apache.commons.configuration.Configuration;

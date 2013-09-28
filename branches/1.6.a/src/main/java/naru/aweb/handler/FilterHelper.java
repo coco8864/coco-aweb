@@ -15,11 +15,11 @@ import java.util.regex.Pattern;
 import javax.jdo.PersistenceManager;
 import javax.jdo.Query;
 
+import naru.aweb.auth.User;
 import naru.aweb.config.Config;
 import naru.aweb.config.FilterCategory;
 import naru.aweb.config.FilterEntry;
 import naru.aweb.config.FilterRole;
-import naru.aweb.config.User;
 import naru.aweb.handler.ServerBaseHandler.SCOPE;
 import naru.aweb.http.Cookie;
 import naru.aweb.mapping.MappingResult;

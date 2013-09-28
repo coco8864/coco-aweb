@@ -1,4 +1,4 @@
-package naru.aweb.config;
+package naru.aweb.auth;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -16,7 +16,7 @@ import javax.jdo.annotations.PersistenceCapable;
 import javax.jdo.annotations.Persistent;
 import javax.jdo.annotations.Unique;
 
-import naru.aweb.auth.Authenticator;
+import naru.aweb.config.Config;
 import naru.aweb.util.DatePropertyFilter;
 import naru.aweb.util.JdoUtil;
 import net.sf.json.JSON;

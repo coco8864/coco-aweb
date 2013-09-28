@@ -22,7 +22,6 @@ import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
 import naru.async.timer.TimerManager;
 import naru.aweb.config.Config;
-import naru.aweb.config.User;
 import naru.aweb.handler.WebServerHandler;
 import naru.aweb.handler.ServerBaseHandler.SCOPE;
 import naru.aweb.util.HeaderParser;

@@ -11,7 +11,6 @@ import org.apache.log4j.Logger;
 import naru.async.pool.PoolBase;
 import naru.async.store.DataUtil;
 import naru.aweb.config.Config;
-import naru.aweb.config.User;
 
 public class AuthSession extends PoolBase{
 	private static Config config=Config.getConfig();

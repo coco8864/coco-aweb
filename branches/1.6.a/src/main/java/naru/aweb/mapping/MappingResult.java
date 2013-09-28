@@ -12,7 +12,6 @@ import naru.async.pool.PoolBase;
 import naru.aweb.auth.AuthHandler;
 import naru.aweb.auth.MappingAuth;
 import naru.aweb.config.Config;
-import naru.aweb.config.Mapping;
 import naru.aweb.util.ServerParser;
 
 public class MappingResult extends PoolBase {
