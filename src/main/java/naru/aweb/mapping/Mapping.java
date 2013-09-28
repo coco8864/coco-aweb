@@ -341,6 +341,7 @@ public class Mapping{
 	public Mapping(){
 	}
 	
+	/*
 	public Mapping(boolean isEnabled,String notes,
 			SourceType sourceType,SecureType secureType,String sourceServer,String sourcePath,
 			DestinationType destinationType,String destinationServer,String destinationPath,
@@ -357,6 +358,7 @@ public class Mapping{
 		setOptions(options);
 		setup();
 	}
+	*/
 	
 	public enum LogType {
 		NONE,
@@ -550,16 +552,13 @@ public class Mapping{
 			if(!"".equals(welcomFiles)){//空白だったらwelcomFilesなし
 				attribute.put(OPTION_FILE_WELCOME_FILES,welcomFiles.split(","));
 			}
+			/*
 			JSONObject appcacheObj=optionsJson.optJSONObject(OPTION_APPCACHE);
 			if(appcacheObj!=null){
-				File baseDir=null;
-				/* role指定がないものだけが配下のコンテンツをappcacheすることができる */
-				if(roles==null || "".equals(roles)){
-					baseDir=destinationFile;
-				}
-				AppcacheOption appcacheOption=new AppcacheOption(baseDir,sourcePath,appcacheObj);
+				AppcacheOption appcacheOption=new AppcacheOption(destinationFile,sourcePath,appcacheObj);
 				attribute.put(OPTION_APPCACHE, appcacheOption);
 			}
+			*/
 		}
 		rolesList.clear();
 		if(roles!=null && !"".equals(roles)){
@@ -569,6 +568,14 @@ public class Mapping{
 			}
 		}
 		return true;
+	}
+	
+	void setupAppcache(){
+		JSONObject appcacheObj=optionsJson.optJSONObject(OPTION_APPCACHE);
+		if(appcacheObj!=null){
+			AppcacheOption appcacheOption=new AppcacheOption(destinationFile,sourcePath,appcacheObj);
+			attribute.put(OPTION_APPCACHE, appcacheOption);
+		}
 	}
 	
 	public void tearDown(){
