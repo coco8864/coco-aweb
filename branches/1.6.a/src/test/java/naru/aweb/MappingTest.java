@@ -15,7 +15,7 @@ import javax.jdo.Query;
 import javax.jdo.Transaction;
 
 import naru.aweb.config.AccessLog;
-import naru.aweb.config.Mapping;
+import naru.aweb.mapping.Mapping;
 import naru.aweb.util.JdoUtil;
 
 import junit.framework.TestCase;

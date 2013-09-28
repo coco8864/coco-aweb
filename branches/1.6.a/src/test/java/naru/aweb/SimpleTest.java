@@ -11,7 +11,7 @@ import javax.jdo.PersistenceManager;
 import javax.jdo.Query;
 
 import naru.aweb.config.AccessLog;
-import naru.aweb.config.Mapping;
+import naru.aweb.mapping.Mapping;
 import naru.aweb.util.JdoUtil;
 import naru.queuelet.test.TestBase;
 
