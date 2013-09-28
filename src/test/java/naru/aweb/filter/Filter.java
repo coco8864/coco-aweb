@@ -7,7 +7,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import naru.aweb.http.HeaderParser;
+import naru.aweb.util.HeaderParser;
 
 import org.junit.Test;
 
