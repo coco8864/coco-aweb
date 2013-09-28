@@ -117,7 +117,7 @@ public class Mapping{
 		jsonConfig=new JsonConfig();
 		jsonConfig.setRootClass(Mapping.class);
 		jsonConfig.setIgnoreTransientFields(true);
-		jsonConfig.setExcludes(new String[]{"admin","auth","destinationFile",OPTION_LOG_TYPE,"userId","sourceServerHost","rolesList","sessionUpdate","mappingAuth"});
+		jsonConfig.setExcludes(new String[]{"admin","auth","destinationFile",OPTION_LOG_TYPE,"userId","sourceServerHost","rolesList","sessionUpdate","mappingAuth","attributeNames"});
 		jsonConfig.setNewBeanInstanceStrategy(new MappingInstanceStrategy());
 	}
 	
