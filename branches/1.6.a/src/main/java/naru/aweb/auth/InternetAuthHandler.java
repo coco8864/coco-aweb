@@ -52,6 +52,7 @@ import naru.aweb.handler.KeepAliveContext;
 import naru.aweb.handler.WebServerHandler;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.util.HeaderParser;
+import naru.aweb.util.HttpUtil;
 import naru.aweb.util.ParameterParser;
 import naru.aweb.util.ServerParser;
 import net.sf.json.JSONObject;
@@ -132,38 +133,6 @@ public class InternetAuthHandler extends WebServerHandler {
 		redirect(encodeUrl);
 	}
 
-	public static String contents(URL url,Map<String,String> requestParams) throws IOException {
-		HttpClient httpClient = new DefaultHttpClient();		
-		HttpPost httpPost = new HttpPost(url.toString());
-		// リクエストパラメータの設定
-        List<NameValuePair> params = new ArrayList<NameValuePair>();
-        for (Map.Entry<String, String> entry : requestParams.entrySet()) {
-            params.add(new BasicNameValuePair((String) entry.getKey(), (String) entry.getValue()));
-        }		
-        httpPost.setEntity(new UrlEncodedFormEntity(params, HTTP.UTF_8));
-        HttpResponse response =httpClient.execute(httpPost);
-        HttpEntity httpEntity = response.getEntity();
-        String restext=EntityUtils.toString(httpEntity);
-        return restext;
-	}
-
-	public static String contents(URL url) throws IOException {
-		InputStream is = url.openStream();
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		byte[] buf = new byte[1024];
-		while (true) {
-			int len = is.read(buf);
-			if (len < 0) {
-				break;
-			}
-			baos.write(buf, 0, len);
-		}
-		is.close();
-		String contents = new String(baos.toByteArray(), /*"iso8859_1"*/"utf-8");
-		baos.close();
-		return contents;
-	}
-	
 	static TwitterFactory twitterFactory = new TwitterFactory();
 	private static Map<String,String> twitterToken=new HashMap<String,String>();
 	
@@ -230,9 +199,9 @@ public class InternetAuthHandler extends WebServerHandler {
 		accessTokenUrl+="&client_secret=" + authFbAppSecret;
 		accessTokenUrl+="&code=" + code;
 		try {
-			String accessToken=contents(new URL(accessTokenUrl));
+			String accessToken=HttpUtil.get(accessTokenUrl);
 			String meUrl="https://graph.facebook.com/me?"+accessToken;
-			String me=contents(new URL(meUrl));
+			String me=HttpUtil.get(meUrl);
 			JSONObject json=JSONObject.fromObject(me);
 			String nickname=json.optString("first_name");
 			successAuth(temporaryId, 
@@ -273,11 +242,11 @@ public class InternetAuthHandler extends WebServerHandler {
 		req.put("code",code);
 
 		try {
-			String accessJson=contents(new URL("https://accounts.google.com/o/oauth2/token"),req);
+			String accessJson=HttpUtil.post("https://accounts.google.com/o/oauth2/token",req);
 			JSONObject access=JSONObject.fromObject(accessJson);
 			String accessToken=access.getString("access_token");
 			String meUrl="https://www.googleapis.com/oauth2/v1/userinfo?access_token="+accessToken;
-			String me=contents(new URL(meUrl));
+			String me=HttpUtil.get(meUrl);
 			JSONObject profile=JSONObject.fromObject(me);
 			String nickname=profile.optString("given_name");
 			successAuth(temporaryId,

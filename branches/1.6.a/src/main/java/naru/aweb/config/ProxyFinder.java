@@ -40,6 +40,7 @@ import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
+import naru.aweb.util.HttpUtil;
 import naru.aweb.util.ServerParser;
 
 /**
@@ -79,23 +80,6 @@ public class ProxyFinder extends ProxySelector{
 		return NEXT_FIND_PROXY_FOR_URL_FUNC_NAME;
 	}
 
-	public static String contents(URL url) throws IOException {
-		InputStream is = url.openStream();
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		byte[] buf = new byte[1024];
-		while (true) {
-			int len = is.read(buf);
-			if (len < 0) {
-				break;
-			}
-			baos.write(buf, 0, len);
-		}
-		is.close();
-		String contents = new String(baos.toByteArray(), /*"iso8859_1"*/"utf-8");
-		baos.close();
-		return contents;
-	}
-	
 	private String merge(String template, Map param) {
 		VelocityContext veloContext = new VelocityContext();
 		veloContext.put("proxyFinder", this);
@@ -292,11 +276,10 @@ public class ProxyFinder extends ProxySelector{
 		this.pacScriptInvoker = null;
 		this.proxyServerCash = new HashMap<String, ServerParser>();
 		this.urlProxyCash = new HashMap<String, ServerParser>();
-//		this.phantomPacCash = new HashMap<String, String>();
 		this.selfDomain=selfDomain;
 		this.proxyPort=proxyPort;
 		if (pacUrl != null) {// pacÇ≈proxyÇåàÇﬂÇÈê›íË
-			if( loadPac(contents(pacUrl))==false){
+			if( loadPac(HttpUtil.get(pacUrl.toString(),false))==false){
 				return false;
 			}
 			this.nextPac = pac.replaceAll("FindProxyForURL",NEXT_FIND_PROXY_FOR_URL_FUNC_NAME);
