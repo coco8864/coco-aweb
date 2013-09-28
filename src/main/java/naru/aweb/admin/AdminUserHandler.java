@@ -7,8 +7,8 @@ import java.util.Iterator;
 import java.util.List;
 
 import naru.aweb.auth.Authenticator;
+import naru.aweb.auth.User;
 import naru.aweb.config.Config;
-import naru.aweb.config.User;
 import naru.aweb.handler.WebServerHandler;
 import naru.aweb.util.ParameterParser;
 import net.sf.json.JSON;

@@ -1,4 +1,4 @@
-package naru.aweb.config;
+package naru.aweb.mapping;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,6 +28,8 @@ import naru.async.pool.PoolManager;
 import naru.aweb.admin.AdminHandler;
 import naru.aweb.admin.StoreHandler;
 import naru.aweb.auth.MappingAuth;
+import naru.aweb.config.AppcacheOption;
+import naru.aweb.config.Config;
 import naru.aweb.core.RealHost;
 import naru.aweb.handler.FileSystemHandler;
 import naru.aweb.handler.ProxyHandler;
@@ -35,7 +37,6 @@ import naru.aweb.handler.SslProxyHandler;
 import naru.aweb.handler.VelocityPageHandler;
 import naru.aweb.handler.WsProxyHandler;
 import naru.aweb.link.LinkHandler;
-import naru.aweb.mapping.MappingResult;
 import naru.aweb.util.JdoUtil;
 import naru.aweb.util.ServerParser;
 import net.sf.json.JSON;

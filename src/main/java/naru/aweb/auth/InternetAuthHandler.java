@@ -48,7 +48,6 @@ import twitter4j.auth.AccessToken;
 import twitter4j.auth.RequestToken;
 
 import naru.aweb.config.Config;
-import naru.aweb.config.User;
 import naru.aweb.handler.KeepAliveContext;
 import naru.aweb.handler.WebServerHandler;
 import naru.aweb.mapping.MappingResult;

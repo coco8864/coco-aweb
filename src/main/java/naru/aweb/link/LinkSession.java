@@ -12,7 +12,7 @@ import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.aweb.auth.AuthSession;
 import naru.aweb.auth.LogoutEvent;
-import naru.aweb.config.User;
+import naru.aweb.auth.User;
 import naru.aweb.link.api.Blob;
 import naru.aweb.link.api.LinkMsg;
 import naru.aweb.link.api.LinkPeer;

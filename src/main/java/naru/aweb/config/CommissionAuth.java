@@ -14,6 +14,7 @@ import javax.jdo.annotations.PersistenceCapable;
 import javax.jdo.annotations.PersistenceModifier;
 import javax.jdo.annotations.Persistent;
 
+import naru.aweb.auth.User;
 import naru.aweb.util.CipherUtil;
 import naru.aweb.util.JdoUtil;
 import net.sf.json.JSON;

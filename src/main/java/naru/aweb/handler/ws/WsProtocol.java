@@ -19,9 +19,9 @@ import naru.async.pool.PoolManager;
 import naru.async.store.Store;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
-import naru.aweb.config.Mapping;
-import naru.aweb.config.Mapping.LogType;
+import naru.aweb.mapping.Mapping;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.mapping.Mapping.LogType;
 import naru.aweb.util.CodeConverter;
 import naru.aweb.util.HeaderParser;
 
