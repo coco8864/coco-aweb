@@ -1,8 +1,11 @@
 package naru.aweb.config;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -14,18 +17,39 @@ import naru.aweb.handler.WebServerHandler;
 import naru.aweb.handler.ServerBaseHandler.SCOPE;
 import naru.aweb.http.Cookie;
 import naru.aweb.util.HeaderParser;
+import naru.aweb.util.StreamUtil;
 import net.sf.json.JSONObject;
 
 /**
+ * /apl配下の *.vsp,*.htmlの中から
+ *   /pub/??/?.js,?.css,?.gif,?.png,?.jpg /??/?.html,?.htm
+ * /docroot配下に存在確認
+ * 
+ * apl.htmlおよびみつかった、/??/?.html,?.htmから
+ *   /pub/??/?.js,?.css,?.gif,?.png,?.jpg /??/?.html,?.htm
+ * 
+ * ph.jsは以下が含まれている
+ * 'jquery-1.8.3.min.js','ph-jqnoconflict.js','ph-json2.js','ph-link.js'
+ * 
+ * ~ph.htmlは以下が含まれている
+ * 'jquery-1.8.3.min.js','ph-json2.js',/pub/js/aes.js,/pub/js/aplOffline.js
+ * 
+ * cache対象は、docroot配下になくてはならない
+ * 
  * option:{appcache:{enabled:true,manifestPath:'/phoffline.appcache',cacheFilePath:'/phoffline.html',cacheFilePattern:'...'}}
  * @author naru
  *
  */
 public class AppcacheOption {
 	public static final String APPCACHE_KEY="appcacheVersion";
+	private static final String HTML_PATTERN=".*\\.html$|.*\\.htm$|.*\\.vsp$";
+	
 	private static final String DEFAULT_CACHE_FILE_PATTERN=".*\\.html$|.*\\.htm$|.*\\.css$|.*\\.js$|.*\\.jpg$|.*\\.png$|.*\\.gif$";
 	private static final String DEFAULT_MANIFEST_PATH="/~ph.appcache";
 	private static final String DEFAULT_CACHE_HTML_PATH="/~ph.vsp";
+	private static final String[] PH_JS_INCLUDE_JS={"jquery-1.8.3.min.js","ph-jqnoconflict.js","ph-json2.js","ph-link.js"};
+	private static final String[] PH_HTML_INCLUDE_JS={"jquery-1.8.3.min.js","ph-json2.js","aes.js","aplOffline.js"};
+	
 	private static Logger logger = Logger.getLogger(AppcacheOption.class);
 	private static Config config = Config.getConfig();
 	
@@ -36,8 +60,9 @@ public class AppcacheOption {
 	private File destinationFile;
 	private String sourcePath;
 	private String cacheFilePattern;
-	private List<String> cachePaths=new ArrayList<String>();
+	private Set<String> cachePaths=new HashSet<String>();
 	private int currentAppacheVersion=0;
+	private String homePath;
 	
 	public AppcacheOption(File destinationFile,String sourcePath,JSONObject options){
 		this.destinationFile=destinationFile;
@@ -48,62 +73,120 @@ public class AppcacheOption {
 		this.cacheFilePattern=options.optString("cacheFilePattern",DEFAULT_CACHE_FILE_PATTERN);
 		if("/".equals(sourcePath)){
 			manifestAbsPath=manifestPath;
+			this.homePath=options.optString("homePath","/index.html");
 		}else{
 			manifestAbsPath=sourcePath+manifestPath;
+			// offline対応する場合、/apl.htmlを起点とする
+			this.homePath=options.optString("homePath",sourcePath+".html");
 		}
 		currentAppacheVersion=config.getInt(APPCACHE_KEY, 0);
 		setup();
 	}
 	
 	private void setup(){
-		/* TODO 必須コンテンツ */
 		cachePaths.clear();
-		cachePaths.add("/pub/js/jquery-1.8.3.min.js");
-		cachePaths.add("/pub/js/ph-json2.js");
-		cachePaths.add("/pub/js/aes.js");
-		cachePaths.add("/pub/js/aplOffline.js");
-		cachePaths.add("/pub/js/sha256.js");
-		cachePaths.add("/pub/js/authOffline.js");
+		Pattern htmlPattern=Pattern.compile(HTML_PATTERN);
+		Set<File>htmlFiles=new HashSet<File>();
+		for(String path:PH_JS_INCLUDE_JS){
+			addPath("/pub/js/"+path,cachePaths);
+		}
+		for(String path:PH_HTML_INCLUDE_JS){
+			addPath("/pub/js/"+path,cachePaths);
+		}
 		if(destinationFile==null){
 			return;
 		}
-		cachePaths.add("/");
-		Pattern pattern=Pattern.compile(cacheFilePattern);
-		Set<String>files=new HashSet<String>();
-		collectFile(destinationFile,files,pattern);
-		String base=destinationFile.getAbsolutePath();
-		for(String abs:files){
-			if(!abs.startsWith(base)){
-				continue;
-			}
-			String filePath=abs.substring(base.length());
-			filePath=filePath.replaceAll("\\\\", "/");
-			if(!filePath.startsWith("/")){
-				filePath="/"+filePath;
-			}
-			String path=null;
-			if("/".equals(sourcePath)){
-				path=filePath;
-			}else{
-				path=sourcePath + filePath;
-			}
-			cachePaths.add(path);
+		collectFile(destinationFile,htmlPattern,htmlFiles);
+		Iterator<File> itr=htmlFiles.iterator();
+		Set<String>uncheckedHtmlFiles=new HashSet<String>();
+		addPath(homePath,uncheckedHtmlFiles);
+		while(itr.hasNext()){
+			File file=itr.next();
+			collectCacheFile(file,uncheckedHtmlFiles,cachePaths);
+		}
+		Set<String>checkHtmlFiles=new HashSet<String>();
+		collectCacheFileR(uncheckedHtmlFiles,checkHtmlFiles,cachePaths);
+		for(String path:checkHtmlFiles){
+			addPath(path,cachePaths);
+		}
+		logger.info("sourcePath:"+sourcePath +" currentAppacheVersion:"+currentAppacheVersion);
+		for(String path:cachePaths){
+			logger.info(path);
 		}
 	}
 	
-	private void collectFile(File file,Set<String>files,Pattern pattern){
+	private void collectFile(File file,Pattern pattern,Set<File>files){
 		if(file.isFile()){
 			String fileName=file.getAbsolutePath();
 			Matcher m=pattern.matcher(fileName);
 			if(m.matches()){
-				files.add(fileName);
+				files.add(file);
 			}
 		}if(file.isDirectory()){
 			for(File f:file.listFiles()){
-				collectFile(f,files,pattern);
+				collectFile(f,pattern,files);
 			}
 		}
 	}
+	
+	/*
+	 * 存在を確認してからlistに追加する
+	 */
+	private void addPath(String path,Set<String>htmlFiles){
+		if(path==null){
+			return;
+		}
+		File f=new File(config.getPublicDocumentRoot(),path);
+		if(f.exists()){
+			htmlFiles.add(path);
+		}
+	}
+	
+	private void collectCacheFile(File file,Set<String>htmlFiles,Set<String>embeddedFiles){
+		String contents=null;
+		try {
+			contents = new String(StreamUtil.readFile(file),"utf-8");
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		String reqex="[\"|'](?:(/pub/[^(?:\"|')]*(?:(?:\\.js)|(?:\\.css)|(?:\\.gif)|(?:\\.png)|(?:\\.jpg)))|(/[^(?:\"|')]*(?:(?:\\.html)|(?:\\.htm))))[\"|']";
+		Pattern pattern=Pattern.compile(reqex);
+		Matcher matcher=null;
+		synchronized(pattern){
+			matcher=pattern.matcher(contents);
+		}
+		while(matcher.find()){
+			String embededFile=matcher.group(1);
+			addPath(embededFile,embeddedFiles);
+			String htmlFile=matcher.group(2);
+			addPath(htmlFile,htmlFiles);
+		}
+	}
+	
+	private void collectCacheFileR(Set<String>uncheckHtmlFiles,Set<String>checkHtmlFiles,Set<String>embeddedFiles){
+		Set<String>addCacheHtmlFiles=new HashSet<String>();
+		Iterator<String> itr=uncheckHtmlFiles.iterator();
+		while(itr.hasNext()){
+			String path=itr.next();
+			collectCacheFile(new File(config.getPublicDocumentRoot(),path),addCacheHtmlFiles,embeddedFiles);
+			checkHtmlFiles.add(path);
+		}
+		itr=addCacheHtmlFiles.iterator();
+		while(itr.hasNext()){
+			String path=itr.next();
+			if(checkHtmlFiles.contains(path)){
+				itr.remove();
+			}
+		}
+		if(addCacheHtmlFiles.size()!=0){
+			collectCacheFileR(addCacheHtmlFiles,checkHtmlFiles,embeddedFiles);
+		}
+	}
+	
 	
 	private void checkAppcacheManifest(WebServerHandler handler,String phappcache,String cookieKey,int appcacheVersion){
 		if("unused".equals(phappcache)){
@@ -113,12 +196,12 @@ public class AppcacheOption {
 		}
 	}
 	
-	private static List<String> NON_PATHS=new ArrayList<String>();
+	private static Set<String> NON_PATHS=new HashSet<String>();
 	
 	private void forwardAppcacheTemplate(WebServerHandler handler,String phappcache,String template,String cookieKey,int appcacheVersion){
 		boolean useAppcache=!"unused".equals(phappcache);
 		boolean appcacheMode=!"off".equals(phappcache);
-		List<String> cachePaths=NON_PATHS;
+		Set<String> cachePaths=NON_PATHS;
 		if(useAppcache && appcacheMode ){
 			cachePaths=this.cachePaths;
 		}

@@ -2,6 +2,7 @@ package naru.aweb.util;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,6 +39,12 @@ public class StreamUtil {
         return -1;
     }
 	
+	public static byte[] readFile(File file) throws IOException {
+		FileInputStream fis=new FileInputStream(file);
+		return readAll(fis);
+	}
+	
+	
 	/**
 	 * InputStreamにあるデータを一気に読み込む
 	 * 主にテスト用
@@ -48,14 +55,17 @@ public class StreamUtil {
 	public static byte[] readAll(InputStream is) throws IOException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		byte[] buf = new byte[1024];
-		while (true) {
-			int len = is.read(buf);
-			if (len < 0) {
-				break;
+		try {
+			while (true) {
+				int len = is.read(buf);
+				if (len < 0) {
+					break;
+				}
+				baos.write(buf, 0, len);
 			}
-			baos.write(buf, 0, len);
+		} finally {
+			is.close();
 		}
-		is.close();
 		return baos.toByteArray();
 	}
 

@@ -84,12 +84,14 @@ public class Mapper {
 		while(itr.hasNext()){
 			Mapping mapping=itr.next();
 			pm.makeTransient(mapping);
-//			System.out.println("json:"+mapping.toJson());
 			if(mapping.setup()==false){//TODO mapping.setup‚ªfalse‚Å•œ‹A‚µ‚½‚ç‚·‚×‚Ärollback‚·‚×‚«?
 				logger.error("fail to mapping setup.id:" + mapping.getId()+":note:"+mapping.getNotes());
 				continue;
 			}
 			loadMapping(mapping);
+		}
+		for(Mapping mapping:activeMappings){
+			mapping.setupAppcache();
 		}
 	}
 	
