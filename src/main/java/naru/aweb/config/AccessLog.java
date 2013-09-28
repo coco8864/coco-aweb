@@ -37,7 +37,7 @@ import org.apache.log4j.Logger;
 /**
  * 
  * 
- * @author naru hayashi
+ * @author naru
  */
 @PersistenceCapable(identityType = IdentityType.APPLICATION,table="ACCESS_LOG")
 public class AccessLog extends PoolBase implements BufferGetter{
