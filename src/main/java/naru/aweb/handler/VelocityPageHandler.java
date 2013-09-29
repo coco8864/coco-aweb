@@ -137,8 +137,7 @@ Caused by: java.lang.LinkageError: loader (instance of  naru/queuelet/loader/Que
 		ToolContext veloContext=toolManager.createContext();
 		veloContext.put("handler", this);
 		veloContext.put("parameter", getParameterParser());
-		RequestContext requestContext=getRequestContext();
-		veloContext.put("session", requestContext.getAuthSession());
+		veloContext.put("session", getAuthSession());
 		veloContext.put("config", getConfig());
 		Iterator<String> itr=getAttributeNames(SCOPE.REQUEST);
 		while(itr.hasNext()){
