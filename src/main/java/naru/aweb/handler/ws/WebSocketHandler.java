@@ -31,23 +31,38 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	/* このクラスを継承したapplicationから呼び出される */
 	/* メッセージを送信する場合(text) */
 	/* 同時にpostMessageを受け付ける事はできないのでsynchronized */
+	/**
+	 * クライアントにtextメッセージを送信します。
+	 * @param message 送信メッセージ
+	 */
 	public synchronized void postMessage(String message){
 		wsProtocol.postMessage(message);
 	}
 	
 	/* メッセージを送信する場合(binary) */
 	/* 同時にpostMessageを受け付ける事はできないのでsynchronized */
+	/**
+	 * クライアントにbinaryメッセージを送信します。
+	 * @param message 送信メッセージ
+	 */
 	public synchronized void postMessage(ByteBuffer[] message){
 		wsProtocol.postMessage(message);
 	}
 	
+	/**
+	 * クライアントにbinaryメッセージを送信します。
+	 * @param message 送信メッセージ
+	 */
 	public synchronized void postMessage(AsyncBuffer message){
 		wsProtocol.postMessage(message);
 	}
 	
 	/* 通信をやめる場合 */
 	/**
-	 * statusCode 接続前だった場合、ブラウザに返却するstatusCode
+	 * websocket接続前後の状態に応じて回線を切断します。
+	 * @param statusCode websocket接続前の場合切断時のhttpステータスコード
+	 * @param code websockte接続後の場合、クライアントのcloseに通知するcode
+	 * @param reason　websocket接続後の場合、クライアントのcloseに通知する原因文字列
 	 */
 	public void closeWebSocket(String statusCode,short code,String reason){
 		if(isHandshaked){
@@ -57,13 +72,39 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		}
 	}
 	
+	/**
+	 * websocket接続前後の状態に応じて回線を切断します。<br/>
+	 * websocket接続後は正常クローズを送信
+	 * @param statusCode websocket接続前の場合切断時のhttpステータスコード
+	 */
 	public void closeWebSocket(String statusCode){
 		closeWebSocket(statusCode,WsHybiFrame.CLOSE_NORMAL,"OK");
 	}
 	
+	/**
+	 * websocket通信の開始を通知します。
+	 * @param subprotocol　サブプロトコル
+	 */
 	public abstract void onWsOpen(String subprotocol);
+	
+	/**
+	 * websocket通信の終了を通知します。
+	 * @param code 終了コード
+	 * @param reason 原因文字列
+	 */
 	public abstract void onWsClose(short code,String reason);
+	
+	
+	/**
+	 * textメッセージを受信したことを通知します。
+	 * @param msgs 受信メッセージ
+	 */
 	public abstract void onMessage(String msgs);
+	
+	/**
+	 * binaryメッセージを受信したことを通知します。
+	 * @param msgs 受信メッセージ
+	 */
 	public abstract void onMessage(CacheBuffer  msgs);
 	
 	/**
@@ -82,6 +123,9 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
     WebSocket-Protocol: sample		 *上りにあれば下りにも必要 
 	 */
 	
+	/**
+	 * overrideしない
+	 */
 	public void onRequestHeader() {
 		logger.debug("#doResponse.cid:"+getChannelId());
 		HeaderParser requestHeader=getRequestHeader();
@@ -91,10 +135,6 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		}
 		isWs=true;
 		/* ログ出力タイプを取得 */
-//		MappingResult mapping=getRequestMapping();
-//		logType=mapping.getLogType();
-//		onMessageCount=0;
-//		postMessageCount=0;
 		/* logoff時にonLogoutイベントが通知されるように設定 */
 		wsProtocol=WsProtocol.createWsProtocol(requestHeader,getRequestMapping());
 		if(wsProtocol==null){
@@ -139,13 +179,23 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	}
 	
 	//web socketのhandshakeを実施
-	public final boolean doHandshake(String subProtocol){
+	/**
+	 * websocketのhandshake処理を行います。<br/>
+	 * handshakeに成功した場合、onWsOpenに通知されます。<br/>
+	 * @param subProtocol
+	 * @return　handshakeが成功した場合true
+	 */
+	public boolean doHandshake(String subProtocol){
 		HeaderParser requestHeader=getRequestHeader();
 		wsProtocol.setup(this);
 		isHandshaked=wsProtocol.onHandshake(requestHeader,subProtocol);
 		return isHandshaked;
 	}
 	
+	/**
+	 * データを受信したことを通知<br/>
+	 * overrideしない<br/>
+	 */
 	public void onReadPlain(Object userContext, ByteBuffer[] buffers) {
 		logger.debug("#read.cid:"+getChannelId());
 		if(!isWs){
@@ -156,7 +206,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	}
 	
 	/**
-	 * ioが失敗したことを通知。<br/>
+	 * ioが失敗したことを通知<br/>
 	 * overrideしない<br/>
 	 */
 	public void onFailure(Object userContext, Throwable t) {
@@ -168,7 +218,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	}
 
 	/**
-	 * read処理がタイムアウトしたことを通知。<br/>
+	 * read処理がタイムアウトしたことを通知<br/>
 	 * overrideしない<br/>
 	 */
 	public void onReadTimeout(Object userContext) {
