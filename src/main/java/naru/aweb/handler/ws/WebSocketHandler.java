@@ -15,11 +15,12 @@ import naru.aweb.util.HeaderParser;
 import org.apache.log4j.Logger;
 
 /**
- * WebSocketを受け付けた場合には、WebSocketプロトコルを処理
- * 層でない場合は、httpリクエストを処理できるようにするWebServerHandlerと同等の動作
+ * websocketに対してレスポンスするhandlerの基底クラス<br/>
+ * httpリクエストやproxyリクエストに対しては、WebServerHandlerとしても動作できる。<br/>
+ * このクラスを継承して、onWsOpen(websocketの開始),onWsClose(websocketの終了),onMessage(websocketからのデータ通知)
+ * を実装することにより、websocket対応のアプリケーションが作成できる。
  * 
  * @author Naru
- *
  */
 public abstract class WebSocketHandler extends WebServerHandler implements LogoutEvent{
 	private static Logger logger=Logger.getLogger(WebSocketHandler.class);
@@ -145,7 +146,6 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		return isHandshaked;
 	}
 	
-	
 	public void onReadPlain(Object userContext, ByteBuffer[] buffers) {
 		logger.debug("#read.cid:"+getChannelId());
 		if(!isWs){
@@ -155,6 +155,10 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		wsProtocol.onBuffer(buffers);
 	}
 	
+	/**
+	 * ioが失敗したことを通知。<br/>
+	 * overrideしない<br/>
+	 */
 	public void onFailure(Object userContext, Throwable t) {
 		logger.debug("#failer.cid:" +getChannelId() +":"+t.getMessage());
 		if(isWs){
@@ -163,6 +167,10 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		super.onFailure(userContext, t);
 	}
 
+	/**
+	 * read処理がタイムアウトしたことを通知。<br/>
+	 * overrideしない<br/>
+	 */
 	public void onReadTimeout(Object userContext) {
 		logger.debug("#readTimeout.cid:" +getChannelId());
 		if(isWs){
@@ -172,6 +180,10 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		}
 	}
 	
+	/**
+	 * ioがタイムアウトしたことを通知。<br/>
+	 * overrideしない<br/>
+	 */
 	public void onTimeout(Object userContext) {
 		logger.debug("#timeout.cid:" +getChannelId());
 		if(isWs){
@@ -179,12 +191,11 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		}
 		super.onTimeout(userContext);
 	}
-	
-	public void onClosed(Object userContext) {
-		logger.debug("#closed client.cid:"+getChannelId());
-		super.onClosed(userContext);
-	}
 
+	/**
+	 * 当該handlerで処置中に回線が回収された場合に通知されます。<br/>
+	 * overrideする場合は、元メソッドも呼び出してください。<br/>
+	 */
 	@Override
 	public void onFinished() {
 		logger.debug("#finished client.cid:"+getChannelId());
@@ -194,6 +205,10 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		super.onFinished();
 	}
 
+	/**
+	 * このオブジェクトを再利用する際に呼び出される。<br/>
+	 * overrideした場合は、必ず元メソッドも呼び出してください。
+	 */
 	@Override
 	public void recycle() {
 		isWs=false;
@@ -206,10 +221,16 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	}
 	
 	/*----asyncBuffer処理----*/
-	//posteMessageの送信完了を通知,overrideして使う
+	/**
+	 * posteMessageの送信完了を通知
+	 */
 	public void onPosted(){
 	}
 
+	/**
+	 * 書き込みが完了したことを通知。<br/>
+	 * overrideしない<br/>
+	 */
 	@Override
 	public void onWrittenPlain(Object userContext) {
 		if(wsProtocol!=null){

@@ -27,8 +27,8 @@ import naru.aweb.util.HeaderParser;
 import naru.aweb.util.ParameterParser;
 
 /**
- * リクエスト単位に作成されるhandlerの基底クラス<br/>
- * httpリクエストやproxyリクエストに対してプログラムからレスポンスを組み立てる場合に継承してアプリケーションクラスを作成してください。<br/>
+ * httpリクエストやproxyリクエストに対してレスポンスするhandlerの基底クラス<br/>
+ * httpリクエストやproxyリクエストに対してレスポンスしたい場合、継承してアプリケーションクラスを作成してください。<br/>
  * ServletアプリケーションのServletクラス相当ですが、handlerオブジェクトのスコープはrequestです。<br/>
  * リクエスト毎に作成され、使用完了後は再利用されます。再利用される際には、recycleメソッドが呼び出されます。<br/>
  * 終了処理が必要な場合は、recycleをoverrideして記述してください。<br/>
@@ -370,7 +370,6 @@ public class WebServerHandler extends ServerBaseHandler {
 
 	/**
 	 * コンテンツ長分レスポンスしたらfalseを復帰。
-	 * 
 	 * @return
 	 */
 	private boolean needMoreResponse() {
@@ -387,7 +386,6 @@ public class WebServerHandler extends ServerBaseHandler {
 
 	/**
 	 * レスポンスヘッダを確定してからじゃないとgzipは確定しない
-	 * 
 	 * @param isAllResponse
 	 *            全レスポンスがメモリ上にあるか否か
 	 */
@@ -899,7 +897,6 @@ public class WebServerHandler extends ServerBaseHandler {
 		}
 	}
 	
-	
 	/**
 	 * レスポンスボディを返却します。
 	 * @param buffer レスポンスボディ
@@ -1047,6 +1044,7 @@ public class WebServerHandler extends ServerBaseHandler {
 	 * 書き込みが完了したことを通知。<br/>
 	 * overrideしない<br/>
 	 */
+	@Override
 	public void onWrittenPlain(Object userContext) {
 		logger.debug("#onWrittenPlain cid:" + getChannelId()+":userContext:"+userContext);
 		if (userContext == WRITE_CONTEXT_BODY) {
