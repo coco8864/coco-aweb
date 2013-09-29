@@ -290,7 +290,11 @@ public abstract class ServerBaseHandler extends SslHandler {
 		return keepAliveContext;
 	}
 	
-	protected void setKeepAliveContext(KeepAliveContext keepAliveContext){
+	/**
+	 * アプリケーションは使用しない
+	 * @param keepAliveContext
+	 */
+	public void setKeepAliveContext(KeepAliveContext keepAliveContext){
 		setAttribute(ATTRIBUTE_KEEPALIVE_CONTEXT,keepAliveContext);
 	}
 	
