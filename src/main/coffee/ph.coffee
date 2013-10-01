@@ -251,14 +251,14 @@ class Ph extends Deferred
   sc=document.createElement('script')
   sc.type='text/javascript'
   sc.onload = ->
-    # document.boby.removeChild(sc)
+    sc.parentNode.removeChild(sc)
     if (index+1)<=(scriptUrls.length-1)
      ph.loadAndExecuteScripts(scriptUrls,index+1,callback)
     else
      if callback
       callback()
   sc.onerror = ->
-    # document.body.removeChild(sc)
+    sc.parentNode.removeChild(sc)
     if errorcb
      errorcb(sc.src)
   sc.src = ph.scriptUrl(scriptUrls[index])
