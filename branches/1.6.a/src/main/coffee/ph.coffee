@@ -1,5 +1,5 @@
 if window.ph
- return
+  return
 
 #-------------------EventModule-------------------
 class Deferred
@@ -52,8 +52,8 @@ class Deferred
   trigger: (args...) ->
     @_trigger.apply(@,args)
     @_triggerOne.apply(@,args)
-# 状態によってメソッドの呼び出す
-# @loading+funcが指定された場合は、load時にfuncを実行
+  # 状態によってメソッドの呼び出す
+  # @loading+funcが指定された場合は、load時にfuncを実行
   onLoad:(func,args...)->
     if @_stat=='@loading'
       if func
@@ -94,7 +94,7 @@ class Ph extends Deferred
  CB_INFO:'INFO'
  CB_ERROR:'ERROR'
  CB_MESSAGE:'MESSAGE'
-#request type
+ # request type
  TYPE_NEGOTIATE:'negotiate'
  TYPE_PUBLISH:'publish'
  TYPE_SUBSCRIBE:'subscribe'
@@ -103,13 +103,13 @@ class Ph extends Deferred
  TYPE_UNDEPLOY:'undeploy'
  TYPE_QNAMES:'qnames'
  TYPE_CLOSE:'close'
-#response type
+ # response type
  TYPE_RESPONSE:'response'
  TYPE_MESSAGE:'message'
  TYPE_DOWNLOAD:'download'
  RESULT_ERROR:'error'
  RESULT_SUCCESS:'success'
-#strage scope
+ # strage scope
  SCOPE_PAGE_PRIVATE:'pagePrivate'
  SCOPE_SESSION_PRIVATE:'sessionPrivate'
  SCOPE_APL_PRIVATE:'aplPrivate'
@@ -119,7 +119,7 @@ class Ph extends Deferred
  SCOPE_SUBNAME:'subname'
  SCOPE_USER:'user'
 
-#  _INTERVAL:1000
+ # _INTERVAL:1000
  _SEND_DATA_MAX:(1024*1024*2)
  _WS_RETRY_MAX:3
  _KEEP_MSG_BEFORE_SUBSCRIBE:true
@@ -186,12 +186,12 @@ class Ph extends Deferred
     utf8[++idx] = ((0xFF00 >>> j) & 0xFF) | (c >>> (6 * --j))
     while j--
      utf8[++idx] = 0x80 | ((c >>> (6 * j)) & 0x3F)
-#  return new Uint8Array(utf8).buffer
+  #  return new Uint8Array(utf8).buffer
   return new Uint8Array(utf8)
  debug:false ##debugメッセージを出力するか否か
  setDebug:(flag)->
   @debug=flag
-## sessionStorageが使用できる場合
+  ## sessionStorageが使用できる場合
   if typeof sessionStorage != "undefined"
     sessionStorage['ph.debug']=flag
  showDebug:false ##debug領域を表示するか否か
@@ -239,27 +239,41 @@ class Ph extends Deferred
    bases.pop()
    pathes.shift()
   return baseroot + bases.concat(pathes).join("/")
-#ph-jqnoconflict.jsでload時にph.onPhLoadが呼び出されるようにしている
+ scriptUrl:(script)->
+  if script.match(/^http/)
+   return script
+  if ph.isSsl
+   schme='https://'
+  else
+   schme='http://'
+  return "#{schme}#{ph.domain}/pub/js/#{script}"
+ loadAndExecuteScripts:(scriptUrls, index, callback,errorcb)->
+  sc=document.createElement('script')
+  sc.type='text/javascript'
+  sc.onload = ->
+    # document.boby.removeChild(sc)
+    if (index+1)<=(scriptUrls.length-1)
+     ph.loadAndExecuteScripts(scriptUrls,index+1,callback)
+    else
+     if callback
+      callback()
+  sc.onerror = ->
+    # document.body.removeChild(sc)
+    if errorcb
+     errorcb(sc.src)
+  sc.src = ph.scriptUrl(scriptUrls[index])
+  document.body.appendChild(sc)
+ # ph-jqnoconflict.jsでload時にph.onPhLoadが呼び出されるようにしている
  onPhLoad:->
   if !navigator.onLine
     ph.isOffline=true
     ph.load()
     return
-  ph.jQuery.ajax({
-   type: 'GET',
-   url: '/ph.json',
-   dataType:'json',
-   success: (json)->
-    for key,value of json
-     ph[key]=value
-    if ph.useWebSocket && !ph.websocketSpec
-     ph.useWebSocket=false
-    ph.isOffline=false
-    ph.load()
-   error: (xhr)->
+  phOnlineUrl=ph.scriptUrl('phOnline.js')
+  ph.loadAndExecuteScripts([phOnlineUrl],0,null,->
     ph.isOffline=true
     ph.load()
-  })
+   )
   ph.jQuery(window).on('message',(ev)->window.ph.trigger('message',ev))
   ph.jQuery(window).on('storage',(ev)->window.ph.trigger('storage',ev))
   ph.jQuery(window).unload((ev)->window.ph.trigger('unload',ev))
@@ -267,10 +281,13 @@ class Ph extends Deferred
 window.ph=new Ph()
 window.ph.Deferred=Deferred
 
-for script in ph.scripts
- document.write('<script type="text/javascript" src="');
- if !script.match(/^http/)
-  document.write('/pub/js/')
- document.write(script + '" charset="utf-8"')
- document.write('></' + 'script>')
+if document.readyState=='loading'
+ for script in ph.scripts
+  document.write('<script type="text/javascript" src="');
+  url=ph.scriptUrl(script)
+  document.write(url)
+  document.write('" charset="utf-8"')
+  document.write('></' + 'script>')
+else
+ ph.loadAndExecuteScripts(ph.scripts,0)
 

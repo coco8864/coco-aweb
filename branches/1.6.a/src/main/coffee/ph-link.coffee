@@ -1,5 +1,8 @@
-#-------------------Link-------------------
 class Link extends ph.Deferred
+ ###
+ *   pub/sub非同期通信
+ *   storage管理
+ ###
  constructor:(@param)->
   super
   @keyUrl=@param.keyUrl
@@ -180,6 +183,7 @@ class Link extends ph.Deferred
      cb(encText)
     )
  offlineAuth:()->
+  ### offlineで認証します。###
   @_requestToAplFrame({type:'offlineAuth'})
  offlineLogout:()->
   @_requestToAplFrame({type:'offlineLogout'})
