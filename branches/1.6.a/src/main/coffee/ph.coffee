@@ -281,7 +281,7 @@ class Ph extends Deferred
 window.ph=new Ph()
 window.ph.Deferred=Deferred
 
-if document.readyState=='loading'
+if document.readyState=='loading' || document.readyState=='interactive'
  for script in ph.scripts
   document.write('<script type="text/javascript" src="');
   url=ph.scriptUrl(script)
