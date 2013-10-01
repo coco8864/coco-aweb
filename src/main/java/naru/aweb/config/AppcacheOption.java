@@ -47,7 +47,7 @@ public class AppcacheOption {
 	private static final String DEFAULT_CACHE_FILE_PATTERN=".*\\.html$|.*\\.htm$|.*\\.css$|.*\\.js$|.*\\.jpg$|.*\\.png$|.*\\.gif$";
 	private static final String DEFAULT_MANIFEST_PATH="/~ph.appcache";
 	private static final String DEFAULT_CACHE_HTML_PATH="/~ph.vsp";
-	private static final String[] PH_JS_INCLUDE_JS={"jquery-1.8.3.min.js","ph-jqnoconflict.js","ph-json2.js","ph-link.js"};
+	private static final String[] PH_JS_INCLUDE_JS={"ph.js","jquery-1.8.3.min.js","ph-jqnoconflict.js","ph-json2.js","ph-link.js"};
 	private static final String[] PH_HTML_INCLUDE_JS={"jquery-1.8.3.min.js","ph-json2.js","aes.js","aplOffline.js"};
 	
 	private static Logger logger = Logger.getLogger(AppcacheOption.class);
