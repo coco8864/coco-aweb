@@ -1,8 +1,4 @@
 class Link extends ph.Deferred
- ###
- *   pub/sub非同期通信
- *   storage管理
- ###
  constructor:(@param)->
   super
   @keyUrl=@param.keyUrl
@@ -43,7 +39,7 @@ class Link extends ph.Deferred
    )
   @
  _connect:->
-#  alert('connect start2')
+  # alert('connect start2')
   @ppStorage=new PrivateSessionStorage(@)
   link=@
   @ppStorage.onUnload(->link._logout())
@@ -91,7 +87,7 @@ class Link extends ph.Deferred
    return
   if res.type=='showFrame'
    @_frame.css({'height':"#{res.height}px",'width':'500px','top':'100px','left':'50%','margin-top':'0px','margin-left':'-250px'})
-#   @_frame.focus()
+   # @_frame.focus()
    return
   if res.type=='hideFrame'
    @_frame.css({'height':'0px','width':'0px','top':'0%','left':'0%'})
@@ -103,25 +99,25 @@ class Link extends ph.Deferred
     @cause='fail to onlineAuth'
     @trigger('failToAuth',@)
     @unload()
-#   else if res.aplInfo.loginId #TODO:認証済みなら,最適化
-#    @aplInfo=res.aplInfo
-#    @authInfo=res.authInfo
-#    @trigger('onlineAuth',@)
-#    @trigger('auth',@)
-#    @_connect()
+   # else if res.aplInfo.loginId #TODO:認証済みなら,最適化
+   #  @aplInfo=res.aplInfo
+   #  @authInfo=res.authInfo
+   #  @trigger('onlineAuth',@)
+   #  @trigger('auth',@)
+   #  @_connect()
    else if res.aplInfo.isOffline==true && @param.useOffline=='never'
-## offlineなのにofflineは絶対使うな指定
+    # offlineなのにofflineは絶対使うな指定
     @isOffline=true
     @trigger('suspendAuth',@)
    else if @param.useOffline=='must' || res.aplInfo.isOffline==true
-## 必ずofflineを使う指定、もしくは実際にoffline
+    # 必ずofflineを使う指定、もしくは実際にoffline
     @isOffline=true
     @_requestToAplFrame({type:'offlineAuth'})
    else
-## online
+    # online
     @isOffline=false
-##isWsは、wsでチェックするかhttpでチェックするかだが、mappingに両者登録しないとlinkアプリは正しく動かない
-##あまり意味はない
+    # isWsは、wsでチェックするかhttpでチェックするかだが、mappingに両者登録しないとlinkアプリは正しく動かない
+    # あまり意味はない
     isWs=!(@param.useWs==false) && ph.useWebSocket
     @_requestToAplFrame({type:'onlineAuth',isWs:isWs,originUrl:location.href})
   if res.type=='onlineAuth'
@@ -129,8 +125,8 @@ class Link extends ph.Deferred
      location.href=res.location
      return
    else if res.result==true
-    ##jQuery UIでdialogをopenするとaplFrameがreloadされる。http://bugs.jqueryui.com/ticket/9166
-    ##その延長でonlineAuthが再度通知される動作に対応
+    # jQuery UIでdialogをopenするとaplFrameがreloadされる。http://bugs.jqueryui.com/ticket/9166
+    # その延長でonlineAuthが再度通知される動作に対応
     if @aplInfo
      return
     @isOffline=false
