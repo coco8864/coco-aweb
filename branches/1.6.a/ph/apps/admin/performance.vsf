@@ -201,21 +201,35 @@ perfProgress();
 ph.admin.perfSub.onMessage(perfCheckConnect);
 function perfCheckConnect(res){
   if(res.kind==='checkConnectProgress'){
-    outputCommonArea(res.connectCount+"\t"+res.time+"\t"+res.failCount+"\t"+res.useMemory+"\n",true);
+    outputCommonArea(res.connectCount+"\t"+res.postCount+"\t"+res.messageCount+"\t"+res.time+"\t"+res.failCount+"\t"+res.useMemory+"\n",true);
   }else if(res.kind==='checkConnectResult' && d.result==='fail'){
     alert('fail to checkConnect');
   }
 }
 
-function checkConnect(){
+function wsConnect(){
   var connectCount=ph.jQuery('#connectCount').val();
   if(connectCount){
-    ph.admin.perfSub.publish({kind:'checkConnect',count:parseInt(connectCount),maxFailCount:10});
-    outputCommonArea("count\ttime\tfailcount\tmemory\n")
+    ph.admin.perfSub.publish({kind:'wsConnect',count:parseInt(connectCount),maxFailCount:10});
+    outputCommonArea("count\tpostCount\tmessageCount\ttime\tfailcount\tmemory\n")
   }
   var dialog=jQuery("#commonOutputDialog");
   dialog.dialog("open");
 }
+
+function wsSend(){
+  var connectCount=ph.jQuery('#connectCount').val();
+  ph.admin.perfSub.publish({kind:'wsSend',count:parseInt(connectCount)});
+  var dialog=jQuery("#commonOutputDialog");
+  dialog.dialog("open");
+}
+function wsDisconnect(){
+  ph.admin.perfSub.publish({kind:'wsDisconnect'});
+  var dialog=jQuery("#commonOutputDialog");
+  dialog.dialog("open");
+}
+
+
 </script>
 
 <h1>Performance list</h1>
@@ -244,7 +258,9 @@ memory:<span id="stTestMemory"></span>%</div>
 <input type="button" value="csv" onClick="perfToCsv();"/>
 <input type="button" value="削除" onClick="if(confirm('stressデータを削除します.よろしいですか?'))perfDelete();"/>
 count:<input type="text" id="connectCount" size="8" />
-<input type="button" value="connect" onClick="checkConnect();" />
+<input type="button" value="wsCon" onClick="wsConnect();" />
+<input type="button" value="wsSend" onClick="wsSend();" />
+<input type="button" value="wsDis" onClick="wsDisconnect();" />
 <div style="margin: 0.4em 0.0em; padding: 0.0em 0.0em;background: #fff none; border: solid 0pt #000;">
 <table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
 <thead>
