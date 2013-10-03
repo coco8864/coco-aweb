@@ -128,7 +128,7 @@ public class Config {
 	private FilterHelper filterHelper;
 	private InjectionHelper injectionHelper;
 	private Configuration configuration = null;
-	private LinkManager paManager =null;
+	private LinkManager linkManager =null;
 	private Object stasticsObject;
 	private File tmpDir;
 	private DiskFileItemFactory uploadItemFactory;
@@ -496,7 +496,7 @@ public class Config {
 	private boolean isAleadyTerm = false;
 
 	public void term() {
-		paManager.undeploy(AdminLinklet.QNAME);
+		linkManager.undeploy(AdminLinklet.QNAME);
 		if (isAleadyTerm) {
 			return;
 		}
@@ -764,15 +764,15 @@ public class Config {
 		
 		//adminハンドラーの設定
 		//TODO 動的に設定できるようにする
-		paManager = LinkManager.getInstance("/admin");
+		linkManager = LinkManager.getInstance("/admin");
 		JSONObject subscribers=JSONObject.fromObject(
 				"{accessLog:'naru.aweb.admin.AccessLogLinklet'," +
 				"chat:'naru.aweb.admin.ChatLinklet'," +
 				"perf:'naru.aweb.admin.PerfLinklet'" +
 				"}");
-		paManager.deploy(AdminLinklet.QNAME, "naru.aweb.admin.AdminLinklet",subscribers);
-		paManager.setNextHandler(Mapping.ADMIN_HANDLER);
-		broadcaster=new Broadcaster(this,paManager);//統計情報監視の開始
+		linkManager.deploy(AdminLinklet.QNAME, "naru.aweb.admin.AdminLinklet",subscribers);
+		linkManager.setNextHandler(Mapping.ADMIN_HANDLER);
+		broadcaster=new Broadcaster(this,linkManager);//統計情報監視の開始
 	}
 	
 	private Broadcaster broadcaster;
@@ -1268,8 +1268,8 @@ public class Config {
 		return spdyConfig;
 	}
 	
-	public LinkManager getAdminPaManager(){
-		return paManager;
+	public LinkManager getAdminLinkManager(){
+		return linkManager;
 	}
 	
 	private VelocityEngine velocityEngine = null;
