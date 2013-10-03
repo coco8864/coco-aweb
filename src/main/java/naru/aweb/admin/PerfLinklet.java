@@ -56,10 +56,6 @@ public class PerfLinklet implements Linklet,Event {
 
 	@Override
 	public void onPublish(LinkPeer peer, LinkMsg parameter) {
-//		JSONObject parameter=null;
-//		if(data instanceof JSONObject){
-//			parameter=(JSONObject)data;
-//		}
 		if(!peer.isLinkSession()){
 			if( parameter.getBoolean("isComplete")==true){
 				if(scenario!=null){
@@ -71,15 +67,20 @@ public class PerfLinklet implements Linklet,Event {
 			return;
 		}
 		String kind=parameter.getString("kind");
-		if("checkConnect".equals(kind)){
+		if("wsConnect".equals(kind)){
 			Integer count=parameter.getInt("count");
 			Integer maxFailCount=parameter.getInt("maxFailCount");
-			LinkPeer publishPeer=LinkPeer.create(config.getAdminPaManager(), null,peer.getQname(),peer.getSubname());
+			LinkPeer publishPeer=LinkPeer.create(config.getAdminLinkManager(), null,peer.getQname(),peer.getSubname());
 			if( ConnectChecker.start(count, maxFailCount, 0,publishPeer)==false ){
 				parameter.put("kind","checkConnectResult");
 				parameter.put("result","fail");
 				peer.message(parameter);
 			}
+		}else if("wsSend".equals(kind)){
+			Integer count=parameter.getInt("count");
+			ConnectChecker.sendTest(count);
+		}else if("wsDisconnect".equals(kind)){
+			ConnectChecker.end();
 		}else if("checkServer".equals(kind)){
 			try {
 				String url=parameter.getString("url");
@@ -105,7 +106,6 @@ public class PerfLinklet implements Linklet,Event {
 		}else if("stress".equals(kind)){
 			String list=parameter.getString("list");
 			AccessLog[] accessLogs=listToAccessLogs(list);
-//			Set<Long> accessLogIds=new HashSet<Long>();
 			String name=parameter.getString("name");
 			String browserCount=parameter.getString("browserCount");
 			String call=parameter.getString("loopCount");
@@ -124,7 +124,7 @@ public class PerfLinklet implements Linklet,Event {
 				peer.message(parameter);
 				return;
 			}
-			LinkPeer publishPeer=LinkPeer.create(config.getAdminPaManager(), null,peer.getQname(),peer.getSubname());
+			LinkPeer publishPeer=LinkPeer.create(config.getAdminLinkManager(), null,peer.getQname(),peer.getSubname());
 			if(!doStress(accessLogs,name,
 						Integer.parseInt(browserCount),
 						Integer.parseInt(call),
@@ -181,7 +181,7 @@ public class PerfLinklet implements Linklet,Event {
 	}
 	
 	private boolean doStressFile(AccessLog[] accessLogs,JSONArray stressJson){
-		LinkPeer publishPeer=LinkPeer.create(config.getAdminPaManager(), null,stressFilePeer.getQname(),stressFilePeer.getSubname());
+		LinkPeer publishPeer=LinkPeer.create(config.getAdminLinkManager(), null,stressFilePeer.getQname(),stressFilePeer.getSubname());
 		stressFilePeer.unref();
 		stressFilePeer=null;
 		Scenario scenario=Scenario.run(accessLogs, stressJson,publishPeer);

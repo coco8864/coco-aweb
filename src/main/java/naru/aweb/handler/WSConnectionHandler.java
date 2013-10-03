@@ -1,6 +1,5 @@
 package naru.aweb.handler;
 
-import naru.async.AsyncBuffer;
 import naru.async.cache.CacheBuffer;
 import naru.async.pool.PoolBase;
 import naru.aweb.config.Config;
@@ -63,5 +62,4 @@ public class WSConnectionHandler extends WebSocketHandler {
 		logger.debug("#wsOpen cid:"+getChannelId());
 		postMessage("OK");
 	}
-
 }
