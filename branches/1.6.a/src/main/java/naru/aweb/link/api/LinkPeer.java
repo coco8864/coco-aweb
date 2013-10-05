@@ -12,9 +12,10 @@ import naru.aweb.link.LinkletWrapper;
 import net.sf.json.JSONObject;
 
 /*
- * PaPeerは、PaSessionとPaletWrapperに同一のものが保持されるようにする
- * 外れる場合には、同時にreleaseすると共にメンバpaSessionをnullにする
- * !!要チェック!!
+ * linkletから端末を特定するオブジェクト<br/>
+ * セション情報+qname+subnameで構成される<br/>
+ * セション情報は、ログイン情報+ブラウザ情報+Path情報で構成される<br/>
+ * ブラウザ情報は、
  */
 public class LinkPeer extends PoolBase{
 	public static LinkPeer create(LinkManager linkManager,LinkSession linkSession,String qname,String subname){
@@ -35,7 +36,7 @@ public class LinkPeer extends PoolBase{
 	private LinkSession linkSession;
 	private long linkSessionId;
 	private String qname;//queue名
-	private String subname;//クライアントid(認証idが同じでもブラウザの違い等により、clientは別のpeerで接続できる)
+	private String subname;//subname
 	
 	public void releaseSession(){
 		linkSession=null;
@@ -150,7 +151,6 @@ public class LinkPeer extends PoolBase{
 		}
 	}
 	
-	
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -165,8 +165,6 @@ public class LinkPeer extends PoolBase{
 	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
-//		if (!super.equals(obj))
-//			return false;
 		if (getClass() != obj.getClass())
 			return false;
 		LinkPeer other = (LinkPeer) obj;

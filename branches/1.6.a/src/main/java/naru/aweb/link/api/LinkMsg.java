@@ -10,6 +10,14 @@ import java.util.Set;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 
+/**
+ * 送受信用のメッセージオブジェクト<br/>
+ * JSONObjectと同様Map形式でデータを保持する<br/>
+ * Blob、Dateオブジェクトをvalueに含めることができる<br/>
+ * これらを含まない場合は、JSONObjectで送受信データとして利用できる<br/>
+ * @author naru
+ *
+ */
 public class LinkMsg extends PoolBase implements Map{
 	private Map root;
 	
