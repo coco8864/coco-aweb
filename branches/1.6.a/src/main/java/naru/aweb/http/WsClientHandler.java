@@ -56,15 +56,15 @@ public class WsClientHandler extends SslHandler implements Timer {
 	}
 	/**
 	 * webClientConnectionのライフサイクルは、作成されるWsClientHandlerと一致する
-	 * @param isHttps
+	 * @param isSsl
 	 * @param targetServer
 	 * @param targetPort
 	 * @return
 	 */
-	public static WsClientHandler create(boolean isHttps, String targetServer,int targetPort){
+	public static WsClientHandler create(boolean isSsl, String targetServer,int targetPort){
 		WsClientHandler wsClientHandler=(WsClientHandler)PoolManager.getInstance(WsClientHandler.class);
 		wsClientHandler.webClientConnection=(WebClientConnection)PoolManager.getInstance(WebClientConnection.class);
-		wsClientHandler.webClientConnection.init(isHttps, targetServer, targetPort,true);
+		wsClientHandler.webClientConnection.init(isSsl, targetServer, targetPort,true);
 		return wsClientHandler;
 	}
 	
@@ -377,7 +377,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 //		
 //	}
 	
-	private ByteBuffer[] crateWsRequestHeader(WebClientConnection webClientConnection,String uri,String subProtocols,String Origin){
+	private ByteBuffer[] crateWsRequestHeader(WebClientConnection webClientConnection,String uri,String subProtocols,String origin){
 		HeaderParser header=(HeaderParser)PoolManager.getInstance(HeaderParser.class);
 		header.setMethod(HeaderParser.GET_METHOD);
 		header.setRequestUri(uri);
@@ -386,7 +386,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 				webClientConnection.getTargetServer()+":"+webClientConnection.getTargetPort());
 		header.setHeader("Upgrade", "websocket");
 		header.setHeader(HeaderParser.CONNECTION_HEADER, "Upgrade");
-		header.setHeader("Origin", Origin);
+		header.setHeader("Origin", origin);
 		if(subProtocols!=null){
 			header.setHeader("Sec-WebSocket-Protocol", subProtocols);
 		}
@@ -404,7 +404,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 		return headerBuffer;
 	}
 
-	public final boolean startRequest(WsClient wsClient,Object userContext,long connectTimeout,String uri,String subProtocols,String Origin) {
+	public final boolean startRequest(WsClient wsClient,Object userContext,long connectTimeout,String uri,String subProtocols,String origin) {
 		synchronized (this) {
 			if (this.wsClient != null) {
 				throw new IllegalStateException("aleardy had wsClient:"+this.wsClient);
@@ -412,7 +412,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 			setWsClient(wsClient);
 			this.userContext=userContext;
 		}
-		this.requestHeaderBuffer = crateWsRequestHeader(webClientConnection, uri, subProtocols, Origin);
+		this.requestHeaderBuffer = crateWsRequestHeader(webClientConnection, uri, subProtocols, origin);
 		Throwable error;
 		if(stat==STAT_INIT){
 			synchronized (this) {

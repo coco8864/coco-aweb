@@ -242,7 +242,9 @@ ph.link=(aplUrl,useOffline,useConnection,useWs)->
    useOffline='can'
   if useConnection!=false
    useConnection=true
-  param={aplUrl:aplUrl,useOffline:useOffline,useConnection:useConnection,useWs:useWs}
+  if useWs!=false
+   useWs=true
+ param={aplUrl:aplUrl,useOffline:useOffline,useConnection:useConnection,useWs:useWs}
  aplUrl.match(URL_PTN)
  protocol=RegExp.$1
  aplDomain=RegExp.$2
@@ -257,7 +259,6 @@ ph.link=(aplUrl,useOffline,useConnection,useWs)->
   else
    keyUrl="http://#{ph.domain}#{aplPath}"
  else #http or https
-  param.useWs=false
   keyUrl=aplUrl
  link=ph._links[keyUrl]
  if link
@@ -270,6 +271,7 @@ ph.link=(aplUrl,useOffline,useConnection,useWs)->
    delete ph._links[keyUrl]
   )
  return link
+ph.trigger('link',ph)
 
 #strage scope
 #  SCOPE_PAGE_PRIVATE:'pagePrivate' ...そのページだけ、reloadを挟んで情報を維持するため
