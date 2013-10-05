@@ -10,10 +10,12 @@ import naru.async.Timer;
 import naru.async.cache.CacheBuffer;
 import naru.async.timer.TimerManager;
 import naru.aweb.config.Config;
+import naru.aweb.handler.ws.WsHybiFrame;
 import naru.aweb.http.WsClient;
 import naru.aweb.http.WsClientHandler;
 import naru.aweb.link.api.LinkPeer;
 import naru.aweb.util.HeaderParser;
+import naru.aweb.util.ServerParser;
 import net.sf.json.JSONObject;
 
 /* そのサーバでいくつconnectionが張れるかをチェックする */
@@ -39,11 +41,12 @@ public class ConnectChecker implements Timer,WsClient{
 	private int count;
 	private int maxFailCount;
 	private Stat stat=Stat.READY;
+	private boolean stopForce=false;
 	private long timerId;
 	private long startTime;
 	
-	public static boolean start(int count,int maxFailCount,long timeout,LinkPeer peer){
-		if( instance.init(count, maxFailCount,peer)==false ){
+	public static boolean start(String url,String subprotocol,String origin,int count,int maxFailCount,long timeout,LinkPeer peer){
+		if( instance.init(url,subprotocol,origin,count, maxFailCount,peer)==false ){
 			return false;
 		}
 		instance.run(timeout);
@@ -54,15 +57,56 @@ public class ConnectChecker implements Timer,WsClient{
 		instance.send(count);
 	}
 	
-	public static void end(){
-		instance.stop();
+	public static void end(boolean force){
+		instance.stop(force);
 	}
 	
-	private synchronized boolean init(int count,int maxFailCount,LinkPeer peer){
+	private boolean isSsl=false;
+	private String server=config.getSelfDomain();
+	private int port=config.getInt(Config.SELF_PORT);
+	private String uri="/connect";
+	private String subprotocol="connect";
+	private String origin=config.getAdminUrl();
+	
+	private synchronized boolean init(String url,String subprotocol,String origin,int count,int maxFailCount,LinkPeer peer){
 		if(stat!=Stat.READY){
 			logger.error("aleady start."+stat);
 			return false;
 		}
+		if(url==null||"".equals(url)){
+			this.isSsl=false;
+			this.server=config.getSelfDomain();
+			this.port=config.getInt(Config.SELF_PORT);
+			this.uri="/connect";
+		}else{
+			StringBuilder schemeSb=new StringBuilder();
+			StringBuilder pathSb=new StringBuilder();
+			ServerParser server=ServerParser.parseUrl(url, schemeSb, pathSb);
+			this.server=server.getHost();
+			this.port=server.getPort();
+			server.unref(true);
+			String scheme=schemeSb.toString();
+			if(scheme.equals("wss")){
+				this.isSsl=true;
+			}else if(scheme.equals("ws")){
+				this.isSsl=false;
+			}else{
+				logger.error("unkown protocol."+schemeSb);
+				return false;
+			}
+			this.uri=pathSb.toString();
+		}
+		if(subprotocol==null||"".equals(subprotocol)){
+			this.subprotocol="connect";
+		}else{
+			this.subprotocol=subprotocol;
+		}
+		if(origin==null||"".equals(origin)){
+			this.origin=config.getAdminUrl();
+		}else{
+			this.origin=origin;
+		}
+		
 		if(this.peer!=null){
 			this.peer.unref();
 		}
@@ -109,16 +153,21 @@ public class ConnectChecker implements Timer,WsClient{
 			publish(size,false);
 		}
 		if(size>=count){
-//			if(timerId==TimerManager.INVALID_ID){
-//				stop();
-//			}else{
-				stat=Stat.KEEP;
-//			}
+			stat=Stat.KEEP;
 			return;
 		}
-		WsClientHandler wsClientHandler=WsClientHandler.create(false,config.getSelfDomain(),config.getInt(Config.SELF_PORT));
+		/*
+		boolean isSsl=false;
+		String server=config.getSelfDomain();
+		int port=config.getInt(Config.SELF_PORT);
+		String uri="/connect";
+		String subprotocol="connect";
+		String origin=config.getAdminUrl();
+		*/
+		
+		WsClientHandler wsClientHandler=WsClientHandler.create(isSsl,server,port);
 		wsClientHandler.ref();
-		wsClientHandler.startRequest(this, wsClientHandler, 10000, "/connect","connect",config.getAdminUrl());
+		wsClientHandler.startRequest(this, wsClientHandler, 10000, uri,subprotocol,origin);
 		clients.add(wsClientHandler);
 	}
 	
@@ -130,7 +179,7 @@ public class ConnectChecker implements Timer,WsClient{
 			failCount++;
 			if(failCount>=maxFailCount){
 				publish(size,false);
-				stop();
+				stop(true);
 				return;
 			}
 		}
@@ -151,7 +200,11 @@ public class ConnectChecker implements Timer,WsClient{
 		Iterator<WsClientHandler> itr=clients.iterator();
 		if(itr.hasNext()){
 			WsClientHandler client=itr.next();
-			client.postMessage("doClose");
+			if(stopForce){
+				client.doClose(WsHybiFrame.CLOSE_NORMAL,"OK");
+			}else{
+				client.postMessage("doClose");
+			}
 		}else{//clientsが空
 			stat=Stat.READY;
 			publish(0,true);
@@ -190,7 +243,7 @@ public class ConnectChecker implements Timer,WsClient{
 		publish(clients.size(),false);
 	}
 	
-	private synchronized void stop(){
+	private synchronized void stop(boolean force){
 		if(stat==Stat.DEC || stat==Stat.READY){
 			logger.warn("aleady stoped");
 			return;
@@ -199,6 +252,7 @@ public class ConnectChecker implements Timer,WsClient{
 		startTime=System.currentTimeMillis();
 		publish(clients.size(),false);
 		stat=Stat.DEC;
+		stopForce=force;
 		sendStop();
 	}
 	
@@ -225,7 +279,7 @@ public class ConnectChecker implements Timer,WsClient{
 			curCount=clients.size();
 		}
 		publish(curCount,false);
-		stop();
+		stop(false);
 	}
 
 	@Override
@@ -251,8 +305,11 @@ public class ConnectChecker implements Timer,WsClient{
 
 	@Override
 	public void onWcMessage(Object userContext, String message) {
-		if("OK".equals(message)){
+		if(stat==Stat.INC){
+		//if("OK".equals(message)){
 			addWsClient();
+			return;
+		}else if(stat!=Stat.KEEP){
 			return;
 		}
 		boolean isLast=false;

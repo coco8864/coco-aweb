@@ -70,8 +70,11 @@ public class PerfLinklet implements Linklet,Event {
 		if("wsConnect".equals(kind)){
 			Integer count=parameter.getInt("count");
 			Integer maxFailCount=parameter.getInt("maxFailCount");
+			String url=parameter.getString("url");
+			String subprotocol=parameter.getString("subprotocol");
+			String origin=parameter.getString("origin");
 			LinkPeer publishPeer=LinkPeer.create(config.getAdminLinkManager(), null,peer.getQname(),peer.getSubname());
-			if( ConnectChecker.start(count, maxFailCount, 0,publishPeer)==false ){
+			if( ConnectChecker.start(url,subprotocol,origin,count, maxFailCount, 0,publishPeer)==false ){
 				parameter.put("kind","checkConnectResult");
 				parameter.put("result","fail");
 				peer.message(parameter);
@@ -80,7 +83,8 @@ public class PerfLinklet implements Linklet,Event {
 			Integer count=parameter.getInt("count");
 			ConnectChecker.sendTest(count);
 		}else if("wsDisconnect".equals(kind)){
-			ConnectChecker.end();
+			Boolean force=parameter.getBoolean("force");
+			ConnectChecker.end(force);
 		}else if("checkServer".equals(kind)){
 			try {
 				String url=parameter.getString("url");
