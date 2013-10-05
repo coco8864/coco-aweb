@@ -200,6 +200,10 @@ public class User {
 	@Persistent
 	@Column(name="PASS_HASH")
 	private String passHash;
+
+	@Persistent
+	@Column(name="PASS_HASH_HISTORY")
+	private String passHashHistory;
 	
 	/**
 	 * digest”FØ‚ğs‚¤‰Â”\«‚ª‚ ‚é‚È‚çİ’è
@@ -211,6 +215,10 @@ public class User {
 	@Persistent
 	@Column(name="OFFLINE_PASS_HASH")
 	private String offlinePassHash;
+	
+	@Persistent
+	@Column(name="OFFLINE_PASS_HASH_HISTORY")
+	private String offlinePassHashHistory;
 	
 	@Persistent
 	@Column(name="CREATE_DATE")
