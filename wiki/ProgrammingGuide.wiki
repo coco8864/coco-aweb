@@ -1,21 +1,24 @@
-#summary WebSocketsアプリケーションフレームワーク
+
+
+#summary アプリケーションフレームワーク
 
 = プログラミングガイド =
 
-!WebSocketsアプリケーションフレームワーク wsq
+html5アプリケーションフレームワーク link
 
  # アプリケーションモデル
+   linkは、メッセージ通信とstorageサービスから構成される。
    アプリケーションを、１つのurlで構築、複数のqueueを配備する。publishメソッドでブラウザの情報queueに通知し、subscribeメソッドでqueueからの通知情報をブラウザで受け取る。
   特徴
    * シンプルなAPI
-   * !WebSocketsの特徴を生かした、リアルタイムな通信
-   * Phantom Proxyの認証機能（roleベース）を利用
-   * blobデータの送受信に対応、ドラッグアンドドロップ等よるバイナリデータが扱えます
-   * !WebSocketsが利用できないブラウザでは、XHRにて動作、機能をシミュレート
-   * クロスドメインで利用可能、ドメイン制限も可能
+   * Phantom Serverの認証機能（roleベース）を利用
+   * !WebSocketsの利用回避にかかわらずリアルタイムな通信を実現
    * bookmarkletから利用可能
+   * offline時にはoffline認証を行いブラウザ内に保存したデータを参照
+   * ブラウザに保持するデータは暗号化されており、offline認証で参照可能となる
+
  # clientAPI
-  ブラウザからは、javascriptインタフェースを使ってwsqにアクセスする。
+  ブラウザからは、javascriptインタフェースを使ってlinkアプリケーションにアクセスする。
   * 接続メソッド
    * ph.wsq.open(url,openCb,eventCb)
     認証およびアプリケーションへの接続を行います
@@ -48,7 +51,7 @@
      接続を解除します
  # ServerAPI
   現状javaインタフェースだが、javascriptインタフェースを用意したい
-  naru.aweb.wsq.Wsqletインタフェースを実装
+  naru.aweb.link.api.Linkletインタフェースを実装
   * naru.aweb.wsq.Wsqletクラス
   * naru.aweb.wsq.!WsqCtxクラス
   * naru.aweb.wsq.Peerクラス
