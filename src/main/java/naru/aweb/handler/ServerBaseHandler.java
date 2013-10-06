@@ -65,27 +65,33 @@ public abstract class ServerBaseHandler extends SslHandler {
 		KEEP_ALIVE,
 		/**
 		 * SessionStorageスコープ<br/>
-		 * 同一sessionでもブラウザが異なると別のスコープとなる。Linkの機能として提供。
+		 * 同一sessionでもブラウザが異なると別のスコープとなる。Linkの機能として提供。<br/>
 		 */
 		BROWSER,/* リクエストすべてにbidを振る必要がある、linkの機能として提供、awebの機能としては提供しない */
 		/**
 		 * sessionスコープ<br/>
-		 * ログイン、単一アプリ単位の範囲
+		 * ログイン、単一アプリ単位の範囲<br/>
 		 */
 		SESSION,
 		/**
 		 * authSessionスコープ<br/>
-		 * ログイン、複数アプリ単位の範囲
+		 * ログイン、複数アプリ単位の範囲<br/>
 		 */
 		AUTH_SESSION,
 		/**
 		 * mappingスコープ<br/>
-		 * mapping定義の範囲、servletアプリケーションとしては、applicationスコープ相当
+		 * mapping定義の範囲<br/>
 		 */
 		MAPPING,/* mapping定義単位つまり、applicationスコープ */
 		/**
+		 * applicationスコープ<br/>
+		 * アプリケーションとして意味のある複数のmapping定義の範囲、servletアプリケーションとしては、applicationスコープ相当<br/>
+		 * 未実装<br/>
+		 */
+		APPLICATION,
+		/**
 		 * configスコープ<br/>
-		 * phantom server範囲
+		 * phantom server範囲　設定情報等<br/>
 		 */
 		CONFIG
 	}

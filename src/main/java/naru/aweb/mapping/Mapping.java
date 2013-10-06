@@ -50,6 +50,9 @@ import net.sf.json.util.NewBeanInstanceStrategy;
 import org.apache.log4j.Logger;
 
 /**
+ * リクエストと出力コンポーネントのマッピングを表現するオブジェクト<br/>
+ * Phantom Server Consoleのmappingタブで設定されてるmapping情報が参照できる<br />
+ * 
  * @author naru
  */
 @PersistenceCapable(identityType = IdentityType.APPLICATION,table="MAPPING",detachable="true")
@@ -76,13 +79,6 @@ public class Mapping{
 	public static final String OPTION_REPLAY="replay";
 	public static final String OPTION_FILTER="filter";
 	public static final String OPTION_REPLAY_DOCROOT="replayDocroot";
-	/*
-	public static final String OPTION_USE_APPCACHE="useAppcache";
-	public static final String OPTION_APPCACHE_HTML_PATH="appcacheHtml";
-	public static final String OPTION_APPCACHE_MANIFEST_PATH="appcacheManifest";
-	public static final String OPTION_APPCACHE_PATTERN = "appcachePattern";
-	public static final String OPTION_APPCACHE_PATHS = "appcachePaths";
-	*/
 	public static final String OPTION_APPCACHE = "appcache";
 	
 	public static Class ADMIN_HANDLER=AdminHandler.class;
@@ -201,7 +197,6 @@ public class Mapping{
 			result.add(mapping.toJson());
 		}
 		return result;
-//		return JSONSerializer.toJSON(mappings,jsonConfig);
 	}
 	
 	private Config config=Config.getConfig();
@@ -341,52 +336,108 @@ public class Mapping{
 	public Mapping(){
 	}
 	
-	/*
-	public Mapping(boolean isEnabled,String notes,
-			SourceType sourceType,SecureType secureType,String sourceServer,String sourcePath,
-			DestinationType destinationType,String destinationServer,String destinationPath,
-			String options){
-		setEnabled(isEnabled);
-		setNotes(notes);
-		setSourceType(sourceType);
-		setSecureType(secureType);
-		setSourceServer(sourceServer);
-		setSourcePath(sourcePath);
-		setDestinationType(destinationType);
-		setDestinationServer(destinationServer);
-		setDestinationPath(destinationPath);
-		setOptions(options);
-		setup();
-	}
-	*/
-	
+	/**
+	 * ログの出力タイプを表す列挙
+	 * @author naru
+	 *
+	 */
 	public enum LogType {
+		/**
+		 * ログを記録しない
+		 */
 		NONE,
+		/**
+		 * アクセスログだけを記録する
+		 */
 		ACCESS,
+		/**
+		 * アクセスログとrequestトレースを記録する
+		 */
 		REQUEST_TRACE,
+		/**
+		 * アクセスログとresponseトレースを記録する
+		 */
 		RESPONSE_TRACE,
+		/**
+		 * アクセスログとrequest/responseトレースを記録する
+		 */
 		TRACE
 	}
 	
+	/**
+	 * リクエスト元タイプ（ブラウザがphantom serverを何サーバだと判断したのか）を表す列挙
+	 * @author naru
+	 *
+	 */
 	public enum SourceType {
+		/**
+		 * webサーバ
+		 */
 		WEB,
+		/**
+		 * proxyサーバ
+		 */
 		PROXY,
+		/**
+		 * websocketサーバ
+		 */
 		WS,
+		/**
+		 * websocket proxyサーバ
+		 */
 		WS_PROXY
 	}
 	
+	/**
+	 * SSL暗号化の有無を表す列挙型
+	 * @author naru
+	 *
+	 */
 	public enum SecureType {
+		/**
+		 * 非SSL通信
+		 */
 		PLAIN,
+		/**
+		 * SSL通信
+		 */
 		SSL
 	}
 	
+	/**
+	 * レスポンスタイプを表す列挙
+	 * @author naru
+	 *
+	 */
 	public enum DestinationType {
+		/**
+		 * http webサーバからレスポンス
+		 */
 		HTTP,
+		/**
+		 * https webサーバからレスポンス
+		 */
 		HTTPS,
+		/**
+		 * https webサーバからレスポンス（phantomは普通のSSL proxyとして動作）
+		 */
 		SSLPROXY,//WebSocket proxyも含む、内容をケアしないproxy
+		/**
+		 * ファイルからレスポンス。(普通のwebサーバとして動作）
+		 */
 		FILE,
+		/**
+		 * ハンドラーからレスポンス。<br/>
+		 * WebSocketHandlerもしくはWebSocketHandlerを継承したクラスをdestinationServerに指定<br />
+		 */
 		HANDLER,//WebSocketの場合は必ずHandlerが必要
+		/**
+		 * ws websocketサーバからレスポンス
+		 */
 		WS,
+		/**
+		 * wss websocketサーバからレスポンス
+		 */
 		WSS
 	}
 	
