@@ -15,15 +15,15 @@
    offline時にも、ブラウザスコープのstorageは、利用可能です。
    特徴
    * シンプルなAPI
-   * Phantom Serverの認証機能（roleベース）を利用
+   * Phantom Serverの多様な認証機能（roleベース）を利用
    * !WebSocketsの利用可否にかかわらずリアルタイムな通信を実現
    * bookmarkletから利用可能
-   * offline時にはoffline認証を行いブラウザ側でけで動作可能
+   * offline時でもブラウザにスコープを持つstorageは利用可能
    * ブラウザに保持するデータは暗号化されており、offline認証で参照可能となる
  # clientAPI
-  ブラウザからは、javascriptインタフェースを使ってlinkアプリケーションにアクセスする。
+  ブラウザからは、javascriptインタフェースを使ってlinkアプリケーションにアクセスする。殆どのインタフェースは非同期化されており、復帰情報はオブジェクトに対するonメソッドで登録するメソッドで受け取る事になる。
   * 接続メソッド
-   * ph.wsq.open(url,openCb,eventCb)
+   * ph.link(url,openCb,eventCb)
     認証およびアプリケーションへの接続を行います
     * url:'/path';
     'http(s)://host:port/path'
