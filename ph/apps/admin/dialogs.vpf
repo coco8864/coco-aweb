@@ -222,10 +222,10 @@ accessLog list:<span id="stressAccessLogList"></span><br/>
 file指定:<input id="isStressFile" type="checkBox" onclick="updateStressDialog();">
 <hr/>
 <div class="stressItem">
-test name:<input id="stressName" type="text"><br/>
-browser count:<input id="stressBrowserCount" type="text"><br/>
-loop count:<input id="loopCount" type="text"><br/>
-thinking time:<input id="thinkingTime" type="text"><br/>
+test name:<input id="stressName" type="text" value="test"><br/>
+browser count:<input id="stressBrowserCount" type="text" value="100"><br/>
+loop count:<input id="loopCount" type="text" value="1000"><br/>
+thinking time:<input id="thinkingTime" type="text" value="0"><br/>
 <!--time(s):<input id="stressTime" type="text"><br/> -->
 keepAlive:<input id="stressKeepAlive" type="checkBox"><br/>
 accessLog:<input id="stressAccessLog" type="checkBox" onclick="updateStressDialog();" >
