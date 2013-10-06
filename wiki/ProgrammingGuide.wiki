@@ -1,22 +1,19 @@
-
-
 #summary アプリケーションフレームワーク
 
 = プログラミングガイド =
 
-html5アプリケーションフレームワーク link
+html5アプリケーションフレームワーク phantom link
 
  # アプリケーションモデル
-   linkは、メッセージ通信とstorageサービスから構成される。
+   linkは、publish/subscribe方式のメッセージ通信と各種スコープを持つstorageサービスから構成される。
    アプリケーションを、１つのurlで構築、複数のqueueを配備する。publishメソッドでブラウザの情報queueに通知し、subscribeメソッドでqueueからの通知情報をブラウザで受け取る。
-  特徴
+   特徴
    * シンプルなAPI
    * Phantom Serverの認証機能（roleベース）を利用
-   * !WebSocketsの利用回避にかかわらずリアルタイムな通信を実現
+   * !WebSocketsの利用可否にかかわらずリアルタイムな通信を実現
    * bookmarkletから利用可能
-   * offline時にはoffline認証を行いブラウザ内に保存したデータを参照
+   * offline時にはoffline認証を行いブラウザ側でけで動作可能
    * ブラウザに保持するデータは暗号化されており、offline認証で参照可能となる
-
  # clientAPI
   ブラウザからは、javascriptインタフェースを使ってlinkアプリケーションにアクセスする。
   * 接続メソッド
