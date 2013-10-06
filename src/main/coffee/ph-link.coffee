@@ -287,16 +287,16 @@ class PrivateSessionStorage extends ph.Deferred
  constructor:(@link)->
   super
   aplInfo=@link.aplInfo
-  @_paPss="_paPss:#{@link.keyUrl}:#{aplInfo.loginId}:#{aplInfo.appSid}"
+  @_linkPss="_linkPss:#{@link.keyUrl}:#{aplInfo.loginId}:#{aplInfo.appSid}"
   ##不要なsessionStorageの刈り取り
-  sameLoginIdKey="_paPss:#{@link.keyUrl}:"
+  sameLoginIdKey="_linkPss:#{@link.keyUrl}:"
   i=sessionStorage.length
   while (i-=1) >=0
    key=sessionStorage.key(i)
-   if key.lastIndexOf(sameLoginIdKey,0)==0 && key!=@_paPss
+   if key.lastIndexOf(sameLoginIdKey,0)==0 && key!=@_linkPss
     sessionStorage.removeItem(key)
   s=@
-  @link._storDecrypt(sessionStorage,@_paPss,(decText)->
+  @link._storDecrypt(sessionStorage,@_linkPss,(decText)->
     if decText
      s.data=ph.JSON.parse(decText)
     else
@@ -329,6 +329,36 @@ class PrivateSessionStorage extends ph.Deferred
  _unload:=>
   ph.off('unload',@_unload)
   if @encText
-   sessionStorage.setItem(@_paPss,@encText)
+   sessionStorage.setItem(@_linkPss,@encText)
   @trigger('save',@)
 
+
+#-------------------PageLocalStorage-------------------
+class PrivateLocalStorage extends ph.Deferred
+ constructor:(@link,@keyPrefix)->
+  super
+  @ctxs={}
+  @ctxIdx=0
+ getItem:(key,ctx)->
+  ctxs[ctxIdx]=ctx
+  @link._requestToAplFrame({type:'getItem',key:keyPrefix+'@'+key,ctxIdx:ctxIdx})
+  ctxIdx++;
+  return
+ setItem:(key,value)->
+  @link._requestToAplFrame({type:'setItem',key:@keyPrefix+'@'+key,value:value})
+  return
+ removeItem:(key)->
+  @link._requestToAplFrame({type:'removeItem',key:@keyPrefix+'@'+key})
+ enumKey:->
+  @link._requestToAplFrame({type:'enumKey',keyPrefix:@keyPrefix})
+ close:->
+  @unload()
+  @
+ _trigger:(data)->
+  if data.type=='getItem'
+    trigger('get',data.value,ctxs[data.ctxIdx])
+    delete ctxs[data.ctxIdx]
+  else if data.type=='enumKey'
+    trigger('enumKey',data.keys)
+
+  
