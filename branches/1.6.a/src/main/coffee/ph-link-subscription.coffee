@@ -1,5 +1,5 @@
 #-------------------Subscription-------------------
-class Subscription extends ph.Deferred
+class Subscription extends Deferred
   constructor:(@_con,@qname,@subname)->
     super
     @_con.onLoad(@_connectionOnLoad)
