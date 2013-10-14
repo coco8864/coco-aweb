@@ -1,4 +1,4 @@
-class Link extends ph.Deferred
+class Link extends Deferred
  constructor:(@param)->
   super
   @keyUrl=@param.keyUrl
@@ -283,7 +283,7 @@ ph.trigger('link',ph)
 #  SCOPE_SUBNAME:'subname'
 #  SCOPE_USER:'user'
 #-------------------PagePrivateStorage-------------------
-class PrivateSessionStorage extends ph.Deferred
+class PrivateSessionStorage extends Deferred
  constructor:(@link)->
   super
   aplInfo=@link.aplInfo
@@ -334,7 +334,7 @@ class PrivateSessionStorage extends ph.Deferred
 
 
 #-------------------PageLocalStorage-------------------
-class PrivateLocalStorage extends ph.Deferred
+class PrivateLocalStorage extends Deferred
  constructor:(@link,@keyPrefix)->
   super
   @ctxs={}
