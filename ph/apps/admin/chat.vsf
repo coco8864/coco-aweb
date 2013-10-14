@@ -76,7 +76,7 @@ chatSd.onMessage(
 ph.admin.chatSd=chatSd;
 
 
-var bkmarklet="javascript:(function(){var d=document;var f=function(){var l=ph.link('$adminUrl$');var s=l.subscribe('admin','chat');s.publish({message:d.title+':'+d.location.href,echoback:false,userName:'bk',date:new Date(),kind:'message'});};if(window.ph&&window.ph.link){f();}else{var u='$publicWebUrl$pub/js/ph.js';var e=d.createElement('script');e.src=u;e.onload=function(){ph.on('link',f);};d.getElementsByTagName('head')[0].appendChild(e);}})();"
+var bkmarklet="javascript:(function(){var d=document;var f=function(){var l=ph.link('$adminUrl$');var s=l.subscribe('admin','chat');s.publish({message:d.title+':'+d.location.href,echoback:false,userName:'bk',date:new Date(),kind:'message'});};if(window.ph&&window.ph.link){f();}else{var u='$publicWebUrl$pub/js/ph.js';var e=d.createElement('script');e.src=u;e.onload=function(){f();};d.getElementsByTagName('head')[0].appendChild(e);}})();"
 bkmarklet=bkmarklet.replace("$adminUrl$",ph.adminUrl);
 bkmarklet=bkmarklet.replace("$publicWebUrl$",ph.publicWebUrl);
 bkmarklet=bkmarklet.split(' ').join('%20');
