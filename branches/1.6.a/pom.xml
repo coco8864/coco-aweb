@@ -129,7 +129,11 @@
                 <fileSet>
                     <directory>${basedir}/src/main/coffee</directory>
                     <includes>
-                        <include>ph.coffee</include>
+                        <include>ph-.coffee</include>
+                        <include>ph-link.coffee</include>
+                        <include>ph-link-connection.coffee</include>
+                        <include>ph-link-subscription.coffee</include>
+                        <include>ph-link-envelope.coffee</include>
                     </includes>
                 </fileSet>
             </joinSet>
