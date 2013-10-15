@@ -1,5 +1,5 @@
 #-------------------Connection-------------------
-class Connection extends Deferred
+class Connection extends PhObject
   constructor:(@link) ->
     super
     @_subscribes={}
@@ -258,14 +258,16 @@ class Connection extends Deferred
         @__onError(msg)
 #----------Connection outer api----------
   close:->
-    @onLoad()
+    if @isUnload()
+      throw 'connection.close:aleady unloaded.'
     @_openCount--
     if @_openCount==0
       @_send({type:ph.TYPE_CLOSE})
     @
   subscribe:(qname,subname,onMessage)->
-    @onLoad()
-    if subname && ph.jQuery.isFunction(subname)
+    if @isUnload()
+      throw 'connection.subscribe:aleady unloaded.'
+    if subname && typeof subname=='function'
      onMessage=subname
      subname=ph._DEFAULT_SUB_ID
     else if !subname
@@ -289,17 +291,21 @@ class Connection extends Deferred
       ,0)
     subscription
   publish:(qname,msg)->
-    @onLoad()
+    if @isUnload()
+      throw 'connection.publish:aleady unloaded.'
     @_send({type:ph.TYPE_PUBLISH,qname:qname,message:msg})
   qnames:(cb)->
-    @onLoad()
+    if @isUnload()
+      throw 'connection.qnames:aleady unloaded.'
     if cb
       @on(ph.TYPE_QNAMES,cb)
     @_send({type:ph.TYPE_QNAMES})
   deploy:(qname,className)->
-    @onLoad()
+    if @isUnload()
+      throw 'connection.deploy:aleady unloaded.'
     @_send({type:ph.TYPE_DEPLOY,qname:qname,paletClassName:className})
   undeploy:(qname)->
-    @onLoad()
+    if @isUnload()
+      throw 'connection.undeploy:aleady unloaded.'
     @_send({type:ph.TYPE_UNDEPLOY,qname:qname})
 
