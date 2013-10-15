@@ -1,4 +1,4 @@
-class Link extends Deferred
+class Link extends PhObject
  constructor:(@param)->
   super
   @keyUrl=@param.keyUrl
@@ -232,7 +232,7 @@ ph.link=(aplUrl,useOffline,useConnection,useWs)->
   useOffline='never'
   useConnection=false
   useWs=false
- if ph.jQuery.isPlainObject(aplUrl)
+ if typeof aplUrl=='Object'
   param=aplUrl
   if !param.aplUrl
     throw 'aplUrl is null'
@@ -283,7 +283,7 @@ ph.trigger('link',ph)
 #  SCOPE_SUBNAME:'subname'
 #  SCOPE_USER:'user'
 #-------------------PagePrivateStorage-------------------
-class PrivateSessionStorage extends Deferred
+class PrivateSessionStorage extends PhObject
  constructor:(@link)->
   super
   aplInfo=@link.aplInfo
@@ -334,7 +334,7 @@ class PrivateSessionStorage extends Deferred
 
 
 #-------------------PageLocalStorage-------------------
-class PrivateLocalStorage extends Deferred
+class PrivateLocalStorage extends PhObject
  constructor:(@link,@keyPrefix)->
   super
   @ctxs={}
