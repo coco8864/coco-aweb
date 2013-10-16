@@ -141,9 +141,11 @@ class Ph extends PhObject
   RESULT_SUCCESS:'success'
   # strage scope
   SCOPE_PAGE_PRIVATE:'pagePrivate'
-  SCOPE_SESSION_PRIVATE:'sessionPrivate'
-  SCOPE_APL_PRIVATE:'aplPrivate'
-  SCOPE_APL_LOCAL:'aplLocal'
+  SCOPE_SESSION_PRIVATE:'sessionPrivate' #auth localstorage key:sessionid.key=value
+  SCOPE_APL_PRIVATE:'aplPrivate' #apl localstorage key:loginid.key=value
+  SCOPE_APL_LOCAL:'aplLocal' #apl localstorage key:@.key=value  (no enc)
+  SCOPE_AUTH_PRIVATE:'authPrivate' #auth localstorage key:loginid.key=value
+  SCOPE_AUTH_LOCAL:'authLocal' #auth localstorage key:@.key=value (no enc)
   SCOPE_APL:'apl'
   SCOPE_QNAME:'qname'
   SCOPE_SUBNAME:'subname'
@@ -303,8 +305,8 @@ class Ph extends PhObject
       ph.isOffline=true
       ph.load()
     )
-    ph.jQuery(window).on('message',(ev)->window.ph.trigger('message',ev))
-    ph.jQuery(window).unload((ev)->window.ph.trigger('unload',ev))
+    ph.jQuery(window).on('message',(ev)->window.ph.trigger('@message',ev))
+    ph.jQuery(window).unload((ev)->window.ph.trigger('@unload',ev))
 
 window.ph=new Ph()
 
