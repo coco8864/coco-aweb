@@ -8,13 +8,13 @@ workFrame=null
 cdr={isIn:false,req:null}
 
 aplInfo={
- aplUrl:null
- authUrl:null
- isOffline:false
- appSid:null
- loginId:null
- token:null
- maxAge:-1
+  aplUrl:null
+  authUrl:null
+  isOffline:false
+  appSid:null
+  loginId:null
+  token:null
+  maxAge:-1
 }
 authFrameTimerId=null
 workFrameTimerId=null
@@ -22,234 +22,269 @@ workFrameCb=null
 authInfo=null
 
 loadAuthFrame=(authUrl)->
- authFrame[0].src=authUrl+'/~ph.vsp?origin='+location.protocol+'//'+location.host
- authFrameTimerId=setTimeout((->
-   authFrameTimerId=null
-   _response({type:'loadAplFrame',result:false,cause:'frameTimeout'}))
-  ,authFrameTimeout
-  )
+  authFrame[0].src=authUrl+'/~ph.vsp?origin='+location.protocol+'//'+location.host
+  authFrameTimerId=setTimeout((->
+      authFrameTimerId=null
+      _response({type:'loadAplFrame',result:false,cause:'frameTimeout'}))
+    ,authFrameTimeout
+    )
 
 requestToAuthFrame=(msg)->
- jsonMsg=ph.JSON.stringify(msg)
- authFrame[0].contentWindow.postMessage(jsonMsg,'*')
+  jsonMsg=ph.JSON.stringify(msg)
+  authFrame[0].contentWindow.postMessage(jsonMsg,'*')
 
 loadWorkFrame=(url,cb)->
- workFrame[0].src=url
- workFrameCb=cb
- workFrameTimerId=setTimeout((->
-  workFrameTimerId=null
-  alert('aplOffline workFrameTimeout'))
- ,authFrameTimeout
- )
+  workFrame[0].src=url
+  workFrameCb=cb
+  workFrameTimerId=setTimeout((->
+     workFrameTimerId=null
+     alert('aplOffline workFrameTimeout'))
+   ,authFrameTimeout
+  )
 
 onlineCheckAuthInfoSuccess=(res)->
- aplInfo.isOffline=false
- aplInfo.appSid=res.appSid
- aplInfo.authUrl=res.authUrl
- aplInfo.loginId=res.loginId
- aplInfo.token=res.token
- localStorage.setItem(AUTH_URL_KEY,res.authUrl)
- loadAuthFrame(res.authUrl)
-
-onlineCheckAuthInfoError=(res)->
- #xhr呼び出しに失敗した.offlineでの接続を試みる
- aplInfo.isOffline=true
- authUrl=localStorage.getItem(AUTH_URL_KEY)
- if authUrl
-  loadAuthFrame(authUrl)
- else
-  aplInfo.result=false
-  aplInfo.cause='cannot find authUrl'
-  _response(aplInfo)
-
-onlineCheckAuthInfo=->
- jQuery.ajax({
-  type:'POST',
-  url:aplInfo.aplUrl + CHECK_XHR_QUERY,
-  dataType:'json',
-  success:onlineCheckAuthInfoSuccess,
-  error:onlineCheckAuthInfoError
- })
-
-onMsg=(qjev)->
- ev=qjev.originalEvent
- if !ev.data
-  return
- if ev.source==parent
-  req=ph.JSON.parse(ev.data)
-  onRequest(req)
- else if ev.source==authFrame[0].contentWindow
-  res=ph.JSON.parse(ev.data)
-  onAuthResponse(res)
- else if ev.source==workFrame[0].contentWindow
-  res=ph.JSON.parse(ev.data)
-  onWorkResponse(res)
-
-onAuthResponse=(res)->
- if res.type=='loadAuthFrame' #AuthFrameのロード完了
-  clearTimeout(authFrameTimerId)
-  authFrameTimerId=null
-  res.type='loadAplFrame'
-  res.aplInfo=aplInfo
-  _response(res)
- if res.type=='offlineAuth' #offlineAuth
-##  _response({type:'hideFrame'})
-  if res.result
-   aplInfo.loginId=res.authInfo.user.loginId
-   aplInfo.maxAge=30
-   res.aplInfo=aplInfo
-   res.authInfo=res.authInfo
-  response(res)
- else if res.type=='encrypt' || res.type=='decrypt' || res.type=='logout'
-  response(res)
- else if res.type=='authInfo'
-  authInfo=res.authInfo
-  response({type:'onlineAuth',result:res.result,aplInfo:aplInfo,authInfo:res.authInfo})
- else if res.type=='offlineLogout'
-  response(res)
- else if res.type=='userProfile'
-##  _response({type:'hideFrame'})
-  response(res)
- else if res.type=='showFrame'
-  authFrame.height(res.height+20)
-  res.height=document.body.clientHeight
-  _response(res)
- else if res.type=='hideFrame'
-  _response(res)
-
-onWorkResponse=(res)->
- clearTimeout(workFrameTimerId)
- workFrameTimerId=null
- workFrameCb(res)
-
-### online auth start ###
-onlineAuthResponse=(res)->
- if res.result==true
   aplInfo.isOffline=false
   aplInfo.appSid=res.appSid
   aplInfo.authUrl=res.authUrl
   aplInfo.loginId=res.loginId
   aplInfo.token=res.token
-  requestToAuthFrame({type:'authInfo',aplInfo:aplInfo})
- else
-  res.type='onlineAuth'
-  response(res)
+  localStorage.setItem(AUTH_URL_KEY,res.authUrl)
+  loadAuthFrame(res.authUrl)
+
+onlineCheckAuthInfoError=(res)->
+  #xhr呼び出しに失敗した.offlineでの接続を試みる
+  aplInfo.isOffline=true
+  authUrl=localStorage.getItem(AUTH_URL_KEY)
+  if authUrl
+    loadAuthFrame(authUrl)
+  else
+    aplInfo.result=false
+    aplInfo.cause='cannot find authUrl'
+    _response(aplInfo)
+
+onlineCheckAuthInfo=->
+  jQuery.ajax({
+    type:'POST',
+    url:aplInfo.aplUrl + CHECK_XHR_QUERY,
+    dataType:'json',
+    success:onlineCheckAuthInfoSuccess,
+    error:onlineCheckAuthInfoError
+  })
+
+onMsg=(qjev)->
+  ev=qjev.originalEvent
+  if !ev.data
+    return
+  if ev.source==parent
+    req=ph.JSON.parse(ev.data)
+    onRequest(req)
+  else if ev.source==authFrame[0].contentWindow
+    res=ph.JSON.parse(ev.data)
+    onAuthResponse(res)
+  else if ev.source==workFrame[0].contentWindow
+    res=ph.JSON.parse(ev.data)
+    onWorkResponse(res)
+
+onAuthResponse=(res)->
+  if res.type=='loadAuthFrame' #AuthFrameのロード完了
+    clearTimeout(authFrameTimerId)
+    authFrameTimerId=null
+    res.type='loadAplFrame'
+    res.aplInfo=aplInfo
+    _response(res)
+  if res.type=='offlineAuth' #offlineAuth
+    ##  _response({type:'hideFrame'})
+    if res.result
+      aplInfo.loginId=res.authInfo.user.loginId
+      aplInfo.maxAge=30
+      res.aplInfo=aplInfo
+      res.authInfo=res.authInfo
+    response(res)
+  else if res.type=='encrypt' || res.type=='decrypt' || res.type=='logout'
+    response(res)
+  else if res.type=='authInfo'
+    authInfo=res.authInfo
+    response({type:'onlineAuth',result:res.result,aplInfo:aplInfo,authInfo:res.authInfo})
+  else if res.type=='offlineLogout'
+    response(res)
+  else if res.type=='userProfile'
+    ##  _response({type:'hideFrame'})
+    response(res)
+  else if res.type=='showFrame'
+    authFrame.height(res.height+20)
+    res.height=document.body.clientHeight
+    _response(res)
+  else if res.type=='hideFrame'
+    _response(res)
+
+onWorkResponse=(res)->
+  clearTimeout(workFrameTimerId)
+  workFrameTimerId=null
+  workFrameCb(res)
+
+### online auth start ###
+onlineAuthResponse=(res)->
+  if res.result==true
+    aplInfo.isOffline=false
+    aplInfo.appSid=res.appSid
+    aplInfo.authUrl=res.authUrl
+    aplInfo.loginId=res.loginId
+    aplInfo.token=res.token
+    requestToAuthFrame({type:'authInfo',aplInfo:aplInfo})
+  else
+    res.type='onlineAuth'
+    response(res)
 
 onlineAuthAuthUrlRes=(res)->
- if res.result=='redirect'
-  loadWorkFrame(res.location,onlineAuthResponse)
-## else if res.result=='redirectForAuthorizer' ##authUrlでも認証されていなければ
-##  location.href=res.location
- else
-  onlineAuthResponse(res)
+  if res.result=='redirect'
+    loadWorkFrame(res.location,onlineAuthResponse)
+  else
+    onlineAuthResponse(res)
 
 onlineAuthAplUrlRes=(res)=>
- if res.result=='redirect' ##apl未認証の場合uthUrlにリダイレクト
-  loadWorkFrame(res.location+'&originUrl='+encodeURIComponent(@originUrl),onlineAuthAuthUrlRes)
- else
-  onlineAuthResponse(res)
+  if res.result=='redirect' ##apl未認証の場合uthUrlにリダイレクト
+    loadWorkFrame(res.location+'&originUrl='+encodeURIComponent(@originUrl),onlineAuthAuthUrlRes)
+  else
+    onlineAuthResponse(res)
 
 onlineAuth=(isWs,originUrl)-> ##aplUrlをチェック
- if isWs
-  url=aplInfo.aplUrl+CHECK_WS_QUERY
- else
-  url=aplInfo.aplUrl+CHECK_QUERY
- if originUrl
-   @originUrl=originUrl
-##  url+='&originUrl='+encodeURIComponent(originUrl)
- loadWorkFrame(url,onlineAuthAplUrlRes)
+  if isWs
+    url=aplInfo.aplUrl+CHECK_WS_QUERY
+  else
+    url=aplInfo.aplUrl+CHECK_QUERY
+  if originUrl
+    @originUrl=originUrl
+  loadWorkFrame(url,onlineAuthAplUrlRes)
 ### online auth end ###
 
+SCOPE={
+  PAGE_PRIVATE:'pagePrivate'
+  SESSION_PRIVATE:'sessionPrivate' #auth localstorage key:sessionid.key=value
+  APL_PRIVATE:'aplPrivate' #apl localstorage key:loginid.key=value
+  APL_LOCAL:'aplLocal' #apl localstorage key:@.key=value  (no enc)
+  AUTH_PRIVATE:'authPrivate' #auth localstorage key:loginid.key=value
+  AUTH_LOCAL:'authLocal' #auth localstorage key:@.key=value (no enc)
+}
+
+getItemRequest=(data)->
+  if data.scope==SCOPE.SESSION_PRIVATE
+    a='aa'
+  else if data.scope==SCOPE.APL_PRIVATE
+    a='aa'
+  else if data.scope==SCOPE.APL_LOCAL
+    a='aa'
+  else if data.scope==SCOPE.APL_PRIVATE
+    a='aa'
+  else if data.scope==SCOPE.AUTH_PRIVATE
+    a='aa'
+  else if data.scope==SCOPE.AUTH_LOCAL
+    a='aa'
+
+setItemRequest=(data)->
+
+enumKeyRequest=(data)->
+
+removeKeyRequest=(data)->
+
+getItemResponse=(data)->
+
+setItemResponse=(data)->
+
+enumKeyResponse=(data)->
+
+removeKeyResponse=(data)->
+
+changeItemResponse=(data)->
+
+
 onRequest=(req)->
-## if cdr.isIn
-##  throw "duplicate request"
- cdr.isIn=true
- cdr.req=req
- if req.type=='onlineAuth'
-  onlineAuth(req.isWs,req.originUrl)
- else if req.type=='offlineAuth'
-  requestToAuthFrame({type:'offlineAuth'})
-  authFrame.focus()
- else if req.type=='offlineLogout'
-  requestToAuthFrame({type:'offlineLogout'})
- else if req.type=='userProfile'
-  requestToAuthFrame({type:'userProfile'})
-  authFrame.focus()
- else if req.type=='encrypt'
-  requestToAuthFrame(req)
- else if req.type=='decrypt'
-  requestToAuthFrame(req)
- else if req.type=='logout'
-  requestToAuthFrame(req)
- else if req.type=="setItem"
-  # req.scope
-  key=req.key
-  value=req.value
-  #localStorage.setItem(key,value)
- else if req.type=="getItem"
-  # req.scope
-  key=req.key
-  #value=localStorage.getItem(key)
-  #req.value=decEncryptText(value,userInfo.offlinePassHash)
-  #response(req)
- else if req.type=="removeItem"
-  # req.scope
-  key=req.key
-  #localStorage.removeItem(key)
- else if req.type=="enumKey"
-  # req.scope
-  req.keys=[]
-  i=localStorage.length
-  while (i-=1) >=0
-   encKey=localStorage.key(i)
-   #key=decEncryptText(encKey,userInfo.offlinePassHash)
-   req.keys.push(encKey)
-  #response(req)
- else
-  throw 'unkown type:'+req.type
+  cdr.isIn=true
+  cdr.req=req
+  if req.type=='onlineAuth'
+    onlineAuth(req.isWs,req.originUrl)
+  else if req.type=='offlineAuth'
+    requestToAuthFrame({type:'offlineAuth'})
+    authFrame.focus()
+  else if req.type=='offlineLogout'
+    requestToAuthFrame({type:'offlineLogout'})
+  else if req.type=='userProfile'
+    requestToAuthFrame({type:'userProfile'})
+    authFrame.focus()
+  else if req.type=='encrypt'
+    requestToAuthFrame(req)
+  else if req.type=='decrypt'
+    requestToAuthFrame(req)
+  else if req.type=='logout'
+    requestToAuthFrame(req)
+  else if req.type=="setItem"
+    # req.scope
+    key=req.key
+    value=req.value
+    #localStorage.setItem(key,value)
+  else if req.type=="getItem"
+    # req.scope
+    key=req.key
+    #value=localStorage.getItem(key)
+    #req.value=decEncryptText(value,userInfo.offlinePassHash)
+    #response(req)
+  else if req.type=="removeItem"
+    # req.scope
+    key=req.key
+    #localStorage.removeItem(key)
+  else if req.type=="enumKey"
+    # req.scope
+    req.keys=[]
+    i=localStorage.length
+    while (i-=1) >=0
+      encKey=localStorage.key(i)
+      #key=decEncryptText(encKey,userInfo.offlinePassHash)
+      req.keys.push(encKey)
+    #response(req)
+  else
+    throw 'unkown type:'+req.type
 
 onStorage=(qjev)->
- ev=qjev.originalEvent
- if !ev
-  return
- res={type:'changeItem',from:'aplFrame'}
- #res.key=decPlainText(ev.key,userInfo.offlinePassHash)
- #res.newValue=decPlainText(ev.newValue,userInfo.offlinePassHash)
- #res.oldValue=decPlainText(ev.oldValue,userInfo.offlinePassHash)
- #response(res)
+  ev=qjev.originalEvent
+  if !ev
+    return
+  res={type:'changeItem',from:'aplFrame'}
+  #res.key=decPlainText(ev.key,userInfo.offlinePassHash)
+  #res.newValue=decPlainText(ev.newValue,userInfo.offlinePassHash)
+  #res.oldValue=decPlainText(ev.oldValue,userInfo.offlinePassHash)
+  #response(res)
 
 response=(msg)->
- cdr.isIn=false
- cdr.req=null
- _response(msg)
+  cdr.isIn=false
+  cdr.req=null
+  _response(msg)
 
 _response=(msg)->
- jsonMsg=ph.JSON.stringify(msg)
- if window==parent #自分にはpostしない対処
-  alert('aplOffline response:'+jsonMsg)
- else
-  parent.postMessage(jsonMsg,'*')
+  jsonMsg=ph.JSON.stringify(msg)
+  if window==parent #自分にはpostしない対処
+    alert('aplOffline response:'+jsonMsg)
+  else
+    parent.postMessage(jsonMsg,'*')
 
 jQuery(->
- if window==parent #直接呼び出された場合は、appcache controle画面
-  return
- #子として呼び出された場合認証用
- jQuery('body').text('')
- href=location.href
- pos=href.lastIndexOf('/')
- aplInfo.aplUrl=href.substring(0,pos)
- jQuery(window).on('message',onMsg)
- jQuery(window).on('storage',onStorage)
- authFrame=jQuery(
+  if window==parent #直接呼び出された場合は、appcache controle画面
+    return
+  #子として呼び出された場合認証用
+  jQuery('body').text('')
+  href=location.href
+  pos=href.lastIndexOf('/')
+  aplInfo.aplUrl=href.substring(0,pos)
+  jQuery(window).on('message',onMsg)
+  jQuery(window).on('storage',onStorage)
+  authFrame=jQuery(
       "<iframe width='100%' height='512' frameborder='no' "+
       "name='aplOfflineAuth#{aplInfo.aplUrl}' >"+
       "</iframe>")
- workFrame=jQuery(
+  workFrame=jQuery(
       "<iframe width='0' height='0' frameborder='no' "+
       "name='aplOfflineWork#{aplInfo.aplUrl}' >"+
       "</iframe>")
- jQuery("body").append(workFrame)
- jQuery("body").append(authFrame)
- onlineCheckAuthInfo()
- window.onlineAuth=onlineAuth
+  jQuery("body").append(workFrame)
+  jQuery("body").append(authFrame)
+  onlineCheckAuthInfo()
+  window.onlineAuth=onlineAuth
 )
