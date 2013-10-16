@@ -116,6 +116,30 @@ onRequest=(req)->
   encrypt(req)
  else if req.type=="decrypt"
   decrypt(req)
+ else if req.type=="setItem"
+  # req.scope
+  key=encPlainText(req.key,userInfo.offlinePassHash)
+  value=encPlainText(req.value,userInfo.offlinePassHash)
+  localStorage.setItem(key,value)
+ else if req.type=="getItem"
+  # req.scope
+  key=encPlainText(req.key,userInfo.offlinePassHash)
+  value=localStorage.getItem(key)
+  req.value=decEncryptText(value,userInfo.offlinePassHash)
+  response(req)
+ else if req.type=="removeItem"
+  # req.scope
+  key=encPlainText(req.key,userInfo.offlinePassHash)
+  localStorage.removeItem(key)
+ else if req.type=="enumKey"
+  # req.scope
+  req.keys=[]
+  i=localStorage.length
+  while (i-=1) >=0
+   encKey=localStorage.key(i)
+   key=decEncryptText(encKey,userInfo.offlinePassHash)
+   req.keys.push(key)
+  response(req)
  else if req.type=="logout"
   jQuery.ajax({
     type:'GET',
@@ -208,6 +232,16 @@ onMsg=(qjev)->
   req=ph.JSON.parse(ev.data)
   onRequest(req)
 
+onStorage=(qjev)->
+ ev=qjev.originalEvent
+ if !ev
+  return
+ res={type:'changeItem',from:'authFrame'}
+ res.key=decPlainText(ev.key,userInfo.offlinePassHash)
+ res.newValue=decPlainText(ev.newValue,userInfo.offlinePassHash)
+ res.oldValue=decPlainText(ev.oldValue,userInfo.offlinePassHash)
+ response(res)
+
 response=(msg)->
  jsonMsg=ph.JSON.stringify(msg)
  if window==parent #テスト時に自分には投げない処理
@@ -293,6 +327,7 @@ jQuery(->
  if parentOrigin=='file://'
   parentOrigin='*'
  jQuery(window).on('message',onMsg)
+ jQuery(window).on('storage',onStorage)
  response({type:'loadAuthFrame',result:true,offsetHeight:document.documentElement.offsetHeight})
 )
 
