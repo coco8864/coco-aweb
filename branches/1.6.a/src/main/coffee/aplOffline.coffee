@@ -181,8 +181,42 @@ onRequest=(req)->
   requestToAuthFrame(req)
  else if req.type=='logout'
   requestToAuthFrame(req)
+ else if req.type=="setItem"
+  # req.scope
+  key=req.key
+  value=req.value
+  #localStorage.setItem(key,value)
+ else if req.type=="getItem"
+  # req.scope
+  key=req.key
+  #value=localStorage.getItem(key)
+  #req.value=decEncryptText(value,userInfo.offlinePassHash)
+  #response(req)
+ else if req.type=="removeItem"
+  # req.scope
+  key=req.key
+  #localStorage.removeItem(key)
+ else if req.type=="enumKey"
+  # req.scope
+  req.keys=[]
+  i=localStorage.length
+  while (i-=1) >=0
+   encKey=localStorage.key(i)
+   #key=decEncryptText(encKey,userInfo.offlinePassHash)
+   req.keys.push(encKey)
+  #response(req)
  else
   throw 'unkown type:'+req.type
+
+onStorage=(qjev)->
+ ev=qjev.originalEvent
+ if !ev
+  return
+ res={type:'changeItem',from:'aplFrame'}
+ #res.key=decPlainText(ev.key,userInfo.offlinePassHash)
+ #res.newValue=decPlainText(ev.newValue,userInfo.offlinePassHash)
+ #res.oldValue=decPlainText(ev.oldValue,userInfo.offlinePassHash)
+ #response(res)
 
 response=(msg)->
  cdr.isIn=false
@@ -205,6 +239,7 @@ jQuery(->
  pos=href.lastIndexOf('/')
  aplInfo.aplUrl=href.substring(0,pos)
  jQuery(window).on('message',onMsg)
+ jQuery(window).on('storage',onStorage)
  authFrame=jQuery(
       "<iframe width='100%' height='512' frameborder='no' "+
       "name='aplOfflineAuth#{aplInfo.aplUrl}' >"+

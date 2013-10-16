@@ -126,13 +126,13 @@ class Connection extends PhObject
       @connectXhrUrl + ph._XHR_FRAME_URL +
       '"></iframe>')
     ph.jQuery('body').append(@_xhrFrame)
-    ph.on('message',@_xhrOnMessage)
+    ph.on('@message',@_xhrOnMessage)
     con=@
     @onUnload(->
       if con._xhrFrame
        con._xhrFrame.remove()
        con._xhrFrame=null
-      ph.off('message',con._xhrOnMessage)
+      ph.off('@message',con._xhrOnMessage)
      )
   _xhrOnMessage:(ev)=>
     if ev.originalEvent.source!=@_xhrFrame[0].contentWindow
