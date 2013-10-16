@@ -4,6 +4,7 @@ class Link extends PhObject
   @keyUrl=@param.keyUrl
   @reqseq=0
   @reqcb={}
+  @storages={}
   link=@
   if @param.useConnection
    @connection=new Connection(@)
@@ -14,11 +15,11 @@ class Link extends PhObject
     )
    @connection.onUnload(->
      if link.ppStorage
-      link.ppStorage.close()
+      link.ppStorage.unload()
       link.ppStorage=null
      return
     )
-  ph.on('message',@_onMessage)
+  ph.on('@message',@_onMessage)
   link=@
   ph.onLoad(->
    link._frame=ph.jQuery(
@@ -37,12 +38,13 @@ class Link extends PhObject
     ,ph.authFrameTimeout*2
     )
    )
+  ph.on('@unload',->link.unlink())
   @
  _connect:->
   # alert('connect start2')
   @ppStorage=new PrivateSessionStorage(@)
   link=@
-  @ppStorage.onUnload(->link._logout())
+  # @ppStorage.onUnload(->link._logout())
   if @param.useConnection==false
    @isConnect=false
    @ppStorage.onLoad(->
@@ -139,7 +141,7 @@ class Link extends PhObject
     @cause='fail to onlineAuth'
     @trigger('failToAuth',@)
     @unload()
-  if res.type=='offlineAuth'
+  else if res.type=='offlineAuth'
    if res.result==true
     @isOffline=true
     @authInfo=res.authInfo
@@ -153,31 +155,22 @@ class Link extends PhObject
       link.load(link)
       link.trigger('linked',link)
      )
-    @ppStorage.onUnload(->link._logout())
+    # @ppStorage.onUnload(->link._logout())
    else
     @cause='fail to offlineAuth'
     @trigger('failToAuth',@)
-  if res.type=='logout'
+  else if res.type=='logout'
     @_frame[0].src='about:blank'
     @_frame.remove()
     @unload()
-  if res.type=='offlineLogout'
+  else if res.type=='offlineLogout'
    if res.result==true
     @trigger('suspendAuth',link)
-
+  else if res.type=='getItem' || res.type=='changeItem' || res.type=='enumKey'
+   storage=@storages[res.scope]
+   if storage
+    storage._trigger(res)
   return
- _storDecrypt:(storage,key,cb)->
-  encText=storage.getItem(key)
-  if encText
-   @decrypt(encText,(decText)->cb(decText))
-  else
-   cb(null)
- _encryptStor:(storage,key,value,cb)->
-  @encrypt(value,(encText)->
-    storage.setItem(key,encText)
-    if cb
-     cb(encText)
-    )
  offlineAuth:()->
   ### offlineで認証します。###
   @_requestToAplFrame({type:'offlineAuth'})
@@ -200,23 +193,21 @@ class Link extends PhObject
  storage:(scope)->
   if scope==ph.SCOPE_PAGE_PRIVATE || !scope
    return @ppStorage
-  else if scope==ph.SCOPE_SESSION_PRIVATE
-   return @ppStorage
-  else if scope==ph.SCOPE_APL_PRIVATE
-   return @ppStorage
-  else if scope==ph.SCOPE_APL_LOCAL
-   return @ppStorage
-  throw 'unkown scope:'+scope
+  stor=@storages[scope]
+  if !stor
+    stor=new PhLocalStorage(@,scope)
+    @storages[scope]=stor
+  return stor
  encrypt:(plainText,cb)->
   @_requestToAplFrame({type:'encrypt',plainText:plainText},cb)
  decrypt:(encryptText,cb)->
   @_requestToAplFrame({type:'decrypt',encryptText:encryptText},cb)
  unlink:->
   if @connection
-   @connection.close()
-   return
-  @ppStorage.close()
-  @unload()
+   @connection.unload()
+   # return
+  @ppStorage.unload()
+  # @unload()
 
 URL_PTN=/^(?:([^:\/]+:))?(?:\/\/([^\/]*))?(.*)/
 ph._links={}
@@ -271,7 +262,6 @@ ph.link=(aplUrl,useOffline,useConnection,useWs)->
    delete ph._links[keyUrl]
   )
  return link
-ph.trigger('link',ph)
 
 #strage scope
 #  SCOPE_PAGE_PRIVATE:'pagePrivate' ...そのページだけ、reloadを挟んで情報を維持するため
@@ -295,16 +285,23 @@ class PrivateSessionStorage extends PhObject
    key=sessionStorage.key(i)
    if key.lastIndexOf(sameLoginIdKey,0)==0 && key!=@_linkPss
     sessionStorage.removeItem(key)
-  s=@
-  @link._storDecrypt(sessionStorage,@_linkPss,(decText)->
+  #_storDecrypt:(storage,key,cb)->
+  @encText=sessionStorage.getItem(@_linkPss)
+  if @encText
+   s=@
+   @link.decrypt(@encText,(decText)->
     if decText
      s.data=ph.JSON.parse(decText)
     else
      s.data={}
     s.load()
-  )
-  ph.one('unload',@_unload) #pageがunloadされるときsessionStorageに残す
-  @onUnload(@_unload)
+    s.onUnload(s._onUnload)
+   )
+  else
+   @data={}
+   @load()
+   @onUnload(@_onUnload)
+  #ph.one('@unload',@_onUnload) #pageがunloadされるときsessionStorageに残す
  getItem:(key)->
   @data[key]
  setItem:(key,value)->
@@ -323,42 +320,44 @@ class PrivateSessionStorage extends PhObject
   s=@
   @link.encrypt(ph.JSON.stringify(@data),(text)->s.encText=text)
   return
- close:->
-  @unload()
-  @
- _unload:=>
-  ph.off('unload',@_unload)
+ _onUnload:=>
+  # ph.off('unload',@_unload)
   if @encText
    sessionStorage.setItem(@_linkPss,@encText)
-  @trigger('save',@)
-
+  @trigger('@save',@)
 
 #-------------------PageLocalStorage-------------------
-class PrivateLocalStorage extends PhObject
- constructor:(@link,@keyPrefix)->
-  super
-  @ctxs={}
-  @ctxIdx=0
- getItem:(key,ctx)->
-  ctxs[ctxIdx]=ctx
-  @link._requestToAplFrame({type:'getItem',key:keyPrefix+'@'+key,ctxIdx:ctxIdx})
-  ctxIdx++;
-  return
- setItem:(key,value)->
-  @link._requestToAplFrame({type:'setItem',key:@keyPrefix+'@'+key,value:value})
-  return
- removeItem:(key)->
-  @link._requestToAplFrame({type:'removeItem',key:@keyPrefix+'@'+key})
- enumKey:->
-  @link._requestToAplFrame({type:'enumKey',keyPrefix:@keyPrefix})
- close:->
-  @unload()
-  @
- _trigger:(data)->
-  if data.type=='getItem'
-    trigger('get',data.value,ctxs[data.ctxIdx])
+class PhLocalStorage extends PhObject
+  constructor:(@link,@scope)->
+    super
+    @ctxs={}
+    @ctxIdx=0
+    @load()
+  getItem:(key,ctx)->
+    ctxs[ctxIdx]=ctx
+    @link._requestToAplFrame({type:'getItem',scope:@scope,key:key,ctxIdx:ctxIdx,via:0})
+    ctxIdx++;
+    return
+  setItem:(key,value)->
+    @link._requestToAplFrame({type:'setItem',scope:@scope,key:key,value:value,via:0})
+    return
+  removeItem:(key)->
+    @link._requestToAplFrame({type:'removeItem',scope:@scope,key:key,via:0})
+  enumKey:(ctx)->
+    ctxs[ctxIdx]=ctx
+    @link._requestToAplFrame({type:'enumKey',scope:@scope,ctxIdx:ctxIdx,via:0})
+    ctxIdx++;
+  _trigger:(data)->
+    ctx=@ctxs[data.ctxIdx]
     delete ctxs[data.ctxIdx]
-  else if data.type=='enumKey'
-    trigger('enumKey',data.keys)
+    if typeof(ctx)=='function'
+      ctx(data)
+    else if data.type=='getItem'
+      trigger('@getItem',data,ctx)
+      trigger(data.key,data,ctx)
+    else if data.type=='enumKey'
+      trigger('@enumKey',data,ctx)
+    else if data.type=='changeItem'
+      trigger('@changeItem',data)
+      trigger(data.key,data)
 
-  
