@@ -1,5 +1,6 @@
 package naru.aweb.auth;
 
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -14,22 +15,31 @@ import naru.aweb.config.Config;
 
 public class AuthSession extends PoolBase{
 	private static Config config=Config.getConfig();
+	private static final String SID_RANDOM_ENTOROPY = "sidRandomEntoropy";
+	private static final String SID_SEQUENCE = "sidSecuence";
+	private static final long SID_SAVE_INTERVAL = 1024l;
+	
 	public static AuthSession UNAUTH_SESSION=new AuthSession(new User(),"");
 	private static Logger logger = Logger.getLogger(AuthSession.class);
-	private static String serverId=DataUtil.digestHex(config.getString("serverIdEntropy","serverIdEntropy").getBytes())+System.currentTimeMillis()+".";
-	private static long appSidSeq=0;
+	private static String serverId=config.getSelfDomain() + config.getString("serverIdEntropy","serverIdEntropy")+System.currentTimeMillis()+".";
+	private static long sidSeq=config.getLong(SID_SEQUENCE,0)+SID_SAVE_INTERVAL;
+	private static SecureRandom sidRandom=config.getRandom(SID_RANDOM_ENTOROPY);
 	
 	private User user;
 	private String token;//CSRF対策
-	private String appSid;//クライアントでこのセションを識別するID,他サーバを含めて一意が理想
+	private String sid;//クライアントでこのセションを識別するID,他サーバを含めて一意
 	private Map<String,Object> attribute=new HashMap<String,Object>();//sessionに付随する属性
 	private boolean isLogout=false;
 	private SessionId sessionId;
 	private Set<LogoutEvent> logoutEvents=new HashSet<LogoutEvent>();
 	private Set<AuthSession> secandarySessions=new HashSet<AuthSession>();
 	
-	private synchronized static long getAppSidSeq(){
-		return appSidSeq++;
+	private synchronized static long getSidSeq(){
+		sidSeq++;
+		if(sidSeq%SID_SAVE_INTERVAL==0){
+			config.setProperty(SID_SEQUENCE, sidSeq);
+		}
+		return sidSeq;
 	}
 	
 	public void recycle() {
@@ -55,7 +65,7 @@ public class AuthSession extends PoolBase{
 	void init(User user,String token){
 		this.user=user;
 		this.token=token;
-		this.appSid=DataUtil.digestHex((serverId+getAppSidSeq()).getBytes());
+		this.sid=DataUtil.digestHex((serverId+getSidSeq()).getBytes());
 	}
 	
 	public AuthSession createSecondarySession(){
@@ -155,8 +165,8 @@ public class AuthSession extends PoolBase{
 		return token;
 	}
 	
-	public String getAppSid() {
-		return appSid;
+	public String getSid() {
+		return sid;
 	}
 
 	public SessionId getSessionId() {

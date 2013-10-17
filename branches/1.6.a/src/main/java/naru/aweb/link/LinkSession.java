@@ -64,7 +64,7 @@ public class LinkSession extends PoolBase implements LogoutEvent{
 		paSession.bid=bid;
 		paSession.isWs=isWs;
 		
-		paSession.appSid=authSession.getAppSid();
+		paSession.appSid=authSession.getSid();
 		User user=authSession.getUser();
 		paSession.loginId=user.getLoginId();
 		paSession.roles=Collections.unmodifiableList(user.getRolesList());
