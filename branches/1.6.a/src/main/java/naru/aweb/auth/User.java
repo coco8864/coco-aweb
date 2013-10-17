@@ -72,22 +72,14 @@ public class User {
 			queryString+= whereSection;//where‹å‚Æ‚ÍŒÀ‚ç‚È‚¢
 		}
 		PersistenceManager pm=JdoUtil.getPersistenceManager();
-		try{
-			pm.currentTransaction().begin();
-			Query q=pm.newQuery(queryString);
-			if(from>=0){
-				q.setRange(from, to);
-			}
-			if(ordering!=null){
-				q.setOrdering(ordering);
-			}
-			return (Collection<User>)pm.detachCopyAll((Collection<User>)q.execute());
-		}finally{
-			if(pm.currentTransaction().isActive()){
-				pm.currentTransaction().rollback();
-			}
-			JdoUtil.close();//need?
+		Query q=pm.newQuery(queryString);
+		if(from>=0){
+			q.setRange(from, to);
 		}
+		if(ordering!=null){
+			q.setOrdering(ordering);
+		}
+		return (Collection<User>)pm.detachCopyAll((Collection<User>)q.execute());
 	}
 	
 	public static User getByLoginId(String loginId) {

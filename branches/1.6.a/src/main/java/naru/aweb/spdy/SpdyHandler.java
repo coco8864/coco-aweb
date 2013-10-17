@@ -155,6 +155,7 @@ public class SpdyHandler extends ServerBaseHandler {
 			break;
 		case SpdyFrame.TYPE_SETTINGS:
 		case SpdyFrame.TYPE_HEADERS:
+		case SpdyFrame.TYPE_WINDOW_UPDATE:
 		default:
 		}
 	}
