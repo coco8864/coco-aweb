@@ -265,7 +265,7 @@ public class AuthHandler extends WebServerHandler {
 		}
 		response.element("result", true);
 		response.element(AUTH_URL,config.getAuthUrl());
-		response.element(APP_SID, authSession.getAppSid());
+		response.element(APP_SID, authSession.getSid());
 		response.element(LOGIN_ID, authSession.getUser().getLoginId());
 		response.element(TOKEN, authSession.getToken());
 		crossDomainResponse(response,secondaryId.getSetCookieString());

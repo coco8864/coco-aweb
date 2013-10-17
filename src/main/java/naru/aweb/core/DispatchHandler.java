@@ -520,7 +520,7 @@ public class DispatchHandler extends ServerBaseHandler {
 			case SUCCESS:
 				response.element("result", true);
 				response.element(AuthHandler.AUTH_URL,config.getAuthUrl());
-				response.element(AuthHandler.APP_SID, authSession.getAppSid());
+				response.element(AuthHandler.APP_SID, authSession.getSid());
 				response.element(AuthHandler.LOGIN_ID, authSession.getUser().getLoginId());
 				response.element(AuthHandler.TOKEN, authSession.getToken());
 				break;
@@ -559,7 +559,7 @@ public class DispatchHandler extends ServerBaseHandler {
 			response.element("result", true);
 			response.element(AuthHandler.AUTH_URL,config.getAuthUrl());
 			if(authSession!=null){
-				response.element(AuthHandler.APP_SID, authSession.getAppSid());
+				response.element(AuthHandler.APP_SID, authSession.getSid());
 				response.element(AuthHandler.LOGIN_ID, authSession.getUser().getLoginId());
 				response.element(AuthHandler.TOKEN, authSession.getToken());
 			}

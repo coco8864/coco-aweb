@@ -309,7 +309,7 @@ public class Authorizer implements Timer{
 			if(secondarySession==null){
 				return CHECK_PRIMARY_ONLY;
 			}
-			if(appSid!=null && !appSid.equals(secondarySession.getAppSid())){
+			if(appSid!=null && !appSid.equals(secondarySession.getSid())){
 				return CHECK_PRIMARY_ONLY;
 			}
 			if(token!=null && !token.equals(secondarySession.getToken())){
