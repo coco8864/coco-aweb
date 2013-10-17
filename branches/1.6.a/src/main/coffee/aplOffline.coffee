@@ -7,6 +7,9 @@ authFrame=null
 workFrame=null
 cdr={isIn:false,req:null}
 
+aplPrivatePrefix=null
+aplLocalPrefix='@.'
+
 aplInfo={
   aplUrl:null
   authUrl:null
@@ -48,6 +51,7 @@ onlineCheckAuthInfoSuccess=(res)->
   aplInfo.authUrl=res.authUrl
   aplInfo.loginId=res.loginId
   aplInfo.token=res.token
+  aplPrivatePrefix='@'+aplInfo.loginId+'.'
   localStorage.setItem(AUTH_URL_KEY,res.authUrl)
   loadAuthFrame(res.authUrl)
 
@@ -96,6 +100,7 @@ onAuthResponse=(res)->
     ##  _response({type:'hideFrame'})
     if res.result
       aplInfo.loginId=res.authInfo.user.loginId
+      aplPrivatePrefix='@'+aplInfo.loginId+'.'
       aplInfo.maxAge=30
       res.aplInfo=aplInfo
       res.authInfo=res.authInfo
@@ -116,6 +121,16 @@ onAuthResponse=(res)->
     _response(res)
   else if res.type=='hideFrame'
     _response(res)
+  else if res.type=='getItem'
+    onGetItemResponse(res)
+  else if res.type=='setItem'
+    onSetItemResponse(res)
+  else if res.type=='removeItem'
+    onRemoveItemResponse(res)
+  else if res.type=='enumKey'
+    onEnumKeyResponse(res)
+  else if res.type=='changeItem'
+    onChangeItemResponse(res)
 
 onWorkResponse=(res)->
   clearTimeout(workFrameTimerId)
@@ -129,6 +144,7 @@ onlineAuthResponse=(res)->
     aplInfo.appSid=res.appSid
     aplInfo.authUrl=res.authUrl
     aplInfo.loginId=res.loginId
+    aplPrivatePrefix='@'+aplInfo.loginId+'.'
     aplInfo.token=res.token
     requestToAuthFrame({type:'authInfo',aplInfo:aplInfo})
   else
@@ -166,36 +182,124 @@ SCOPE={
   AUTH_LOCAL:'authLocal' #auth localstorage key:@.key=value (no enc)
 }
 
-getItemRequest=(data)->
-  if data.scope==SCOPE.SESSION_PRIVATE
-    a='aa'
+scopePrefix=(scope)->
+  if scope==SCOPE.APL_LOCAL
+    return aplLocalPrefix
+  else if scope==SCOPE.APL_PRIVATE
+    return aplPrivatePrefix
+  throw 'unkown scope:'+scope
+
+scopeKey=(scope,key)->
+  return scopePrefix(scope)+key
+
+onGetItemRequest=(data)->
+  date.via++
+  if data.scope==SCOPE.SESSION_PRIVATE || data.scope==SCOPE.AUTH_PRIVATE || data.scope==SCOPE.AUTH_LOCAL
+    requestToAuthFrame(data)
   else if data.scope==SCOPE.APL_PRIVATE
-    a='aa'
+    requestToAuthFrame(data)
   else if data.scope==SCOPE.APL_LOCAL
-    a='aa'
+    realKey=scopeKey(data.scope,date.key)
+    date.value=localStorage.getItem(realKey)
+    response(date)
+  else
+    throw 'scope error:'+date.scope
+
+onSetItemRequest=(data)->
+  date.via++
+  if data.scope==SCOPE.SESSION_PRIVATE || data.scope==SCOPE.AUTH_PRIVATE || data.scope==SCOPE.AUTH_LOCAL
+    requestToAuthFrame(data)
   else if data.scope==SCOPE.APL_PRIVATE
-    a='aa'
-  else if data.scope==SCOPE.AUTH_PRIVATE
-    a='aa'
-  else if data.scope==SCOPE.AUTH_LOCAL
-    a='aa'
+    requestToAuthFrame(data)
+  else if data.scope==SCOPE.APL_LOCAL
+    realKey=scopeKey(date.key)
+    date.value=localStorage.setItem(realKey,date.value)
+  else
+    throw 'scope error:'+date.scope
 
-setItemRequest=(data)->
+onRemoveItemRequest=(data)->
+  date.via++
+  if data.scope==SCOPE.SESSION_PRIVATE || data.scope==SCOPE.AUTH_PRIVATE || data.scope==SCOPE.AUTH_LOCAL
+    requestToAuthFrame(data)
+  else if data.scope==SCOPE.APL_PRIVATE
+    requestToAuthFrame(data)
+  else if data.scope==SCOPE.APL_LOCAL
+    realKey=scopeKey(date.key)
+    date.value=localStorage.removeItem(realKey,date.value)
+  else
+    throw 'scope error:'+date.scope
 
-enumKeyRequest=(data)->
+enumScopeKey=(scope)->
+  prefix=scopePrefix(scope)
+  keys=[]
+  i=localStorage.length
+  while (i-=1) >=0
+    key=localStorage.key(i)
+    if key.lastIndexOf(prefix,0)==0
+      keys.push(key.substring(prefix.length))
+  return keys
 
-removeKeyRequest=(data)->
+onEnumKeyRequest=(data)->
+  date.via++
+  if data.scope==SCOPE.SESSION_PRIVATE || data.scope==SCOPE.AUTH_PRIVATE || data.scope==SCOPE.AUTH_LOCAL
+    requestToAuthFrame(data)
+  else if data.scope==SCOPE.APL_PRIVATE
+    date.keys=enumScopeKey(data.scope)
+    if date.keys.length==0
+      response(date)
+    else
+      requestToAuthFrame(data)
+  else if data.scope==SCOPE.APL_LOCAL
+    date.keys=enumScopeKey(data.scope)
+    response(date)
+  else
+    throw 'scope error:'+date.scope
 
-getItemResponse=(data)->
+onGetItemResponse=(data)->
+  date.via++
+  if data.scope==SCOPE.SESSION_PRIVATE || data.scope==SCOPE.AUTH_PRIVATE || data.scope==SCOPE.AUTH_LOCAL
+    response(data)
+  else if data.scope==SCOPE.APL_PRIVATE
+    if typeof(data.value)!='undefined'
+      response(data)
+    else
+      realKey=scopeKey(date.encKey)
+      data.encValue=localStorage.getItem(realKey)
+      requestToAuthFrame(data)
+  else
+    throw 'scope error:'+date.scope
 
-setItemResponse=(data)->
+onSetItemResponse=(data)->
+  date.via++
+  if data.scope==SCOPE.APL_PRIVATE
+    realKey=scopeKey(date.encKey)
+    data.encValue=localStorage.setItem(realKey,data.encValue)
+  else
+    throw 'scope error:'+date.scope
 
-enumKeyResponse=(data)->
+onRemoveItemResponse=(data)->
+  date.via++
+  if data.scope==SCOPE.APL_PRIVATE
+    realKey=scopeKey(date.encKey)
+    localStorage.removeItem(realKey)
+  else
+    throw 'scope error:'+date.scope
 
-removeKeyResponse=(data)->
+onEnumKeyResponse=(data)->
+  date.via++
+  if data.scope==SCOPE.SESSION_PRIVATE || data.scope==SCOPE.AUTH_PRIVATE || data.scope==SCOPE.AUTH_LOCAL
+    response(data)
+  else if data.scope==SCOPE.APL_PRIVATE
+    response(data)
+  else
+    throw 'scope error:'+date.scope
 
-changeItemResponse=(data)->
-
+onChangeItemResponse=(data)->
+  date.via++
+  if data.scope==SCOPE.SESSION_PRIVATE || data.scope==SCOPE.AUTH_PRIVATE || data.scope==SCOPE.AUTH_LOCAL
+    response(data)
+  else
+    throw 'scope error:'+date.scope
 
 onRequest=(req)->
   cdr.isIn=true
@@ -217,41 +321,42 @@ onRequest=(req)->
   else if req.type=='logout'
     requestToAuthFrame(req)
   else if req.type=="setItem"
-    # req.scope
-    key=req.key
-    value=req.value
-    #localStorage.setItem(key,value)
+    onSetItemRequest(req)
   else if req.type=="getItem"
-    # req.scope
-    key=req.key
-    #value=localStorage.getItem(key)
-    #req.value=decEncryptText(value,userInfo.offlinePassHash)
-    #response(req)
+    onGetItemRequest(req)
   else if req.type=="removeItem"
-    # req.scope
-    key=req.key
-    #localStorage.removeItem(key)
+    onRemoveItemRequest(req)
   else if req.type=="enumKey"
-    # req.scope
-    req.keys=[]
-    i=localStorage.length
-    while (i-=1) >=0
-      encKey=localStorage.key(i)
-      #key=decEncryptText(encKey,userInfo.offlinePassHash)
-      req.keys.push(encKey)
-    #response(req)
+    onEnumKeyRequest(req)
   else
     throw 'unkown type:'+req.type
+
+setupScope=(data,realKey)->
+  if realKey.lastIndexOf(aplPrivatePrefix,0)==0
+    data.scope=SCOPE.APL_PRIVATE
+    data.encKey=realKey.substring(aplPrivatePrefix.length)
+  else if realKey.lastIndexOf(aplLocalPrefix,0)==0
+    data.scope=SCOPE.APL_LOCAL
+    data.key=realKey.substring(aplLocalPrefix.length)
+  else
+    return false
+  return true
 
 onStorage=(qjev)->
   ev=qjev.originalEvent
   if !ev
     return
-  res={type:'changeItem',from:'aplFrame'}
-  #res.key=decPlainText(ev.key,userInfo.offlinePassHash)
-  #res.newValue=decPlainText(ev.newValue,userInfo.offlinePassHash)
-  #res.oldValue=decPlainText(ev.oldValue,userInfo.offlinePassHash)
-  #response(res)
+  data={type:'changeItem',via:0}
+  if setupScope(data,ev.key)==false
+    return
+  if data.scope==SCOPE.APL_PRIVATE
+    date.encNewValue=ev.newValue
+    date.encOldValue=ev.oldValue
+    requestToAuthFrame(data)
+  else if data.scope==SCOPE.APL_LOCAL
+    date.newValue=ev.newValue
+    date.oldValue=ev.oldValue
+    response(data)
 
 response=(msg)->
   cdr.isIn=false
