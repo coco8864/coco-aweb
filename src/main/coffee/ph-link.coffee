@@ -205,9 +205,8 @@ class Link extends PhObject
  unlink:->
   if @connection
    @connection.unload()
-   # return
-  @ppStorage.unload()
-  # @unload()
+  if @ppStorage
+   @ppStorage.unload()
 
 URL_PTN=/^(?:([^:\/]+:))?(?:\/\/([^\/]*))?(.*)/
 ph._links={}
