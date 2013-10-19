@@ -66,7 +66,7 @@ public class Authenticator {
 		return authSession;
 	}
 	
-	private static String getNextRandom(SecureRandom random){
+	public static String getNextRandom(SecureRandom random){
 		byte[] bytes = (byte[]) PoolManager.getArrayInstance(byte.class, 16);
 		String nonce=null;
 		random.nextBytes(bytes);
