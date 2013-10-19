@@ -75,7 +75,7 @@ ph.jQuery(function(){
 <H1>Authentication</H1>
 <Hr/>
 <H2 onclick="ph.jQuery('#authDiv').toggle();">+認証設定</H2>
-<div id="authDiv">
+<div class="internetAuthItem" id="authDiv">
 <p>ph認証:mappingとuserのrolesで認可します</br>
 authUrl:${config.config.authUrl}
 </p>
