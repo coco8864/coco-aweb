@@ -1,5 +1,6 @@
 package naru.aweb.auth;
 
+import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,31 +17,21 @@ import naru.aweb.config.Config;
 public class AuthSession extends PoolBase{
 	private static Config config=Config.getConfig();
 	private static final String SID_RANDOM_ENTOROPY = "sidRandomEntoropy";
-	private static final String SID_SEQUENCE = "sidSecuence";
-	private static final long SID_SAVE_INTERVAL = 1024l;
 	
-	public static AuthSession UNAUTH_SESSION=new AuthSession(new User(),"");
 	private static Logger logger = Logger.getLogger(AuthSession.class);
-	private static String serverId=config.getSelfDomain() + config.getString("serverIdEntropy","serverIdEntropy")+System.currentTimeMillis()+".";
-	private static long sidSeq=config.getLong(SID_SEQUENCE,0)+SID_SAVE_INTERVAL;
+	private static ByteBuffer serverId=ByteBuffer.wrap(("12345678"+config.getSelfDomain() + config.getString("serverIdEntropy","serverIdEntropy")+System.currentTimeMillis()).getBytes());
+	private static long sidSeq=0;
 	private static SecureRandom sidRandom=config.getRandom(SID_RANDOM_ENTOROPY);
+	public static AuthSession UNAUTH_SESSION=new AuthSession(new User(),"");
 	
 	private User user;
 	private String token;//CSRF対策
-	private String sid;//クライアントでこのセションを識別するID,他サーバを含めて一意
+	private String sid;//クライアントでこのセションを識別するID,グローバル一意、乱数を追加して予想不可能にするが、意味的には不要
 	private Map<String,Object> attribute=new HashMap<String,Object>();//sessionに付随する属性
 	private boolean isLogout=false;
 	private SessionId sessionId;
 	private Set<LogoutEvent> logoutEvents=new HashSet<LogoutEvent>();
 	private Set<AuthSession> secandarySessions=new HashSet<AuthSession>();
-	
-	private synchronized static long getSidSeq(){
-		sidSeq++;
-		if(sidSeq%SID_SAVE_INTERVAL==0){
-			config.setProperty(SID_SEQUENCE, sidSeq);
-		}
-		return sidSeq;
-	}
 	
 	public void recycle() {
 		Iterator<Object> itr=attribute.values().iterator();
@@ -65,7 +56,13 @@ public class AuthSession extends PoolBase{
 	void init(User user,String token){
 		this.user=user;
 		this.token=token;
-		this.sid=DataUtil.digestHex((serverId+getSidSeq()).getBytes());
+		String unique=null;
+		synchronized(serverId){
+			sidSeq++;
+			serverId.putLong(0,sidSeq);
+			unique=DataUtil.digestHex(serverId.array());
+		}
+		this.sid=unique+Authenticator.getNextRandom(sidRandom);
 	}
 	
 	public AuthSession createSecondarySession(){

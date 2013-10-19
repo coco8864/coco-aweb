@@ -474,14 +474,25 @@ public class AuthHandler extends WebServerHandler {
 		String aplUrl=parameter.getParameter(APL_URL);
 		String appSid=parameter.getParameter(APP_SID);
 		String token=parameter.getParameter(TOKEN);//aplのtoken
-		//passHashを返却するので厳密にチェック
-		int check=authorizer.checkSecondarySessionByPrimaryId(cookieId, aplUrl, appSid, token);
+		//passHashを返却するので厳密にチェックしたい
+		//int check=authorizer.checkSecondarySessionByPrimaryId(cookieId, aplUrl, appSid, token);
 		AuthSession session=authorizer.getPrimarySession(cookieId);
 		String authToken=null;
+		String authSid=null;
 		if(session!=null){
 			authToken=session.getToken();
+			authSid=session.getSid();
 		}
 		JSONObject response=new JSONObject();
+		response.element("result", true);
+		User user=authorizer.getUserByPrimaryId(cookieId);
+		if(user!=null){
+			response.element("offlinePassHash", user.getOfflinePassHash());
+			response.element("token", authToken);
+			response.element("authSid", authSid);
+		}
+		response.element("authInfo",infoObject(user,authToken));
+		/*
 		if(check!=Authorizer.CHECK_SECONDARY_OK){
 			response.element("result", false);
 			User user=authorizer.getUserByPrimaryId(cookieId);
@@ -489,14 +500,8 @@ public class AuthHandler extends WebServerHandler {
 				response.element("offlinePassHash", user.getOfflinePassHash());
 			}
 			response.element("authInfo",infoObject(user,authToken));
-		}else{
-			response.element("result", true);
-			User user=authorizer.getUserByPrimaryId(cookieId);
-			if(user!=null){
-				response.element("offlinePassHash", user.getOfflinePassHash());
-			}
-			response.element("authInfo",infoObject(user,authToken));
 		}
+		*/
 		responseJson(response);
 	}
 	

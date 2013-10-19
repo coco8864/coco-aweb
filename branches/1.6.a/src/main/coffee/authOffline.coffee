@@ -56,7 +56,7 @@ getUserInfo=(cb)->
     url:'userInfo',
     dataType:'json',
     data:aplInfo
-   })
+    })
   userInfoDfd.done((x)->
     userInfo=x
     if cb
@@ -64,13 +64,13 @@ getUserInfo=(cb)->
     isOffline=false
     isAuth=true
     saveUserInfo()
-   )
+    )
   userInfoDfd.fail((x)->
     userInfo=null
     if cb
       cb()
     isAuth=false
-   )
+    )
 
 encryptText=(plainText,passHash)->
   if passHash
