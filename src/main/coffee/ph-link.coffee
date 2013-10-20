@@ -191,7 +191,7 @@ class Link extends PhObject
  undeploy:(qname)->
   @connection.undeploy(qname)
  storage:(scope)->
-  if scope==ph.SCOPE_PAGE_PRIVATE || !scope
+  if scope==ph.SCOPE.PAGE_PRIVATE || !scope
    return @ppStorage
   stor=@storages[scope]
   if !stor
@@ -333,9 +333,9 @@ class PhLocalStorage extends PhObject
     @ctxIdx=0
     @load()
   getItem:(key,ctx)->
-    ctxs[ctxIdx]=ctx
-    @link._requestToAplFrame({type:'getItem',scope:@scope,key:key,ctxIdx:ctxIdx,via:0})
-    ctxIdx++;
+    @ctxs[@ctxIdx]=ctx
+    @link._requestToAplFrame({type:'getItem',scope:@scope,key:key,ctxIdx:@ctxIdx,via:0})
+    @ctxIdx++;
     return
   setItem:(key,value)->
     @link._requestToAplFrame({type:'setItem',scope:@scope,key:key,value:value,via:0})
@@ -343,12 +343,12 @@ class PhLocalStorage extends PhObject
   removeItem:(key)->
     @link._requestToAplFrame({type:'removeItem',scope:@scope,key:key,via:0})
   enumKey:(ctx)->
-    ctxs[ctxIdx]=ctx
-    @link._requestToAplFrame({type:'enumKey',scope:@scope,ctxIdx:ctxIdx,via:0})
-    ctxIdx++;
+    @ctxs[@ctxIdx]=ctx
+    @link._requestToAplFrame({type:'enumKey',scope:@scope,ctxIdx:@ctxIdx,via:0})
+    @ctxIdx++;
   _trigger:(data)->
     ctx=@ctxs[data.ctxIdx]
-    delete ctxs[data.ctxIdx]
+    delete @ctxs[data.ctxIdx]
     if typeof(ctx)=='function'
       ctx(data)
     else if data.type=='getItem'
