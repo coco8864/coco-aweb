@@ -140,16 +140,18 @@ class Ph extends PhObject
   RESULT_ERROR:'error'
   RESULT_SUCCESS:'success'
   # strage scope
-  SCOPE_PAGE_PRIVATE:'pagePrivate'
-  SCOPE_SESSION_PRIVATE:'sessionPrivate' #auth localstorage key:sessionid.key=value
-  SCOPE_APL_PRIVATE:'aplPrivate' #apl localstorage key:loginid.key=value
-  SCOPE_APL_LOCAL:'aplLocal' #apl localstorage key:@.key=value  (no enc)
-  SCOPE_AUTH_PRIVATE:'authPrivate' #auth localstorage key:loginid.key=value
-  SCOPE_AUTH_LOCAL:'authLocal' #auth localstorage key:@.key=value (no enc)
-  SCOPE_APL:'apl'
-  SCOPE_QNAME:'qname'
-  SCOPE_SUBNAME:'subname'
-  SCOPE_USER:'user'
+  SCOPE:{
+    PAGE_PRIVATE:'pagePrivate'
+    SESSION_PRIVATE:'sessionPrivate' #auth localstorage key:sessionid.key=value
+    APL_PRIVATE:'aplPrivate' #apl localstorage key:loginid.key=value
+    APL_LOCAL:'aplLocal' #apl localstorage key:@.key=value  (no enc)
+    AUTH_PRIVATE:'authPrivate' #auth localstorage key:loginid.key=value
+    AUTH_LOCAL:'authLocal' #auth localstorage key:@.key=value (no enc)
+    APL:'apl'
+    QNAME:'qname'
+    SUBNAME:'subname'
+    USER:'user'
+  }
  # _INTERVAL:1000
   _SEND_DATA_MAX:(1024*1024*2)
   _WS_RETRY_MAX:3

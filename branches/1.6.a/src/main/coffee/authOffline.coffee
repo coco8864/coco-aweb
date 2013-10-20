@@ -8,6 +8,10 @@ isOffline=false
 isAuth=false
 isDisplay=false
 
+sessionPrivatePrefix=null #'#userid.sid.'
+authPrivatePrefix=null #'$userid.'
+authLocalPrefix='$.'
+
 checkPassword=(loginId,password)->
   userInfo=null
   encryptText=localStorage.getItem(OFFLINE_KEY+loginId)
@@ -24,6 +28,8 @@ checkPassword=(loginId,password)->
     return false
   try
     userInfo=ph.JSON.parse(plainText)
+    sessionPrivatePrefix=null
+    authPrivatePrefix='$'+userInfo.authInfo.user.loginId+'.'
   catch error
     return false
   return true
@@ -59,6 +65,8 @@ getUserInfo=(cb)->
     })
   userInfoDfd.done((x)->
     userInfo=x
+    sessionPrivatePrefix='#'+userInfo.authSid+'.'
+    authPrivatePrefix='$'+userInfo.authInfo.user.loginId+'.'
     if cb
       cb()
     isOffline=false
@@ -73,13 +81,13 @@ getUserInfo=(cb)->
     )
 
 encryptText=(plainText,passHash)->
-  if passHash
+  if passHash && plainText!=null && typeof(plainText)!='undefined'
     return CryptoJS.AES.encrypt(plainText,passHash).toString()
   else
     return plainText
 
 decryptText=(encryptText,passHash)->
-  if passHash
+  if passHash && encryptText!=null && typeof(encryptText)!='undefined'
     return CryptoJS.AES.decrypt(encryptText, passHash).toString(CryptoJS.enc.Utf8)
   else
     return encryptText
@@ -120,55 +128,71 @@ SCOPE={
   AUTH_LOCAL:'authLocal' #auth localstorage key:@.key=value (no enc)
 }
 
+scopePrefix=(scope)->
+  if scope==SCOPE.SESSION_PRIVATE
+    return sessionPrivatePrefix
+  else if scope==SCOPE.AUTH_PRIVATE
+    return authPrivatePrefix
+  else if scope==SCOPE.AUTH_LOCAL
+    return authLocalPrefix
+  throw 'unkown scope:'+scope
+
+scopeKey=(scope,key)->
+  return scopePrefix(scope)+key
+
 onGetItemRequest=(data)->
-  date.via++
+  data.via++
   if data.scope==SCOPE.SESSION_PRIVATE || data.scope==SCOPE.AUTH_PRIVATE
-    key=encryptText(data.key,userInfo.offlinePassHash)
-    realKey=scopeKey(data.scope,key)
+    # key=encryptText(data.key,userInfo.offlinePassHash)
+    realKey=scopeKey(data.scope,data.key)
     value=localStorage.getItem(realKey)
     data.value=decryptText(value,userInfo.offlinePassHash)
   else if data.scope==SCOPE.APL_PRIVATE
-    if typeof(data.key)=='undefined'
-      data.key=decryptText(data.encKey,userInfo.offlinePassHash)
+    if typeof(data.encKey)=='undefined'
+      # data.encKey=encryptText(data.key,userInfo.offlinePassHash)
+      data.encKey=data.key
     else
       data.value=decryptText(data.encValue,userInfo.offlinePassHash)
-    requestToAuthFrame(data)
   else if data.scope==SCOPE.AUTH_LOCAL
-    realKey=scopeKey(data.scope,date.key)
-    date.value=localStorage.getItem(realKey)
+    realKey=scopeKey(data.scope,data.key)
+    data.value=localStorage.getItem(realKey)
   else
-    throw 'scope error:'+date.scope
-  response(req)
+    throw 'scope error:'+data.scope
+  response(data)
 
 onSetItemRequest=(data)->
-  date.via++
+  data.via++
   if data.scope==SCOPE.SESSION_PRIVATE || data.scope==SCOPE.AUTH_PRIVATE
-    key=encryptText(data.key,userInfo.offlinePassHash)
-    realKey=scopeKey(data.scope,key)
+    # key=encryptText(data.key,userInfo.offlinePassHash)
+    realKey=scopeKey(data.scope,data.key)
     value=encryptText(data.value,userInfo.offlinePassHash)
     localStorage.setItem(realKey,value)
   else if data.scope==SCOPE.APL_PRIVATE
-    data.encKey=encryptText(data.key,userInfo.offlinePassHash)
+    # data.encKey=encryptText(data.key,userInfo.offlinePassHash)
+    data.encKey=data.key
     data.encValue=encryptText(data.value,userInfo.offlinePassHash)
+    response(data)
   else if data.scope==SCOPE.AUTH_LOCAL
-    realKey=scopeKey(data.scope,date.key)
-    localStorage.setItem(realKey,date.value)
+    realKey=scopeKey(data.scope,data.key)
+    localStorage.setItem(realKey,data.value)
   else
-    throw 'scope error:'+date.scope
+    throw 'scope error:'+data.scope
 
 onRemoveItemRequest=(data)->
-  date.via++
+  data.via++
   if data.scope==SCOPE.SESSION_PRIVATE || data.scope==SCOPE.AUTH_PRIVATE
-    key=encryptText(data.key,userInfo.offlinePassHash)
-    realKey=scopeKey(data.scope,key)
+    # key=encryptText(data.key,userInfo.offlinePassHash)
+    realKey=scopeKey(data.scope,data.key)
     localStorage.removeItem(realKey)
   else if data.scope==SCOPE.APL_PRIVATE
-    data.encKey=encryptText(data.key,userInfo.offlinePassHash)
+    # data.encKey=encryptText(data.key,userInfo.offlinePassHash)
+    data.encKey=data.key
+    response(data)
   else if data.scope==SCOPE.AUTH_LOCAL
-    realKey=scopeKey(data.scope,date.key)
+    realKey=scopeKey(data.scope,data.key)
     localStorage.removeItem(realKey)
   else
-    throw 'scope error:'+date.scope
+    throw 'scope error:'+data.scope
 
 enumScopeKey=(scope)->
   prefix=scopePrefix(scope)
@@ -187,27 +211,28 @@ decryptKeys=(keys)->
     key[i]=decryptText(key[i],userInfo.offlinePassHash)
 
 onEnumKeyRequest=(data)->
-  date.via++
+  data.via++
   if data.scope==SCOPE.SESSION_PRIVATE || data.scope==SCOPE.AUTH_PRIVATE
-    date.keys=enumScopeKey(data.scope)
-    decryptKeys(date.keys)
+    data.keys=enumScopeKey(data.scope)
+    # decryptKeys(data.keys)
   else if data.scope==SCOPE.APL_PRIVATE
-    decryptKeys(date.keys)
+    # decryptKeys(data.keys)
   else if data.scope==SCOPE.AUTH_LOCAL
-    date.keys=enumScopeKey(data.scope)
+    data.keys=enumScopeKey(data.scope)
   else
-    throw 'scope error:'+date.scope
-  response(date)
+    throw 'scope error:'+data.scope
+  response(data)
 
 onChangeItemRequest=(data)->
-  date.via++
+  data.via++
   if data.scope==SCOPE.APL_PRIVATE
-    data.encKey=encryptText(data.key,userInfo.offlinePassHash)
-    data.newValue=encryptText(data.encNewValue,userInfo.offlinePassHash)
-    data.oldValue=encryptText(data.encOldValue,userInfo.offlinePassHash)
+    # data.key=decryptText(data.encKey,userInfo.offlinePassHash)
+    data.key=data.encKey
+    data.newValue=decryptText(data.encNewValue,userInfo.offlinePassHash)
+    data.oldValue=decryptText(data.encOldValue,userInfo.offlinePassHash)
   else
-    throw 'scope error:'+date.scope
-  response(date)
+    throw 'scope error:'+data.scope
+  response(data)
 
 onRequest=(req)->
   if req.type=="encrypt"
@@ -266,6 +291,8 @@ onRequest=(req)->
     if userInfo
       result=true
     userInfo=null
+    sessionPrivatePrefix=null
+    authPrivatePrefix=null
     isOffline=true
     isAuth=false
     response({type:'offlineLogout',result:result})
@@ -316,19 +343,17 @@ onMsg=(qjev)->
     req=ph.JSON.parse(ev.data)
     onRequest(req)
 
-sessionPrivatePrefix='#userid.sid.'
-authPrivatePrefix='$userid.'
-authLocalPrefix='$.'
-
 setupScope=(data,realKey)->
   if realKey.lastIndexOf(sessionPrivatePrefix,0)==0
     data.scope=SCOPE.SESSION_PRIVATE
     realKey=realKey.substring(sessionPrivatePrefix.length)
-    data.key=decryptText(realKey,userInfo.offlinePassHash)
+    # data.key=decryptText(realKey,userInfo.offlinePassHash)
+    data.key=realKey
   else if realKey.lastIndexOf(authPrivatePrefix,0)==0
     data.scope=SCOPE.AUTH_PRIVATE
     realKey=realKey.substring(authPrivatePrefix.length)
-    data.key=decryptText(realKey,userInfo.offlinePassHash)
+    # data.key=decryptText(realKey,userInfo.offlinePassHash)
+    data.key=realKey
   else if realKey.lastIndexOf(authLocalPrefix,0)==0
     data.scope=SCOPE.AUTH_LOCAL
     data.key=realKey.substring(authLocalPrefix.length)
@@ -344,12 +369,12 @@ onStorage=(qjev)->
   if setupScope(data,ev.key)==false
     return
   if data.scope==SCOPE.AUTH_PRIVATE || data.scope==SCOPE.AUTH_PRIVATE
-    date.newValue=decryptText(ev.newValue,userInfo.offlinePassHash)
-    date.oldValue=decryptText(ev.oldValue,userInfo.offlinePassHash)
+    data.newValue=decryptText(ev.newValue,userInfo.offlinePassHash)
+    data.oldValue=decryptText(ev.oldValue,userInfo.offlinePassHash)
     response(data)
   else if data.scope==SCOPE.AUTH_LOCAL
-    date.newValue=ev.newValue
-    date.oldValue=ev.oldValue
+    data.newValue=ev.newValue
+    data.oldValue=ev.oldValue
     response(data)
 
 response=(msg)->
