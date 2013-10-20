@@ -67,6 +67,12 @@ getUserInfo=(cb)->
     userInfo=x
     sessionPrivatePrefix='#'+userInfo.authSid+'.'
     authPrivatePrefix='$'+userInfo.authInfo.user.loginId+'.'
+    ##不要なsessionPrivateの刈り取り
+    i=localStorage.length
+    while (i-=1) >=0
+      key=localStorage.key(i)
+      if key.lastIndexOf('#')==0 && key.lastIndexOf(sessionPrivatePrefix)!=0
+        localStorage.removeItem(key)
     if cb
       cb()
     isOffline=false
@@ -138,6 +144,9 @@ scopePrefix=(scope)->
   throw 'unkown scope:'+scope
 
 scopeKey=(scope,key)->
+  prefix=scopePrefix(scope)
+  if prefix==null
+    return null
   return scopePrefix(scope)+key
 
 onGetItemRequest=(data)->
@@ -145,8 +154,9 @@ onGetItemRequest=(data)->
   if data.scope==SCOPE.SESSION_PRIVATE || data.scope==SCOPE.AUTH_PRIVATE
     # key=encryptText(data.key,userInfo.offlinePassHash)
     realKey=scopeKey(data.scope,data.key)
-    value=localStorage.getItem(realKey)
-    data.value=decryptText(value,userInfo.offlinePassHash)
+    if realKey!=null
+      value=localStorage.getItem(realKey)
+      data.value=decryptText(value,userInfo.offlinePassHash)
   else if data.scope==SCOPE.APL_PRIVATE
     if typeof(data.encKey)=='undefined'
       # data.encKey=encryptText(data.key,userInfo.offlinePassHash)
@@ -155,7 +165,8 @@ onGetItemRequest=(data)->
       data.value=decryptText(data.encValue,userInfo.offlinePassHash)
   else if data.scope==SCOPE.AUTH_LOCAL
     realKey=scopeKey(data.scope,data.key)
-    data.value=localStorage.getItem(realKey)
+    if realKey!=null
+      data.value=localStorage.getItem(realKey)
   else
     throw 'scope error:'+data.scope
   response(data)
@@ -166,7 +177,8 @@ onSetItemRequest=(data)->
     # key=encryptText(data.key,userInfo.offlinePassHash)
     realKey=scopeKey(data.scope,data.key)
     value=encryptText(data.value,userInfo.offlinePassHash)
-    localStorage.setItem(realKey,value)
+    if realKey!=null
+      localStorage.setItem(realKey,value)
   else if data.scope==SCOPE.APL_PRIVATE
     # data.encKey=encryptText(data.key,userInfo.offlinePassHash)
     data.encKey=data.key
@@ -174,7 +186,8 @@ onSetItemRequest=(data)->
     response(data)
   else if data.scope==SCOPE.AUTH_LOCAL
     realKey=scopeKey(data.scope,data.key)
-    localStorage.setItem(realKey,data.value)
+    if realKey!=null
+      localStorage.setItem(realKey,data.value)
   else
     throw 'scope error:'+data.scope
 
@@ -183,14 +196,16 @@ onRemoveItemRequest=(data)->
   if data.scope==SCOPE.SESSION_PRIVATE || data.scope==SCOPE.AUTH_PRIVATE
     # key=encryptText(data.key,userInfo.offlinePassHash)
     realKey=scopeKey(data.scope,data.key)
-    localStorage.removeItem(realKey)
+    if realKey!=null
+      localStorage.removeItem(realKey)
   else if data.scope==SCOPE.APL_PRIVATE
     # data.encKey=encryptText(data.key,userInfo.offlinePassHash)
     data.encKey=data.key
     response(data)
   else if data.scope==SCOPE.AUTH_LOCAL
     realKey=scopeKey(data.scope,data.key)
-    localStorage.removeItem(realKey)
+    if realKey!=null
+      localStorage.removeItem(realKey)
   else
     throw 'scope error:'+data.scope
 
@@ -344,12 +359,12 @@ onMsg=(qjev)->
     onRequest(req)
 
 setupScope=(data,realKey)->
-  if realKey.lastIndexOf(sessionPrivatePrefix,0)==0
+  if sessionPrivatePrefix && realKey.lastIndexOf(sessionPrivatePrefix,0)==0
     data.scope=SCOPE.SESSION_PRIVATE
     realKey=realKey.substring(sessionPrivatePrefix.length)
     # data.key=decryptText(realKey,userInfo.offlinePassHash)
     data.key=realKey
-  else if realKey.lastIndexOf(authPrivatePrefix,0)==0
+  else if authPrivatePrefix && realKey.lastIndexOf(authPrivatePrefix,0)==0
     data.scope=SCOPE.AUTH_PRIVATE
     realKey=realKey.substring(authPrivatePrefix.length)
     # data.key=decryptText(realKey,userInfo.offlinePassHash)

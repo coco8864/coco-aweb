@@ -190,6 +190,9 @@ scopePrefix=(scope)->
   throw 'unkown scope:'+scope
 
 scopeKey=(scope,key)->
+  prefix=scopePrefix(scope)
+  if prefix==null
+    return null
   return scopePrefix(scope)+key
 
 onGetItemRequest=(data)->
@@ -200,7 +203,8 @@ onGetItemRequest=(data)->
     requestToAuthFrame(data)
   else if data.scope==SCOPE.APL_LOCAL
     realKey=scopeKey(data.scope,data.key)
-    data.value=localStorage.getItem(realKey)
+    if realKey!=null
+      data.value=localStorage.getItem(realKey)
     response(data)
   else
     throw 'scope error:'+data.scope
@@ -213,7 +217,8 @@ onSetItemRequest=(data)->
     requestToAuthFrame(data)
   else if data.scope==SCOPE.APL_LOCAL
     realKey=scopeKey(data.scope,data.key)
-    data.value=localStorage.setItem(realKey,data.value)
+    if realKey!=null
+      data.value=localStorage.setItem(realKey,data.value)
   else
     throw 'scope error:'+data.scope
 
@@ -225,7 +230,8 @@ onRemoveItemRequest=(data)->
     requestToAuthFrame(data)
   else if data.scope==SCOPE.APL_LOCAL
     realKey=scopeKey(data.scope,data.key)
-    data.value=localStorage.removeItem(realKey,data.value)
+    if realKey!=null
+      data.value=localStorage.removeItem(realKey,data.value)
   else
     throw 'scope error:'+data.scope
 
@@ -264,8 +270,11 @@ onGetItemResponse=(data)->
       response(data)
     else
       realKey=scopeKey(data.scope,data.encKey)
-      data.encValue=localStorage.getItem(realKey)
-      requestToAuthFrame(data)
+      if realKey!=null
+        data.encValue=localStorage.getItem(realKey)
+        requestToAuthFrame(data)
+      else
+        response(data)
   else
     throw 'scope error:'+data.scope
 
@@ -273,7 +282,8 @@ onSetItemResponse=(data)->
   data.via++
   if data.scope==SCOPE.APL_PRIVATE
     realKey=scopeKey(data.scope,data.encKey)
-    data.encValue=localStorage.setItem(realKey,data.encValue)
+    if realKey!=null
+      data.encValue=localStorage.setItem(realKey,data.encValue)
   else
     throw 'scope error:'+data.scope
 
@@ -281,7 +291,8 @@ onRemoveItemResponse=(data)->
   data.via++
   if data.scope==SCOPE.APL_PRIVATE
     realKey=scopeKey(data.scope,data.encKey)
-    localStorage.removeItem(realKey)
+    if realKey!=null
+      localStorage.removeItem(realKey)
   else
     throw 'scope error:'+data.scope
 
@@ -334,7 +345,7 @@ onRequest=(req)->
     throw 'unkown type:'+req.type
 
 setupScope=(data,realKey)->
-  if realKey.lastIndexOf(aplPrivatePrefix,0)==0
+  if aplPrivatePrefix && realKey.lastIndexOf(aplPrivatePrefix,0)==0
     data.scope=SCOPE.APL_PRIVATE
     data.encKey=realKey.substring(aplPrivatePrefix.length)
   else if realKey.lastIndexOf(aplLocalPrefix,0)==0
