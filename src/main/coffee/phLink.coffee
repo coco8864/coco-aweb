@@ -208,6 +208,7 @@ class Link extends PhObject
    @connection.unload()
   if @ppStorage
    @ppStorage.unload()
+  @_frame.remove()
   @unload()
 
 URL_PTN=/^(?:([^:\/]+:))?(?:\/\/([^\/]*))?(.*)/
