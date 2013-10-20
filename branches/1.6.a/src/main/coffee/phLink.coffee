@@ -108,11 +108,11 @@ class Link extends PhObject
    #  @trigger('onlineAuth',@)
    #  @trigger('auth',@)
    #  @_connect()
-   else if res.aplInfo.isOffline==true && @param.useOffline=='never'
+   else if res.aplInfo.isOffline==true && @param.useOffline==false
     # offlineなのにofflineは絶対使うな指定
     @isOffline=true
     @trigger('suspendAuth',@)
-   else if @param.useOffline=='must' || res.aplInfo.isOffline==true
+   else if @param.useOffline==true || res.aplInfo.isOffline==true
     # 必ずofflineを使う指定、もしくは実際にoffline
     @isOffline=true
     @_requestToAplFrame({type:'offlineAuth'})
@@ -147,16 +147,16 @@ class Link extends PhObject
     @isOffline=true
     @authInfo=res.authInfo
     @aplInfo={loginId:@authInfo.user.loginId,appSid:'offline'}
-    @ppStorage=new PrivateSessionStorage(@)
-    link=@
-    @ppStorage.onLoad(->
-      link.trigger('ppStorage',link)
-      link.trigger('offlineAuth',link)
-      link.trigger('auth',link)
-      link.load(link)
-      link.trigger('linked',link)
-     )
+    # @ppStorage=new PrivateSessionStorage(@)
+    link.trigger('offlineAuth',link)
+    link.trigger('auth',link)
+    #link=@
+    #@ppStorage.onLoad(->
+    #  link.trigger('offlineAuth',link)
+    #  link.trigger('auth',link)
+    # )
     # @ppStorage.onUnload(->link._logout())
+    @load()
    else
     @cause='fail to offlineAuth'
     @trigger('failToAuth',@)
@@ -208,6 +208,7 @@ class Link extends PhObject
    @connection.unload()
   if @ppStorage
    @ppStorage.unload()
+  @unload()
 
 URL_PTN=/^(?:([^:\/]+:))?(?:\/\/([^\/]*))?(.*)/
 ph._links={}
@@ -220,7 +221,7 @@ ph.link=(aplUrl,useOffline,useConnection,useWs)->
  if !aplUrl
   pos=location.href.lastIndexOf("/")
   aplUrl=location.href.substring(0,pos)
-  useOffline='never'
+  useOffline=false
   useConnection=false
   useWs=false
  if typeof aplUrl=='Object'
@@ -229,8 +230,6 @@ ph.link=(aplUrl,useOffline,useConnection,useWs)->
     throw 'aplUrl is null'
   aplUrl=param.aplUrl
  else
-  if !useOffline
-   useOffline='can'
   if useConnection!=false
    useConnection=true
   if useWs!=false
