@@ -5,6 +5,7 @@ class Link extends PhObject
   @reqseq=0
   @reqcb={}
   @storages={}
+  @ppStorage=new PrivateSessionStorage(@)
   link=@
   if @param.useConnection
    @connection=new Connection(@)
@@ -42,7 +43,7 @@ class Link extends PhObject
   @
  _connect:->
   # alert('connect start2')
-  @ppStorage=new PrivateSessionStorage(@)
+  # @ppStorage=new PrivateSessionStorage(@)
   link=@
   # @ppStorage.onUnload(->link._logout())
   if @param.useConnection==false
@@ -169,7 +170,7 @@ class Link extends PhObject
   else if res.type=='getItem' || res.type=='changeItem' || res.type=='enumKey'
    storage=@storages[res.scope]
    if storage
-    storage._trigger(res)
+    storage._storageTrigger(res)
   return
  offlineAuth:()->
   ### offlineで認証します。###
@@ -275,6 +276,8 @@ ph.link=(aplUrl,useOffline,useConnection,useWs)->
 class PrivateSessionStorage extends PhObject
  constructor:(@link)->
   super
+  @link.on('auth',@_init)
+ _init:=>
   aplInfo=@link.aplInfo
   @_linkPss="_linkPss:#{@link.keyUrl}:#{aplInfo.loginId}:#{aplInfo.appSid}"
   ##不要なsessionStorageの刈り取り
@@ -301,21 +304,45 @@ class PrivateSessionStorage extends PhObject
    @load()
    @onUnload(@_onUnload)
   #ph.one('@unload',@_onUnload) #pageがunloadされるときsessionStorageに残す
- getItem:(key)->
+ getItem:(key,ctx)->
+  s=@
+  @onLoad(->s._getItem(key,ctx))
+ _getItem:(key,ctx)->
+  data={key:key,scope:ph.SCOPE.PAGE_PRIVATE,value:@data[key]}
+  if typeof(ctx)=='function'
+    ctx(data)
+  else
+    @trigger(key,data,ctx)
+    @trigger('@getItem',data,ctx)
   @data[key]
+ enumKey:(ctx)->
+  s=@
+  @onLoad(->s._enumKey(ctx))
+ _enumKey:(ctx)->
+  keys=Object.keys(@data)
+  data={scope:ph.SCOPE.PAGE_PRIVATE,kyes:kyes}
+  if typeof(ctx)=='function'
+    ctx(data)
+  else
+    @trigger('@enumKey',data,ctx)
+  keys
  setItem:(key,value)->
+  s=@
+  @onLoad(->s._setItem(key,value))
+ _setItem:(key,value)->
   oldValue=@data[key]
   @data[key]=value
-  @trigger(key,{key:key,oldValue:oldValue,newValue:value})
   s=@
   @link.encrypt(ph.JSON.stringify(@data),(text)->s.encText=text)
   return
  removeItem:(key)->
+  s=@
+  @onLoad(->s._removeItem(key))
+ _removeItem:(key)->
   oldValue=@data[key]
   if !oldValue
    return
   delete @data[key]
-  @trigger(key,{key:key,oldValue:oldValue})
   s=@
   @link.encrypt(ph.JSON.stringify(@data),(text)->s.encText=text)
   return
@@ -331,32 +358,51 @@ class PhLocalStorage extends PhObject
     super
     @ctxs={}
     @ctxIdx=0
-    @load()
+    if @link.isLoading()
+      s=@
+      link.onLoad(->s.load())
+    else
+      @load()
   getItem:(key,ctx)->
+    s=@
+    @onLoad(->s._getItem(key,ctx))
+  _getItem:(key,ctx)->
     @ctxs[@ctxIdx]=ctx
     @link._requestToAplFrame({type:'getItem',scope:@scope,key:key,ctxIdx:@ctxIdx,via:0})
     @ctxIdx++;
     return
   setItem:(key,value)->
+    s=@
+    @onLoad(->s._setItem(key,value))
+  _setItem:(key,value)->
     @link._requestToAplFrame({type:'setItem',scope:@scope,key:key,value:value,via:0})
     return
   removeItem:(key)->
+    s=@
+    @onLoad(->s._removeItem(key))
+  _removeItem:(key)->
     @link._requestToAplFrame({type:'removeItem',scope:@scope,key:key,via:0})
+    return
   enumKey:(ctx)->
+    s=@
+    @onLoad(->s._enumKey(ctx))
+  _enumKey:(ctx)->
     @ctxs[@ctxIdx]=ctx
     @link._requestToAplFrame({type:'enumKey',scope:@scope,ctxIdx:@ctxIdx,via:0})
     @ctxIdx++;
-  _trigger:(data)->
+    return
+  _storageTrigger:(data)->
     ctx=@ctxs[data.ctxIdx]
     delete @ctxs[data.ctxIdx]
     if typeof(ctx)=='function'
       ctx(data)
     else if data.type=='getItem'
-      trigger('@getItem',data,ctx)
-      trigger(data.key,data,ctx)
+      @trigger('@getItem',data,ctx)
+      @trigger(data.key,data,ctx)
     else if data.type=='enumKey'
-      trigger('@enumKey',data,ctx)
+      @trigger('@enumKey',data,ctx)
     else if data.type=='changeItem'
-      trigger('@changeItem',data)
-      trigger(data.key,data)
+      data.value=data.newValue
+      @trigger('@changeItem',data)
+      @trigger(data.key,data)
 

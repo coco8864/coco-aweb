@@ -298,6 +298,8 @@ onChangeItemResponse=(data)->
   data.via++
   if data.scope==SCOPE.SESSION_PRIVATE || data.scope==SCOPE.AUTH_PRIVATE || data.scope==SCOPE.AUTH_LOCAL
     response(data)
+  else if data.scope==SCOPE.APL_PRIVATE
+    response(data)
   else
     throw 'scope error:'+data.scope
 

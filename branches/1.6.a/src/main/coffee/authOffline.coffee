@@ -368,7 +368,7 @@ onStorage=(qjev)->
   data={type:'changeItem',via:0}
   if setupScope(data,ev.key)==false
     return
-  if data.scope==SCOPE.AUTH_PRIVATE || data.scope==SCOPE.AUTH_PRIVATE
+  if data.scope==SCOPE.SESSION_PRIVATE || data.scope==SCOPE.AUTH_PRIVATE
     data.newValue=decryptText(ev.newValue,userInfo.offlinePassHash)
     data.oldValue=decryptText(ev.oldValue,userInfo.offlinePassHash)
     response(data)
