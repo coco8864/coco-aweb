@@ -78,11 +78,10 @@ class PhObject
       if func
         _this=@
         @one(@STAT_LOAD,->func.apply(_this,args))
-      return false
+      return
     else if @_stat==@STAT_LOAD
       if func
-        func.apply(@,args)
-      return true
+        return func.apply(@,args)
     else
       throw 'aleady unloaded'
   # Žg‚¦‚È‚­‚È‚Á‚½‚ç’Ê’m‚³‚ê‚éfunc‚ð“o˜^
