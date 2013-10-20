@@ -80,23 +80,10 @@
                 <include>*.js</include>
             </includes>
          </setOfFilesToMinify-->
-
          <!--coffeeOutputDirectory>${project.build.directory}/coffee</coffeeOutputDirectory-->
          <coffeeOutputDirectory>${basedir}/ph/docroot/pub/js</coffeeOutputDirectory>
          <compileIndividualFiles>false</compileIndividualFiles>
          <coffeeJoinSets>
-            <joinSet>
-                <id>ph-link</id>
-                <fileSet>
-                    <directory>${basedir}/src/main/coffee</directory>
-                    <includes>
-                        <include>ph-link.coffee</include>
-                        <include>ph-link-connection.coffee</include>
-                        <include>ph-link-subscription.coffee</include>
-                        <include>ph-link-envelope.coffee</include>
-                    </includes>
-                </fileSet>
-            </joinSet>
             <joinSet>
                 <id>authOffline</id>
                 <fileSet>
@@ -116,24 +103,15 @@
                 </fileSet>
             </joinSet>
             <joinSet>
-                <id>~auth</id>
-                <fileSet>
-                    <directory>${basedir}/src/main/coffee</directory>
-                    <includes>
-                        <include>~auth.coffee</include>
-                    </includes>
-                </fileSet>
-            </joinSet>
-            <joinSet>
                 <id>ph</id>
                 <fileSet>
                     <directory>${basedir}/src/main/coffee</directory>
                     <includes>
-                        <include>ph-.coffee</include>
-                        <include>ph-link.coffee</include>
-                        <include>ph-link-connection.coffee</include>
-                        <include>ph-link-subscription.coffee</include>
-                        <include>ph-link-envelope.coffee</include>
+                        <include>ph.coffee</include>
+                        <include>phLink.coffee</include>
+                        <include>phLinkConnection.coffee</include>
+                        <include>phLinkSubscription.coffee</include>
+                        <include>phLinkEnvelope.coffee</include>
                     </includes>
                 </fileSet>
             </joinSet>
