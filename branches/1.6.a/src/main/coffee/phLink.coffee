@@ -167,7 +167,7 @@ class Link extends PhObject
   else if res.type=='offlineLogout'
    if res.result==true
     @trigger('suspendAuth',link)
-  else if res.type=='getItem' || res.type=='changeItem' || res.type=='enumKey'
+  else if res.type=='getItem' || res.type=='changeItem' || res.type=='keys'
    storage=@storages[res.scope]
    if storage
     storage._storageTrigger(res)
@@ -208,6 +208,8 @@ class Link extends PhObject
    @connection.unload()
   if @ppStorage
    @ppStorage.unload()
+  for scope, storage of @storages
+   storage.unload()
   @_frame.remove()
   @unload()
 
@@ -279,9 +281,9 @@ class PrivateSessionStorage extends PhObject
   @link.on('auth',@_init)
  _init:=>
   aplInfo=@link.aplInfo
-  @_linkPss="_linkPss:#{@link.keyUrl}:#{aplInfo.loginId}:#{aplInfo.appSid}"
+  @_linkPss="&#{@link.keyUrl}:#{aplInfo.loginId}:#{aplInfo.appSid}"
   ##不要なsessionStorageの刈り取り
-  sameLoginIdKey="_linkPss:#{@link.keyUrl}:"
+  sameLoginIdKey="&#{@link.keyUrl}:"
   i=sessionStorage.length
   while (i-=1) >=0
    key=sessionStorage.key(i)
@@ -315,16 +317,21 @@ class PrivateSessionStorage extends PhObject
     @trigger(key,data,ctx)
     @trigger('@getItem',data,ctx)
   @data[key]
- enumKey:(ctx)->
+ keys:(ctx)->
   s=@
-  @onLoad(->s._enumKey(ctx))
- _enumKey:(ctx)->
-  keys=Object.keys(@data)
-  data={scope:ph.SCOPE.PAGE_PRIVATE,kyes:kyes}
+  @onLoad(->s._keys(ctx))
+ _keys:(ctx)->
+  if typeof(Object.keys)=='function'
+   keys=Object.keys(@data)
+  else
+   keys=[]
+   for key,value of @data
+    keys.push(key)
+  data={scope:ph.SCOPE.PAGE_PRIVATE,keys:keys}
   if typeof(ctx)=='function'
     ctx(data)
   else
-    @trigger('@enumKey',data,ctx)
+    @trigger('@keys',data,ctx)
   keys
  setItem:(key,value)->
   s=@
@@ -383,12 +390,12 @@ class PhLocalStorage extends PhObject
   _removeItem:(key)->
     @link._requestToAplFrame({type:'removeItem',scope:@scope,key:key,via:0})
     return
-  enumKey:(ctx)->
+  keys:(ctx)->
     s=@
-    @onLoad(->s._enumKey(ctx))
-  _enumKey:(ctx)->
+    @onLoad(->s._keys(ctx))
+  _keys:(ctx)->
     @ctxs[@ctxIdx]=ctx
-    @link._requestToAplFrame({type:'enumKey',scope:@scope,ctxIdx:@ctxIdx,via:0})
+    @link._requestToAplFrame({type:'keys',scope:@scope,ctxIdx:@ctxIdx,via:0})
     @ctxIdx++;
     return
   _storageTrigger:(data)->
@@ -399,8 +406,8 @@ class PhLocalStorage extends PhObject
     else if data.type=='getItem'
       @trigger('@getItem',data,ctx)
       @trigger(data.key,data,ctx)
-    else if data.type=='enumKey'
-      @trigger('@enumKey',data,ctx)
+    else if data.type=='keys'
+      @trigger('@keys',data,ctx)
     else if data.type=='changeItem'
       data.value=data.newValue
       @trigger('@changeItem',data)
