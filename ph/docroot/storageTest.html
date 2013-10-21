@@ -12,9 +12,7 @@
   <script type="text/javascript" src="/pub/js/ph.js"></script>
   <script type="text/javascript" src="/pub/js/dateformat.js"></script>
   <script type="text/javascript">
-var TEST_KEY='testKey';
 var link;
-
 var scopes=[
   ph.SCOPE.PAGE_PRIVATE,
   ph.SCOPE.SESSION_PRIVATE,
@@ -24,16 +22,37 @@ var scopes=[
   ph.SCOPE.AUTH_LOCAL]
 var storages={};
 
+function testKey(){
+  return ph.jQuery("#keyText").val();
+}
+
+function aplUrl(){
+  return ph.jQuery("#aplUrl").val();
+}
+
+
 function auth(isOffline){
   if(link!=null){
     link.unlink();
   }
-  link=ph.link('/admin',isOffline);
+  link=ph.link(aplUrl(),isOffline);
+  link.on('auth',function(){
+    var linkInfo=
+    "isOffline:"+link.isOffline +
+    " keyUrl:"+link.keyUrl +
+    " user:"+ ph.JSON.stringify(link.authInfo.user);
+    //alert(linkInfo);
+    ph.jQuery("#authOutput").text(linkInfo);
+    ph.jQuery("#storages").show();
+  });
+  link.onUnload(function(){
+    ph.jQuery("#storages").hide();
+  });
   for(i=0;i<scopes.length;i++){
     var scope=scopes[i];
     storages[scope]=link.storage(scope);
     getItem(scope);
-    storages[scope].on(TEST_KEY,function(data){
+    storages[scope].on(testKey(),function(data){
       ph.jQuery("#"+data.scope+"Text").val(data.value)
     });
   }
@@ -42,19 +61,26 @@ function auth(isOffline){
 function setItem(scope){
   var value=ph.jQuery("#"+scope+"Text").val();
   storage=storages[scope];
-  storage.setItem(TEST_KEY,value);
+  storage.setItem(testKey(),value);
 }
 
 function getItem(scope){
   storage=storages[scope];
-  storage.getItem(TEST_KEY,function(data){ph.jQuery("#"+scope+"Text").val(data.value)});
+  storage.getItem(testKey(),function(data){ph.jQuery("#"+scope+"Text").val(data.value)});
 }
 function removeItem(scope){
   storage=storages[scope];
-  storage.removeItem(TEST_KEY);
+  storage.removeItem(testKey());
+}
+function keys(scope){
+  storage=storages[scope];
+  storage.keys(function(data){
+    ph.jQuery("#"+scope+"Text").val(ph.JSON.stringify(data.keys));
+    });
 }
 
 ph.jQuery(function(){
+ph.jQuery("#storages").hide();
 //  onlineAuth();
 });
 
@@ -63,62 +89,75 @@ ph.jQuery(function(){
 </head>
 <body>
 <H1>storage test</H1>
-<input type="button" value="online logon" onclick="auth(false);"/>
-<input type="button" value="offline logon" onclick="auth(true);"/>
-<input type="button" value="offline logoff" onclick="link.offlineLogout();"/>
+<hr/>
+aplUrl:<input id='aplUrl' type="text" value="/admin" style="width:256px;"/><input type="button" value="online logon" onclick="auth(false);"/>
+<input type="button" value="offline logon" onclick="auth(true);"/><br />
+key:<input id='keyText' type="text" value="testKey"/><br />
+<hr/>
+
+<div id="storages">
+AuthInfo:<br />
+<div id="authOutput"></div>
 <hr/>
 <div>
-PAGE_PRIVATE:
+PAGE_PRIVATE:<br />
 <input type="button" value="setItem" onclick="setItem(ph.SCOPE.PAGE_PRIVATE);"/>
 <input type="button" value="getItem" onclick="getItem(ph.SCOPE.PAGE_PRIVATE);"/>
 <input type="button" value="removeItem" onclick="removeItem(ph.SCOPE.PAGE_PRIVATE);"/>
+<input type="button" value="keys" onclick="keys(ph.SCOPE.PAGE_PRIVATE);"/>
 <br />
-<input id='pagePrivateText' type="text" />
+<input id='pagePrivateText' type="text" style="width:512px;"/>
 </div>
 <hr/>
 <div>
-SESSION_PRIVATE:
+SESSION_PRIVATE:<br />
 <input type="button" value="setItem" onclick="setItem(ph.SCOPE.SESSION_PRIVATE);"/>
 <input type="button" value="getItem" onclick="getItem(ph.SCOPE.SESSION_PRIVATE);"/>
 <input type="button" value="removeItem" onclick="removeItem(ph.SCOPE.SESSION_PRIVATE);"/>
+<input type="button" value="keys" onclick="keys(ph.SCOPE.SESSION_PRIVATE);"/>
 <br />
-<input id='sessionPrivateText' type="text" />
+<input id='sessionPrivateText' type="text" style="width:512px;"/>
 </div>
 <hr/>
 <div>
-APL_PRIVATE:
+APL_PRIVATE:<br />
 <input type="button" value="setItem" onclick="setItem(ph.SCOPE.APL_PRIVATE);"/>
 <input type="button" value="getItem" onclick="getItem(ph.SCOPE.APL_PRIVATE);"/>
 <input type="button" value="removeItem" onclick="removeItem(ph.SCOPE.APL_PRIVATE);"/>
+<input type="button" value="keys" onclick="keys(ph.SCOPE.APL_PRIVATE);"/>
 <br />
-<input id='aplPrivateText' type="text" />
+<input id='aplPrivateText' type="text" style="width:512px;"/>
 </div>
 <hr/>
 <div>
-APL_LOCAL:
+APL_LOCAL:<br />
 <input type="button" value="setItem" onclick="setItem(ph.SCOPE.APL_LOCAL);"/>
 <input type="button" value="getItem" onclick="getItem(ph.SCOPE.APL_LOCAL);"/>
 <input type="button" value="removeItem" onclick="removeItem(ph.SCOPE.APL_LOCAL);"/>
+<input type="button" value="keys" onclick="keys(ph.SCOPE.APL_LOCAL);"/>
 <br />
-<input id='aplLocalText' type="text" />
+<input id='aplLocalText' type="text" style="width:512px;"/>
 </div>
 <hr/>
 <div>
-AUTH_PRIVATE:
+AUTH_PRIVATE:<br />
 <input type="button" value="setItem" onclick="setItem(ph.SCOPE.AUTH_PRIVATE);"/>
 <input type="button" value="getItem" onclick="getItem(ph.SCOPE.AUTH_PRIVATE);"/>
 <input type="button" value="removeItem" onclick="removeItem(ph.SCOPE.AUTH_PRIVATE);"/>
+<input type="button" value="keys" onclick="keys(ph.SCOPE.AUTH_PRIVATE);"/>
 <br />
-<input id='authPrivateText' type="text" />
+<input id='authPrivateText' type="text" style="width:512px;"/>
 </div>
 <hr/>
 <div>
-AUTH_LOCAL:
+AUTH_LOCAL:<br />
 <input type="button" value="setItem" onclick="setItem(ph.SCOPE.AUTH_LOCAL);"/>
 <input type="button" value="getItem" onclick="getItem(ph.SCOPE.AUTH_LOCAL);"/>
 <input type="button" value="removeItem" onclick="removeItem(ph.SCOPE.AUTH_LOCAL);"/>
+<input type="button" value="keys" onclick="keys(ph.SCOPE.AUTH_LOCAL);"/>
 <br />
-<input id='authLocalText' type="text" />
+<input id='authLocalText' type="text" style="width:512px;"/>
+</div>
 </div>
 
 </body>

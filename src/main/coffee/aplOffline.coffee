@@ -127,8 +127,8 @@ onAuthResponse=(res)->
     onSetItemResponse(res)
   else if res.type=='removeItem'
     onRemoveItemResponse(res)
-  else if res.type=='enumKey'
-    onEnumKeyResponse(res)
+  else if res.type=='keys'
+    onkeysResponse(res)
   else if res.type=='changeItem'
     onChangeItemResponse(res)
 
@@ -245,7 +245,7 @@ enumScopeKey=(scope)->
       keys.push(key.substring(prefix.length))
   return keys
 
-onEnumKeyRequest=(data)->
+onkeysRequest=(data)->
   data.via++
   if data.scope==SCOPE.SESSION_PRIVATE || data.scope==SCOPE.AUTH_PRIVATE || data.scope==SCOPE.AUTH_LOCAL
     requestToAuthFrame(data)
@@ -296,7 +296,7 @@ onRemoveItemResponse=(data)->
   else
     throw 'scope error:'+data.scope
 
-onEnumKeyResponse=(data)->
+onkeysResponse=(data)->
   data.via++
   if data.scope==SCOPE.SESSION_PRIVATE || data.scope==SCOPE.AUTH_PRIVATE || data.scope==SCOPE.AUTH_LOCAL
     response(data)
@@ -339,8 +339,8 @@ onRequest=(req)->
     onGetItemRequest(req)
   else if req.type=="removeItem"
     onRemoveItemRequest(req)
-  else if req.type=="enumKey"
-    onEnumKeyRequest(req)
+  else if req.type=="keys"
+    onkeysRequest(req)
   else
     throw 'unkown type:'+req.type
 

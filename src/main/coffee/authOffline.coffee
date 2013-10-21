@@ -225,7 +225,7 @@ decryptKeys=(keys)->
   for i in [0..keys.length-1]
     key[i]=decryptText(key[i],userInfo.offlinePassHash)
 
-onEnumKeyRequest=(data)->
+onkeysRequest=(data)->
   data.via++
   if data.scope==SCOPE.SESSION_PRIVATE || data.scope==SCOPE.AUTH_PRIVATE
     data.keys=enumScopeKey(data.scope)
@@ -260,8 +260,8 @@ onRequest=(req)->
     onSetItemRequest(req)
   else if req.type=="removeItem"
     onRemoveItemRequest(req)
-  else if req.type=="enumKey"
-    onEnumKeyRequest(req)
+  else if req.type=="keys"
+    onkeysRequest(req)
   else if req.type=="changeItem"
     onChangeItemRequest(req)
   else if req.type=="logout"
