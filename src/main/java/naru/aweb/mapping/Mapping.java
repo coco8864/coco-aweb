@@ -37,6 +37,7 @@ import naru.aweb.handler.SslProxyHandler;
 import naru.aweb.handler.VelocityPageHandler;
 import naru.aweb.handler.WsProxyHandler;
 import naru.aweb.link.LinkHandler;
+import naru.aweb.link.LinkManager;
 import naru.aweb.util.JdoUtil;
 import naru.aweb.util.ServerParser;
 import net.sf.json.JSON;
@@ -80,6 +81,7 @@ public class Mapping{
 	public static final String OPTION_FILTER="filter";
 	public static final String OPTION_REPLAY_DOCROOT="replayDocroot";
 	public static final String OPTION_APPCACHE = "appcache";
+	public static final String OPTION_LINK_NAME = "linkName";
 	
 	public static Class ADMIN_HANDLER=AdminHandler.class;
 	public static Class SSL_PROXY_HANDLER=SslProxyHandler.class;
@@ -333,6 +335,9 @@ public class Mapping{
 	@NotPersistent
 	private Pattern sourcePathPattern;
 	
+	@NotPersistent
+	private boolean isAdmin=false;
+	
 	public Mapping(){
 	}
 	
@@ -583,6 +588,7 @@ public class Mapping{
 			}
 			if(optionsJson.optBoolean(OPTION_ADMIN_HANDLER,false)){
 				config.setAdminDocumentRoot(destinationFile);
+				isAdmin=true;
 			}
 			if(optionsJson.optBoolean(OPTION_AUTH_HANDLER,false)){
 				config.setAuthDocumentRoot(destinationFile);
@@ -603,13 +609,12 @@ public class Mapping{
 			if(!"".equals(welcomFiles)){//‹ó”’‚¾‚Á‚½‚çwelcomFiles‚È‚µ
 				attribute.put(OPTION_FILE_WELCOME_FILES,welcomFiles.split(","));
 			}
-			/*
-			JSONObject appcacheObj=optionsJson.optJSONObject(OPTION_APPCACHE);
-			if(appcacheObj!=null){
-				AppcacheOption appcacheOption=new AppcacheOption(destinationFile,sourcePath,appcacheObj);
-				attribute.put(OPTION_APPCACHE, appcacheOption);
+			
+			String linkName = optionsJson.optString(OPTION_LINK_NAME,null);
+			if(linkName!=null){
+				LinkManager linkManager=LinkManager.getInstance(linkName);
+				attribute.put(OPTION_LINK_NAME, linkManager);
 			}
-			*/
 		}
 		rolesList.clear();
 		if(roles!=null && !"".equals(roles)){
@@ -996,7 +1001,7 @@ public class Mapping{
 	}
 
 	public boolean isAdmin() {
-		return false;
+		return isAdmin;
 	}
 
 	public List<String> getRolesList() {
@@ -1004,10 +1009,6 @@ public class Mapping{
 	}
 
 	public Object getOption(String key) {
-//		Object attr=optionsObj.get(key);
-//		if(attr!=null){
-//			return attr;
-//		}
 		return optionsJson.opt(key);
 	}
 

@@ -38,16 +38,11 @@ public class Mapper {
 	private Set<Mapping> entryMappings=new HashSet<Mapping>();
 	private Set<Mapping> activeMappings=new TreeSet<Mapping>(Mapping.mappingComparator);
 	private Set<Mapping> activeSslProxyMappings=new TreeSet<Mapping>(Mapping.mappingComparator);
-	/*
-	private Set<Mapping> activeWebMappings=new TreeSet<Mapping>(Mapping.mappingComparator);
-	private Set<Mapping> activeProxyMappings=new TreeSet<Mapping>(Mapping.mappingComparator);
-	private Set<Mapping> activeWsMappings=new TreeSet<Mapping>(Mapping.mappingComparator);
-	private Set<Mapping> activePeekSslProxyMappings=new TreeSet<Mapping>(Mapping.mappingComparator);
-	*/
 	
 	//pacÇ©ÇÁóòóp
 	private Set<String> securePhantomDomains=new HashSet<String>();
 	private Set<String> httpPhantomDomains=new HashSet<String>();
+	private Mapping adminMapping;//admin
 	private Mapping authMapping=null;//îFèÿópmapping
 	private String publicWebUrl;
 	private String adminUrl;
@@ -118,6 +113,10 @@ public class Mapper {
 		return authMapping;
 	}
 	
+	public Mapping getAdminMapping() {
+		return adminMapping;
+	}
+	
 	private void loadMapping(Mapping mapping){
 		entryMappings.add(mapping);
 		if(!mapping.isEnabled()){
@@ -150,6 +149,7 @@ public class Mapper {
 			sb.append(realHost.getBindPort());
 			sb.append(mapping.getSourcePath());
 			adminUrl=sb.toString();
+			adminMapping=mapping;
 			System.out.println("adminUrl:"+adminUrl);
 		}
 		
