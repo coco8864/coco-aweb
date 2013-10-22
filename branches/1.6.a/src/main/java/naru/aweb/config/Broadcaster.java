@@ -23,13 +23,13 @@ public class Broadcaster implements Timer {
 	private static Logger logger=Logger.getLogger(Broadcaster.class);	
 	private static final long BROADCAST_INTERVAL=1000;
 	private static final long LOG_WATCH_INTERVAL=300000;
-	private LinkManager paManager;/*=PaManager.getInstance("/pa");*/
+	private LinkManager adminLinkManager;/*=PaManager.getInstance("/pa");*/
 	private long timerId=TimerManager.INVALID_ID;
 	private Config config;
 	
-	Broadcaster(Config config,LinkManager paManager){
+	Broadcaster(Config config,LinkManager adminLinkManager){
 		this.config=config;
-		this.paManager=paManager;
+		this.adminLinkManager=adminLinkManager;
 		long interval=config.getLong("broardcastInterval", BROADCAST_INTERVAL);
 		Stastics stastics=new Stastics();
 		config.setStasticsObject(stastics);
@@ -162,7 +162,7 @@ public class Broadcaster implements Timer {
 		Stastics stastics=(Stastics)userContext;
 		stastics.update();
 		logWatch(stastics);
-		paManager.publish(AdminLinklet.QNAME,AdminLinklet.SUBNAME_STASTICS, JSONObject.fromObject(stastics));
+		adminLinkManager.publish(AdminLinklet.QNAME,AdminLinklet.SUBNAME_STASTICS, JSONObject.fromObject(stastics));
 		long interval=config.getLong("broardcastInterval", BROADCAST_INTERVAL);
 		timerId=TimerManager.setTimeout(interval, this, stastics);
 	}

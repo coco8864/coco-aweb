@@ -19,6 +19,7 @@ import naru.aweb.config.Config;
 import naru.aweb.handler.ws.WebSocketHandler;
 import naru.aweb.link.api.Blob;
 import naru.aweb.link.api.LinkMsg;
+import naru.aweb.mapping.Mapping;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.util.ParameterParser;
 import net.sf.json.JSON;
@@ -230,11 +231,17 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 			}
 			return true;
 		}
-		String path=getRequestMapping().getSourcePath();
+		MappingResult mapping=getRequestMapping();
+		String path=mapping.getSourcePath();
+		LinkManager linkManager=(LinkManager)mapping.getAttribute(Mapping.OPTION_LINK_NAME);
+		if(linkManager==null){
+			logger.error("not found linkManager.");
+			return false;
+		}
 		synchronized(paSessions){
 			paSessions.bidSeq++;
 			bid=paSessions.bidSeq;
-			linkSession=LinkSession.create(path,bid, isWs, authSession);
+			linkSession=LinkSession.create(path,linkManager,bid, isWs, authSession);
 			paSessions.sessions.put(bid, linkSession);
 			sendNegotiation();
 		}
@@ -370,9 +377,8 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 			formPublish(parameter);
 			return;
 		}
-		String srcPath=getRequestMapping().getSourcePath();
-		LinkManager paManager=LinkManager.getInstance(srcPath);
-		forwardHandler(paManager.getNextHandler());
+		LinkManager linkManager=(LinkManager)mapping.getAttribute(Mapping.OPTION_LINK_NAME);
+		forwardHandler(linkManager.getNextHandler());
 	}
 	
 	/**

@@ -57,10 +57,10 @@ public class LinkSession extends PoolBase implements LogoutEvent{
 	
 	private static Logger logger=Logger.getLogger(LinkSession.class);
 	
-	static LinkSession create(String path,Integer bid,boolean isWs,AuthSession authSession){
+	static LinkSession create(String path,LinkManager linkManager,Integer bid,boolean isWs,AuthSession authSession){
 		LinkSession paSession=(LinkSession)PoolManager.getInstance(LinkSession.class);
 		paSession.path=path;
-		paSession.linkManager=LinkManager.getInstance(path);
+		paSession.linkManager=linkManager;
 		paSession.bid=bid;
 		paSession.isWs=isWs;
 		
