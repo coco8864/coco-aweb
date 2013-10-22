@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache"> 
   <meta http-equiv="Cache-Control" content="no-cache"> 
   <meta http-equiv="Expires" content="0"> 
-  <title>storage test</title>
+  <title>PhantomLink storage test</title>
 
   <link type="text/css" href="/pub/css/jquery-ui-1.8.2.custom.css" rel="stylesheet" />
   <script type="text/javascript" src="/pub/js/ph.js"></script>
@@ -30,7 +30,6 @@ function aplUrl(){
   return ph.jQuery("#aplUrl").val();
 }
 
-
 function auth(isOffline){
   if(link!=null){
     link.unlink();
@@ -43,10 +42,23 @@ function auth(isOffline){
     " user:"+ ph.JSON.stringify(link.authInfo.user);
     //alert(linkInfo);
     ph.jQuery("#authOutput").text(linkInfo);
+
+    var bkmarklet="javascript:(function(){var d=document;var f=function(){var l=ph.link('$adminUrl$');var s=l.storage(ph.SCOPE.APL_PRIVATE);s.off('injection');s.on('injection',function(x){if(x.value){eval(x.value)}});s.getItem('injection');};if(window.ph){f();}else{var u='$publicWebUrl$pub/js/ph.js';var e=d.createElement('script');e.src=u;e.onload=function(){f();};d.getElementsByTagName('head')[0].appendChild(e);}})();"
+    bkmarklet=bkmarklet.replace("$adminUrl$",link.keyUrl);
+    bkmarklet=bkmarklet.replace("$publicWebUrl$",ph.publicWebUrl);
+    bkmarklet=bkmarklet.split(' ').join('%20');
+    ph.jQuery('#bkmarklet').attr("href", bkmarklet);
     ph.jQuery("#storages").show();
   });
   link.onUnload(function(){
     ph.jQuery("#storages").hide();
+  });
+  link.on('auth',function(){
+    var linkInfo=
+    "isOffline:"+link.isOffline +
+    "isConnect:"+link.isConnect +
+    "user:"+ ph.JSON.stringify(link.authInfo.user);
+    ph.jQuery("#storages").show();
   });
   for(i=0;i<scopes.length;i++){
     var scope=scopes[i];
@@ -88,16 +100,23 @@ ph.jQuery("#storages").hide();
   <link type="text/css" href="/pub/css/ph.css" rel="stylesheet" /> 
 </head>
 <body>
-<H1>storage test</H1>
+<H1>PhantomLink storage test</H1>
 <hr/>
-aplUrl:<input id='aplUrl' type="text" value="/admin" style="width:256px;"/><input type="button" value="online logon" onclick="auth(false);"/>
-<input type="button" value="offline logon" onclick="auth(true);"/><br />
+aplUrl:<input id='aplUrl' type="text" value="/admin" style="width:256px;"/>
+<input type="button" value="online logon" onclick="auth(false);"/>
+<input type="button" value="offline logon" onclick="auth(true);"/>
+<input type="button" value="logon" onclick="auth(undefined);"/>
+<br />
 key:<input id='keyText' type="text" value="testKey"/><br />
 <hr/>
 
 <div id="storages">
 AuthInfo:<br />
 <div id="authOutput"></div>
+<input type="button" value="profile" onclick="link.userProfile();"/>
+<input type="button" value="logout" onclick="link.logout();"/>
+<input type="button" value="unlink" onclick="link.unlink();"/><br />
+bookmarklet<a id='bkmarklet'>injection</a>
 <hr/>
 <div>
 PAGE_PRIVATE:<br />
