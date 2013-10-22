@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="jp">
 <head>
-<title>Phatom Proxy Login</title>
+<title>Phatom Server Login</title>
 </head>
 <body>
-<h1>Phatom Proxy Login(basic)</h1>
+<h1>Phatom Server Login(basic)</h1>
 <p>Please input username and password</p>
 <form action='$esc.html(${config.authUrl})/basicForm' method='post'>
 <input type='hidden' name='authId' value='$esc.html(${authId})'/>

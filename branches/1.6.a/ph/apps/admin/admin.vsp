@@ -46,6 +46,10 @@ window.onhashchange = function(){
 	jQuery('#tabs').tabs("option", "active", index);
 };
 var link=null;
+var unloading=false;
+window.onbeforeunload = function(e){
+	unloading=true;
+}
 ph.jQuery(function() {
 	ph.setShowDebug(ph.showDebug);
 	jQuery("#textEditTextArea").resizable({
@@ -57,14 +61,16 @@ ph.jQuery(function() {
     ph.admin.con.on('linked',function(){
 		ph.jQuery('#dialogs').show();
 		var stor=ph.admin.storage=ph.admin.con.storage();
-		var logId=stor.getItem('logId');
-		if(logId){
-			changeEntry(logId);
-		}
+		stor.getItem('logId',function(data){
+			if(data.value){
+				changeEntry(data.value);
+			}
+		});
 	});
 	ph.admin.con.on('unlinked',function(){
-          if (confirm('!!unlinked!!\nDo you go Phantom Server Home?')){location=ph.publicWebUrl;}
-          });
+		if(unloading)return;
+		if (confirm('!!unlinked!!\nDo you go Phantom Server Home?')){location=ph.publicWebUrl;}
+	});
 	ph.admin.accessLogSub=ph.admin.con.subscribe('admin','accessLog',
 		function(res){
 			if(!res){
