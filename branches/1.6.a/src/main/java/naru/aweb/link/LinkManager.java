@@ -21,8 +21,8 @@ public class LinkManager {
 	}
 	
 	private Map<String,LinkletWrapper> linkletWrappers=new HashMap<String,LinkletWrapper>();//qname->palet
-	public LinkletWrapper deploy(String qname,String paletName){
-		return deploy(qname, paletName,null);
+	public LinkletWrapper deploy(String qname,String linkletName){
+		return deploy(qname, linkletName,null);
 	}
 	
 	/*
