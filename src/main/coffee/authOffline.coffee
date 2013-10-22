@@ -12,6 +12,10 @@ sessionPrivatePrefix=null #'#userid.sid.'
 authPrivatePrefix=null #'$userid.'
 authLocalPrefix='$.'
 
+function calcPassHash(loginId,password){
+  return CryptoJS.SHA256(offlinePassSalt+":"+loginId+":"+password).toString()
+}
+
 checkPassword=(loginId,password)->
   userInfo=null
   encryptText=localStorage.getItem(OFFLINE_KEY+loginId)
@@ -19,7 +23,7 @@ checkPassword=(loginId,password)->
     return false
   passHash=null
   if password
-    passHash=CryptoJS.SHA256(offlinePassSalt+":"+loginId+":"+password).toString()
+    passHash=calcPassHash(loginId,password)
   try
     plainText=decryptText(encryptText,passHash)
   catch error
@@ -28,6 +32,7 @@ checkPassword=(loginId,password)->
     return false
   try
     userInfo=ph.JSON.parse(plainText)
+    userInfo.offlinePassHash=passHash #passwordを省略された場合違うかもしれない
     sessionPrivatePrefix=null
     authPrivatePrefix='$'+userInfo.authInfo.user.loginId+'.'
   catch error
@@ -65,8 +70,11 @@ getUserInfo=(cb)->
     })
   userInfoDfd.done((x)->
     userInfo=x
+    loginId=userInfo.authInfo.user.loginId
+    if !userInfo.offlinePassHash
+      userInfo.offlinePassHash=calcPassHash(loginId,loginId)
     sessionPrivatePrefix='#'+userInfo.authSid+'.'
-    authPrivatePrefix='$'+userInfo.authInfo.user.loginId+'.'
+    authPrivatePrefix='$'+loginId+'.'
     ##不要なsessionPrivateの刈り取り
     i=localStorage.length
     while (i-=1) >=0
@@ -269,7 +277,10 @@ onRequest=(req)->
       type:'GET',
       url:'ajaxLogout',
       dataType:'json',
-      success:(x)->response({type:'logout',result:true,x:x}),
+      success:((x)->
+        userInfo=null
+        aplInfo=null
+        response({type:'logout',result:true,x:x})),
       error:(x)->response({type:'logout',result:false})
     })
   else if req.type=="authInfo"
@@ -402,6 +413,8 @@ response=(msg)->
 offlineLogon=->
   loginId=jQuery('#loginId').val()
   password=jQuery('#password').val()
+  if password==""
+    password=loginId
   isOffline=true
   if !checkPassword(loginId,password)
     alert(loginId+':認証情報に誤りがあります')
