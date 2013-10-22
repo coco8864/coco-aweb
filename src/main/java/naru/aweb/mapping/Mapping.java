@@ -82,6 +82,7 @@ public class Mapping{
 	public static final String OPTION_REPLAY_DOCROOT="replayDocroot";
 	public static final String OPTION_APPCACHE = "appcache";
 	public static final String OPTION_LINK_NAME = "linkName";
+	public static final String OPTION_QUEUE_NAME = "queueName";
 	
 	public static Class ADMIN_HANDLER=AdminHandler.class;
 	public static Class SSL_PROXY_HANDLER=SslProxyHandler.class;
@@ -614,6 +615,10 @@ public class Mapping{
 			if(linkName!=null){
 				LinkManager linkManager=LinkManager.getInstance(linkName);
 				attribute.put(OPTION_LINK_NAME, linkManager);
+				String queueName = optionsJson.optString(OPTION_QUEUE_NAME,null);
+				if(queueName!=null){
+					linkManager.deploy(queueName, null);
+				}
 			}
 		}
 		rolesList.clear();
