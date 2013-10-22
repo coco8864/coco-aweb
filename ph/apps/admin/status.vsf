@@ -76,14 +76,15 @@ function onWatchCheck(){
 }
 
 function broardcastWatch(){
-	var broardcastWatch=ph.admin.storage.getItem('broardcastWatch');
-	var watchCheck=ph.jQuery('#broardcastWatchCheck');
-	if(broardcastWatch){
-		watchCheck.attr('checked',true);
-		watchStastics();
-	}else{
-		watchCheck.attr('checked',false);
-	}
+	ph.admin.storage.getItem('broardcastWatch',function(data){
+		var watchCheck=ph.jQuery('#broardcastWatchCheck');
+		if(data.value){
+			watchCheck.attr('checked',true);
+			watchStastics();
+		}else{
+			watchCheck.attr('checked',false);
+		}
+	});
 }
 
 ph.jQuery(function() {

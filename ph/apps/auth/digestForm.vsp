@@ -4,7 +4,7 @@
 <script type="text/javascript" src="/pub/js/jquery-1.8.3.min.js"></script>
 <script type="text/javascript" src="/pub/js/sha256.js"></script>
 <!--script type="text/javascript" src="/pub/js/md5.js"></script-->
-<title>Phatom Proxy Login</title>
+<title>Phatom Server Login</title>
 <script type="text/javascript"> 
 function login(){
   var username=jQuery("#username").val();
@@ -26,7 +26,7 @@ function login(){
 </script> 
 </head>
 <body>
-<h1>Phatom Proxy Login(digest)</h1>
+<h1>Phatom Server Login(digest)</h1>
 <p>Please input username and password</p>
 <form id='dummyForm' method='post' onsubmit='return login();'>
 <div>username:<input type='text' id='username' value='' size="32"/></div>
