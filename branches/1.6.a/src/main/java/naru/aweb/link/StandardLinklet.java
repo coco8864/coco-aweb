@@ -7,8 +7,8 @@ import naru.aweb.link.api.LinkletCtx;
 
 import org.apache.log4j.Logger;
 
-public class SamplePalet implements Linklet{
-	private static Logger logger=Logger.getLogger(SamplePalet.class);
+public class StandardLinklet implements Linklet{
+	private static Logger logger=Logger.getLogger(StandardLinklet.class);
 	private LinkletCtx ctx;
 
 	@Override
@@ -36,21 +36,9 @@ public class SamplePalet implements Linklet{
 		logger.info("onUnsubscribe.peer:"+peer+":"+reason);
 	}
 
-
 	@Override
 	public void onPublish(LinkPeer peer, LinkMsg data) {
 		logger.info("onPublishObj.peer:"+peer+":"+data);
-		ctx.message(data);
+		ctx.message(data,peer.getSubname(),peer);
 	}
-
-	/*
-	@Override
-	public void onPublishArray(PaPeer peer, List<?> data) {
-		logger.info("onPublishArray.peer:"+peer+":"+data);
-		Map f=(Map)data.get(0);
-//		peer.download((Blob)f.get("file"));
-		ctx.download((Blob)f.get("file"), ctx.getPeers(), null);
-//		ctx.message(data);
-	}
-	*/
 }

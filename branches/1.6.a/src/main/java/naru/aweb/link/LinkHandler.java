@@ -19,7 +19,6 @@ import naru.aweb.config.Config;
 import naru.aweb.handler.ws.WebSocketHandler;
 import naru.aweb.link.api.Blob;
 import naru.aweb.link.api.LinkMsg;
-import naru.aweb.mapping.Mapping;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.util.ParameterParser;
 import net.sf.json.JSON;

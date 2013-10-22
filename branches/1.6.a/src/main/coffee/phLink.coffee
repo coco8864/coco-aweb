@@ -64,7 +64,7 @@ class Link extends PhObject
     return
    )
   return
- _logout:->
+ logout:->
   @_requestToAplFrame({type:'logout'})
  _requestToAplFrame:(msg,cb)->
   if cb

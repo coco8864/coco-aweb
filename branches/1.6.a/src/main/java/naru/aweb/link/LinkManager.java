@@ -40,12 +40,17 @@ public class LinkManager {
 		return nextHandler;
 	}
 	
-	public synchronized LinkletWrapper deploy(String qname,String paletName,Map subscriberNames){
+	public synchronized LinkletWrapper deploy(String qname,String linkletName,Map subscriberNames){
 		try {
 			if(linkletWrappers.get(qname)!=null){
 				return null;
 			}
-			Class clazz = Class.forName(paletName);
+			Class clazz=null;
+			if(linkletName==null){
+				clazz=StandardLinklet.class;
+			}else{
+				clazz = Class.forName(linkletName);
+			}
 			Linklet rootPalet = (Linklet) clazz.newInstance();
 			Map<String,Linklet> subscrivers=null;
 			if(subscriberNames!=null){
