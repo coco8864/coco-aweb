@@ -24,6 +24,7 @@ function loginIdsOnchange(){
 ######################################################
 <div id='offlineLogon'>
 <h1>offline logon</h1>
+<p id='ofMessage'></p>
 <div>
 nickname:<select id="loginIds" size="1" onchange="loginIdsOnchange();">
 </select>
