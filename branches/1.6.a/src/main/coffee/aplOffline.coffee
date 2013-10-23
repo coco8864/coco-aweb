@@ -96,7 +96,7 @@ onAuthResponse=(res)->
     res.type='loadAplFrame'
     res.aplInfo=aplInfo
     _response(res)
-  if res.type=='offlineAuth' #offlineAuth
+  else if res.type=='offlineAuth' #offlineAuth
     ##  _response({type:'hideFrame'})
     if res.result
       aplInfo.loginId=res.authInfo.user.loginId
@@ -320,7 +320,7 @@ onRequest=(req)->
   if req.type=='onlineAuth'
     onlineAuth(req.isWs,req.originUrl)
   else if req.type=='offlineAuth'
-    requestToAuthFrame({type:'offlineAuth'})
+    requestToAuthFrame(req)
     authFrame.focus()
   else if req.type=='offlineLogout'
     requestToAuthFrame({type:'offlineLogout'})

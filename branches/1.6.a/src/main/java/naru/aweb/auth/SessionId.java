@@ -202,6 +202,9 @@ public class SessionId extends PoolBase{
 	
 	/* Cookie的に該当するsecondaryかをチェックする */
 	public boolean isCookieMatch(String authUrl){
+		if(cookieLocation==null){
+			return false;
+		}
 		return this.cookieLocation.isMatch(authUrl);
 	}
 	

@@ -2,8 +2,8 @@ class Link extends PhObject
  constructor:(@param)->
   super
   @keyUrl=@param.keyUrl
-  @reqseq=0
-  @reqcb={}
+  @ctxs={}
+  @ctxIdx=1
   @storages={}
   @ppStorage=new PrivateSessionStorage(@)
   link=@
@@ -66,11 +66,11 @@ class Link extends PhObject
   return
  logout:->
   @_requestToAplFrame({type:'logout'})
- _requestToAplFrame:(msg,cb)->
-  if cb
-   @reqseq++
-   msg.reqseq=@reqseq
-   @reqcb[msg.reqseq]=cb
+ _requestToAplFrame:(msg,ctx)->
+  if ctx
+   @ctxs[@ctxIdx]=ctx
+   msg.ctxIdx=@ctxIdx
+   @ctxIdx++
   jsonMsg=ph.JSON.stringify(msg)
   @_frame[0].contentWindow.postMessage(jsonMsg,'*')
  _onMessage:(qjev)=>
@@ -78,15 +78,19 @@ class Link extends PhObject
   if !@_frame || ev.source!=@_frame[0].contentWindow
    return
   res=ph.JSON.parse(ev.data)
-  if res.reqseq
-   cb=@reqcb[res.reqseq]
-   delete @reqcb[res.reqseq]
-   if !res.result
-    cb(null)
-   else if res.type=='encrypt'
-    cb(res.encryptText)
+  if res.ctxIdx
+   ctx=@ctxs[res.ctxIdx]
+   delete @ctxs[res.ctxIdx]
+   if res.type=='encrypt'
+    if typeof(ctx)=='function'
+     ctx(res.encryptText)
+    else
+     @trigger('@encrypt',res)
    else if res.type=='decrypt'
-    cb(res.plainText)
+    if typeof(ctx)=='function'
+     ctx(res.plainText)
+    else
+     @trigger('@decrypt',res)
    return
   if res.type=='showFrame'
    @_frame.css({'height':"#{res.height}px",'width':'500px','top':'100px','left':'50%','margin-top':'0px','margin-left':'-250px'})
@@ -115,7 +119,7 @@ class Link extends PhObject
    else if @param.useOffline==true || res.aplInfo.isOffline==true
     # 必ずofflineを使う指定、もしくは実際にoffline
     @isOffline=true
-    @_requestToAplFrame({type:'offlineAuth'})
+    @_requestToAplFrame({type:'offlineAuth',aplUrl:@keyUrl})
    else
     # online
     @isOffline=false
@@ -136,37 +140,37 @@ class Link extends PhObject
     @aplInfo=res.aplInfo
     @authInfo=res.authInfo
     @trigger('onlineAuth',@)
+    @isAuth=true
     @trigger('auth',@)
     @_connect()
    else
-    @cause='fail to onlineAuth'
+    @cause=res.reason
     @trigger('failToAuth',@)
+    @isAuth=false
     @unload()
   else if res.type=='offlineAuth'
    if res.result==true
     @isOffline=true
+    @isAuth=true
     @authInfo=res.authInfo
     @aplInfo={loginId:@authInfo.user.loginId,appSid:'offline'}
     # @ppStorage=new PrivateSessionStorage(@)
-    link.trigger('offlineAuth',link)
-    link.trigger('auth',link)
-    #link=@
-    #@ppStorage.onLoad(->
-    #  link.trigger('offlineAuth',link)
-    #  link.trigger('auth',link)
-    # )
-    # @ppStorage.onUnload(->link._logout())
+    @trigger('offlineAuth',link)
+    @trigger('auth',link)
     @load()
    else
+    @isAuth=false
     @cause='fail to offlineAuth'
     @trigger('failToAuth',@)
-  else if res.type=='logout'
-    @_frame[0].src='about:blank'
-    @_frame.remove()
     @unload()
+  else if res.type=='logout'
+   @_frame[0].src='about:blank'
+   @_frame.remove()
+   @unload()
   else if res.type=='offlineLogout'
    if res.result==true
     @trigger('suspendAuth',link)
+    @unload()
   else if res.type=='getItem' || res.type=='changeItem' || res.type=='keys'
    storage=@storages[res.scope]
    if storage
@@ -174,7 +178,7 @@ class Link extends PhObject
   return
  offlineAuth:()->
   ### offlineで認証します。###
-  @_requestToAplFrame({type:'offlineAuth'})
+  @_requestToAplFrame({type:'offlineAuth',aplUrl:@keyUrl})
  offlineLogout:()->
   @_requestToAplFrame({type:'offlineLogout'})
  userProfile:()->
