@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" /> 
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Pragma" content="no-cache"> 
+  <meta http-equiv="Cache-Control" content="no-cache"> 
+  <meta http-equiv="Expires" content="0"> 
+  <title>PhantomLink pubsub test</title>
+  <script type="text/javascript" src="/pub/js/ph.js"></script>
+  <script type="text/javascript">
+var link;
+var sub;
+
+function subscribe(){
+  if(sub){
+    sub.unsubscribe();
+  }
+  sub=link.subscribe(ph.jQuery("#qname").val(),ph.jQuery("#subname").val());
+  sub.onMessage(function(data){});
+}
+
+function aplUrl(){
+  return ph.jQuery("#aplUrl").val();
+}
+
+function auth(isOffline){
+  if(link!=null){
+    link.unlink();
+  }
+  link=ph.link(aplUrl(),isOffline);
+  link.onNotLoading(function(){
+    var linkInfo=
+    "isOffline:"+link.isOffline + "<br />"
+    + "isAuth:"+link.isAuth + "<br />"
+    + "isConnect:"+link.isAuth + "<br />"
+    + " keyUrl:"+link.keyUrl + "<br />";
+    if(link.isAuth){
+      var user=link.authInfo.user;
+      linkInfo +="loginId:"+ user.loginId + "<br />";
+      linkInfo +="nickname:"+ user.nickname + "<br />";
+      linkInfo +="user:"+ ph.JSON.stringify(link.authInfo.user);
+    }else{
+      linkInfo +="cause:"+ link.cause + "<br />";
+    }
+    ph.jQuery("#authOutput").html(linkInfo);
+    ph.jQuery("#authInfo").show();
+    if(link.isConnect){
+      ph.jQuery("#pubsub").show();
+    }
+  });
+  link.onUnload(function(){
+    ph.jQuery("#authInfo").hide();
+    ph.jQuery("#pubsub").hide();
+  });
+}
+
+ph.jQuery(function(){
+ph.jQuery("#authInfo").hide();
+ph.jQuery("#pubsub").hide();
+//  onlineAuth();
+});
+
+  </script>
+</head>
+<body>
+<H1>PhantomLink pubsub test</H1>
+<hr/>
+aplUrl:<input id='aplUrl' type="text" value="/admin" style="width:256px;"/>
+<input type="button" value="online logon" onclick="auth(false);"/>
+<br />
+<div id="authInfo">
+<hr/>
+AuthInfo:<br />
+<div id="authOutput"></div>
+</div>
+<div id="pubsub">
+<hr/>
+<input type="button" value="profile" onclick="link.userProfile();"/>
+<input type="button" value="logout" onclick="link.logout();"/>
+<input type="button" value="unlink" onclick="link.unlink();"/><br />
+qname:<input id='qname' type="text" value="qname" style="width:100px;"/>
+subname:<input id='subname' type="text" value="subname" style="width:100px;"/>
+<input type="button" value="sbscribe" onclick="subscribe();"/><br />
+<hr/>
+<div id="subctrl">
+<input type="button" value="publish object" onclick="sd.publish({data:'testData'});"/>
+<input type="button" value="publish bin" onclick="sd.publish({data:'testCCC',blobData:[{string:'1234567890'},{arrayBuffer:ph.stringToArrayBuffer('abcdefg')}]});"/>
+<input type="button" value="publishForm" onclick="sd.publishForm('publishFormTest');"/>
+<form id='publishFormTest'>
+<input type='file' name='file' />
+<input type='hidden' name='from' value='form'/>
+<input type='text' name='test' value='hello'/>
+</form>
+</div>
+</div>
+</div>
+</body>
+</html>
