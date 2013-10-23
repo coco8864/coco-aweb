@@ -7,14 +7,14 @@ userInfoDfd=null
 isOffline=false
 isAuth=false
 isDisplay=false
+offlineTargetAplUrl=null
 
 sessionPrivatePrefix=null #'#userid.sid.'
 authPrivatePrefix=null #'$userid.'
 authLocalPrefix='$.'
 
-function calcPassHash(loginId,password){
+calcPassHash=(loginId,password)->
   return CryptoJS.SHA256(offlinePassSalt+":"+loginId+":"+password).toString()
-}
 
 checkPassword=(loginId,password)->
   userInfo=null
@@ -291,8 +291,10 @@ onRequest=(req)->
       getUserInfo(responseAuthInfo)
   else if req.type=="offlineAuth"
     if isDisplay
-      response({type:'offlineAuth',result:false,cause:'aleady display'})
+      # response({type:'offlineAuth',result:false,cause:'aleady display'})
       return
+    offlineTargetAplUrl=req.aplUrl
+    jQuery('#ofMessage').text('please enter password')
     jQuery('#password').val('')
     users=getUsers()
     count=0
@@ -324,7 +326,7 @@ onRequest=(req)->
     response({type:'offlineLogout',result:result})
   else if req.type=="userProfile"
     if isDisplay
-      response({type:'userProfile',result:false,cause:'aleady display'})
+      # response({type:'userProfile',result:false,cause:'aleady display'})
       return
     jQuery('#orgPassword').val('')
     jQuery('#password1').val('')
@@ -417,7 +419,21 @@ offlineLogon=->
     password=loginId
   isOffline=true
   if !checkPassword(loginId,password)
-    alert(loginId+':認証情報に誤りがあります')
+    # alert(loginId+':wrong password')
+    jQuery('#ofMessage').text('wrong password')
+    jQuery('#loginIds').focus()
+    isAuth=false
+    return
+  #利用可能なaplUrlかチェック
+  authInfo=userInfo.authInfo
+  check=false
+  for allow in authInfo.allowUrls
+    if allow.url==offlineTargetAplUrl
+      check=true
+      break
+  if !check
+    # alert(loginId+':lack of right')
+    jQuery('#ofMessage').text('lack of right')
     jQuery('#loginIds').focus()
     isAuth=false
     return

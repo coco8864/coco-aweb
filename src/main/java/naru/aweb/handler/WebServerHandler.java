@@ -809,6 +809,8 @@ public class WebServerHandler extends ServerBaseHandler {
 		}
 	}
 	
+	private ByteBuffer NO_HEADER=ByteBuffer.wrap("no header".getBytes());
+	
 	private void traceHeader(boolean isHeaderOnlyResponse,ByteBuffer[] headerBuffer){
 		Store responsePeek = null;
 		AccessLog accessLog = getAccessLog();
@@ -822,7 +824,8 @@ public class WebServerHandler extends ServerBaseHandler {
 			case RESPONSE_TRACE:
 			case TRACE:
 				if(headerBuffer==null){//SPDY経由の場合はヘッダバッファはない
-					headerBuffer=responseHeader.getHeaderBuffer();
+//					headerBuffer=responseHeader.getHeaderBuffer();
+					headerBuffer=BuffersUtil.toByteBufferArray(NO_HEADER.duplicate());
 				}else{
 					headerBuffer=PoolManager.duplicateBuffers(headerBuffer);
 				}
