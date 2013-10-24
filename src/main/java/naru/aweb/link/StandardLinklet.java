@@ -38,7 +38,13 @@ public class StandardLinklet implements Linklet{
 
 	@Override
 	public void onPublish(LinkPeer peer, LinkMsg data) {
-		logger.info("onPublishObj.peer:"+peer+":"+data);
+		logger.info("onPublish(LinkMsg).peer:"+peer+":"+data);
+		ctx.message(data,peer.getSubname(),peer);
+	}
+	
+	@Override
+	public void onPublish(LinkPeer peer, String data) {
+		logger.info("onPublish(String).peer:"+peer+":"+data);
 		ctx.message(data,peer.getSubname(),peer);
 	}
 }

@@ -212,4 +212,9 @@ public class PerfLinklet implements Linklet,Event {
 			stressFilePeer=null;
 		}
 	}
+	
+	@Override
+	public void onPublish(LinkPeer peer, String data) {
+		logger.error("unsupport data");
+	}
 }

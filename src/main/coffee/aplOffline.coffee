@@ -8,10 +8,11 @@ workFrame=null
 cdr={isIn:false,req:null}
 
 aplPrivatePrefix=null
-aplLocalPrefix='@.'
+aplLocalPrefix=null
 
 aplInfo={
   aplUrl:null
+  aplPath:null
   authUrl:null
   isOffline:false
   appSid:null
@@ -51,7 +52,8 @@ onlineCheckAuthInfoSuccess=(res)->
   aplInfo.authUrl=res.authUrl
   aplInfo.loginId=res.loginId
   aplInfo.token=res.token
-  aplPrivatePrefix='@'+aplInfo.loginId+'.'
+  aplPrivatePrefix="@#{aplInfo.aplPath}@#{aplInfo.loginId}."
+  aplLocalPrefix="@#{aplInfo.aplPath}."
   localStorage.setItem(AUTH_URL_KEY,res.authUrl)
   loadAuthFrame(res.authUrl)
 
@@ -100,7 +102,8 @@ onAuthResponse=(res)->
     ##  _response({type:'hideFrame'})
     if res.result
       aplInfo.loginId=res.authInfo.user.loginId
-      aplPrivatePrefix='@'+aplInfo.loginId+'.'
+      aplPrivatePrefix="@#{aplInfo.aplPath}@#{aplInfo.loginId}."
+      aplLocalPrefix="@#{aplInfo.aplPath}."
       aplInfo.maxAge=30
       res.aplInfo=aplInfo
       res.authInfo=res.authInfo
@@ -144,7 +147,8 @@ onlineAuthResponse=(res)->
     aplInfo.appSid=res.appSid
     aplInfo.authUrl=res.authUrl
     aplInfo.loginId=res.loginId
-    aplPrivatePrefix='@'+aplInfo.loginId+'.'
+    aplPrivatePrefix="@#{aplInfo.aplPath}@#{aplInfo.loginId}."
+    aplLocalPrefix="@#{aplInfo.aplPath}."
     aplInfo.token=res.token
     requestToAuthFrame({type:'authInfo',aplInfo:aplInfo})
   else
@@ -391,6 +395,9 @@ jQuery(->
   href=location.href
   pos=href.lastIndexOf('/')
   aplInfo.aplUrl=href.substring(0,pos)
+  path=location.pathname
+  pos=path.lastIndexOf('/')
+  aplInfo.aplPath=path.substring(0,pos)
   jQuery(window).on('message',onMsg)
   jQuery(window).on('storage',onStorage)
   authFrame=jQuery(

@@ -97,6 +97,10 @@ public class LinkletWrapper implements LinkletCtx,Timer{
 	
 	void onPublish(LinkPeer peer,Object data){
 		Linklet palet=getLinklet(peer);
+		if(data instanceof String){/*　送信データが文字列の場合*/
+			palet.onPublish(peer,(String)data);
+			return;
+		}
 		LinkMsg msg=null;
 		if(data instanceof LinkMsg){
 			msg=(LinkMsg)data;
@@ -104,7 +108,9 @@ public class LinkletWrapper implements LinkletCtx,Timer{
 			msg=LinkMsg.wrap((Map)data);
 		}else{
 			logger.error("onPublish data type" + data.getClass().getName());
+			return;
 		}
+		/*　送信データがObjectの場合*/		
 		try{
 			palet.onPublish(peer,msg);
 		}finally{

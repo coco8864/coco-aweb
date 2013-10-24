@@ -133,7 +133,7 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 	public void recycle() {
 		if(buffer!=null){
 			buffer.close();
-			buffer.unref();
+			//buffer.unref();
 			buffer=null;
 		}
 		size=offset=0;
@@ -154,6 +154,10 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 	/* ˆê‰ñ‚ÌŒÄ‚Ño‚µ‚Å‚P‰ñ‚Ìcallback */
 	public boolean asyncBuffer(BufferGetter bufferGetter, long offset,Object userContext) {
 		long maxLength=size-offset;
+		if(maxLength==0){//‘S•”“Ç‚ñ‚¾
+			bufferGetter.onBufferEnd(userContext);
+			return false;
+		}
 		Object[] ctx={bufferGetter,userContext,maxLength};
 		return buffer.asyncBuffer(this, this.offset+offset,ctx);
 	}

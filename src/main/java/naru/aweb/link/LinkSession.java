@@ -275,8 +275,12 @@ public class LinkSession extends PoolBase implements LogoutEvent{
 	public void publish(LinkMsg msg){
 		String qname=msg.getString(KEY_QNAME);
 		String subname=msg.getString(KEY_SUBNAME);
-		LinkMsg message=msg.getMap(KEY_MESSAGE);
-		message.ref();
+		Object message=msg.getMap(KEY_MESSAGE);
+		if(message==null){
+			message=msg.getString(KEY_MESSAGE);
+		}else{
+			((LinkMsg)message).ref();
+		}
 		msg.unref();
 		LinkPeer keyPeer=LinkPeer.create(linkManager,this, qname, subname);
 		LinkletWrapper paletWrapper=linkManager.getLinkletWrapper(qname);

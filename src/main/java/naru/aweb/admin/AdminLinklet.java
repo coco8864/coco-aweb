@@ -101,5 +101,10 @@ public class AdminLinklet implements Linklet {
 			suspendTime=System.currentTimeMillis();
 		}
 	}
+	
+	@Override
+	public void onPublish(LinkPeer peer, String data) {
+		logger.error("unsupport data");
+	}
 
 }

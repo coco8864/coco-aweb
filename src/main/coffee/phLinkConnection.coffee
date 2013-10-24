@@ -67,10 +67,10 @@ class Connection extends PhObject
       @_sendMsgs.push(msg)
     @_flushMsg()
   _onWsOpen:=>
-    ph.log('Pa _onWsOpen')
+    ph.log('_onWsOpen')
     @_onOpen()
   _onWsClose: (event)=>
-    ph.log('Pa _onWsClose.code:'+event.code+':reason:'+event.reason+':wasClean:'+event.wasClean)
+    ph.log('_onWsClose.code:'+event.code+':reason:'+event.reason+':wasClean:'+event.wasClean)
 #    @__onClose(event.reason)
     if @stat==ph.STAT_OPEN
 # 接続直後に切れるのはwebsocketが使えないと考える
@@ -91,12 +91,12 @@ class Connection extends PhObject
     @_openWebSocket()
     return
   _onWsMessage:(msg)=>
-    ph.log('Pa _onWsMessage:'+msg.data)
+    ph.log('_onWsMessage:'+msg.data)
     @useWs=true #一回websocketでつながれば、xhrのスイッチを許さない
     envelope=new Envelope()
     envelope.unpack(msg.data,@_onMessage)
   _openWebSocket:=>
-    ph.log('Pa WebSocket start')
+    ph.log('WebSocket start')
     @stat=ph.STAT_OPEN
     ws=new WebSocket(@connectWsUrl)
     ws.onopen=@_onWsOpen
@@ -114,7 +114,7 @@ class Connection extends PhObject
         con._ws=null
      )
   _openXhr:->
-    ph.log('Pa _openXhr')
+    ph.log('_openXhr')
     if @_xhrFrameName
       return
     @stat=ph.STAT_OPEN
@@ -146,13 +146,13 @@ class Connection extends PhObject
       @_onXhrMessage(res)
     return
   _onXhrOpen:(res)->
-    ph.log('Pa _onXhrOpen')
+    ph.log('_onXhrOpen')
     if res.load
       @_onOpen()
     else
       ph.log('_onXhrOpened error.'+ph.JSON.stringify(res))
   _onXhrMessage:(obj)->
-    ph.log('Pa _onXhrMessage')
+    ph.log('_onXhrMessage')
     envelope=new Envelope()
     envelope.unpack(obj,@_onMessage)
 #   @_onMessage(obj)
@@ -180,7 +180,6 @@ class Connection extends PhObject
       ph.log('aleady closed')
       return
     @_setBid(null)
-    @trigger('unload')
     @unload()
     @stat=ph.STAT_CLOSE
 #----------for response event----------
@@ -192,8 +191,9 @@ class Connection extends PhObject
     sd=@_subscribes[key]
     if !sd
       return false
-    sd.trigger('done',msg,sd)
+    # sd.trigger('done',msg,sd)
     delete @_subscribes[key]
+    sd.unload()
     true
   __onSuccess:(msg)->
     if msg.requestType==ph.TYPE_SUBSCRIBE

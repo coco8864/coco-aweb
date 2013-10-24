@@ -47,7 +47,14 @@ public interface Linklet {
 	/**
 	 * ブラウザがpublishした際に呼び出されるイベント通知<br/>
 	 * @param peer　送信した端末情報、サーバ側からmessageした場合は、LinkSessionが設定されない。
-	 * @param data　送信されたデータ、BlobやDateを含む場合、HashMap,それ以外の場合、JSONObject
+	 * @param data　送信されたデータ、BlobやDateを含めることができる
 	 */
 	void onPublish(LinkPeer peer,LinkMsg data);
+	
+	/**
+	 * ブラウザがpublishした際に呼び出されるイベント通知<br/>
+	 * @param peer　送信した端末情報、サーバ側からmessageした場合は、LinkSessionが設定されない。
+	 * @param data　送信された文字列データ
+	 */
+	void onPublish(LinkPeer peer,String data);
 }
