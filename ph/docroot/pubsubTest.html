@@ -13,11 +13,14 @@ var link;
 var sub;
 
 function subscribe(){
-  if(sub){
-    sub.unsubscribe();
-  }
   sub=link.subscribe(ph.jQuery("#qname").val(),ph.jQuery("#subname").val());
-  sub.onMessage(function(data){});
+  ph.jQuery("#subctrl").show();
+  sub.onMessage(function(data){
+    ph.log('++sub message sub++ message:'+data);
+    ph.dump(data);
+    ph.log('--sub message sub--');
+  });
+  sub.onUnload(function(){ph.jQuery("#subctrl").hide();sub=null});
 }
 
 function aplUrl(){
@@ -39,7 +42,7 @@ function auth(isOffline){
       var user=link.authInfo.user;
       linkInfo +="loginId:"+ user.loginId + "<br />";
       linkInfo +="nickname:"+ user.nickname + "<br />";
-      linkInfo +="user:"+ ph.JSON.stringify(link.authInfo.user);
+      //linkInfo +="user:"+ ph.JSON.stringify(link.authInfo.user);
     }else{
       linkInfo +="cause:"+ link.cause + "<br />";
     }
@@ -52,22 +55,49 @@ function auth(isOffline){
   link.onUnload(function(){
     ph.jQuery("#authInfo").hide();
     ph.jQuery("#pubsub").hide();
+    ph.jQuery("#subctrl").hide();
   });
 }
 
 ph.jQuery(function(){
-ph.jQuery("#authInfo").hide();
-ph.jQuery("#pubsub").hide();
-//  onlineAuth();
+// ドラッグドロップからの入力
+  ph.jQuery("#subctrl").bind("drop", function (e) {
+    var files = e.originalEvent.dataTransfer.files;
+    alert('publish file:'+files[0].name);
+    var data={data:files,source:'drop'};
+    try{
+      sub.publish(data);
+    }catch(e){
+    ph.log(e);
+    }
+    return false;
+  })
+  .bind("dragenter", function () {
+    // false を返してデフォルトの処理を実行しないようにする
+    return false;
+  })
+  .bind("dragover", function () {
+    // false を返してデフォルトの処理を実行しないようにする
+    return false;
+  });
+  ph.jQuery("#authInfo").hide();
+  ph.jQuery("#pubsub").hide();
+  ph.jQuery("#subctrl").hide();
+  ph.debug=true;
 });
 
   </script>
 </head>
 <body>
 <H1>PhantomLink pubsub test</H1>
+<a href='/admin' target='adminWnd'>admin</a>|
+<a href='' target='_blank'>pubsubTest</a>|
+<a href='storageTest.html' target='_blank'>storageTest</a>|
+<a href='javascript:location.reload()'>reload</a>
+<br />
 <hr/>
-aplUrl:<input id='aplUrl' type="text" value="/admin" style="width:256px;"/>
-<input type="button" value="online logon" onclick="auth(false);"/>
+aplUrl:<input id='aplUrl' type="text" value="/link1" style="width:256px;"/>
+<input type="button" value="online link" onclick="auth(false);"/>
 <br />
 <div id="authInfo">
 <hr/>
@@ -82,18 +112,33 @@ AuthInfo:<br />
 qname:<input id='qname' type="text" value="qname" style="width:100px;"/>
 subname:<input id='subname' type="text" value="subname" style="width:100px;"/>
 <input type="button" value="sbscribe" onclick="subscribe();"/><br />
-<hr/>
+<input type='text' id='directPublishData' value='directPublishData'/>
+<input type="button" value="direct publish" 
+  onclick="link.publish(ph.jQuery('#qname').val(),{data:ph.jQuery('#directPublishData').val(),source:'directPublish'});"/>
 <div id="subctrl">
-<input type="button" value="publish object" onclick="sd.publish({data:'testData'});"/>
-<input type="button" value="publish bin" onclick="sd.publish({data:'testCCC',blobData:[{string:'1234567890'},{arrayBuffer:ph.stringToArrayBuffer('abcdefg')}]});"/>
-<input type="button" value="publishForm" onclick="sd.publishForm('publishFormTest');"/>
+<hr/>
+<input type='text' id='publishData' value='publishData'/>
+<input type="button" value="publish string" 
+  onclick="sub.publish(ph.jQuery('#publishData').val());"/>
+<input type="button" value="publish object" 
+  onclick="sub.publish({data:ph.jQuery('#publishData').val(),source:'objectPublish'});"/>
+<input type="button" value="publish bin" 
+  onclick="sub.publish({data:ph.stringToArrayBuffer(ph.jQuery('#publishData').val()),source:'binaryPublish'});"/>
 <form id='publishFormTest'>
-<input type='file' name='file' />
-<input type='hidden' name='from' value='form'/>
-<input type='text' name='test' value='hello'/>
+<input type='file' name='data' />
+<input type='hidden' name='source' value='formPublish'/>
+<input type="button" value="publishForm" 
+  onclick="sub.publishForm('publishFormTest');"/>
 </form>
+<p>ここにファイルをドロップするとpublishします</p>
+<input type="button" value="unsubscribe" onclick="sub.unsubscribe();"/>
 </div>
 </div>
+</div>
+<Hr/>
+<div id="debug">
+<input type="button" value="出力クリア" onclick="ph.jQuery('#phDebugArea').text('');"/>
+<pre id="phDebugArea"></pre>
 </div>
 </body>
 </html>

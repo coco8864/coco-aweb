@@ -42,7 +42,7 @@ function auth(isOffline){
       var user=link.authInfo.user;
       linkInfo +="loginId:"+ user.loginId + "<br />";
       linkInfo +="nickname:"+ user.nickname + "<br />";
-      linkInfo +="user:"+ ph.JSON.stringify(link.authInfo.user);
+      //linkInfo +="user:"+ ph.JSON.stringify(link.authInfo.user);
     }else{
       linkInfo +="cause:"+ link.cause + "<br />";
     }
@@ -94,20 +94,25 @@ function keys(scope){
 }
 
 ph.jQuery(function(){
-ph.jQuery("#storages").hide();
-ph.jQuery("#authInfo").hide();
-//  onlineAuth();
+  ph.jQuery("#storages").hide();
+  ph.jQuery("#authInfo").hide();
 });
 
   </script>
 </head>
 <body>
 <H1>PhantomLink storage test</H1>
+<a href='/admin' target='adminWnd'>admin</a>|
+<a href='' target='_blank'>storageTest</a>|
+<a href='pubsubTest.html' target='_blank'>pubsubTest</a>|
+<a href='javascript:location.reload()'>reload</a>
+<br />
 <hr/>
-aplUrl:<input id='aplUrl' type="text" value="/admin" style="width:256px;"/>
-<input type="button" value="online logon" onclick="auth(false);"/>
-<input type="button" value="offline logon" onclick="auth(true);"/>
-<input type="button" value="logon" onclick="auth(undefined);"/>
+
+aplUrl:<input id='aplUrl' type="text" value="/link1" style="width:256px;"/>
+<input type="button" value="online link" onclick="auth(false);"/>
+<input type="button" value="offline link" onclick="auth(true);"/>
+<input type="button" value="link" onclick="auth(undefined);"/>
 <br />
 <div id="authInfo">
 <hr/>
@@ -123,7 +128,7 @@ bookmarklet<a id='bkmarklet'>injection</a><br />
 key:<input id='keyText' type="text" value="testKey"/><br />
 <hr/>
 <div>
-PAGE_PRIVATE:<br />
+scope PAGE_PRIVATE:<br />
 <input type="button" value="setItem" onclick="setItem(ph.SCOPE.PAGE_PRIVATE);"/>
 <input type="button" value="getItem" onclick="getItem(ph.SCOPE.PAGE_PRIVATE);"/>
 <input type="button" value="removeItem" onclick="removeItem(ph.SCOPE.PAGE_PRIVATE);"/>
@@ -133,7 +138,7 @@ PAGE_PRIVATE:<br />
 </div>
 <hr/>
 <div>
-SESSION_PRIVATE:<br />
+scope SESSION_PRIVATE:<br />
 <input type="button" value="setItem" onclick="setItem(ph.SCOPE.SESSION_PRIVATE);"/>
 <input type="button" value="getItem" onclick="getItem(ph.SCOPE.SESSION_PRIVATE);"/>
 <input type="button" value="removeItem" onclick="removeItem(ph.SCOPE.SESSION_PRIVATE);"/>
@@ -143,7 +148,7 @@ SESSION_PRIVATE:<br />
 </div>
 <hr/>
 <div>
-APL_PRIVATE:<br />
+scope APL_PRIVATE:<br />
 <input type="button" value="setItem" onclick="setItem(ph.SCOPE.APL_PRIVATE);"/>
 <input type="button" value="getItem" onclick="getItem(ph.SCOPE.APL_PRIVATE);"/>
 <input type="button" value="removeItem" onclick="removeItem(ph.SCOPE.APL_PRIVATE);"/>
@@ -153,7 +158,7 @@ APL_PRIVATE:<br />
 </div>
 <hr/>
 <div>
-APL_LOCAL:<br />
+scope APL_LOCAL:<br />
 <input type="button" value="setItem" onclick="setItem(ph.SCOPE.APL_LOCAL);"/>
 <input type="button" value="getItem" onclick="getItem(ph.SCOPE.APL_LOCAL);"/>
 <input type="button" value="removeItem" onclick="removeItem(ph.SCOPE.APL_LOCAL);"/>
@@ -163,7 +168,7 @@ APL_LOCAL:<br />
 </div>
 <hr/>
 <div>
-AUTH_PRIVATE:<br />
+scope AUTH_PRIVATE:<br />
 <input type="button" value="setItem" onclick="setItem(ph.SCOPE.AUTH_PRIVATE);"/>
 <input type="button" value="getItem" onclick="getItem(ph.SCOPE.AUTH_PRIVATE);"/>
 <input type="button" value="removeItem" onclick="removeItem(ph.SCOPE.AUTH_PRIVATE);"/>
@@ -173,7 +178,7 @@ AUTH_PRIVATE:<br />
 </div>
 <hr/>
 <div>
-AUTH_LOCAL:<br />
+scope AUTH_LOCAL:<br />
 <input type="button" value="setItem" onclick="setItem(ph.SCOPE.AUTH_LOCAL);"/>
 <input type="button" value="getItem" onclick="getItem(ph.SCOPE.AUTH_LOCAL);"/>
 <input type="button" value="removeItem" onclick="removeItem(ph.SCOPE.AUTH_LOCAL);"/>
