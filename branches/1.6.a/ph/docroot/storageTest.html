@@ -3,9 +3,6 @@
 <head>
   <meta charset="UTF-8" /> 
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Pragma" content="no-cache"> 
-  <meta http-equiv="Cache-Control" content="no-cache"> 
-  <meta http-equiv="Expires" content="0"> 
   <title>PhantomLink storage test</title>
   <script type="text/javascript" src="/pub/js/ph.js"></script>
   <script type="text/javascript">
@@ -32,7 +29,7 @@ function auth(isOffline){
     link.unlink();
   }
   link=ph.link(aplUrl(),isOffline);
-  link.onNotLoading(function(){
+  link.onReady(function(){
     var linkInfo=
     "isOffline:"+link.isOffline + "<br />"
     + "isAuth:"+link.isAuth + "<br />"
