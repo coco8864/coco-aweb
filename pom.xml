@@ -224,6 +224,7 @@
 									<include name="favicon.ico" />
 									<include name="index.html" />
 									<include name="storageTest.html" />
+									<include name="pubsubTest.html" />
 									<include name="pub/js/authOffline.js" />
 									<include name="pub/js/aplOffline.js" />
 									<include name="pub/js/ph-link.js" />
