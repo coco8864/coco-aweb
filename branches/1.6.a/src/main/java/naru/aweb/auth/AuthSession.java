@@ -175,7 +175,16 @@ public class AuthSession extends PoolBase{
 	}
 
 	public long getLastAccessTime() {
+		if(sessionId==null){
+			return -1;
+		}
 		return sessionId.getLastAccessTime();
+	}
+	public void setLastAccessTime() {
+		if(sessionId==null){
+			return;
+		}
+		sessionId.setLastAccessTime();
 	}
 	
 	/*

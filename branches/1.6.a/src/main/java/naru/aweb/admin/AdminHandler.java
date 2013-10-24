@@ -13,6 +13,7 @@ import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
 import naru.async.store.Store;
 import naru.async.store.StoreManager;
+import naru.aweb.auth.AuthSession;
 import naru.aweb.auth.Authenticator;
 import naru.aweb.auth.Authorizer;
 import naru.aweb.auth.LogoutEvent;
@@ -21,7 +22,6 @@ import naru.aweb.config.AppcacheOption;
 import naru.aweb.config.Config;
 import naru.aweb.core.Main;
 import naru.aweb.handler.WebServerHandler;
-import naru.aweb.handler.ServerBaseHandler.SCOPE;
 import naru.aweb.handler.ws.WsProtocol;
 import naru.aweb.mapping.Mapping;
 import naru.aweb.mapping.MappingResult;
@@ -448,6 +448,8 @@ public class AdminHandler extends WebServerHandler{
 
 	public void onRequestBody(){
 		try{
+			AuthSession session=getAuthSession();
+			session.setLastAccessTime();
 			doAdmin();
 		}catch(RuntimeException e){
 			logger.warn("fail to doAdmin.",e);

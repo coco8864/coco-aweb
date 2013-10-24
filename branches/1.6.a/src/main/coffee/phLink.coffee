@@ -284,6 +284,8 @@ class PrivateSessionStorage extends PhObject
   super
   @link.on('auth',@_init)
  _init:=>
+  if !@link.isAuth
+    return
   aplInfo=@link.aplInfo
   @_linkPss="&#{@link.keyUrl}:#{aplInfo.loginId}:#{aplInfo.appSid}"
   ##不要なsessionStorageの刈り取り

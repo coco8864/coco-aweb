@@ -23,9 +23,9 @@ import net.sf.json.JSONObject;
  * blobÇä‹ÇﬁèÍçáÅAbinaryÇ∆ÇµÇƒÇµÇ©ëóïtÇ≈Ç´Ç»Ç¢
  */
 public class Envelope extends PoolBase{
-	private static final String BLOB_VALUE_NAME_PREFIX="_paBlobValue";
+	private static final String BLOB_VALUE_NAME_PREFIX="__plBlobValue";
 	private static final int BLOB_VALUE_NAME_PREFIX_LEN=BLOB_VALUE_NAME_PREFIX.length();
-	private static final String DATE_VALUE_NAME_PREFIX="_paDateValue";
+	private static final String DATE_VALUE_NAME_PREFIX="__plDateValue";
 	private static final int DATE_VALUE_NAME_PREFIX_LEN=DATE_VALUE_NAME_PREFIX.length();
 
 	/* BlobÇä‹ÇﬁÅ@JSONÇ siriarize */
@@ -61,8 +61,13 @@ public class Envelope extends PoolBase{
 	
 	public JSONObject meta(){
 		JSONObject meta=new JSONObject();
-		meta.element("dates", dates);
+		if(dates.size()!=0){
+			meta.element("dates", dates);
+		}
 		int size=blobs.size();
+		if(size==0){
+			return meta;
+		}
 		JSONArray blobsJson=new JSONArray();
 		for(int i=0;i<size;i++){
 			Blob blob=blobs.get(i);
@@ -261,16 +266,22 @@ public class Envelope extends PoolBase{
 	}
 	
 	public static LinkMsg unpack(JSONObject header,List<Blob> blobs){
-		JSONObject meta=header.getJSONObject("meta");
-		JSONArray dates=meta.getJSONArray("dates");
-		if(blobs==null && dates.size()==0){
+		JSONObject meta=header.optJSONObject("meta");
+		JSONArray dates=null;
+		if(meta!=null){
+			dates=meta.optJSONArray("dates");
+		}
+		if(blobs==null && (dates==null ||dates.size()==0)){
 			return LinkMsg.wrap(header);
 		}
 		Envelope envelop=(Envelope)PoolManager.getInstance(Envelope.class);
 		if(blobs!=null){
 			envelop.blobs.addAll(blobs);
 		}
-		int size=dates.size();
+		int size=0;
+		if(dates!=null){
+			size=dates.size();
+		}
 		for(int i=0;i<size;i++){
 			envelop.dates.add(dates.getLong(i));
 		}

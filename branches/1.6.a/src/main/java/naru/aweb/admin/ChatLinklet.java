@@ -60,4 +60,9 @@ public class ChatLinklet implements Linklet {
 			ctx.message(data, AdminLinklet.SUBNAME_CHAT, peer);
 		}
 	}
+	
+	@Override
+	public void onPublish(LinkPeer peer, String data) {
+		logger.error("unsupport data");
+	}
 }

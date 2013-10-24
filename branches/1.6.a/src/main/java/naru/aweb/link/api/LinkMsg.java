@@ -24,7 +24,6 @@ public class LinkMsg extends PoolBase implements Map{
 	public static LinkMsg create(){
 		return wrap(null);
 	}
-	
 	public static LinkMsg wrap(Map root){
 		LinkMsg paData=(LinkMsg)PoolManager.getInstance(LinkMsg.class);
 		if(root==null){
@@ -147,14 +146,15 @@ public class LinkMsg extends PoolBase implements Map{
 		return (Date)root.get(key); 
 	}
 	public LinkMsg getMap(String key){
-		Map map=(Map)root.get(key);
+		Object map=root.get(key);
 		if(map instanceof LinkMsg){
 			return (LinkMsg)map;
-		}else{
-			LinkMsg value=wrap(map);
+		}else if(map instanceof Map){
+			LinkMsg value=wrap((Map)map);
 			root.put(key, value);
 			return value;
 		}
+		return null;
 	}
 	public List getList(String key){
 		return (List)root.get(key); 

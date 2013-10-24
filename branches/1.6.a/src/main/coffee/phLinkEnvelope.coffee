@@ -1,7 +1,7 @@
 #-------------------Envelope-------------------
 class Envelope
-  BLOB_VALUE_NAME_PREFIX:'_paBlobValue'
-  DATE_VALUE_NAME_PREFIX:'_paDateValue'
+  BLOB_VALUE_NAME_PREFIX:'__plBlobValue'
+  DATE_VALUE_NAME_PREFIX:'__plDateValue'
   mainObj:null
   constructor:->
     @blobs=[]
@@ -9,7 +9,15 @@ class Envelope
     @dates=[]
     @asyncBlobCount=0
   meta:->
-    {dates:@dates,blobs:@blobMetas}
+    if @datas==undefined || @datas.length==0
+      if @blobMetas==undefined ||@blobMetas.length==0
+        return null
+      else
+        return {blobs:@blobMetas}
+    else
+      if @blobMetas==undefined || @blobMetas.length==0
+        return {dates:@dates}
+    return {dates:@dates,blobs:@blobMetas}
   serialize:(obj)->
     if ph.jQuery.isArray(obj)
       result=[]
@@ -61,6 +69,14 @@ class Envelope
       for key,value of obj
         result[key]=@serialize(obj[key])
       return result
+    else if window.FileList && obj instanceof FileList
+      result=[]
+      size=obj.length
+      if size<=0
+        return result
+      for i in [0..(size-1)]
+        result[i]=@serialize(obj[i])
+      return result
     return obj
   deserialize:(obj)->
     if ph.jQuery.isArray(obj)
@@ -103,7 +119,9 @@ class Envelope
     onPacked(ph.createBlob(blobData))
   pack:(obj,onPacked)->
     @mainObj=@serialize(obj)
-    @mainObj.meta=@meta()
+    meta=@meta()
+    if meta
+      @mainObj.meta=meta
     if !onPacked
       return @mainObj
     if @blobs.length==0

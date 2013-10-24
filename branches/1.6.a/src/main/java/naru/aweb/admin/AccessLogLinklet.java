@@ -419,4 +419,9 @@ public class AccessLogLinklet implements Linklet {
 		}
 		return query;
 	}
+
+	@Override
+	public void onPublish(LinkPeer peer, String data) {
+		logger.error("unsupport data");
+	}
 }
