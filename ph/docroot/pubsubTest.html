@@ -3,9 +3,6 @@
 <head>
   <meta charset="UTF-8" /> 
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Pragma" content="no-cache"> 
-  <meta http-equiv="Cache-Control" content="no-cache"> 
-  <meta http-equiv="Expires" content="0"> 
   <title>PhantomLink pubsub test</title>
   <script type="text/javascript" src="/pub/js/ph.js"></script>
   <script type="text/javascript">
@@ -15,7 +12,7 @@ var sub;
 function subscribe(){
   sub=link.subscribe(ph.jQuery("#qname").val(),ph.jQuery("#subname").val());
   ph.jQuery("#subctrl").show();
-  sub.onMessage(function(data){
+  sub.onMessage(function(data){//TODO
     ph.log('++sub message sub++ message:'+data);
     ph.dump(data);
     ph.log('--sub message sub--');
@@ -32,7 +29,7 @@ function auth(isOffline){
     link.unlink();
   }
   link=ph.link(aplUrl(),isOffline);
-  link.onNotLoading(function(){
+  link.onReady(function(){
     var linkInfo=
     "isOffline:"+link.isOffline + "<br />"
     + "isAuth:"+link.isAuth + "<br />"
@@ -101,7 +98,7 @@ aplUrl:<input id='aplUrl' type="text" value="/link1" style="width:256px;"/>
 <br />
 <div id="authInfo">
 <hr/>
-AuthInfo:<br />
+<H2>Link info and operation</H2>
 <div id="authOutput"></div>
 </div>
 <div id="pubsub">
@@ -117,6 +114,7 @@ subname:<input id='subname' type="text" value="subname" style="width:100px;"/>
   onclick="link.publish(ph.jQuery('#qname').val(),{data:ph.jQuery('#directPublishData').val(),source:'directPublish'});"/>
 <div id="subctrl">
 <hr/>
+<H2>Subscription operation</H2>
 <input type='text' id='publishData' value='publishData'/>
 <input type="button" value="publish string" 
   onclick="sub.publish(ph.jQuery('#publishData').val());"/>
