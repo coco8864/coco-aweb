@@ -41,4 +41,4 @@ class Subscription extends PhObject
     qnameInput.remove()
     subnameInput.remove()
   onMessage:(cb)->
-    @on(ph.TYPE_MESSAGE,cb)
+    @on(ph.EVENT.MESSAGE,cb)

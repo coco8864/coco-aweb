@@ -11,7 +11,7 @@ class PhObject
   STAT_LOADING:'@loading'
   STAT_LOAD:'@load'
   STAT_UNLOAD:'@unload'
-  STAT_NOT_LOADING:'@notLoading'
+  STAT_READY:'@ready' # @loadingから状態が変更されたことを通知
   constructor:->
     @_callback ={}
     @_callbackOne ={}
@@ -46,14 +46,14 @@ class PhObject
     if @_stat==@STAT_LOADING
       @_stat=@STAT_LOAD
       @trigger(@STAT_LOAD)
-      @trigger(@STAT_NOT_LOADING)
+      @trigger(@STAT_READY)
     return
   # このオブジェクトが使えなくなったら呼び出す
   unload:->
     if @_stat==@STAT_LOAD||@_stat==@STAT_LOADING
       @_stat=@STAT_UNLOAD
       @trigger(@STAT_UNLOAD)
-      @trigger(@STAT_NOT_LOADING)
+      @trigger(@STAT_READY)
     return
   _triggerOne: (name,args...) ->
     list = @_callbackOne[name]
@@ -96,11 +96,11 @@ class PhObject
         func.apply(@,args)
       return true
   # 使えるか使えないかはっきりしたら通知されるfuncを登録
-  onNotLoading:(func,args...)->
+  onReady:(func,args...)->
     if @_stat==@STAT_LOADING
       if func
         _this=@
-        @one(@STAT_NOT_LOADING,->func.apply(_this,args))
+        @one(@STAT_READY,->func.apply(_this,args))
       return false
     else
       if func
@@ -120,9 +120,6 @@ class Ph extends PhObject
   STAT_OPEN:'OPEN',
   STAT_CONNECT:'CONNECT'
   STAT_CLOSE:'CLOSE'
-  CB_INFO:'INFO'
-  CB_ERROR:'ERROR'
-  CB_MESSAGE:'MESSAGE'
   # request type
   TYPE_NEGOTIATE:'negotiate'
   TYPE_PUBLISH:'publish'
@@ -150,6 +147,25 @@ class Ph extends PhObject
     QNAME:'qname'
     SUBNAME:'subname'
     USER:'user'
+  }
+  EVENT:{
+    GET_ITEM:'@getItem'
+    SET_ITEM:'@setItem'
+    REMOVE_ITEM:'@removeItem'
+    KEYS:'@keys'
+    CHANGE_ITEM:'@changeItem'
+    MESSAGE:'@message'
+    QNAMES:'@qnames'
+    LOGIN:'@login'
+    LOGOUT:'@logout'
+  }
+  TYPE:{
+    GET_ITEM:'getItem'
+    SET_ITEM:'setItem'
+    REMOVE_ITEM:'removeItem'
+    KEYS:'keys'
+    CHANGE_ITEM:'changeItem'
+    MESSAGE:'message'
   }
  # _INTERVAL:1000
   _SEND_DATA_MAX:(1024*1024*2)
@@ -306,7 +322,7 @@ class Ph extends PhObject
       ph.isOffline=true
       ph.load()
     )
-    ph.jQuery(window).on('message',(ev)->window.ph.trigger('@message',ev))
+    ph.jQuery(window).on('message',(ev)->window.ph.trigger(ph.EVENT.MESSAGE,ev))
     ph.jQuery(window).unload((ev)->window.ph.trigger('@unload',ev))
 
 window.ph=new Ph()

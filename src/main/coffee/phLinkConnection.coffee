@@ -75,7 +75,6 @@ class Connection extends PhObject
     if @stat==ph.STAT_OPEN
 # Ú‘±’¼Œã‚ÉØ‚ê‚é‚Ì‚Íwebsocket‚ªŽg‚¦‚È‚¢‚Æl‚¦‚é
       if @useWs==true
-        @trigger('unload')
         @unload()
         @stat=ph.INIT
         return
@@ -83,7 +82,6 @@ class Connection extends PhObject
       @_openXhr()
       return
     else if @stat!=ph.STAT_CONNECT
-      @trigger('unload')
       @unload()
       @stat=ph.INIT
       return
@@ -126,13 +124,13 @@ class Connection extends PhObject
       @connectXhrUrl + ph._XHR_FRAME_URL +
       '"></iframe>')
     ph.jQuery('body').append(@_xhrFrame)
-    ph.on('@message',@_xhrOnMessage)
+    ph.on(ph.EVENT.MESSAGE,@_xhrOnMessage)
     con=@
     @onUnload(->
       if con._xhrFrame
        con._xhrFrame.remove()
        con._xhrFrame=null
-      ph.off('@message',con._xhrOnMessage)
+      ph.off(ph.EVENT.MESSAGE,con._xhrOnMessage)
      )
   _xhrOnMessage:(ev)=>
     if ev.originalEvent.source!=@_xhrFrame[0].contentWindow
@@ -201,7 +199,7 @@ class Connection extends PhObject
     else if msg.requestType==ph.TYPE_CLOSE
       @__onClose(msg)
     else if msg.requestType==ph.TYPE_QNAMES
-      @trigger(ph.TYPE_QNAMES,msg.message)
+      @trigger(ph.EVENT.QNAMES,msg.message)
     else
       sd=@__getSd(msg)
       if sd
@@ -247,10 +245,10 @@ class Connection extends PhObject
           ph.log('drop msg:'+x)
         reciveMsgs.push(msg)
         return
-      sd.trigger(ph.TYPE_MESSAGE,msg.message,sd)
-      @trigger(sd.qname,msg.message,sd)
-      @trigger(sd.subname,msg.message,sd)
-      @trigger("#{sd.qname}@#{sd.subname}",msg.message,sd)
+      sd.trigger(ph.EVENT.MESSAGE,msg.message,sd)
+      # @trigger(sd.qname,msg.message,sd)
+      # @trigger(sd.subname,msg.message,sd)
+      # @trigger("#{sd.qname}@#{sd.subname}",msg.message,sd)
     else if msg.type==ph.TYPE_RESPONSE
       if msg.result==ph.RESULT_SUCCESS
         @__onSuccess(msg)
@@ -298,7 +296,7 @@ class Connection extends PhObject
     if @isUnload()
       throw 'connection.qnames:aleady unloaded.'
     if cb
-      @on(ph.TYPE_QNAMES,cb)
+      @on(ph.EVENT.QNAMES,cb)
     @_send({type:ph.TYPE_QNAMES})
   deploy:(qname,className)->
     if @isUnload()

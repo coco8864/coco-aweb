@@ -20,7 +20,7 @@ class Link extends PhObject
       link.ppStorage=null
      return
     )
-  ph.on('@message',@_onMessage)
+  ph.on(ph.EVENT.MESSAGE,@_onMessage)
   link=@
   ph.onLoad(->
    link._frame=ph.jQuery(
@@ -39,7 +39,7 @@ class Link extends PhObject
     ,ph.authFrameTimeout*2
     )
    )
-  ph.on('@unload',->link.unlink())
+  ph.on(@STAT_UNLOAD,->link.unlink())
   @
  _connect:->
   # alert('connect start2')
@@ -141,7 +141,7 @@ class Link extends PhObject
     @authInfo=res.authInfo
     @trigger('onlineAuth',@)
     @isAuth=true
-    @trigger('auth',@)
+    @trigger(ph.EVENT.LOGIN,@)
     @_connect()
    else
     @cause=res.reason
@@ -155,8 +155,8 @@ class Link extends PhObject
     @authInfo=res.authInfo
     @aplInfo={loginId:@authInfo.user.loginId,appSid:'offline'}
     # @ppStorage=new PrivateSessionStorage(@)
-    @trigger('offlineAuth',link)
-    @trigger('auth',link)
+    # @trigger('offlineAuth',link)
+    @trigger(ph.EVENT.LOGIN,@)
     @load()
    else
     @isAuth=false
@@ -171,7 +171,7 @@ class Link extends PhObject
    if res.result==true
     @trigger('suspendAuth',link)
     @unload()
-  else if res.type=='getItem' || res.type=='changeItem' || res.type=='keys'
+  else if res.type==ph.TYPE.GET_ITEM || res.type==ph.TYPE.CHANGE_ITEM || res.type==ph.TYPE.KEYS
    storage=@storages[res.scope]
    if storage
     storage._storageTrigger(res)
@@ -282,7 +282,7 @@ ph.link=(aplUrl,useOffline,useConnection,useWs)->
 class PrivateSessionStorage extends PhObject
  constructor:(@link)->
   super
-  @link.on('auth',@_init)
+  @link.on(ph.EVENT.LOGIN,@_init)
  _init:=>
   if !@link.isAuth
     return
@@ -321,7 +321,7 @@ class PrivateSessionStorage extends PhObject
     ctx(data)
   else
     @trigger(key,data,ctx)
-    @trigger('@getItem',data,ctx)
+    @trigger(ph.EVENT.GET_ITEM,data,ctx)
   @data[key]
  keys:(ctx)->
   s=@
@@ -337,7 +337,7 @@ class PrivateSessionStorage extends PhObject
   if typeof(ctx)=='function'
     ctx(data)
   else
-    @trigger('@keys',data,ctx)
+    @trigger(ph.EVENT.KYES,data,ctx)
   keys
  setItem:(key,value)->
   s=@
@@ -381,27 +381,27 @@ class PhLocalStorage extends PhObject
     @onLoad(->s._getItem(key,ctx))
   _getItem:(key,ctx)->
     @ctxs[@ctxIdx]=ctx
-    @link._requestToAplFrame({type:'getItem',scope:@scope,key:key,ctxIdx:@ctxIdx,via:0})
+    @link._requestToAplFrame({type:ph.TYPE.GET_ITEM,scope:@scope,key:key,ctxIdx:@ctxIdx,via:0})
     @ctxIdx++;
     return
   setItem:(key,value)->
     s=@
     @onLoad(->s._setItem(key,value))
   _setItem:(key,value)->
-    @link._requestToAplFrame({type:'setItem',scope:@scope,key:key,value:value,via:0})
+    @link._requestToAplFrame({type:ph.TYPE.SET_ITEM,scope:@scope,key:key,value:value,via:0})
     return
   removeItem:(key)->
     s=@
     @onLoad(->s._removeItem(key))
   _removeItem:(key)->
-    @link._requestToAplFrame({type:'removeItem',scope:@scope,key:key,via:0})
+    @link._requestToAplFrame({type:ph.TYPE.REMOVE_ITEM,scope:@scope,key:key,via:0})
     return
   keys:(ctx)->
     s=@
     @onLoad(->s._keys(ctx))
   _keys:(ctx)->
     @ctxs[@ctxIdx]=ctx
-    @link._requestToAplFrame({type:'keys',scope:@scope,ctxIdx:@ctxIdx,via:0})
+    @link._requestToAplFrame({type:ph.TYPE.KEYS,scope:@scope,ctxIdx:@ctxIdx,via:0})
     @ctxIdx++;
     return
   _storageTrigger:(data)->
@@ -409,13 +409,13 @@ class PhLocalStorage extends PhObject
     delete @ctxs[data.ctxIdx]
     if typeof(ctx)=='function'
       ctx(data)
-    else if data.type=='getItem'
-      @trigger('@getItem',data,ctx)
+    else if data.type==ph.TYPE.GET_ITEM
+      @trigger(ph.EVENT.GET_ITEM,data,ctx)
       @trigger(data.key,data,ctx)
-    else if data.type=='keys'
-      @trigger('@keys',data,ctx)
-    else if data.type=='changeItem'
+    else if data.type==ph.TYPE.KEYS
+      @trigger(ph.EVENT.KEYS,data,ctx)
+    else if data.type==ph.TYPE.CHANGE_ITEM
       data.value=data.newValue
-      @trigger('@changeItem',data)
+      @trigger(ph.EVENT.CHANGE_ITEM,data)
       @trigger(data.key,data)
 
