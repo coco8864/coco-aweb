@@ -135,6 +135,7 @@ class Ph extends PhObject
   TYPE_DOWNLOAD:'download'
   RESULT_ERROR:'error'
   RESULT_SUCCESS:'success'
+  KEY_BID:'@bid'
   # strage scope
   SCOPE:{
     PAGE_PRIVATE:'pagePrivate'
@@ -158,6 +159,8 @@ class Ph extends PhObject
     QNAMES:'@qnames'
     LOGIN:'@login'
     LOGOUT:'@logout'
+    ENCRYPT:'@encrypt'
+    DECRYPT:'@decrypt'
   }
   TYPE:{
     GET_ITEM:'getItem'

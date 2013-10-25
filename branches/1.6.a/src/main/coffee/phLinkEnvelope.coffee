@@ -9,7 +9,7 @@ class Envelope
     @dates=[]
     @asyncBlobCount=0
   meta:->
-    if @datas==undefined || @datas.length==0
+    if @dates==undefined || @dates.length==0
       if @blobMetas==undefined ||@blobMetas.length==0
         return null
       else
