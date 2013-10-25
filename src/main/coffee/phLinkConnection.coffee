@@ -155,12 +155,12 @@ class Connection extends PhObject
     envelope.unpack(obj,@_onMessage)
 #   @_onMessage(obj)
   _getBid:->
-    @link.ppStorage.getItem('bid') ? 0
+    @link.ppStorage.getItem(ph.KEY_BID) ? 0
   _setBid:(bid)->
     if bid
-      @link.ppStorage.setItem('bid',bid)
+      @link.ppStorage.setItem(ph.KEY_BID,bid)
     else
-      @link.ppStorage.removeItem('bid')
+      @link.ppStorage.removeItem(ph.KEY_BID)
   _onOpen:->
     @stat=ph.STAT_NEGOTIATION
     @_sendNego({type:ph.TYPE_NEGOTIATE,bid:@_getBid(),token:@_token,needRes:true})

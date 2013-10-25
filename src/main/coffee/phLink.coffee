@@ -30,9 +30,12 @@ class Link extends PhObject
      "src='#{link.keyUrl}/~ph.vsp'>" + 
      "</iframe>")
    ph.jQuery("body").append(link._frame)
+   # link._frame.on('load',->ph.log('apl frame onload'))
    link._frameTimerId=setTimeout((->
      link._frameTimerId=null
      link._frame.remove()
+     link.isAuth=false
+     link.cause='apl frame load timeout'
      link.trigger('failToAuth',link)
      link.unload(link)
      return)
@@ -78,21 +81,25 @@ class Link extends PhObject
   if !@_frame || ev.source!=@_frame[0].contentWindow
    return
   res=ph.JSON.parse(ev.data)
-  if res.ctxIdx
-   ctx=@ctxs[res.ctxIdx]
-   delete @ctxs[res.ctxIdx]
-   if res.type=='encrypt'
+  if res.type=='encrypt'
+   if res.ctxIdx
+    ctx=@ctxs[res.ctxIdx]
+    delete @ctxs[res.ctxIdx]
     if typeof(ctx)=='function'
      ctx(res.encryptText)
     else
-     @trigger('@encrypt',res)
-   else if res.type=='decrypt'
+     @trigger(@EVENT.ENCRYPT,res)
+   return
+  else if res.type=='decrypt'
+   if res.ctxIdx
+    ctx=@ctxs[res.ctxIdx]
+    delete @ctxs[res.ctxIdx]
     if typeof(ctx)=='function'
      ctx(res.plainText)
     else
-     @trigger('@decrypt',res)
+     @trigger(@EVENT.DECRYPT,res)
    return
-  if res.type=='showFrame'
+  else if res.type=='showFrame'
    @_frame.css({'height':"#{res.height}px",'width':'500px','top':'100px','left':'50%','margin-top':'0px','margin-left':'-250px'})
    # @_frame.focus()
    return
@@ -101,6 +108,7 @@ class Link extends PhObject
    return
   if res.type=='loadAplFrame'
    clearTimeout(@_frameTimerId)
+   ph.log('loadAplFrame')
    @_frameTimerId=null
    if !res.result
     @cause='fail to onlineAuth'
@@ -289,7 +297,7 @@ class PrivateSessionStorage extends PhObject
   aplInfo=@link.aplInfo
   @_linkPss="&#{@link.keyUrl}:#{aplInfo.loginId}:#{aplInfo.appSid}"
   ##不要なsessionStorageの刈り取り
-  sameLoginIdKey="&#{@link.keyUrl}:"
+  sameLoginIdKey="&#{@link.keyUrl}:#{aplInfo.loginId}"
   i=sessionStorage.length
   while (i-=1) >=0
    key=sessionStorage.key(i)
