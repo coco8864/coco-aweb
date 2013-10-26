@@ -1,11 +1,23 @@
 <!DOCTYPE html>
 <html>
-<head>
+<head> 
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta charset="UTF-8" /> 
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <title>PhantomLink storage test</title>
   <script type="text/javascript" src="/pub/js/ph.js"></script>
   <script type="text/javascript">
+
+var outputCounter=1;
+function outputClear(){
+  ph.jQuery("#output").html("");
+}
+function outputLog(html){
+  var orgHtml=ph.jQuery("#output").html();
+  ph.jQuery("#output").html("*"+outputCounter+"*<br />"+html+"<br />"+orgHtml);
+  outputCounter++;
+}
+
 var link;
 var scopes=[
   ph.SCOPE.PAGE_PRIVATE,
@@ -22,13 +34,6 @@ function testKey(){
 
 function aplUrl(){
   return ph.jQuery("#aplUrl").val();
-}
-
-var counter=1;
-function outputLog(html){
-    var orgHtml=ph.jQuery("#output").html();
-    ph.jQuery("#output").html("*"+counter+"*<br />"+html+"<br />"+orgHtml);
-    counter++;
 }
 
 function auth(isOffline){
@@ -55,14 +60,16 @@ function auth(isOffline){
     bkmarklet=bkmarklet.replace("$event$",testKey());
     bkmarklet=bkmarklet.replace("$adminUrl$",link.keyUrl);
     bkmarklet=bkmarklet.replace("$publicWebUrl$",ph.publicWebUrl);
-    bkmarklet=bkmarklet.split(' ').join('%20');
-    outputLog(testKey()+":<a href='"+bkmarklet+"'>strageInjection</a>");
+    //bkmarklet=bkmarklet.split(' ').join('%20');
+    outputLog('SESSION_PRIVATE:testKey()+:<a href="'+bkmarklet+'">storageInjection</a>');
     if(link.isAuth){
-      ph.jQuery(".link").removeAttr('disabled');
+      ph.jQuery("#linkAuthArea input").removeAttr('disabled');
+      ph.jQuery("#storageArea input").removeAttr('disabled');
     }
   });
   link.onUnload(function(){
-    ph.jQuery(".link").attr('disabled','disabled');
+    ph.jQuery("#linkAuthArea input").attr('disabled','disabled');
+    ph.jQuery("#storageArea input").attr('disabled','disabled');
   });
   for(i=0;i<scopes.length;i++){
     var scope=scopes[i];
@@ -72,124 +79,168 @@ function auth(isOffline){
       ph.jQuery("#"+data.scope+"Text").val(data.value)
     });
   }
+  //ph.debug=true;
 }
 
 function setItem(scope){
   var value=ph.jQuery("#"+scope+"Text").val();
+  outputLog(scope + ' setItem("'+testKey()+'","'+value+'")');
   storage=storages[scope];
   storage.setItem(testKey(),value);
 }
 
 function getItem(scope){
+  outputLog(scope + ' getItem("'+testKey()+'")');
   storage=storages[scope];
   storage.getItem(testKey(),function(data){ph.jQuery("#"+scope+"Text").val(data.value)});
 }
 function removeItem(scope){
+  outputLog(scope + ' removeItem()');
   storage=storages[scope];
   storage.removeItem(testKey());
 }
 function keys(scope){
   storage=storages[scope];
   storage.keys(function(data){
-    ph.jQuery("#"+scope+"Text").val(ph.JSON.stringify(data.keys));
+    outputLog(scope + ' kyes()='+ph.JSON.stringify(data.keys));
     });
 }
 ph.jQuery(function(){
-  ph.jQuery(".link").attr('disabled','disabled');
+  ph.jQuery("#linkAuthArea input").attr('disabled','disabled');
+  ph.jQuery("#storageArea input").attr('disabled','disabled');
 });
 
   </script>
-<style type="text/css"><!--
-#outputArea {
+  <style type="text/css"><!--
+  #outputArea {
     margin-right: 20px;
-    height: 100px;
+    height: 200px;
     background: #ddd;
     overflow: auto;
-}
--->
-</style>
+  }
+  -->
+  </style>
 </head>
 <body>
 <H1>PhantomLink storage test</H1>
 <a href='/admin' target='adminWnd'>admin</a>|
-<a href='' target='_blank'>storageTest</a>|
+<a href='storageTest.html' target='_blank'>storageTest</a>|
 <a href='pubsubTest.html' target='_blank'>pubsubTest</a>|
 <a href='javascript:location.reload()'>reload</a>|
-<a href='javascript:ph.jQuery("#output").html("")'>output clear</a>
-<br />
-output<br />
-<div id="outputArea">
-<div id="output"></div>
-</div>
-<H2>Link operation</H2>
+<a href='#' onclick='outputClear();'>output clear</a>
+<hr/>
 <div id="storages">
 aplUrl:<input id='aplUrl' type="text" value="/link1" style="width:256px;"/>
 <input type="button" value="online link" onclick="auth(false);"/>
 <input type="button" value="offline link" onclick="auth(true);"/>
 <input type="button" value="link" onclick="auth(undefined);"/>
 <br />
-<input class='link' type="button" value="profile" onclick="link.userProfile();"/>
-<input class='link' type="button" value="logout" onclick="link.logout();"/>
-<input class='link' type="button" value="unlink" onclick="link.unlink();"/><br />
-key:<input class='link' id='keyText' type="text" value="testKey"/><br />
+<div id='linkAuthArea'>
+<input type="button" value="profile" onclick="link.userProfile();"/>
+<input type="button" value="logout" onclick="link.logout();"/>
+<input type="button" value="unlink" onclick="link.unlink();"/><br />
+</div>
+
+<div id='storageArea'>
 <hr/>
-scopes<br />
+key:<input id='keyText' type="text" value="testKey"/><br />
 <table>
 <tr>
-<td>PAGE_PRIVATE:</td>
 <td>
-<input class='link' type="button" value="setItem" onclick="setItem(ph.SCOPE.PAGE_PRIVATE);"/>
-<input class='link' type="button" value="getItem" onclick="getItem(ph.SCOPE.PAGE_PRIVATE);"/>
-<input class='link' type="button" value="removeItem" onclick="removeItem(ph.SCOPE.PAGE_PRIVATE);"/>
-<input class='link' type="button" value="keys" onclick="keys(ph.SCOPE.PAGE_PRIVATE);"/>
+scope
 </td>
 <td>
-<input class='link' id='pagePrivateText' type="text" style="width:512px;"/>
+operation
 </td>
 </tr>
 
-<P>SESSION_PRIVATE:
-<input class='link' type="button" value="setItem" onclick="setItem(ph.SCOPE.SESSION_PRIVATE);"/>
-<input class='link' type="button" value="getItem" onclick="getItem(ph.SCOPE.SESSION_PRIVATE);"/>
-<input class='link' type="button" value="removeItem" onclick="removeItem(ph.SCOPE.SESSION_PRIVATE);"/>
-<input class='link' type="button" value="keys" onclick="keys(ph.SCOPE.SESSION_PRIVATE);"/>
-<input class='link' id='sessionPrivateText' type="text" style="width:512px;"/>
-</P>
+<tr>
+<td>
+PAGE_PRIVATE:
+</td>
+<td>
+<input id='pagePrivateText' type="text" style="width:200px;"/>
+<input type="button" value="setItem" onclick="setItem(ph.SCOPE.PAGE_PRIVATE);"/>
+<input type="button" value="getItem" onclick="getItem(ph.SCOPE.PAGE_PRIVATE);"/>
+<input type="button" value="removeItem" onclick="removeItem(ph.SCOPE.PAGE_PRIVATE);"/>
+<input type="button" value="keys" onclick="keys(ph.SCOPE.PAGE_PRIVATE);"/>
+</td>
+</tr>
 
+<tr>
+<td>
+SESSION_PRIVATE:
+</td>
+<td>
+<input id='sessionPrivateText' type="text" style="width:200px;"/>
+<input type="button" value="setItem" onclick="setItem(ph.SCOPE.SESSION_PRIVATE);"/>
+<input type="button" value="getItem" onclick="getItem(ph.SCOPE.SESSION_PRIVATE);"/>
+<input type="button" value="removeItem" onclick="removeItem(ph.SCOPE.SESSION_PRIVATE);"/>
+<input type="button" value="keys" onclick="keys(ph.SCOPE.SESSION_PRIVATE);"/>
+</td>
+</tr>
 
-<P>APL_PRIVATE:
-<input class='link' type="button" value="setItem" onclick="setItem(ph.SCOPE.APL_PRIVATE);"/>
-<input class='link' type="button" value="getItem" onclick="getItem(ph.SCOPE.APL_PRIVATE);"/>
-<input class='link' type="button" value="removeItem" onclick="removeItem(ph.SCOPE.APL_PRIVATE);"/>
-<input class='link' type="button" value="keys" onclick="keys(ph.SCOPE.APL_PRIVATE);"/>
-<input class='link' id='aplPrivateText' type="text" style="width:512px;"/>
-</P>
+<tr>
+<td>
+APL_PRIVATE:
+</td>
+<td>
+<input id='aplPrivateText' type="text" style="width:200px;"/>
+<input type="button" value="setItem" onclick="setItem(ph.SCOPE.APL_PRIVATE);"/>
+<input type="button" value="getItem" onclick="getItem(ph.SCOPE.APL_PRIVATE);"/>
+<input type="button" value="removeItem" onclick="removeItem(ph.SCOPE.APL_PRIVATE);"/>
+<input type="button" value="keys" onclick="keys(ph.SCOPE.APL_PRIVATE);"/>
+</td>
+</tr>
 
+<tr>
+<td>
+APL_LOCAL:
+</td>
+<td>
+<input id='aplLocalText' type="text" style="width:200px;"/>
+<input type="button" value="setItem" onclick="setItem(ph.SCOPE.APL_LOCAL);"/>
+<input type="button" value="getItem" onclick="getItem(ph.SCOPE.APL_LOCAL);"/>
+<input type="button" value="removeItem" onclick="removeItem(ph.SCOPE.APL_LOCAL);"/>
+<input type="button" value="keys" onclick="keys(ph.SCOPE.APL_LOCAL);"/>
+</td>
+</tr>
 
-<P>APL_LOCAL:
-<input class='link' type="button" value="setItem" onclick="setItem(ph.SCOPE.APL_LOCAL);"/>
-<input class='link' type="button" value="getItem" onclick="getItem(ph.SCOPE.APL_LOCAL);"/>
-<input class='link' type="button" value="removeItem" onclick="removeItem(ph.SCOPE.APL_LOCAL);"/>
-<input class='link' type="button" value="keys" onclick="keys(ph.SCOPE.APL_LOCAL);"/>
-<input class='link' id='aplLocalText' type="text" style="width:512px;"/>
-</P>
+<tr>
+<td>
+AUTH_PRIVATE:
+</td>
+<td>
+<input id='authPrivateText' type="text" style="width:200px;"/>
+<input type="button" value="setItem" onclick="setItem(ph.SCOPE.AUTH_PRIVATE);"/>
+<input type="button" value="getItem" onclick="getItem(ph.SCOPE.AUTH_PRIVATE);"/>
+<input type="button" value="removeItem" onclick="removeItem(ph.SCOPE.AUTH_PRIVATE);"/>
+<input type="button" value="keys" onclick="keys(ph.SCOPE.AUTH_PRIVATE);"/>
+</td>
+</tr>
 
-
-<P>AUTH_PRIVATE:
-<input class='link' type="button" value="setItem" onclick="setItem(ph.SCOPE.AUTH_PRIVATE);"/>
-<input class='link' type="button" value="getItem" onclick="getItem(ph.SCOPE.AUTH_PRIVATE);"/>
-<input class='link' type="button" value="removeItem" onclick="removeItem(ph.SCOPE.AUTH_PRIVATE);"/>
-<input class='link' type="button" value="keys" onclick="keys(ph.SCOPE.AUTH_PRIVATE);"/>
-<input class='link' id='authPrivateText' type="text" style="width:512px;"/>
-</P>
-
-
-<P>AUTH_LOCAL:
-<input class='link' type="button" value="setItem" onclick="setItem(ph.SCOPE.AUTH_LOCAL);"/>
-<input class='link' type="button" value="getItem" onclick="getItem(ph.SCOPE.AUTH_LOCAL);"/>
-<input class='link' type="button" value="removeItem" onclick="removeItem(ph.SCOPE.AUTH_LOCAL);"/>
-<input class='link' type="button" value="keys" onclick="keys(ph.SCOPE.AUTH_LOCAL);"/>
-<input class='link' id='authLocalText' type="text" style="width:512px;"/>
-</P>
+<tr>
+<td>
+AUTH_LOCAL:
+</td>
+<td>
+<input id='authLocalText' type="text" style="width:200px;"/>
+<input type="button" value="setItem" onclick="setItem(ph.SCOPE.AUTH_LOCAL);"/>
+<input type="button" value="getItem" onclick="getItem(ph.SCOPE.AUTH_LOCAL);"/>
+<input type="button" value="removeItem" onclick="removeItem(ph.SCOPE.AUTH_LOCAL);"/>
+<input type="button" value="keys" onclick="keys(ph.SCOPE.AUTH_LOCAL);"/>
+</td>
+</tr>
+</table>
+</div>
+output<br />
+<div id="outputArea">
+<div id="output"></div>
+</div>
+<!--div id="debug">
+<Hr/>
+<input type="button" value="出力クリア" onclick="ph.jQuery('#phDebugArea').text('');"/>
+<pre id="phDebugArea"></pre>
+</div-->
 </body>
 </html>
