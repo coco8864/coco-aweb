@@ -233,7 +233,7 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 		}
 		MappingResult mapping=getRequestMapping();
 		String path=mapping.getSourcePath();
-		LinkManager linkManager=(LinkManager)mapping.getAttribute(Mapping.OPTION_LINK_NAME);
+		LinkManager linkManager=(LinkManager)mapping.getAttribute(Mapping.OPTION_LINK);
 		if(linkManager==null){
 			logger.error("not found linkManager.");
 			return false;
@@ -377,7 +377,7 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 			formPublish(parameter);
 			return;
 		}
-		LinkManager linkManager=(LinkManager)mapping.getAttribute(Mapping.OPTION_LINK_NAME);
+		LinkManager linkManager=(LinkManager)mapping.getAttribute(Mapping.OPTION_LINK);
 		forwardHandler(linkManager.getNextHandler());
 	}
 	

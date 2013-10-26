@@ -81,8 +81,9 @@ public class Mapping{
 	public static final String OPTION_FILTER="filter";
 	public static final String OPTION_REPLAY_DOCROOT="replayDocroot";
 	public static final String OPTION_APPCACHE = "appcache";
-	public static final String OPTION_LINK_NAME = "linkName";
-	public static final String OPTION_QUEUE_NAME = "queueName";
+	public static final String OPTION_LINK = "link";
+	//public static final String OPTION_LINK_NAME = "linkName";
+	//public static final String OPTION_QUEUE_NAME = "queueName";
 	
 	public static Class ADMIN_HANDLER=AdminHandler.class;
 	public static Class SSL_PROXY_HANDLER=SslProxyHandler.class;
@@ -611,6 +612,12 @@ public class Mapping{
 				attribute.put(OPTION_FILE_WELCOME_FILES,welcomFiles.split(","));
 			}
 			
+			JSONObject link=optionsJson.optJSONObject(OPTION_LINK);
+			if(link!=null){
+				LinkManager linkManager=LinkManager.getInstance(link);
+				attribute.put(OPTION_LINK, linkManager);
+			}
+			/*
 			String linkName = optionsJson.optString(OPTION_LINK_NAME,null);
 			if(linkName!=null){
 				LinkManager linkManager=LinkManager.getInstance(linkName);
@@ -620,6 +627,7 @@ public class Mapping{
 					linkManager.deploy(queueName, null);
 				}
 			}
+			*/
 		}
 		rolesList.clear();
 		if(roles!=null && !"".equals(roles)){
