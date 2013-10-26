@@ -92,7 +92,7 @@ function setItem(scope){
 function getItem(scope){
   outputLog(scope + ' getItem("'+testKey()+'")');
   storage=storages[scope];
-  storage.getItem(testKey(),function(data){ph.jQuery("#"+scope+"Text").val(data.value)});
+  storage.getItem(testKey(),function(value){ph.jQuery("#"+scope+"Text").val(value)});
 }
 function removeItem(scope){
   outputLog(scope + ' removeItem()');
@@ -101,8 +101,8 @@ function removeItem(scope){
 }
 function keys(scope){
   storage=storages[scope];
-  storage.keys(function(data){
-    outputLog(scope + ' kyes()='+ph.JSON.stringify(data.keys));
+  storage.keys(function(keys){
+    outputLog(scope + ' kyes()='+ph.JSON.stringify(keys));
     });
 }
 ph.jQuery(function(){
