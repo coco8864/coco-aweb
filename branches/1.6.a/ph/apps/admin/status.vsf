@@ -76,9 +76,9 @@ function onWatchCheck(){
 }
 
 function broardcastWatch(){
-	ph.admin.storage.getItem('broardcastWatch',function(data){
+	ph.admin.storage.getItem('broardcastWatch',function(value){
 		var watchCheck=ph.jQuery('#broardcastWatchCheck');
-		if(data.value){
+		if(value){
 			watchCheck.attr('checked',true);
 			watchStastics();
 		}else{
