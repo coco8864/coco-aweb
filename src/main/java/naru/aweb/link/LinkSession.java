@@ -28,7 +28,8 @@ public class LinkSession extends PoolBase implements LogoutEvent{
 	public static final String KEY_TOKEN="token";
 	public static final String KEY_QNAME="qname";
 	public static final String KEY_SUBNAME="subname";
-	public static final String KEY_PALET_CLASS_NAME="paletClassName";
+	public static final String KEY_SUBSCRIBERS="subscribers";
+	//public static final String KEY_PALET_CLASS_NAME="paletClassName";
 	public static final String KEY_KEY="key";
 	
 	/* request type */
@@ -349,8 +350,8 @@ public class LinkSession extends PoolBase implements LogoutEvent{
 			return;
 		}
 		String qname=req.getString(KEY_QNAME);
-		String paletClassName=req.getString(KEY_PALET_CLASS_NAME);
-		if(linkManager.deploy(qname, paletClassName)!=null){
+		JSONObject subscribers=req.getJSONObject(KEY_SUBSCRIBERS);
+		if(linkManager.deploy(qname, subscribers)!=null){
 			sendSuccess(TYPE_DEPLOY,qname, null, null);
 		}else{
 			sendError(TYPE_DEPLOY,qname, null,"aleady deployed");

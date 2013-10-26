@@ -765,8 +765,9 @@ public class Config {
 		//adminハンドラーの設定
 		//TODO 動的に設定できるようにする
 		Mapping adminMapping=mapper.getAdminMapping();
-		linkManager =(LinkManager)adminMapping.getAttribute(Mapping.OPTION_LINK_NAME);
+		linkManager =(LinkManager)adminMapping.getAttribute(Mapping.OPTION_LINK);
 		//linkManager = LinkManager.getInstance("/admin");
+		/*
 		JSONObject subscribers=JSONObject.fromObject(
 				"{accessLog:'naru.aweb.admin.AccessLogLinklet'," +
 				"chat:'naru.aweb.admin.ChatLinklet'," +
@@ -774,6 +775,7 @@ public class Config {
 				"}");
 		linkManager.deploy(AdminLinklet.QNAME, "naru.aweb.admin.AdminLinklet",subscribers);
 		linkManager.setNextHandler(Mapping.ADMIN_HANDLER);
+		*/
 		broadcaster=new Broadcaster(this,linkManager);//統計情報監視の開始
 	}
 	
