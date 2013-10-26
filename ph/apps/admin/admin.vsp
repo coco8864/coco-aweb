@@ -61,9 +61,9 @@ ph.jQuery(function() {
     ph.admin.con.on('linked',function(){
 		ph.jQuery('#dialogs').show();
 		var stor=ph.admin.storage=ph.admin.con.storage();
-		stor.getItem('logId',function(data){
-			if(data.value){
-				changeEntry(data.value);
+		stor.getItem('logId',function(value){
+			if(value){
+				changeEntry(value);
 			}
 		});
 	});
