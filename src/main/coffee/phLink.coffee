@@ -325,11 +325,11 @@ class PrivateSessionStorage extends PhObject
   @onLoad(->s._getItem(key,ctx))
  _getItem:(key,ctx)->
   if typeof(ctx)=='function'
-    ctx(@data[key])
+   ctx(@data[key])
   else
-    data={key:key,scope:ph.SCOPE.PAGE_PRIVATE,value:@data[key]}
-    @trigger(key,data,ctx)
-    @trigger(ph.EVENT.GET_ITEM,data,ctx)
+   data={key:key,scope:ph.SCOPE.PAGE_PRIVATE,value:@data[key]}
+   @trigger(key,data,ctx)
+   @trigger(ph.EVENT.GET_ITEM,data,ctx)
   @data[key]
  keys:(ctx)->
   s=@
@@ -342,10 +342,10 @@ class PrivateSessionStorage extends PhObject
    for key,value of @data
     keys.push(key)
   if typeof(ctx)=='function'
-    ctx(keys)
+   ctx(keys)
   else
-    data={scope:ph.SCOPE.PAGE_PRIVATE,keys:keys}
-    @trigger(ph.EVENT.KYES,data,ctx)
+   data={scope:ph.SCOPE.PAGE_PRIVATE,keys:keys}
+   @trigger(ph.EVENT.KYES,data,ctx)
   keys
  setItem:(key,value)->
   s=@
@@ -415,14 +415,16 @@ class PhLocalStorage extends PhObject
   _storageTrigger:(data)->
     ctx=@ctxs[data.ctxIdx]
     delete @ctxs[data.ctxIdx]
-    else if data.type==ph.TYPE.GET_ITEM
+    if data.type==ph.TYPE.GET_ITEM
       if typeof(ctx)=='function'
         ctx(data.value)
+        return
       @trigger(ph.EVENT.GET_ITEM,data,ctx)
       @trigger(data.key,data,ctx)
     else if data.type==ph.TYPE.KEYS
       if typeof(ctx)=='function'
         ctx(data.keys)
+        return
       @trigger(ph.EVENT.KEYS,data,ctx)
     else if data.type==ph.TYPE.CHANGE_ITEM
       data.value=data.newValue
