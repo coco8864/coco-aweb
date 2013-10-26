@@ -72,7 +72,8 @@ getUserInfo=(cb)->
     userInfo=x
     loginId=userInfo.authInfo.user.loginId
     if !userInfo.offlinePassHash
-      userInfo.offlinePassHash=calcPassHash(loginId,loginId)
+      # passwordが設定されていない場合は、loginIdをhashした値をpasswordとする
+      userInfo.offlinePassHash=calcPassHash(loginId,CryptoJS.SHA256(loginId).toString())
     sessionPrivatePrefix='#'+userInfo.authSid+'.'
     authPrivatePrefix='$'+loginId+'.'
     ##不要なsessionPrivateの刈り取り
@@ -416,7 +417,8 @@ offlineLogon=->
   loginId=jQuery('#loginId').val()
   password=jQuery('#password').val()
   if password==""
-    password=loginId
+    # passwordが設定されていない場合は、loginIdをhashした値をpasswordとする
+    password=CryptoJS.SHA256(loginId).toString()
   isOffline=true
   if !checkPassword(loginId,password)
     # alert(loginId+':wrong password')
