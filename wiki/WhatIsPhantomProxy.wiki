@@ -10,7 +10,7 @@
     * http/https webサーバ(SPDY対応)
     * websocketサーバ
     複数のプロトコルを組み合わせたWebアプリケーションを作る際の基本的な機能を提供しています。http/httpsとwebsocketを組み合わせたアプリケーションを作成する場合、認証を共有できるなど便利に利用できます。
-    websocket,webstorageをはじめhtml5の機能を簡単かつ有効に利用できるApplication Framework !PhantomLinkを搭載。
+    Phantom Serverには、websocket,webstorageをはじめhtml5の機能を簡単かつ有効に利用できるApplication Framework !PhantomLinkを搭載しています。
 
    ===="Phantom"====
      "Phantom"という名称は、ブラウザとproxyサーバ間で決められた実際には存在しないホスト名に対して機能するところから採りました。
