@@ -55,7 +55,7 @@ inputArea.keydown(function(e){
 });
 
 var chatSd=ph.admin.con.subscribe('admin','chat');
-chatSd.onMessage(
+chatSd.onMsg(
  function(msg){
  ##chat画面を表示していない可能性がある
   var outputArea=jQuery('#chatOutputTextArea');

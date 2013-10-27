@@ -198,7 +198,7 @@ function perfProgress(msg){
 perfTableRefresh();
 perfProgress();
 
-ph.admin.perfSub.onMessage(perfCheckConnect);
+ph.admin.perfSub.onMsg(perfCheckConnect);
 function perfCheckConnect(res){
   if(res.kind==='checkConnectProgress'){
     outputCommonArea(res.connectCount+"\t"+res.postCount+"\t"+res.messageCount+"\t"+res.time+"\t"+res.failCount+"\t"+res.useMemory+"\n",true);
