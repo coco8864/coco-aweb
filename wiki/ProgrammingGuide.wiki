@@ -27,7 +27,7 @@
    # storageインタフェースは、link.srorageの復帰値[https://phapp.coco.0t0.jp/api/coffee/phLink.coffee.html#PrivateSessionStorage Storage]です。
 
  * ServerAPI
-  基本的なpub/sub通信のためにサーバ側のアプリケーションは必要ありませ。しかし複雑な処理をするためには、Javaによりサーバアプリケーションを記述することができます。詳細は、[https://phapp.coco.0t0.jp/api/java/ ServerAPI]を参照してください。
+   基本的なpub/sub通信のためにサーバ側のアプリケーションは必要ありませ。しかし複雑な処理をするためには、Javaによりサーバアプリケーションを記述することができます。詳細は、[https://phapp.coco.0t0.jp/api/java/ ServerAPI]を参照してください。
    # clientからのpublish/subscribe通信を送受信するには、[https://phapp.coco.0t0.jp/api/java/naru/aweb/link/api/Linklet.html Linkletインタフェース]を実装してください。
    # 作成したクラスは、以下の書式にそってmapping定義に追加してください。
     link:{@LinkName:"Managerの固有名",@MaxSubscribe:セションに保持できる最大subscribe数(16),"qname":{"subname":"linklet継承クラス名".....}}
