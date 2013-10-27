@@ -197,8 +197,8 @@ class Link extends PhObject
   @connection.publish(qname,msg)
  publishForm:(formId,qname,subname)->
   @connection.publishForm(formId,qname,subname)
- qnames:(cb)->
-  @connection.qnames(cb)
+ qnames:(ctx)->
+  @connection.qnames(ctx)
  deploy:(qname,className)->
   @connection.deploy(qname,className)
  undeploy:(qname)->
@@ -211,10 +211,10 @@ class Link extends PhObject
     stor=new PhLocalStorage(@,scope)
     @storages[scope]=stor
   return stor
- encrypt:(plainText,cb)->
-  @_requestToAplFrame({type:'encrypt',plainText:plainText},cb)
- decrypt:(encryptText,cb)->
-  @_requestToAplFrame({type:'decrypt',encryptText:encryptText},cb)
+ encrypt:(plainText,ctx)->
+  @_requestToAplFrame({type:'encrypt',plainText:plainText},ctx)
+ decrypt:(encryptText,ctx)->
+  @_requestToAplFrame({type:'decrypt',encryptText:encryptText},ctx)
  unlink:->
   if @connection
    @connection.unload()
