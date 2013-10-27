@@ -1,6 +1,16 @@
 #-------------------Subscription-------------------
 class Subscription extends PhObject
+  ###
+  \#\#\#\# pubsubAPIのメインクラス
+  Link.subscribeメソッドの復帰値として取得.このオブジェクトを通じてサーバからのデータを送受信する.
+  送受信するデータには、JSONでは表現できないDateオブジェクトやBlobオブジェクトを含める事ができる.
+
+  \#\#\#\# イベント
+  *  **ph.EVENT.MESSAGE:** サーバからのmessage受信を通知
+  *  **ph.STAT_UNLOAD:** このオブジェクトの終了を通知,onUnloadと同義
+  ###
   constructor:(@_con,@qname,@subname)->
+    ###利用しない.Link.subscribeから呼び出される。###
     super
     @_con.onLoad(@_connectionOnLoad)
     @
@@ -9,14 +19,21 @@ class Subscription extends PhObject
     @load()
     return
   unsubscribe:->
+    ### subscribe終了 ###
     @onLoad(@_unsubscribe)
   _unsubscribe:=>
     @_con._send({type:ph.TYPE_UNSUBSCRIBE,qname:@qname,subname:@subname})
   publish:(msg)->
+    ### 指定したmsgオブジェクトをサーバに送信 ###
     @onLoad(@_publish,msg)
   _publish:(msg)=>
     @_con._send({type:ph.TYPE_PUBLISH,qname:@qname,subname:@subname,message:msg})
   publishForm:(formId)->
+    ###
+    \#\#\#\#\# formに含まれるデータを、指定したqname,dubnameにsubscribeします.
+    指定したformデータをサーバに送信,Blobをサポートしていないブラウザからでもファイルデータが送信できる.
+     -   **formId:** publishするformタグのid属性
+    ###
     @onLoad(@_publishForm,formId)
   _publishForm:(formId)->
     form=ph.jQuery('#'+formId)
@@ -41,4 +58,5 @@ class Subscription extends PhObject
     qnameInput.remove()
     subnameInput.remove()
   onMsg:(cb)->
+    ### message通知メソッドを登録.sub.on(ph.EVENT.MESSAGE,cb)と同義. ###
     @on(ph.EVENT.MESSAGE,cb)

@@ -33,16 +33,18 @@ import naru.aweb.util.ParameterParser;
  * リクエスト毎に作成され、使用完了後は再利用されます。再利用される際には、recycleメソッドが呼び出されます。<br/>
  * 終了処理が必要な場合は、recycleをoverrideして記述してください。<br/>
  * アプリケーション作成手順
- * 1)WebServerHandlerを継承してアプリケーションクラスを作成。
- * 2)onRequestHeaderメソッドをoverrideして、parameter情報やheader情報からビジネスロジック処理を実施
- * 3.1)completeResponseメソッドでレスポンスを返却
- * 3.2.1)setXXX系のメソッドでresponseHeaderを設定
- * 3.2.2)responseBodyメソッドでresponseBodyを設定
- * 3.2.3)responseEndメソッドで、レスポンスの終了を通知
- * 3.3)responseJSONメソッドでJSON形式のレスポンスを返却
- * ...
- * 4)consoleのmappingタブで、destinationType:HANDLER、destinationServer:1)で作成したクラス名を指定<br/>
- * 定義されたリクエストが到着した場合に、このクラスがレスポンンスに利用されます。
+ * <ol>
+ * <li>WebServerHandlerを継承してアプリケーションクラスを作成</li>
+ * <li>onRequestHeaderメソッドをoverrideして、parameter情報やheader情報からビジネスロジック処理を実施</li>
+ * <li>completeResponseメソッドでレスポンスを返却</li>
+ * <li>setXXX系のメソッドでresponseHeaderを設定</li>
+ * <li>responseBodyメソッドでresponseBodyを設定</li>
+ * <li>responseEndメソッドで、レスポンスの終了を通知</li>
+ * <li>responseJSONメソッドでJSON形式のレスポンスを返却</li>
+ * <li>...</li>
+ * <li>consoleのmappingタブで、destinationType:HANDLER、destinationServer:1.で作成したクラス名を指定
+ * 定義されたリクエストが到着した場合に、このクラスがレスポンンスに利用されます。</li>
+ * </ol>
  * 
  * @author Naru
  * 
