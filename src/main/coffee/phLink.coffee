@@ -1,5 +1,27 @@
 class Link extends PhObject
+ ###
+ \#\#\#\# PhntomLinkアプリの入口となるクラス
+ ph.linkメソッドの復帰値として取得.
+ このオブジェクトから、storageAPI(storage),pubsubAPI(subscribe)を開始する。
+
+ \#\#\#\# 属性
+ *  **isAuth:** 認証の有無
+ *  **isOffline:** offline状態か否か
+ *  **isConnect:** サーバとの接続の有無
+
+ \#\#\#\# イベント
+ *  **ph.EVENT.LOGIN:** 認証完了を通知
+ *  **ph.EVENT.QNAMES:** qnameメソッドでcallbackを指定しなかった場合APIの完了を通知
+  *   通知={qnames:['qname1','qname2'...]},ユーザ指定ctx
+ *  **ph.EVENT.ENCRYPT:** encryptメソッドでcallbackを指定しなかった場合APIの完了を通知
+  *   通知={encryptText:'暗号化文字列',plainText:'指定した平文']},ユーザ指定ctx
+ *  **ph.EVENT.DECRYPT:** decryptメソッドでcallbackを指定しなかった場合APIの完了を通知
+  *   通知={encryptText:'指定した暗号化文字列',plainText:'平文']},ユーザ指定ctx
+ *  **ph.STAT_UNLOAD:** このオブジェクトの終了を通知,onUnloadメソッドと同義
+ *  **ph.STAT_READY:** このオブジェクトの準備が完了した事を通知,認証完了or認証失敗,onReadyメソッドと同義
+ ###
  constructor:(@param)->
+  ###利用しない.ph.linkから呼び出される。###
   super
   @keyUrl=@param.keyUrl
   @ctxs={}
@@ -68,6 +90,7 @@ class Link extends PhObject
    )
   return
  logout:->
+  ###online認証している場合ログオフします###
   @_requestToAplFrame({type:'logout'})
  _requestToAplFrame:(msg,ctx)->
   if ctx
@@ -185,25 +208,66 @@ class Link extends PhObject
     storage._storageTrigger(res)
   return
  offlineAuth:()->
-  ### offlineで認証します。###
+  ###利用しない.offline認証します.###
   @_requestToAplFrame({type:'offlineAuth',aplUrl:@keyUrl})
  offlineLogout:()->
+  ###利用しない.offline認証している場合logoutします.###
   @_requestToAplFrame({type:'offlineLogout'})
  userProfile:()->
+  ###ユーザプロファイル画面を表示します.###
   @_requestToAplFrame({type:'userProfile'})
  subscribe:(qname,subname,cb)->
+  ###
+  \#\#\#\#\# pubsub APIの開始.online認証しているのを前提に、指定したqname,subnameにsubscribeします。
+   -   **qname:** subscribeするqname
+   -   **subname:** subscribeするsubname
+   -   **cb:** messageの通知メソッド.省略可 subscription.onMsg(cb)と同義
+   -   **復帰値:** Subscriptionオブジェクト
+
+   **例** qname:'qname1',subname:'subname1'にsubscribe,msgをfuncに受け取る
+    >     var sub=link.subscribe('qname1','subname1',func);
+    >//   sub.onMsg(func);
+
+  ###
   @connection.subscribe(qname,subname,cb)
  publish:(qname,msg)->
+  ###
+  \#\#\#\#\# online認証しているのを前提に、指定したqnameにpublishします.
+   -   **qname:** publishするqname
+   -   **meg:** 通知するオブジェクト,エントリにDate,Blobを含める事ができます.
+  ###
   @connection.publish(qname,msg)
- publishForm:(formId,qname,subname)->
-  @connection.publishForm(formId,qname,subname)
  qnames:(ctx)->
+  ###
+  \#\#\#\#\# 接続先に登録されているqname一覧を取得します.
+   -   **ctx:** メソッドの場合は、このメソッドにqname一覧を通知します.
+       それ以外の場合は、当該Linkオブジェクトのph.EVENT.QNAMESイベントで通知します。
+  ###
   @connection.qnames(ctx)
  deploy:(qname,className)->
+  ### 未サポート,指定したqnameにapplicationを配備します(adminのみ) ###
   @connection.deploy(qname,className)
  undeploy:(qname)->
+  ### 未サポート,指定したqnameのapplicationを配備解除します(adminのみ) ###
   @connection.undeploy(qname)
  storage:(scope)->
+  ###
+  \#\#\#\#\# storage APIの開始.各scopeのstoregeオブジェクトを取得します.offline/onlineの認証の種別によらず利用可能
+   -   **scope:** 取得するstorageのscope
+   -   **復帰値:** Storageオブジェクト(PrivateSessionStorage or PhLocalStorageだがAPIは同一)
+
+    scopeの種類
+    -   **PAGE_PRIVATE:** そのpageのreloadや画面遷移を挟んで情報を維持できるstorage,別タブの同一画面とは別storage.暗号化あり
+    -   **SESSION_PRIVATE:** onlineログイン時に利用できる.aplを跨いで同一logon sessionで利用できるstorage.暗号化あり
+    -   **APL_PRIVATE:** logonしたaplicationの同一Userで利用できるstorage.暗号化あり
+    -   **APL_LOCAL:** aplicationにlogonしたUser全員で共有するstorage.暗号化なし
+    -   **AUTH_PRIVATE:** aplicationによらず、logonした同一Userで利用できるstorage.暗号化あり
+    -   **AUTH_LOCAL:** aplicationによらず、User全員で共有するstorage.暗号化なし
+
+   **例** SESSION_PRIVATE scopeのstorageを取得する
+    >     var storage=link.storage(ph.SCOPE.SESSION_PRIVATE)
+
+  ###
   if scope==ph.SCOPE.PAGE_PRIVATE || !scope
    return @ppStorage
   stor=@storages[scope]
@@ -212,10 +276,23 @@ class Link extends PhObject
     @storages[scope]=stor
   return stor
  encrypt:(plainText,ctx)->
+  ###
+  \#\#\#\#\# 文字列をlogonしているUserのofflineパスワードで暗号化します.
+   -   **plainText:** 平文文字列
+   -   **ctx:** メソッドの場合は、このメソッドに暗号化文字列を通知します.
+       それ以外の場合は、当該Linkオブジェクトのph.EVENT.ENCRYPTイベントで通知します。
+  ###
   @_requestToAplFrame({type:'encrypt',plainText:plainText},ctx)
  decrypt:(encryptText,ctx)->
+  ###
+  \#\#\#\#\# 暗号化文字列をlogonしているUserのofflineパスワードで復号化します.復号化に失敗した場合は、nullを通知情報とします。
+   -   **encryptText:** 暗号化文字列
+   -   **ctx:** メソッドの場合は、このメソッドに平文文字列を通知します.
+       それ以外の場合は、当該Linkオブジェクトのph.EVENT.DECRYPTイベントで通知します。
+  ###
   @_requestToAplFrame({type:'decrypt',encryptText:encryptText},ctx)
  unlink:->
+  ### PhantomLink APLの終了 ###
   if @connection
    @connection.unload()
   if @ppStorage
@@ -228,11 +305,26 @@ class Link extends PhObject
 URL_PTN=/^(?:([^:\/]+:))?(?:\/\/([^\/]*))?(.*)/
 ph._links={}
 
-# aplUrl:
-# useOffline:ture=必ずoffline,false=必ずonline,undefined=onlineで試してだめならoffline
-# useConnection:onlineの場合有効 true=必ずconnectする,false=必ずconnectしない,undefined=connectして失敗すればそのまま
-# useWs:connect成功した場合、true=必ずwebsocketを使う,false=必ずxhrを使う、undefined=websocketに失敗すればxhr
 ph.link=(aplUrl,useOffline,useConnection,useWs)->
+ ###
+ \#\#\#\# PhantomLink APIの開始
+ 認証,サーバとの接続を行う.
+ online認証する場合はあらかじめそのブラウザで認証済みにする必要がある。
+ サーバが動作しているにもかか関わらず認証済みでない場合は、
+ 一旦認証した後、このAPIを呼び出した画面に戻ってくる
+
+ -   **aplUrl:** 'http','ws'から始まるURLを指定。'/'から開始した場合は、ph.jsの配信サイトが基準
+ -   **userOffline:** true offline認証,false online認証,指定なし online認証できない場合offline認証
+ -   **useConnection:** 非公開 online認証時のサーバ接続の有無
+ -   **useWs:** 非公開 接続時websocketを使うか否か
+ -   **復帰値:** Linkオブジェクト
+
+ **例** online認証できない場合は、offline認証する
+  >     ph.link('https://host:port/apl')
+
+ **例** ph.jsを取得したサイトの/aplに必ずoffline認証する
+  >     ph.link('/apl',true)
+ ###
  if !aplUrl
   pos=location.href.lastIndexOf("/")
   aplUrl=location.href.substring(0,pos)
@@ -288,7 +380,22 @@ ph.link=(aplUrl,useOffline,useConnection,useWs)->
 #  SCOPE_USER:'user'
 #-------------------PagePrivateStorage-------------------
 class PrivateSessionStorage extends PhObject
+ ###
+ \#\#\#\# SrorageAPIのメインクラス
+ Link.storageメソッドの復帰値として取得.PAGE_PRIVATE scopeの復帰オブジェクト.
+ APIは、その他のscopeのstorageと同じ.getItemを含めてイベントもしくはcallback経由の非同期APIとなっている.
+
+ \#\#\#\# イベント
+ *  **ph.EVENT.GET_ITEM:** getItemメソッドの復帰情報を通知
+  *   通知={key:'key1',value:'valu1'},ユーザ指定ctx
+ *  **ph.EVENT.KEYS:** keysメソッドの復帰情報を通知
+  *   通知={keys:['key1','key2'...]},ユーザ指定ctx
+ *  **ph.EVENT.CHANGE_ITEM:** 他pageでの値変更を通知
+  *   通知={key:'key1',value:'valu1',newValue:'valu1',oldValue:'value2'}
+ *  **ph.STAT_UNLOAD:** このオブジェクトの終了を通知
+ ###
  constructor:(@link)->
+  ###利用しない.Link.storageから呼び出される。###
   super
   @link.on(ph.EVENT.LOGIN,@_init)
  _init:=>
@@ -321,6 +428,12 @@ class PrivateSessionStorage extends PhObject
    @onUnload(@_onUnload)
   #ph.one('@unload',@_onUnload) #pageがunloadされるときsessionStorageに残す
  getItem:(key,ctx)->
+  ###
+  \#\#\#\#\# 当該storageの指定したkeyに対するvalueを取得します.
+   -   **key:** 指定するkey
+   -   **ctx:** メソッドの場合は、このメソッドにvalueを通知します.
+       それ以外の場合は、当該storageオブジェクトのph.EVENT.GET_ITEMイベントで通知します。
+  ###
   s=@
   @onLoad(->s._getItem(key,ctx))
  _getItem:(key,ctx)->
@@ -332,6 +445,11 @@ class PrivateSessionStorage extends PhObject
    @trigger(ph.EVENT.GET_ITEM,data,ctx)
   @data[key]
  keys:(ctx)->
+  ###
+  \#\#\#\#\# 当該storageのkey一覧を取得します.
+   -   **ctx:** メソッドの場合は、このメソッドにkey一覧を通知します.
+       それ以外の場合は、当該storageオブジェクトのph.EVENT.KEYSイベントで通知します。
+  ###
   s=@
   @onLoad(->s._keys(ctx))
  _keys:(ctx)->
@@ -348,6 +466,11 @@ class PrivateSessionStorage extends PhObject
    @trigger(ph.EVENT.KYES,data,ctx)
   keys
  setItem:(key,value)->
+  ###
+  \#\#\#\#\# 当該storageの指定したkeyに指定したvalueを設定します.
+   -   **key:** 指定するkey
+   -   **value:** 設定するvalue
+  ###
   s=@
   @onLoad(->s._setItem(key,value))
  _setItem:(key,value)->
@@ -357,6 +480,10 @@ class PrivateSessionStorage extends PhObject
   @link.encrypt(ph.JSON.stringify(@data),(text)->s.encText=text)
   return
  removeItem:(key)->
+  ###
+  \#\#\#\#\# 当該storageの指定したkey項目を削除します.
+   -   **key:** 指定するkey
+  ###
   s=@
   @onLoad(->s._removeItem(key))
  _removeItem:(key)->
@@ -375,6 +502,11 @@ class PrivateSessionStorage extends PhObject
 
 #-------------------PageLocalStorage-------------------
 class PhLocalStorage extends PhObject
+  ###
+  \#\#\#\# SrorageAPIのメインクラス
+  Link.storageメソッドの復帰値として取得.PAGE_PRIVATE以外のscopeの復帰オブジェクト.
+  API,イベントは、PrivateSessionStorageと同一。PrivateSessionStorage参照
+  ###
   constructor:(@link,@scope)->
     super
     @ctxs={}
