@@ -25,15 +25,15 @@ function subscribe(){
   outputLog('subscribe("'+qname+'","' +subname+'")');
   sub=link.subscribe(qname,subname);
   ph.jQuery("#subArea input").removeAttr('disabled');
-  sub.onMessage(function(data){//TODO
-    outputLog("onMessage:"+ph.JSON.stringify(data));
+  sub.onMsg(function(data){//TODO
+    outputLog("onMsg:"+ph.JSON.stringify(data));
   });
   sub.onUnload(function(){
     outputLog('unsubscribed:qname='+qname+' subname=' +subname);
     ph.jQuery("#subArea input").attr('disabled','disabled');
     sub=null
   });
-  var bkmarklet="javascript:(function(){var d=document;var f=function(){var l=ph.link('$adminUrl$');var s=l.subscribe('$qname$','$subname$');s.onMessage(function(x){if(x){eval(x);}});};if(window.ph){f();}else{var u='$publicWebUrl$pub/js/ph.js';var e=d.createElement('script');e.src=u;e.onload=function(){f();};d.getElementsByTagName('head')[0].appendChild(e);}})();"
+  var bkmarklet="javascript:(function(){var d=document;var f=function(){var l=ph.link('$adminUrl$');var s=l.subscribe('$qname$','$subname$');s.onMsg(function(x){if(x){eval(x);}});};if(window.ph){f();}else{var u='$publicWebUrl$pub/js/ph.js';var e=d.createElement('script');e.src=u;e.onload=function(){f();};d.getElementsByTagName('head')[0].appendChild(e);}})();"
   bkmarklet=bkmarklet.replace("$qname$",ph.jQuery("#qname").val());
   bkmarklet=bkmarklet.replace("$subname$",ph.jQuery("#subname").val());
   bkmarklet=bkmarklet.replace("$adminUrl$",link.keyUrl);
@@ -107,6 +107,7 @@ ph.jQuery(function(){
 });
 
   </script>
+  <link type="text/css" href="/pub/css/ph.css" rel="stylesheet" /> 
   <style type="text/css"><!--
   #outputArea {
     margin-right: 20px;
@@ -138,12 +139,14 @@ aplUrl:<input id='aplUrl' type="text" value="/link1" style="width:256px;"/>
 <hr/>
 <div id="linkArea">
 <b>link operation</b><br />
-qname:<input id='qname' type="text" value="qname" style="width:100px;"/>
-subname:<input id='subname' type="text" value="subname" style="width:100px;"/>
+qname:<input id='qname' type="text" value="qname1" style="width:100px;"/>
+subname:<input id='subname' type="text" value="subname1" style="width:100px;"/>
 <input type="button" value="sbscribe" onclick="subscribe();"/><br />
 <input type='text' id='directPublishData' value='directPublishData'/>
 <input type="button" value="direct publish" 
-  onclick="link.publish(ph.jQuery('#qname').val(),{data:ph.jQuery('#directPublishData').val(),source:'directPublish'});"/>
+  onclick="link.publish(ph.jQuery('#qname').val(),{data:ph.jQuery('#directPublishData').val(),source:'directPublish'});"/><br />
+<input type="button" value="qnames" 
+  onclick="link.qnames(function(qnames){outputLog('qnames:'+ph.JSON.stringify(qnames));});"/>
 </div>
 <hr/>
 <div id="subArea">
