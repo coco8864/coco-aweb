@@ -23,7 +23,7 @@
  * clientAPI
    詳細は、[https://phapp.coco.0t0.jp/api/coffee/ clientAPI]を参照ください。
    # エントリーポイントは、[https://phapp.coco.0t0.jp/api/coffee/phLink.coffee.html#ph.link ph.link]
-   # pub/sib通信インタフェースは、link.subscribeの復帰オブジェクト[https://phapp.coco.0t0.jp/api/coffee/phLinkSubscription.coffee.html Subscription]です。
+   # pub/sub通信インタフェースは、link.subscribeの復帰オブジェクト[https://phapp.coco.0t0.jp/api/coffee/phLinkSubscription.coffee.html Subscription]です。
    # storageインタフェースは、link.srorageの復帰オブジェクト[https://phapp.coco.0t0.jp/api/coffee/phLink.coffee.html#PrivateSessionStorage Storage]です。
 
  * ServerAPI
