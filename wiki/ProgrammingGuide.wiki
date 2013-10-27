@@ -2,7 +2,7 @@
 
 = !PhantomLinkプログラミングガイド =
 
- # html5アプリケーションフレームワーク
+ * html5アプリケーションフレームワーク
    !PhantomLinkは、以下のようなhtml5技術を利用したapplication frameworkです。
    * websocket
    * Cross-document messaging
@@ -10,7 +10,7 @@
    * !AppCache
   これらのhtml5技術は、単体では実際にアプリケーションに適用できないものがあります。たとえば、websocketの認証は、websocketの技術だけでは実装できず、Cross-document messagingを利用したAPI認証の仕組みが必要です。また、webstorageに保存したデータは誰でも参照可能な状態になるため、端末のマルチユーザ利用を想定した場合!AppCache機能を利用したoffline認証の仕組みが必要となります。
   !PhantomLinkは、phantom serverの機能を利用し、html5技術をラッピングしてapplicationの作成を助けるframeworkを提供します。
- # アプリケーションモデル
+ * アプリケーションモデル
    linkは、publish/subscribe方式のメッセージ通信と各種スコープを持つstorageサービスから構成される。
    offline時にも、ブラウザスコープのstorageは、利用可能です。
    特徴
@@ -20,12 +20,14 @@
    * bookmarkletなど3ed pertyのサイトからも安全に利用可能
    * offline時でもブラウザにスコープを持つstorageは利用可能
    * ブラウザに保持するデータは暗号化されており、offline認証後そのユーザだけが参照可能となる
- # clientAPI
-   [https://phapp.coco.0t0.jp/api/coffee/ clientAPI]の詳細
-   [https://phapp.coco.0t0.jp/api/coffee/phLink.coffee.html#ph.link ph.link]が入口のメソッドとなります。
- # ServerAPI
-  現状javaインタフェースだが、javascriptインタフェースを用意したい
-  naru.aweb.link.api.Linkletインタフェースを実装
-  * naru.aweb.wsq.Wsqletクラス
-  * naru.aweb.wsq.!WsqCtxクラス
-  * naru.aweb.wsq.Peerクラス
+ * clientAPI
+   詳細は、[https://phapp.coco.0t0.jp/api/coffee/ clientAPI]を参照ください。
+   # エントリーポイントは、[https://phapp.coco.0t0.jp/api/coffee/phLink.coffee.html#ph.link ph.link]
+   # pub/sib通信インタフェースは、link.subscribeの復帰値[https://phapp.coco.0t0.jp/api/coffee/phLinkSubscription.coffee.html Subscription]です。
+   # storageインタフェースは、link.srorageの復帰値[https://phapp.coco.0t0.jp/api/coffee/phLink.coffee.html#PrivateSessionStorage Storage]です。
+
+ * ServerAPI
+  基本的なpub/sub通信のためにサーバ側のアプリケーションは必要ありませ。しかし複雑な処理をするためには、Javaによりサーバアプリケーションを記述することができます。詳細は、[https://phapp.coco.0t0.jp/api/java/ ServerAPI]を参照してください。
+   # clientからのpublish/subscribe通信を送受信するには、[https://phapp.coco.0t0.jp/api/java/naru/aweb/link/api/Linklet.html Linkletインタフェース]を実装してください。
+   # 作成したクラスは、以下の書式にそってmapping定義に追加してください。
+    link:{@LinkName:"Managerの固有名",@MaxSubscribe:セションに保持できる最大subscribe数(16),"qname":{"subname":"linklet継承クラス名".....}}
