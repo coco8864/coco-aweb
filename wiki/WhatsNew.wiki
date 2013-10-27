@@ -13,7 +13,7 @@
    * openID認証
    * oauth認証(facebook,twitter,google)
  * websocket負荷機能を強化
- * !PhantomLinkのテストアプリを追加
+ * !PhantomLinkのdocument&テストアプリを追加
 
  ==  2013.4.15 Phatom Server1.5.0 公開 ==
  * 名称をPhantom Proxy -> Phantom Serverに変更
