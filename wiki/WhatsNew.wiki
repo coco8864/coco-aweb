@@ -5,6 +5,7 @@
  Phatom Server(Proxy)の改版情報を提供します。
  ==  2013.10.28 Phatom Server1.6.0 公開 ==
  * Application Frameworkを名称!PhantomLinkに変更、strorage機能を追加
+ * !PhantomLinkのdocument&テストアプリを追加
  * appCache機能を利用
  * offline認証機能を追加
  * opneSSLを利用してCA認証局を同梱、SSLトレース時にセキュリティ警告が出ないように対応
@@ -13,7 +14,6 @@
    * openID認証
    * oauth認証(facebook,twitter,google)
  * websocket負荷機能を強化
- * !PhantomLinkのdocument&テストアプリを追加
 
  ==  2013.4.15 Phatom Server1.5.0 公開 ==
  * 名称をPhantom Proxy -> Phantom Serverに変更
