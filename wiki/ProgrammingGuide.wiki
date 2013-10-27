@@ -1,57 +1,28 @@
 #summary アプリケーションフレームワーク
 
-= phantom linkプログラミングガイド =
+= !PhantomLinkプログラミングガイド =
 
  # html5アプリケーションフレームワーク
-   phantom linkは、以下のようなhtml5技術を利用したアプリケーションフレームワークです。
+   !PhantomLinkは、以下のようなhtml5技術を利用したapplication frameworkです。
    * websocket
    * Cross-document messaging
    * webstorage
    * !AppCache
   これらのhtml5技術は、単体では実際にアプリケーションに適用できないものがあります。たとえば、websocketの認証は、websocketの技術だけでは実装できず、Cross-document messagingを利用したAPI認証の仕組みが必要です。また、webstorageに保存したデータは誰でも参照可能な状態になるため、端末のマルチユーザ利用を想定した場合!AppCache機能を利用したoffline認証の仕組みが必要となります。
-  phantom linkは、phantom serverの機能を利用し、html5技術をラッピングしてアプリケーションがより作りやすくなるようなフレームワークを提供します。
+  !PhantomLinkは、phantom serverの機能を利用し、html5技術をラッピングしてapplicationの作成を助けるframeworkを提供します。
  # アプリケーションモデル
    linkは、publish/subscribe方式のメッセージ通信と各種スコープを持つstorageサービスから構成される。
    offline時にも、ブラウザスコープのstorageは、利用可能です。
    特徴
    * シンプルなAPI
-   * Phantom Serverの多様な認証機能（roleベース）を利用
+   * Phantom Serverの多様な認証機能を利用
    * !WebSocketsの利用可否にかかわらずリアルタイムな通信を実現
-   * bookmarkletから利用可能
+   * bookmarkletなど3ed pertyのサイトからも安全に利用可能
    * offline時でもブラウザにスコープを持つstorageは利用可能
-   * ブラウザに保持するデータは暗号化されており、offline認証で参照可能となる
+   * ブラウザに保持するデータは暗号化されており、offline認証後そのユーザだけが参照可能となる
  # clientAPI
-  ブラウザからは、javascriptインタフェースを使ってlinkアプリケーションにアクセスする。殆どのインタフェースは非同期化されており、復帰情報はオブジェクトに対するonメソッドで登録するメソッドで受け取る事になる。
-  * 接続メソッド
-   * ph.link(url,openCb,eventCb)
-    認証およびアプリケーションへの接続を行います
-    * url:'/path';
-    'http(s)://host:port/path'
-    'ws(s)://host:port/path'
-    * openCb:openリクエストの結果が通知される。
-      evnetCbの内open結果だけが通知される
-    * evnetCb:このconnectionに関するイベントが通知される。
-     connection.cbType INFO|ERROR|MESSAGE
-     connection.cause  open|close|subscribe|unsubscribe|publish|qnames|server
-     connection.message opend|closed|
-     connection.qname 対象qname
-     connection.subId 対象subid
-     connection.qnameList qnameメソッドの復帰情報、このurlに登録されているqueue名群
-     openCbでconnectionを受け取る
-     openCbは、その後のconnectionイベントの通知も受ける
-   * ph.wsq.bind(evnetName,eventCb)
-     特定のeventだけがcbされる
-  * connectionオブジェクト
-    queueとの接続(open)単位で作成される、各queueへの操作や接続の解消を行う
-    * publish(qname,message,subid);
-     message:string or object or blob
-    * subscribe(qname,subscribeCb,subid);
-     subscribeCb:subscribeCb(message);
-    * unsubscribe(qname,subid);
-    * qnames();
-     open時に指定したurl配下にあるqname一覧を要求します
-    * close();
-     接続を解除します
+   [https://phapp.coco.0t0.jp/api/coffee/ clientAPI]の詳細
+   [https://phapp.coco.0t0.jp/api/coffee/phLink.coffee.html#ph.link ph.link]が入口のメソッドとなります。
  # ServerAPI
   現状javaインタフェースだが、javascriptインタフェースを用意したい
   naru.aweb.link.api.Linkletインタフェースを実装
