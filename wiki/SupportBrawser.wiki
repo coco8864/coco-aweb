@@ -7,6 +7,7 @@
   * 12.0.725.0 dev
   * 16.0.899.0 dev-m
   * 26.0.1410.64 m
+  * 30.0.1599.101 m
 
  = <img src='http://windows.microsoft.com/favicon.ico?dmy.png' height='16' width='16'>Internat Explorer =
   * 8.0.6001.18702
@@ -14,6 +15,7 @@
   * 9.0.8080.16413
   上記は、websocketがサポートされていません。
   * 10.0.9200.16540
+  * 10.0.9200.16721
 
  = <img src='http://devimages.apple.com/assets/elements/safari/devcenter/safari-logo.png' height='20' width='20'>Safari(Windows) =
   * 5.0(7533.16)
