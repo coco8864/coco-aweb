@@ -71,9 +71,9 @@ class Connection extends PhObject
     @_onOpen()
   _onWsClose: (event)=>
     ph.log('_onWsClose.code:'+event.code+':reason:'+event.reason+':wasClean:'+event.wasClean)
-#    @__onClose(event.reason)
+    # @__onClose(event.reason)
     if @stat==ph.STAT_OPEN
-# 接続直後に切れるのはwebsocketが使えないと考える
+      # 接続直後に切れるのはwebsocketが使えないと考える
       if @useWs==true
         @unload()
         @stat=ph.INIT
@@ -153,7 +153,7 @@ class Connection extends PhObject
     ph.log('_onXhrMessage')
     envelope=new Envelope()
     envelope.unpack(obj,@_onMessage)
-#   @_onMessage(obj)
+    # @_onMessage(obj)
   _getBid:->
     @link.ppStorage.getItem(ph.KEY_BID) ? 0
   _setBid:(bid)->
@@ -199,7 +199,13 @@ class Connection extends PhObject
     else if msg.requestType==ph.TYPE_CLOSE
       @__onClose(msg)
     else if msg.requestType==ph.TYPE_QNAMES
-      @trigger(ph.EVENT.QNAMES,msg.message)
+      message=msg.message
+      ctxIdx=message.ctxIdx
+      ctx=@_popCtx(ctxIdx)
+      if typeof(ctx)=='function'
+        ctx(message.qnames)
+      else
+        @link.trigger(ph.EVENT.QNAMES,message,ctx)
     else
       sd=@__getSd(msg)
       if sd
@@ -262,24 +268,24 @@ class Connection extends PhObject
     if @_openCount==0
       @_send({type:ph.TYPE_CLOSE})
     @
-  subscribe:(qname,subname,onMessage)->
+  subscribe:(qname,subname,cb)->
     if @isUnload()
       throw 'connection.subscribe:aleady unloaded.'
     if subname && typeof subname=='function'
-     onMessage=subname
+     cb=subname
      subname=ph._DEFAULT_SUB_ID
     else if !subname
       subname=ph._DEFAULT_SUB_ID
     key="#{qname}@#{subname}"
     prm=@_subscribes[key]
     if prm
-      if onMessage
-        prm.onMessage(onMessage)
+      if cb
+        prm.onMsg(cb)
       return prm
     subscription=new Subscription(@,qname,subname)
     @_subscribes[key]=subscription
-    if onMessage
-      subscription.onMessage(onMessage)
+    if cb
+      subscription.onMsg(cb)
     #aleady recive message check
     reciveMsgs=@_reciveMsgs[key]
     if reciveMsgs && reciveMsgs.length>0
@@ -292,12 +298,11 @@ class Connection extends PhObject
     if @isUnload()
       throw 'connection.publish:aleady unloaded.'
     @_send({type:ph.TYPE_PUBLISH,qname:qname,message:msg})
-  qnames:(cb)->
+  qnames:(ctx)->
     if @isUnload()
       throw 'connection.qnames:aleady unloaded.'
-    if cb
-      @on(ph.EVENT.QNAMES,cb)
-    @_send({type:ph.TYPE_QNAMES})
+    ctxIdx=@_pushCtx(ctx)
+    @_send({type:ph.TYPE_QNAMES,ctxIdx:ctxIdx})
   deploy:(qname,className)->
     if @isUnload()
       throw 'connection.deploy:aleady unloaded.'

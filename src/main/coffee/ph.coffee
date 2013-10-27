@@ -13,6 +13,8 @@ class PhObject
   STAT_UNLOAD:'@unload'
   STAT_READY:'@ready' # @loading‚©‚çó‘Ô‚ª•ÏX‚³‚ê‚½‚±‚Æ‚ð’Ê’m
   constructor:->
+    @_ctxIdx=1
+    @_ctxs={}
     @_callback ={}
     @_callbackOne ={}
     @_stat=@STAT_LOADING ##_stat: '@loading' -> '@load'-> ‚±‚ÌŒãŽ©—R -> '@unload'
@@ -110,7 +112,14 @@ class PhObject
     @_stat==@STAT_UNLOAD
   isLoading:->
     @_stat==@STAT_LOADING
-
+  _pushCtx:(ctx)->
+    @_ctxIdx++
+    @_ctxs[@_ctxIdx]=ctx
+    @_ctxIdx
+  _popCtx:(ctxIdx)->
+    ctx=@_ctxs[ctxIdx]
+    delete @_ctxs[ctxIdx]
+    ctx
 #-------------------Ph-------------------
 class Ph extends PhObject
   STAT_INIT:'INIT'

@@ -74,11 +74,15 @@ public class LinkManager {
 	 * 実装してしまっていたため、このルートが必要だった。
 	 * TODO adminの完全pa化
 	 */
-	public void setNextHandler(Class nextHandler){
-		this.nextHandler=nextHandler;
-	}
+	//public void setNextHandler(Class nextHandler){
+	//	this.nextHandler=nextHandler;
+	//}
 	public Class getNextHandler(){
 		return nextHandler;
+	}
+	
+	public int getMaxSubscribe(){
+		return maxSubscribe;
 	}
 	
 	private int maxSubscribe;

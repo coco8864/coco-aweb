@@ -40,5 +40,5 @@ class Subscription extends PhObject
     tokenInput.remove()
     qnameInput.remove()
     subnameInput.remove()
-  onMessage:(cb)->
+  onMsg:(cb)->
     @on(ph.EVENT.MESSAGE,cb)

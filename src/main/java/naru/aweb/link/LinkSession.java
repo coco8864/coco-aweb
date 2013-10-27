@@ -227,9 +227,9 @@ public class LinkSession extends PoolBase implements LogoutEvent{
 	public void subscribe(JSONObject msg){
 		String qname=msg.getString(KEY_QNAME);
 		String subname=msg.optString(KEY_SUBNAME,null);
-		LinkletWrapper paletWrapper=linkManager.getLinkletWrapper(qname);
-		if(paletWrapper==null){
-			sendError(TYPE_SUBSCRIBE,qname, subname,null);
+		LinkletWrapper linkletWrapper=linkManager.getLinkletWrapper(qname);
+		if(linkletWrapper==null){
+			sendError(TYPE_SUBSCRIBE,qname, subname,"not found qname");
 			return;
 		}
 		LinkPeer keyPeer=LinkPeer.create(linkManager,this, qname, subname);
@@ -241,7 +241,22 @@ public class LinkSession extends PoolBase implements LogoutEvent{
 			}
 			peers.put(keyPeer, keyPeer);
 		}
-		paletWrapper.onSubscribe(keyPeer);
+		/*subscribeãŒÀ‚ð’´‚¦‚½*/
+		if(peers.size()>linkManager.getMaxSubscribe()){
+			logger.warn("maxSubscribe over."+path+":"+loginId);
+			synchronized(peers){
+				peers.remove(keyPeer);
+			}
+			sendError(TYPE_SUBSCRIBE,qname, subname,"maxSubscribe over");
+		}
+		/*linklet‚ª‚Ý‚Â‚©‚ç‚È‚©‚Á‚½*/
+		if( linkletWrapper.onSubscribe(keyPeer)==false){
+			logger.warn("not found linklet."+qname+":"+subname);
+			synchronized(peers){
+				peers.remove(keyPeer);
+			}
+			sendError(TYPE_SUBSCRIBE,qname, subname,"not found subname");
+		}
 	}
 	
 	public void unsubscribe(JSONObject msg){
@@ -341,7 +356,8 @@ public class LinkSession extends PoolBase implements LogoutEvent{
 	
 	public void qname(JSONObject req){
 		Set<String> qnames=linkManager.qnames();
-		sendSuccess(TYPE_QNAMES,null, null,JSONSerializer.toJSON(qnames));
+		req.put("qnames", qnames);
+		sendSuccess(TYPE_QNAMES,null, null,req);
 	}
 	
 	public void deploy(JSONObject req){

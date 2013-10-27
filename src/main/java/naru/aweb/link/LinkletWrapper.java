@@ -34,7 +34,9 @@ public class LinkletWrapper implements LinkletCtx,Timer{
 	public LinkletWrapper(String qname,Linklet rootPalet,Map<String,Linklet> subscribers){
 		this.qname=qname;
 		this.rootPalet=rootPalet;
-		rootPalet.init(qname,null,this);
+		if(rootPalet!=null){
+			rootPalet.init(qname,null,this);
+		}
 		if(subscribers!=null){
 			for(String subname:subscribers.keySet()){
 				Linklet palet=subscribers.get(subname);
@@ -51,18 +53,18 @@ public class LinkletWrapper implements LinkletCtx,Timer{
 		if(subname!=null){
 			palet=subscribers.get(subname);
 		}
-		if(palet!=null){
-			return palet;
+		if(palet==null){
+			palet=rootPalet;
 		}
-		return rootPalet;
+		return palet;
 	}
 	
-	void onSubscribe(LinkPeer peer){
+	boolean onSubscribe(LinkPeer peer){
 		String subname=peer.getSubname();
 		synchronized(peers){
 			if(isTerminate){
 				logger.warn("onSubscribe aleady stop");
-				return;
+				return false;
 			}
 			peers.add(peer);
 			Set<LinkPeer> subnamePeers=subnamePeersMap.get(subname);
@@ -73,7 +75,11 @@ public class LinkletWrapper implements LinkletCtx,Timer{
 			subnamePeers.add(peer);
 		}
 		Linklet palet=getLinklet(peer);
+		if(palet==null){
+			return false;
+		}
 		palet.onSubscribe(peer);
+		return true;
 	}
 	
 	public boolean onUnubscribe(LinkPeer peer,String reason){
