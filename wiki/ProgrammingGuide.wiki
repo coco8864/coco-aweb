@@ -25,6 +25,8 @@
    # エントリーポイントは、[https://phapp.coco.0t0.jp/api/coffee/phLink.coffee.html#ph.link ph.link]
    # pub/sub通信インタフェースは、link.subscribeの復帰オブジェクト[https://phapp.coco.0t0.jp/api/coffee/phLinkSubscription.coffee.html Subscription]です。
    # storageインタフェースは、link.srorageの復帰オブジェクト[https://phapp.coco.0t0.jp/api/coffee/phLink.coffee.html#PrivateSessionStorage Storage]です。
+   # 参考[https://phapp.coco.0t0.jp/storageTest.html storageTest],[https://phapp.coco.0t0.jp/pubsubTest.html pubsubTest]
+ 
 
  * ServerAPI
    基本的なpub/sub通信のためにサーバ側のアプリケーションは必要ありませ。しかし複雑な処理をするためには、Javaによりサーバアプリケーションを記述することができます。詳細は、[https://phapp.coco.0t0.jp/api/java/ ServerAPI]を参照してください。
