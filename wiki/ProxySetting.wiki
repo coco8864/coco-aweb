@@ -1,7 +1,7 @@
-#summary Phantom Proxyを使用するためのブラウザ設定
+#summary Phantom Serverを使用するためのブラウザ設定
 
 = Proxy設定 =
-ブラウザのProxy設定を変更すると、Phantom Proxyをより効果的に利用できます。自動構成スクリプトを利用することで、Phantom Proxyが処理すべきリクエストだけをPhantom Proxyに向けることができます。
+ブラウザのProxy設定を変更すると、Phantom Serverをより効果的に利用できます。自動構成スクリプトを利用することで、Phantom Serverが処理すべきリクエストだけをPhantom Serverに向けることができます。
 
 == 自動構成スクリプトの設定箇所　==
    自動構成スクリプトの設定はブラウザ毎に異なります。
