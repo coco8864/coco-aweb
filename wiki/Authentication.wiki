@@ -9,6 +9,12 @@
   * Digest認証
   * !FormBasic認証
   * !FormDigest認証
+  * Internet認証
+    * facebook oauth
+    * twitter oauth
+    * google oauth
+    * openId
+
   loginしたUserのrolesとそのリクエストで選択された[Mapping mapping]に付加されたrolesに一致があれば、そのリクエスト処理が許可されます。一致がない場合は、認証に成功しても処理が許可されません。
 
   cookieベースでの認証ですが、mapping毎、proxy動作の場合ドメイン毎に異なるidを採番します。
