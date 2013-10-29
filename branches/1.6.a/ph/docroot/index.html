@@ -1,15 +1,12 @@
 <!DOCTYPE html>
 <html manifest="~ph.appcache">
 <head>
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<meta charset="UTF-8" /> 
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-	<meta http-equiv="Pragma" content="no-cache"> 
-	<meta http-equiv="Cache-Control" content="no-cache"> 
-	<meta http-equiv="Expires" content="0"> 
-	<title>Welcome to Phantom Server</title>
-	<script type="text/javascript" src="/pub/js/ph.js"></script>
-	<link type="text/css" href="/pub/css/ph.css" rel="stylesheet" /> 
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta charset="UTF-8" /> 
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>Welcome to Phantom Server</title>
+  <script type="text/javascript" src="/pub/js/ph.js"></script>
+  <link type="text/css" href="/pub/css/ph.css" rel="stylesheet" /> 
 <style type="text/css"><!--
 table {border-collapse: collapse;}
 td,th {border:1px solid #000;text-align:left;font-size:x-small}
@@ -19,18 +16,99 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 -->
 </style>
 <script type="text/javascript">
+function suspendLogin(){
+  listTag=ph.jQuery("#list");
+  listTag.empty();
+  ph.jQuery("#isOnline").text("offline");
+  ph.jQuery("#loadicon").remove();
+  ph.jQuery("#profile").hide();
+  ph.jQuery("#welcome").text("Welcome to Phantom Server(offline)");
+  var inout=ph.jQuery("#loginout");
+  inout.attr("src","/pub/images/login.gif");
+  inout.attr("title","offline login");
+  inout.unbind();
+  inout.bind("click",function(){link.offlineAuth();});
+  var liTag="<li><a href='#' onclick='link.offlineAuth();'>Phantom Server offline Login</a></li>"
+  listTag.append(liTag);
+  var profile=ph.jQuery("#profile");
+  profile.hide();
+}
+
+function offline(){
+  listTag=ph.jQuery("#list");
+  listTag.empty();
+  ph.jQuery("#isOnline").text("offline");
+  var user=link.authInfo.user;
+  ph.jQuery("#welcome").text(user.nickname+"さん ようこそ(offline)");
+  var inout=ph.jQuery("#loginout");
+  inout.attr("src","/pub/images/logout.gif");
+  inout.attr("title","logout");
+  inout.unbind();
+  inout.bind("click",function(){link.offlineLogout();});
+  var liTag="<li><a href='#' onclick='link.offlineLogout();'>Phantom Server offline Logout</a></li>"
+  listTag.append(liTag);
+
+  var profile=ph.jQuery("#profile");
+  profile.attr("src","/pub/images/profile.gif");
+  profile.unbind();
+  profile.bind("click",function(){link.userProfile();});
+  profile.show();
+}
+
+function online(){
+  listTag=ph.jQuery("#list");
+  listTag.empty();
+  ph.jQuery("#isOnline").text("online");
+  var user=link.authInfo.user;
+  var allowUrls=link.authInfo.allowUrls;
+  var len=allowUrls.length;
+  for(var i=0;i<len;i++){
+    if(allowUrls[i].url.lastIndexOf('http',0)!=0){
+      continue;
+    }
+    var liTag="<li><a href='#' onclick='checkGo(\"" +allowUrls[i].url+ "\")'>"+allowUrls[i].notes+"</a></li>"
+    listTag.append(liTag);
+  }
+  var inout=ph.jQuery("#loginout");
+  var profile=ph.jQuery("#profile");
+  if(user.loginId){
+    ph.jQuery("#welcome").text(user.nickname+"さん ようこそ");
+    inout.attr("src","/pub/images/logout.gif");
+    inout.attr("title","logout");
+    inout.unbind();
+    inout.bind("click",function(){location=ph.authUrl+'/logout';});
+    var liTag="<li><a href='#' onclick='checkGo(\"" +ph.authUrl+ "/logout\")'>Phantom Server Logout</a></li>"
+    listTag.append(liTag);
+
+    profile.attr("src","/pub/images/profile.gif");
+    profile.unbind();
+    profile.bind("click",function(){link.userProfile();});
+    profile.show();
+  }else{
+    ph.jQuery("#welcome").text("Welcome to Phantom Server");
+    inout.attr("src","/pub/images/login.gif");
+    inout.attr("title","login");
+    inout.unbind();
+    inout.bind("click",function(){checkGo(ph.authUrl);});
+    var liTag="<li><a href='#' onclick='checkGo(\"" +ph.authUrl+ "\")'>Phantom Server Login</a></li>"
+    listTag.append(liTag);
+    profile.hide();
+  }
+  ph.jQuery("#loadicon").remove();
+}
+
 var link;
 var listTag;
 ph.jQuery(function() {
-	ph.jQuery("#version").text(ph.version);
-	ph.jQuery("#status").text('running');
-	ph.jQuery("#sessionStorage").text("necessary");
-	ph.jQuery("#crossDocument").text("necessary");
-	ph.jQuery("#websocket").text("optional");
-	ph.jQuery("#hashChange").text("optional");
-	ph.jQuery("#blob").text("optional");
-	ph.jQuery("#appCache").text("optional");
-	
+  ph.jQuery("#version").text(ph.version);
+  ph.jQuery("#status").text('running');
+  ph.jQuery("#sessionStorage").text("necessary");
+  ph.jQuery("#crossDocument").text("necessary");
+  ph.jQuery("#websocket").text("optional");
+  ph.jQuery("#hashChange").text("optional");
+  ph.jQuery("#blob").text("optional");
+  ph.jQuery("#appCache").text("optional");
+
 	var available=true;
 	if(ph.useWebSocket){
 		useText="available"
@@ -82,93 +160,24 @@ ph.jQuery(function() {
 	}
 	link=ph.link();
 	listTag=ph.jQuery("#list");
-	
 	link.onUnload(function(x){
-			listTag.empty();
-			var liTag="<li>error:" + link.cause + "</li>"
-			listTag.append(liTag);
-			ph.jQuery("#loadicon").remove();
-		});
-	link.on('suspendAuth',function(){
-			listTag.empty();
-			ph.jQuery("#isOnline").text("offline");
-			ph.jQuery("#loadicon").remove();
-			ph.jQuery("#profile").hide();
-			ph.jQuery("#welcome").text("Welcome to Phantom Server(offline)");
-			var inout=ph.jQuery("#loginout");
-			inout.attr("src","/pub/images/login.gif");
-			inout.attr("title","offline login");
-			inout.unbind();
-			inout.bind("click",function(){link.offlineAuth();});
-			var liTag="<li><a href='#' onclick='link.offlineAuth();'>Phantom Server offline Login</a></li>"
-			listTag.append(liTag);
-			var profile=ph.jQuery("#profile");
-			profile.hide();
-
-		});
-	link.on('offlineAuth',function(){
-			listTag.empty();
-			ph.jQuery("#isOnline").text("offline");
-			var user=link.authInfo.user;
-			ph.jQuery("#welcome").text(user.nickname+"さん ようこそ(offline)");
-			var inout=ph.jQuery("#loginout");
-			inout.attr("src","/pub/images/logout.gif");
-			inout.attr("title","logout");
-			inout.unbind();
-			inout.bind("click",function(){link.offlineLogout();});
-			var liTag="<li><a href='#' onclick='link.offlineLogout();'>Phantom Server offline Logout</a></li>"
-			listTag.append(liTag);
-
-			var profile=ph.jQuery("#profile");
-			profile.attr("src","/pub/images/profile.gif");
-			profile.unbind();
-			profile.bind("click",function(){link.userProfile();});
-			profile.show();
-
-		});
-	link.on('onlineAuth',function(){
+		if(!link.cause){
+			return;
+		}
 		listTag.empty();
-		ph.jQuery("#isOnline").text("online");
-		var user=link.authInfo.user;
-		var allowUrls=link.authInfo.allowUrls;
-		var len=allowUrls.length;
-		for(var i=0;i<len;i++){
-			if(allowUrls[i].url.lastIndexOf('http',0)!=0){
-				continue;
-			}
-			var liTag="<li><a href='#' onclick='checkGo(\"" +allowUrls[i].url+ "\")'>"+allowUrls[i].notes+"</a></li>"
-			listTag.append(liTag);
-		}
-		var inout=ph.jQuery("#loginout");
-		var profile=ph.jQuery("#profile");
-		if(user.loginId){
-			ph.jQuery("#welcome").text(user.nickname+"さん ようこそ");
-			inout.attr("src","/pub/images/logout.gif");
-			inout.attr("title","logout");
-			inout.unbind();
-			inout.bind("click",function(){location=ph.authUrl+'/logout';});
-			var liTag="<li><a href='#' onclick='checkGo(\"" +ph.authUrl+ "/logout\")'>Phantom Server Logout</a></li>"
-			listTag.append(liTag);
-
-			profile.attr("src","/pub/images/profile.gif");
-			profile.unbind();
-			profile.bind("click",function(){link.userProfile();});
-			profile.show();
-
-		}else{
-			ph.jQuery("#welcome").text("Welcome to Phantom Server");
-			inout.attr("src","/pub/images/login.gif");
-			inout.attr("title","login");
-			inout.unbind();
-			inout.bind("click",function(){checkGo(ph.authUrl);});
-			var liTag="<li><a href='#' onclick='checkGo(\"" +ph.authUrl+ "\")'>Phantom Server Login</a></li>"
-			listTag.append(liTag);
-			profile.hide();
-
-		}
+		var liTag="<li>error:" + link.cause + "</li>"
+		listTag.append(liTag);
 		ph.jQuery("#loadicon").remove();
 	});
+	link.on(ph.EVENT.SUSPEND_LOGIN,suspendLogin);
+	link.on(ph.EVENT.LOGIN,function(l){
+		if(l.isOffline){offline()}
+		else{online()};
+	});
 });
+
+
+
 function goAdmin(){
 	if(typeof ph != "undefined"){
 		checkGo(ph.adminUrl);

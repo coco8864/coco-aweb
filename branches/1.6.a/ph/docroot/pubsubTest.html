@@ -16,6 +16,30 @@ function outputLog(html){
   ph.jQuery("#output").html("*"+outputCounter+"*<br />"+html+"<br />"+orgHtml);
   outputCounter++;
 }
+function outputBlob(blob){
+  if(typeof URL.createObjectURL!=='function'){
+    return;
+  }
+  var url=URL.createObjectURL(blob);
+  if(blob.type.indexOf('image')>=0){
+    outputImg(url,blob.name);
+  }else{
+    outputDownload(url,blob.name);
+  }
+}
+
+function outputImg(url,title){
+  outputLog("<img src='"+url+ "' title='" +title + "'/>");
+}
+
+function outputDownload(url,name){
+  //TODO ie10
+  outputLog("<a download='" + name +"' href='"+url+ "'>" + name +"</a>");
+}
+
+function onError(msg){
+  outputLog("error:"+ph.JSON.stringify(msg));
+}
 
 var link;
 var sub;
@@ -24,9 +48,17 @@ function subscribe(){
   var subname=ph.jQuery("#subname").val();
   outputLog('subscribe("'+qname+'","' +subname+'")');
   sub=link.subscribe(qname,subname);
+  sub.on(ph.EVENT.ERROR,onError);
   ph.jQuery("#subArea input").removeAttr('disabled');
-  sub.onMsg(function(data){//TODO
-    outputLog("onMsg:"+ph.JSON.stringify(data));
+  sub.onMsg(function(msg){//TODO
+    outputLog("onMsg:"+ph.JSON.stringify(msg));
+    if(msg.source==='drop'){
+      for(var i=0;i<msg.data.length;i++){
+        outputBlob(msg.data[i]);
+      }
+    }else if(msg.source==='formPublish'){
+      outputBlob(msg.data);
+    }
   });
   sub.onUnload(function(){
     outputLog('unsubscribed:qname='+qname+' subname=' +subname);
@@ -51,6 +83,7 @@ function auth(isOffline){
     link.unlink();
   }
   link=ph.link(aplUrl(),isOffline);
+  link.on(ph.EVENT.ERROR,onError);
   link.onReady(function(){
     var linkInfo=
     "isOffline:"+link.isOffline + "<br />"
@@ -131,6 +164,7 @@ aplUrl:<input id='aplUrl' type="text" value="/link1" style="width:256px;"/>
 <input type="button" value="online link" onclick="auth(false);"/>
 <br />
 <div id='linkAuthArea'>
+<H2>Link operation</H2>
 <input type="button" value="profile" onclick="link.userProfile();"/>
 <input type="button" value="logout" onclick="link.logout();"/>
 <input type="button" value="unlink" onclick="link.unlink();"/><br />
