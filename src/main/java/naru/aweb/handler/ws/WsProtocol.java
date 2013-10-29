@@ -246,13 +246,13 @@ public abstract class WsProtocol extends PoolBase{
 			if(isCallWsClose){
 				return;
 			}
-			traceOnClose(code, reason);
-			try {
-				handler.onWsClose(code,reason);
-			} catch (Throwable e) {
-				logger.warn("onWsClose throw exception.",e);
-			}
 			isCallWsClose=true;
+		}
+		traceOnClose(code, reason);
+		try {
+			handler.onWsClose(code,reason);
+		} catch (Throwable e) {
+			logger.warn("onWsClose throw exception.",e);
 		}
 	}
 	

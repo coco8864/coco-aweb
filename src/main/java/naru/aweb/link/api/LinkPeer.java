@@ -218,9 +218,9 @@ public class LinkPeer extends PoolBase{
 	public boolean unsubscribe(String reason){
 		/* client‚Éunsubscribe(subscribeŽ¸”s)‚ð’Ê’m‚·‚é */
 		if( linkSession!=null && linkSession.unsubscribeByPeer(this) ){
-			/* palet‚ÉonUnsubscribe‚ð’Ê’m‚·‚é */
-			LinkletWrapper paletWrapper=linkManager.getLinkletWrapper(qname);
-			return paletWrapper.onUnubscribe(this,reason);
+			/* linklet‚ÉonUnsubscribe‚ð’Ê’m‚·‚é */
+			LinkletWrapper linkletWrapper=linkManager.getLinkletWrapper(qname);
+			return linkletWrapper.onUnubscribe(this,reason);
 		}else{
 			return false;
 		}

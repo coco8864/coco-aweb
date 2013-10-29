@@ -189,8 +189,6 @@ class Ph extends PhObject
     AUTH_PRIVATE:'authPrivate' #auth localstorage key:loginid.key=value
     AUTH_LOCAL:'authLocal' #auth localstorage key:@.key=value (no enc)
     APL:'apl'
-    QNAME:'qname'
-    SUBNAME:'subname'
     USER:'user'
   }
   EVENT:{
@@ -203,8 +201,12 @@ class Ph extends PhObject
     QNAMES:'@qnames'
     LOGIN:'@login'
     LOGOUT:'@logout'
+    SUSPEND_LOGIN:'@suspendLogin'
+    CONNECTED:'@connected'
+    DISCONNECT:'@disconnect'
     ENCRYPT:'@encrypt'
     DECRYPT:'@decrypt'
+    ERROR:'@error'
   }
   TYPE:{
     GET_ITEM:'getItem'
@@ -215,7 +217,6 @@ class Ph extends PhObject
     MESSAGE:'message'
   }
  # _INTERVAL:1000
-  _SEND_DATA_MAX:(1024*1024*2)
   _WS_RETRY_MAX:3
   _KEEP_MSG_BEFORE_SUBSCRIBE:true
   _KEEP_MSG_MAX:64

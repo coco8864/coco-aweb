@@ -107,7 +107,7 @@ public interface LinkletCtx{
 	public boolean terminate();
 	
 	/**
-	 * “¯ˆê‚Ìqname‚É“o˜^‚³‚ê‚Ä‚¢‚é•Ê‚Ìpalet‚ğæ“¾‚·‚é<br/>
+	 * “¯ˆê‚Ìqname‚É“o˜^‚³‚ê‚Ä‚¢‚é•Ê‚Ìlinklet‚ğæ“¾‚·‚é<br/>
 	 * @param subname
 	 * @return@linklet
 	 */

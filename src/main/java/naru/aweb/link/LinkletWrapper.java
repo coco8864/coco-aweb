@@ -21,27 +21,27 @@ public class LinkletWrapper implements LinkletCtx,Timer{
 	private static Logger logger=Logger.getLogger(LinkSession.class);
 	private Object intervalObj=null;
 	private String qname;
-	private Linklet rootPalet;//root palet
+	private Linklet rootLinklet;
 	private Map<String,Linklet> subscribers=new HashMap<String,Linklet>();
 	private boolean isTerminate=false;
 	private Set<LinkPeer> peers=new HashSet<LinkPeer>();
 	private Map<String,Set<LinkPeer>> subnamePeersMap=new HashMap<String,Set<LinkPeer>>();
-	private Map<String,Object> attribute=new HashMap<String,Object>();//同じqname配下のpalet間で情報を共有する
+	private Map<String,Object> attribute=new HashMap<String,Object>();//同じqname配下のlinklet間で情報を共有する
 
-	public LinkletWrapper(String qname,Linklet rootPalet){
-		this(qname, rootPalet, null);
+	public LinkletWrapper(String qname,Linklet rootLinklet){
+		this(qname, rootLinklet, null);
 	}
-	public LinkletWrapper(String qname,Linklet rootPalet,Map<String,Linklet> subscribers){
+	public LinkletWrapper(String qname,Linklet rootLinklet,Map<String,Linklet> subscribers){
 		this.qname=qname;
-		this.rootPalet=rootPalet;
-		if(rootPalet!=null){
-			rootPalet.init(qname,null,this);
+		this.rootLinklet=rootLinklet;
+		if(rootLinklet!=null){
+			rootLinklet.init(qname,null,this);
 		}
 		if(subscribers!=null){
 			for(String subname:subscribers.keySet()){
-				Linklet palet=subscribers.get(subname);
-				palet.init(qname,subname,this);
-				this.subscribers.put(subname, palet);
+				Linklet linklet=subscribers.get(subname);
+				linklet.init(qname,subname,this);
+				this.subscribers.put(subname, linklet);
 			}
 		}
 		isTerminate=false;
@@ -49,14 +49,14 @@ public class LinkletWrapper implements LinkletCtx,Timer{
 	
 	private Linklet getLinklet(LinkPeer peer){
 		String subname=peer.getSubname();
-		Linklet palet=null;
+		Linklet linklet=null;
 		if(subname!=null){
-			palet=subscribers.get(subname);
+			linklet=subscribers.get(subname);
 		}
-		if(palet==null){
-			palet=rootPalet;
+		if(linklet==null){
+			linklet=rootLinklet;
 		}
-		return palet;
+		return linklet;
 	}
 	
 	boolean onSubscribe(LinkPeer peer){
@@ -74,11 +74,11 @@ public class LinkletWrapper implements LinkletCtx,Timer{
 			}
 			subnamePeers.add(peer);
 		}
-		Linklet palet=getLinklet(peer);
-		if(palet==null){
+		Linklet linklet=getLinklet(peer);
+		if(linklet==null){
 			return false;
 		}
-		palet.onSubscribe(peer);
+		linklet.onSubscribe(peer);
 		return true;
 	}
 	
@@ -93,8 +93,8 @@ public class LinkletWrapper implements LinkletCtx,Timer{
 			}
 		}
 		if(exist){
-			Linklet palet=getLinklet(peer);
-			palet.onUnsubscribe(peer,reason);
+			Linklet linklet=getLinklet(peer);
+			linklet.onUnsubscribe(peer,reason);
 			return true;
 		}else{
 			return false;
@@ -102,9 +102,9 @@ public class LinkletWrapper implements LinkletCtx,Timer{
 	}
 	
 	void onPublish(LinkPeer peer,Object data){
-		Linklet palet=getLinklet(peer);
+		Linklet linklet=getLinklet(peer);
 		if(data instanceof String){/*　送信データが文字列の場合*/
-			palet.onPublish(peer,(String)data);
+			linklet.onPublish(peer,(String)data);
 			return;
 		}
 		LinkMsg msg=null;
@@ -118,7 +118,7 @@ public class LinkletWrapper implements LinkletCtx,Timer{
 		}
 		/*　送信データがObjectの場合*/		
 		try{
-			palet.onPublish(peer,msg);
+			linklet.onPublish(peer,msg);
 		}finally{
 			msg.unref();
 		}
@@ -294,18 +294,18 @@ public class LinkletWrapper implements LinkletCtx,Timer{
 			}
 			peer.unsubscribe("terminate");
 		}
-		for(Linklet palet:subscribers.values()){
-			palet.term(null);
+		for(Linklet linklet:subscribers.values()){
+			linklet.term(null);
 		}
-		rootPalet.term(null);
+		rootLinklet.term(null);
 		return false;
 	}
 
 	@Override
 	public void onTimer(Object arg0) {
-		rootPalet.onTimer();
-		for(Linklet palet:subscribers.values()){
-			palet.onTimer();
+		rootLinklet.onTimer();
+		for(Linklet linklet:subscribers.values()){
+			linklet.onTimer();
 		}
 	}
 
@@ -315,7 +315,7 @@ public class LinkletWrapper implements LinkletCtx,Timer{
 	@Override
 	public Linklet getLinklet(String subname) {
 		if(subname==null){
-			return rootPalet;
+			return rootLinklet;
 		}
 		return subscribers.get(subname);
 	}

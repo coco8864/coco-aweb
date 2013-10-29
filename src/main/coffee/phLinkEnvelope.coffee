@@ -158,14 +158,14 @@ class Envelope
         @dates=meta?.dates ? []
         for blobMeta in meta.blobs
           size=blobMeta.size
-          blob=ph.blobSlice(blob,offset,offset+size,blobMeta.type)
+          childBlob=ph.blobSlice(blob,offset,offset+size,blobMeta.type)
           offset+=size
-          blob.type=blobMeta.type
+          childBlob.type=blobMeta.type
           if blobMeta.name
-            blob.name=blobMeta.name
+            childBlob.name=blobMeta.name
           if blobMeta.lastModifiedDate
-            blob.lastModifiedDate=blobMeta.lastModifiedDate
-          @blobs.push(blob)
+            childBlob.lastModifiedDate=blobMeta.lastModifiedDate
+          @blobs.push(childBlob)
         obj=@deserialize(header)
         cb(obj)
     offset=4
