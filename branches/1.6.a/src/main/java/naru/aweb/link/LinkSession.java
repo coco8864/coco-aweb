@@ -29,7 +29,6 @@ public class LinkSession extends PoolBase implements LogoutEvent{
 	public static final String KEY_QNAME="qname";
 	public static final String KEY_SUBNAME="subname";
 	public static final String KEY_SUBSCRIBERS="subscribers";
-	//public static final String KEY_PALET_CLASS_NAME="paletClassName";
 	public static final String KEY_KEY="key";
 	
 	/* request type */
@@ -299,9 +298,9 @@ public class LinkSession extends PoolBase implements LogoutEvent{
 		}
 		msg.unref();
 		LinkPeer keyPeer=LinkPeer.create(linkManager,this, qname, subname);
-		LinkletWrapper paletWrapper=linkManager.getLinkletWrapper(qname);
+		LinkletWrapper linkletWrapper=linkManager.getLinkletWrapper(qname);
 		if(subname==null){//‘—MŒ³‚ª‚È‚¢Publish •Ö‹X“I‚ÈPeer
-			paletWrapper.onPublish(keyPeer, message);
+			linkletWrapper.onPublish(keyPeer, message);
 			keyPeer.unref();
 			return;
 		}
@@ -314,16 +313,16 @@ public class LinkSession extends PoolBase implements LogoutEvent{
 				return;
 			}
 		}
-		paletWrapper.onPublish(peer, message);
+		linkletWrapper.onPublish(peer, message);
 	}
 	
-	/* PaletWrapper‚©‚ç‚Ìunsubcribe */
+	/* LinkletWrapper‚©‚ç‚Ìunsubcribe */
 	private boolean unsubscribeFromWrapper(LinkPeer peer){
-		LinkletWrapper paletWrapper=linkManager.getLinkletWrapper(peer.getQname());
-		if(paletWrapper==null){
+		LinkletWrapper linkletWrapper=linkManager.getLinkletWrapper(peer.getQname());
+		if(linkletWrapper==null){
 			return false;
 		}
-		paletWrapper.onUnubscribe(peer,"client");
+		linkletWrapper.onUnubscribe(peer,"client");
 		//³í‚Ésubscribe‚ğŠ®—¹‚µ‚½‚Æ‚¢‚¤ˆÓ–¡‚ÅsubscribeŠ®—¹‚ğ•œ‹A
 		sendSuccess(TYPE_SUBSCRIBE,peer.getQname(), peer.getSubname(),"client");
 		return true;

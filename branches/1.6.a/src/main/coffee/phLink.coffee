@@ -33,7 +33,6 @@ class Link extends PhObject
    @connection=new Connection(@)
    @connection.onLoad(->
      link.load(link)
-     link.trigger('linked',link)
      return
     )
    @connection.onUnload(->
@@ -58,7 +57,7 @@ class Link extends PhObject
      link._frame.remove()
      link.isAuth=false
      link.cause='apl frame load timeout'
-     link.trigger('failToAuth',link)
+     link.trigger(ph.EVENT.ERROR,{type:'link',keyUrl:link.keyUrl,cause:link.cause,detail:'loadFrame'},link)
      link.unload(link)
      return)
     ,ph.authFrameTimeout*2
@@ -74,7 +73,7 @@ class Link extends PhObject
   if @param.useConnection==false
    @isConnect=false
    @ppStorage.onLoad(->
-    link.trigger('ppStorage',link)
+    # link.trigger('ppStorage',link)
     link.load()
    )
    return
@@ -85,7 +84,7 @@ class Link extends PhObject
   con=@connection
   @ppStorage.onLoad(->
     con.init(isWs)
-    link.trigger('ppStorage',link)
+    # link.trigger('ppStorage',link)
     return
    )
   return
@@ -101,8 +100,12 @@ class Link extends PhObject
   @_frame[0].contentWindow.postMessage(jsonMsg,'*')
  _onMessage:(qjev)=>
   ev=qjev.originalEvent
-  if !@_frame || ev.source!=@_frame[0].contentWindow
-   return
+  #ie9で、画面切り替え中によばれるとオブジェクトが存在しない場合がある
+  try
+   if !@_frame || ev.source!=@_frame[0].contentWindow
+    return
+  catch error
+    return
   res=ph.JSON.parse(ev.data)
   if res.type=='encrypt'
    if res.ctxIdx
@@ -135,7 +138,7 @@ class Link extends PhObject
    @_frameTimerId=null
    if !res.result
     @cause='fail to onlineAuth'
-    @trigger('failToAuth',@)
+    link.trigger(ph.EVENT.ERROR,{type:'loadAplFrame',keyUrl:@keyUrl,cause:@cause,detail:res},@)
     @unload()
    # else if res.aplInfo.loginId #TODO:認証済みなら,最適化
    #  @aplInfo=res.aplInfo
@@ -146,7 +149,7 @@ class Link extends PhObject
    else if res.aplInfo.isOffline==true && @param.useOffline==false
     # offlineなのにofflineは絶対使うな指定
     @isOffline=true
-    @trigger('suspendAuth',@)
+    @trigger(ph.EVENT.SUSPEND_LOGIN,@)
    else if @param.useOffline==true || res.aplInfo.isOffline==true
     # 必ずofflineを使う指定、もしくは実際にoffline
     @isOffline=true
@@ -170,13 +173,12 @@ class Link extends PhObject
     @isOffline=false
     @aplInfo=res.aplInfo
     @authInfo=res.authInfo
-    @trigger('onlineAuth',@)
     @isAuth=true
     @trigger(ph.EVENT.LOGIN,@)
     @_connect()
    else
     @cause=res.reason
-    @trigger('failToAuth',@)
+    @trigger(ph.EVENT.ERROR,{type:'onlineAuth',keyUrl:@keyUrl,cause:@cause,detail:res},@)
     @isAuth=false
     @unload()
   else if res.type=='offlineAuth'
@@ -192,7 +194,7 @@ class Link extends PhObject
    else
     @isAuth=false
     @cause='fail to offlineAuth'
-    @trigger('failToAuth',@)
+    @trigger(ph.EVENT.ERROR,{type:'offlineAuth',keyUrl:@keyUrl,cause:@cause,detail:res},@)
     @unload()
   else if res.type=='logout'
    @_frame[0].src='about:blank'
@@ -200,7 +202,7 @@ class Link extends PhObject
    @unload()
   else if res.type=='offlineLogout'
    if res.result==true
-    @trigger('suspendAuth',link)
+    @trigger(ph.EVENT.SUSPEND_LOGIN,link)
     @unload()
   else if res.type==ph.TYPE.GET_ITEM || res.type==ph.TYPE.CHANGE_ITEM || res.type==ph.TYPE.KEYS
    storage=@storages[res.scope]
@@ -363,10 +365,7 @@ ph.link=(aplUrl,useOffline,useConnection,useWs)->
  param.keyUrl=keyUrl
  link=new Link(param)
  ph._links[keyUrl]=link
- link.onUnload(->
-   link.trigger('unlinked',link)
-   delete ph._links[keyUrl]
-  )
+ link.onUnload(->delete ph._links[keyUrl])
  return link
 
 #strage scope

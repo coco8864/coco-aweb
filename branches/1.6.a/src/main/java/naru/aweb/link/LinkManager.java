@@ -7,7 +7,6 @@ import java.util.Set;
 import naru.aweb.handler.FileSystemHandler;
 import naru.aweb.link.api.LinkPeer;
 import naru.aweb.link.api.Linklet;
-import naru.aweb.mapping.Mapping;
 import net.sf.json.JSONObject;
 
 /**
@@ -65,7 +64,7 @@ public class LinkManager {
 		return manager;
 	}
 	
-	private Map<String,LinkletWrapper> linkletWrappers=new HashMap<String,LinkletWrapper>();//qname->palet
+	private Map<String,LinkletWrapper> linkletWrappers=new HashMap<String,LinkletWrapper>();
 	
 	/*
 	 * nextHander‚ÌˆÓ–¡
@@ -103,7 +102,7 @@ public class LinkManager {
 			if(linkletWrappers.get(qname)!=null){
 				return null;
 			}
-			Linklet rootPalet=null;
+			Linklet rootLinklet=null;
 			Map<String,Linklet> subscrivers=new HashMap<String,Linklet>();
 			for(Object subname:subscriberNames.keySet()){
 				String className=(String)subscriberNames.get((String)subname);
@@ -113,16 +112,16 @@ public class LinkManager {
 				}else{
 					clazz=Class.forName(className);
 				}
-				Linklet palet = (Linklet) clazz.newInstance();
+				Linklet linklet = (Linklet) clazz.newInstance();
 				if(ROOT_LINKLET.equals(subname)){
-					rootPalet=palet;
+					rootLinklet=linklet;
 				}else{
-					subscrivers.put((String)subname, palet);
+					subscrivers.put((String)subname, linklet);
 				}
 			}
-			LinkletWrapper paletWrapper = new LinkletWrapper(qname, rootPalet,subscrivers);
-			linkletWrappers.put(qname, paletWrapper);
-			return paletWrapper;
+			LinkletWrapper linkletWrapper = new LinkletWrapper(qname, rootLinklet,subscrivers);
+			linkletWrappers.put(qname, linkletWrapper);
+			return linkletWrapper;
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}

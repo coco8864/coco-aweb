@@ -33,11 +33,11 @@ class Connection extends PhObject
     msgs=@_sendMsgs
     @_sendMsgs=[]
     if @isWs
-#WebSocketの場合は、1メッセージづつ送る
+      #WebSocketの場合は、1メッセージづつ送る
       for msg in msgs
         env=new Envelope()
         env.pack(msg,(protocolData)=>
-          if ph.useBlob && protocolData instanceof Blob && protocolData.size>=ph._SEND_DATA_MAX
+          if ph.useBlob && protocolData instanceof Blob && protocolData.size>=ph.webSocketMessageLimit
             ph.log('blob size:'+protocolData.size)
             @__onError({requestType:msg.type,qname:msg.qname,subname:msg.subname,message:'too long size:'+protocolData.size})
             return
@@ -170,7 +170,7 @@ class Connection extends PhObject
       @_setBid(msg.bid)
       @_send({type:ph.TYPE_NEGOTIATE,bid:msg.bid,token:@_token,needRes:false})
     if @isLoading()
-      @trigger('connected',@) #success to connect
+      @trigger(ph.EVENT.CONNECTED,@) #success to connect
       @load()
     return
   __onClose:(msg)->
@@ -213,14 +213,13 @@ class Connection extends PhObject
       else
         @trigger(ph.RESULT_SUCCESS,msg.requestType,msg)
   __onError:(msg)->
+    sd=@__getSd(msg)
+    if sd
+      sd.trigger(ph.EVENT.ERROR,msg,sd)
+    else
+      @trigger(ph.EVENT.ERROR,msg,@)
     if msg.requestType==ph.TYPE_SUBSCRIBE
       @__endOfSubscribe(msg)
-    else
-      sd=@__getSd(msg)
-      if sd
-        sd.trigger(ph.RESULT_ERROR,msg.requestType,msg)
-      else
-        @trigger(ph.RESULT_ERROR,msg.requestType,msg)
   _onMessage:(msg)=>
     if msg.type==ph.TYPE_NEGOTIATE
       @__onMsgNego(msg)

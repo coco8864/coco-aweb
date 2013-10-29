@@ -24,11 +24,8 @@ checkPassword=(loginId,password)->
   passHash=null
   if password
     passHash=calcPassHash(loginId,password)
-  try
-    plainText=decryptText(encryptText,passHash)
-  catch error
-    return false
-  if !plainText
+  plainText=decryptText(encryptText,passHash)
+  if plainText==null
     return false
   try
     userInfo=ph.JSON.parse(plainText)
@@ -73,7 +70,7 @@ getUserInfo=(cb)->
     loginId=userInfo.authInfo.user.loginId
     if !userInfo.offlinePassHash
       # passwordが設定されていない場合は、loginIdをhashした値をpasswordとする
-      userInfo.offlinePassHash=calcPassHash(loginId,CryptoJS.SHA256(loginId).toString())
+      userInfo.offlinePassHash=calcPassHash(loginId,"")
     sessionPrivatePrefix='#'+userInfo.authSid+'.'
     authPrivatePrefix='$'+loginId+'.'
     ##不要なsessionPrivateの刈り取り
@@ -103,7 +100,10 @@ encryptText=(plainText,passHash)->
 
 decryptText=(encryptText,passHash)->
   if passHash && encryptText!=null && typeof(encryptText)!='undefined'
-    return CryptoJS.AES.decrypt(encryptText, passHash).toString(CryptoJS.enc.Utf8)
+    try
+      return CryptoJS.AES.decrypt(encryptText, passHash).toString(CryptoJS.enc.Utf8)
+    catch error
+      return null
   else
     return encryptText
 
@@ -416,9 +416,9 @@ response=(msg)->
 offlineLogon=->
   loginId=jQuery('#loginId').val()
   password=jQuery('#password').val()
-  if password==""
-    # passwordが設定されていない場合は、loginIdをhashした値をpasswordとする
-    password=CryptoJS.SHA256(loginId).toString()
+  ##if password==""
+  ##  # passwordが設定されていない場合は、loginIdをhashした値をpasswordとする
+  ##  password=CryptoJS.SHA256(loginId).toString()
   isOffline=true
   if !checkPassword(loginId,password)
     # alert(loginId+':wrong password')
