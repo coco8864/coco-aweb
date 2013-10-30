@@ -4,8 +4,8 @@ import java.net.UnknownHostException;
 
 import naru.aweb.config.Config;
 import naru.aweb.core.RealHost;
-import naru.aweb.http.ParameterParser;
-import naru.aweb.http.WebServerHandler;
+import naru.aweb.handler.WebServerHandler;
+import naru.aweb.util.ParameterParser;
 import net.sf.json.JSONObject;
 
 import org.apache.log4j.Logger;
@@ -34,6 +34,7 @@ public class AdminRealHostHandler extends WebServerHandler{
 					orgRealHost.setBindHost(realHost.getBindHost());
 					orgRealHost.setBindPort(realHost.getBindPort());
 					orgRealHost.setBacklog(realHost.getBacklog());
+					orgRealHost.setSslCommonName(realHost.getSslCommonName());
 					orgRealHost.setBlackPattern(realHost.getBlackPattern());
 					orgRealHost.setWhitePattern(realHost.getWhitePattern());
 					config.updateRealHosts();
@@ -65,7 +66,7 @@ public class AdminRealHostHandler extends WebServerHandler{
 		completeResponse("404");
 	}
 	
-	public void startResponseReqBody(){
+	public void onRequestBody(){
 		ParameterParser parameter=getParameterParser();
 		String command=parameter.getParameter("command");
 		if(command!=null){

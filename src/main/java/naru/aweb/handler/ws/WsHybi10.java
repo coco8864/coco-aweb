@@ -12,7 +12,7 @@ import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
-import naru.aweb.http.HeaderParser;
+import naru.aweb.util.HeaderParser;
 
 public class WsHybi10 extends WsProtocol implements BufferGetter{
 	private static Logger logger=Logger.getLogger(WsHybi10.class);
@@ -49,7 +49,8 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 	public boolean onHandshake(HeaderParser requestHeader,String subProtocol) {
 		logger.debug("WsHybi10#onHandshake cid:"+handler.getChannelId());
 		if(!isUseSpec(SPEC)){
-			handler.completeResponse("400");
+			logger.warn("unsupport spec:"+SPEC);
+			handler.completeResponse("422");//422 Protocol Extension Refused
 			return false;
 		}
 		String version=requestHeader.getHeader(SEC_WEBSOCKET_VERSION);
@@ -58,7 +59,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 		if(v>SUPPORT_VERSION){//version‚ª‘å‚«‚·‚¬‚éê‡‚ÍA8‚Å‰ï˜b‚·‚é‚æ‚¤‚ÉŒğÂ,chrome "16.0.912.12 dev-m"‚ÍA13
 			logger.debug("WsHybi10#version error:"+v);
 			handler.setHeader(SEC_WEBSOCKET_VERSION, Integer.toString(SUPPORT_VERSION));
-			handler.completeResponse("400");
+			handler.completeResponse("422");//422 Protocol Extension Refused
 			return false;
 		}
 		if(subProtocol!=null){

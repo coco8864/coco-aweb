@@ -2,6 +2,8 @@ package naru.aweb.http;
 
 import java.nio.ByteBuffer;
 
+import naru.aweb.util.HeaderParser;
+
 
 /**
  * Webクライアントの通知インタフェース

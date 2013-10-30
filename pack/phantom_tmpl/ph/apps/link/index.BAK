@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html manifest="~ph.appcache">
+<head>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta charset="UTF-8" /> 
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<meta http-equiv="Pragma" content="no-cache"> 
+	<meta http-equiv="Cache-Control" content="no-cache"> 
+	<meta http-equiv="Expires" content="0"> 
+	<title>Welcome to Phantom Server</title>
+	<script type="text/javascript" src="/pub/js/ph.js"></script>
+	<link type="text/css" href="/pub/css/ph.css" rel="stylesheet" /> 
+<style type="text/css"><!--
+table {border-collapse: collapse;}
+td,th {border:1px solid #000;text-align:left;font-size:x-small}
+.ui-resizable-se {bottom: 17px;}
+.mainTitle{ margin: 0.0em 0.5em;padding:0em 0.0em 0.0em;}
+.welcome{ margin: 0.0em 1.0em;font-size: 125.0%;}
+-->
+</style>
+<script type="text/javascript">
+var link;
+var listTag;
+ph.jQuery(function() {
+	ph.jQuery("#version").text(ph.version);
+	ph.jQuery("#status").text('running');
+	ph.jQuery("#sessionStorage").text("necessary");
+	ph.jQuery("#crossDocument").text("necessary");
+	ph.jQuery("#websocket").text("optional");
+	ph.jQuery("#hashChange").text("optional");
+	ph.jQuery("#blob").text("optional");
+	ph.jQuery("#appCache").text("optional");
+	
+	var available=true;
+	if(ph.useWebSocket){
+		useText="available"
+	}else{
+		useText="unavailable"
+	}
+	ph.jQuery("#useWebsocket").text(useText);
+
+	if(ph.useCrossDomain){
+		useText="available";
+	}else{
+		useText="unavailable";
+		available=false;
+	}
+	ph.jQuery("#useCrossDocument").text(useText);
+
+	if(ph.useHashChange){
+		useText="available";
+	}else{
+		useText="unavailable";
+	}
+	ph.jQuery("#useHashChange").text(useText);
+
+	if(ph.useSessionStorage){
+		useText="available";
+	}else{
+		useText="unavailable";
+		available=false;
+	}
+	ph.jQuery("#useSessionStorage").text(useText);
+
+	if(ph.useBlob){
+		useText="available";
+	}else{
+		useText="unavailable";
+	}
+	ph.jQuery("#useBlob").text(useText);
+
+	if(ph.useAppCache){
+		useText="available";
+	}else{
+		useText="unavailable";
+	}
+	ph.jQuery("#useAppCache").text(useText);
+	if(!available){
+		ph.jQuery("#welcome").text("このブラウザでは利用できません。");
+		ph.jQuery("#loginout").attr("src","/pub/images/logout.gif");
+		return;
+	}
+	link=ph.link();
+	listTag=ph.jQuery("#list");
+	
+	link.onUnload(function(x){
+			listTag.empty();
+			var liTag="<li>error:" + link.cause + "</li>"
+			listTag.append(liTag);
+			ph.jQuery("#loadicon").remove();
+		});
+	link.on('suspendAuth',function(){
+			listTag.empty();
+			ph.jQuery("#isOnline").text("offline");
+			ph.jQuery("#loadicon").remove();
+			ph.jQuery("#profile").hide();
+			ph.jQuery("#welcome").text("Welcome to Phantom Server(offline)");
+			var inout=ph.jQuery("#loginout");
+			inout.attr("src","/pub/images/login.gif");
+			inout.attr("title","offline login");
+			inout.unbind();
+			inout.bind("click",function(){link.offlineAuth();});
+			var liTag="<li><a href='#' onclick='link.offlineAuth();'>Phantom Server offline Login</a></li>"
+			listTag.append(liTag);
+			var profile=ph.jQuery("#profile");
+			profile.hide();
+
+		});
+	link.on('offlineAuth',function(){
+			listTag.empty();
+			ph.jQuery("#isOnline").text("offline");
+			var user=link.authInfo.user;
+			ph.jQuery("#welcome").text(user.nickname+"さん ようこそ(offline)");
+			var inout=ph.jQuery("#loginout");
+			inout.attr("src","/pub/images/logout.gif");
+			inout.attr("title","logout");
+			inout.unbind();
+			inout.bind("click",function(){link.offlineLogout();});
+			var liTag="<li><a href='#' onclick='link.offlineLogout();'>Phantom Server offline Logout</a></li>"
+			listTag.append(liTag);
+
+			var profile=ph.jQuery("#profile");
+			profile.attr("src","/pub/images/profile.gif");
+			profile.unbind();
+			profile.bind("click",function(){link.userProfile();});
+			profile.show();
+
+		});
+	link.on('onlineAuth',function(){
+		listTag.empty();
+		ph.jQuery("#isOnline").text("online");
+		var user=link.authInfo.user;
+		var allowUrls=link.authInfo.allowUrls;
+		var len=allowUrls.length;
+		for(var i=0;i<len;i++){
+			if(allowUrls[i].url.lastIndexOf('http',0)!=0){
+				continue;
+			}
+			var liTag="<li><a href='#' onclick='checkGo(\"" +allowUrls[i].url+ "\")'>"+allowUrls[i].notes+"</a></li>"
+			listTag.append(liTag);
+		}
+		var inout=ph.jQuery("#loginout");
+		var profile=ph.jQuery("#profile");
+		if(user.loginId){
+			ph.jQuery("#welcome").text(user.nickname+"さん ようこそ");
+			inout.attr("src","/pub/images/logout.gif");
+			inout.attr("title","logout");
+			inout.unbind();
+			inout.bind("click",function(){location=ph.authUrl+'/logout';});
+			var liTag="<li><a href='#' onclick='checkGo(\"" +ph.authUrl+ "/logout\")'>Phantom Server Logout</a></li>"
+			listTag.append(liTag);
+			listTag.append("<li><a href='/pubsubTest.html'>PhantomLink pubsub test</a></li>");
+			listTag.append("<li><a href='/storageTest.html'>PhantomLink storage test</a></li>");
+
+			profile.attr("src","/pub/images/profile.gif");
+			profile.unbind();
+			profile.bind("click",function(){link.userProfile();});
+			profile.show();
+
+		}else{
+			ph.jQuery("#welcome").text("Welcome to Phantom Server");
+			inout.attr("src","/pub/images/login.gif");
+			inout.attr("title","login");
+			inout.unbind();
+			inout.bind("click",function(){checkGo(ph.authUrl);});
+			var liTag="<li><a href='#' onclick='checkGo(\"" +ph.authUrl+ "\")'>Phantom Server Login</a></li>"
+			listTag.append(liTag);
+			profile.hide();
+
+		}
+		ph.jQuery("#loadicon").remove();
+	});
+});
+function goAdmin(){
+	if(typeof ph != "undefined"){
+		checkGo(ph.adminUrl);
+	}else{
+		location.href="/admin";
+	}
+}
+function checkGo(url){
+	var now = new Date();
+	ph.jQuery.ajax({
+		type: 'GET',
+		url: '/check.html?'+now.getTime(),
+		success: function(){location.href=url;},
+		error: function(){alert('Phatom Server停止中');}
+	});
+}
+</script>
+</head>
+<body>
+<div>
+<H1 class="mainTitle" style="float: left;">Phantom Server Home</H1>
+<div style="float: right;">
+<span id="welcome"></span>
+<img id="profile" title='user profile'/>
+<img id="loginout"/>
+</div>
+</div>
+<hr style="clear: both;"/>
+<H2>Available web link list</H2>
+<ul id="list">
+<img src="/pub/images/loading.gif" id="loadicon"/>
+</ul>
+<hr/>
+<!--div>Status:<span id="status">checking...</span></div-->
+<H2>Browser support function</H2>
+<table>
+<tr><td>Web Storage sessionStorage</td><td id="sessionStorage"></td><td id="useSessionStorage"></td></tr>
+<tr><td>Cross-document messaging</td><td id="crossDocument"></td><td id="useCrossDocument"></td></tr>
+<tr><td>HashChange event</td><td id="hashChange"></td><td id="useHashChange"></td></tr>
+<tr><td>WebSocket API</td><td id="websocket"></td><td id="useWebsocket"></td></tr>
+<tr><td>Blob</td><td id="blob"></td><td id="useBlob"></td></tr>
+<tr><td>AppCache</td><td id="appCache"></td><td id="useAppCache"></td></tr>
+<tr><td>network</td><td>-</td><td id="isOnline">checking...</td></tr>
+</table>
+<hr/>
+<H2>Version:<span id="version">checking...</span></H2>
+</body>
+</html>

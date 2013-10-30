@@ -7,9 +7,9 @@ import java.io.UnsupportedEncodingException;
 import java.util.Collection;
 
 import naru.aweb.config.Config;
-import naru.aweb.config.Mapping;
-import naru.aweb.http.ParameterParser;
-import naru.aweb.http.WebServerHandler;
+import naru.aweb.handler.WebServerHandler;
+import naru.aweb.mapping.Mapping;
+import naru.aweb.util.ParameterParser;
 import naru.aweb.util.ServerParser;
 import naru.aweb.util.StreamUtil;
 import net.sf.json.JSON;
@@ -30,8 +30,6 @@ public class AdminMappingHandler extends WebServerHandler{
 	
 	void doCommand(String command,ParameterParser parameter){
 		if("mappingList".equals(command)){
-//			List<String>userRoles=getAuthSession().getUser().getRolesList();
-//			List<Mapping> allowMappings=config.getMapper().getRoleMappings(userRoles);
 			String order=parameter.getParameter("order");
 			Collection<Mapping> mappings=Mapping.query(null, -1, 0, order);
 			JSON mappingsJson=Mapping.collectionToJson(mappings);
@@ -98,6 +96,7 @@ public class AdminMappingHandler extends WebServerHandler{
 			}else{
 				script=createReverseProxy(mapping,destinationUrl);
 			}
+			config.getMapper().reloadMappings();
 			completeResponse("200",script);
 			return;
 		}else if("reloadMappings".equals(command)){
@@ -208,7 +207,7 @@ public class AdminMappingHandler extends WebServerHandler{
 		completeResponse("404");
 	}
 	
-	public void startResponseReqBody(){
+	public void onRequestBody(){
 		ParameterParser parameter=getParameterParser();
 		String command=parameter.getParameter("command");
 		if(command!=null){

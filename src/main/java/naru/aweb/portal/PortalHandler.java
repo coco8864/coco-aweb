@@ -13,19 +13,20 @@ import javax.jdo.PersistenceManager;
 
 import naru.async.store.DataUtil;
 import naru.aweb.auth.AuthSession;
+import naru.aweb.auth.User;
 import naru.aweb.config.CommissionAuth;
 import naru.aweb.config.CommissionAuthEntry;
 import naru.aweb.config.CommissionAuthRole;
 import naru.aweb.config.CommissionAuthUrl;
 import naru.aweb.config.Config;
-import naru.aweb.config.Mapping;
-import naru.aweb.config.User;
-import naru.aweb.core.ServerBaseHandler;
-import naru.aweb.http.HeaderParser;
-import naru.aweb.http.ParameterParser;
-import naru.aweb.http.WebServerHandler;
+import naru.aweb.handler.ServerBaseHandler;
+import naru.aweb.handler.WebServerHandler;
+import naru.aweb.handler.ServerBaseHandler.SCOPE;
+import naru.aweb.mapping.Mapping;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.util.HeaderParser;
 import naru.aweb.util.JdoUtil;
+import naru.aweb.util.ParameterParser;
 import naru.aweb.util.ServerParser;
 import net.sf.json.JSON;
 import net.sf.json.JSONObject;
@@ -326,8 +327,8 @@ public class PortalHandler extends WebServerHandler{
 		return;
 	}
 	
-	public void startResponseReqBody(){
-		User user=(User)getRequestAttribute(ServerBaseHandler.ATTRIBUTE_USER);
+	public void onRequestBody(){
+		User user=(User)getAttribute(SCOPE.REQUEST,ServerBaseHandler.ATTRIBUTE_USER);
 		PortalSession portalSession=PortalSession.getPortalSession(this);
 		MappingResult mapping=getRequestMapping();
 		//portal画面からのリクエスト、画面
@@ -387,7 +388,7 @@ public class PortalHandler extends WebServerHandler{
 			}
 			setRequestAttribute("CommissionAuthUrls",authUrlList);
 			*/
-			setRequestAttribute("portalSession",portalSession);
+			setAttribute(SCOPE.REQUEST,"portalSession",portalSession);
 		}
 		//uriから、controllerUrlをとって、controllerRootの後ろにくっつける
 		//でfileSystemに送る

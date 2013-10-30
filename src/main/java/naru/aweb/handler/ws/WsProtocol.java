@@ -19,11 +19,11 @@ import naru.async.pool.PoolManager;
 import naru.async.store.Store;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
-import naru.aweb.config.Mapping.LogType;
-import naru.aweb.handler.WebSocketHandler;
-import naru.aweb.http.HeaderParser;
+import naru.aweb.mapping.Mapping;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.mapping.Mapping.LogType;
 import naru.aweb.util.CodeConverter;
+import naru.aweb.util.HeaderParser;
 
 /**
  *1)userHandlerの以下メソッドの呼び出し
@@ -153,7 +153,7 @@ public abstract class WsProtocol extends PoolBase{
 		Set<String> subprotocolSet=(Set<String>)mappingSubprotocol.get(id);
 		if(subprotocolSet==null){
 //			mapping.getMapping().getId();
-			String subprotocol=(String)mapping.getOption("subprotocol");
+			String subprotocol=(String)mapping.getOption(Mapping.OPTION_SUBPROTOCOL);
 			subprotocolSet=new HashSet<String>();
 			if(subprotocol!=null){
 				String[] subprotocols=subprotocol.split(",");
@@ -246,13 +246,13 @@ public abstract class WsProtocol extends PoolBase{
 			if(isCallWsClose){
 				return;
 			}
-			traceOnClose(code, reason);
-			try {
-				handler.onWsClose(code,reason);
-			} catch (Throwable e) {
-				logger.warn("onWsClose throw exception.",e);
-			}
 			isCallWsClose=true;
+		}
+		traceOnClose(code, reason);
+		try {
+			handler.onWsClose(code,reason);
+		} catch (Throwable e) {
+			logger.warn("onWsClose throw exception.",e);
 		}
 	}
 	
@@ -293,6 +293,9 @@ public abstract class WsProtocol extends PoolBase{
 	 */
 	private void wsTrace(char sourceType,String contentType,String comment,String statusCode,long length,ByteBuffer[] message,boolean isPersist){
 		AccessLog accessLog=handler.getAccessLog();
+		if(accessLog==null){
+			return;
+		}
 		AccessLog wsAccessLog=accessLog.copyForWs();
 		wsAccessLog.setContentType(contentType);
 		wsAccessLog.setRequestLine(comment);

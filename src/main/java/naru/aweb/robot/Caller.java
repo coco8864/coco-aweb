@@ -18,10 +18,10 @@ import naru.async.store.Store;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.config.WebClientLog;
-import naru.aweb.http.HeaderParser;
 import naru.aweb.http.WebClient;
 import naru.aweb.http.WebClientConnection;
 import naru.aweb.http.WebClientHandler;
+import naru.aweb.util.HeaderParser;
 
 /**
  * 何度でも呼び出せるWebリクエスタ

@@ -1,5 +1,7 @@
 package naru.aweb.auth;
 
+import java.nio.ByteBuffer;
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -11,27 +13,25 @@ import org.apache.log4j.Logger;
 import naru.async.pool.PoolBase;
 import naru.async.store.DataUtil;
 import naru.aweb.config.Config;
-import naru.aweb.config.User;
 
 public class AuthSession extends PoolBase{
 	private static Config config=Config.getConfig();
-	public static AuthSession UNAUTH_SESSION=new AuthSession(new User(),"");
+	private static final String SID_RANDOM_ENTOROPY = "sidRandomEntoropy";
+	
 	private static Logger logger = Logger.getLogger(AuthSession.class);
-	private static String serverId=DataUtil.digestHex(config.getString("serverIdEntropy","serverIdEntropy").getBytes())+System.currentTimeMillis()+".";
-	private static long appIdSeq=0;
+	private static ByteBuffer serverId=ByteBuffer.wrap(("12345678"+config.getSelfDomain() + config.getString("serverIdEntropy","serverIdEntropy")+System.currentTimeMillis()).getBytes());
+	private static long sidSeq=0;
+	private static SecureRandom sidRandom=config.getRandom(SID_RANDOM_ENTOROPY);
+	public static AuthSession UNAUTH_SESSION=new AuthSession(new User(),"");
 	
 	private User user;
 	private String token;//CSRF対策
-	private String appId;//クライアントでこのセションを識別するID,他サーバを含めて一意が理想
+	private String sid;//クライアントでこのセションを識別するID,グローバル一意、乱数を追加して予想不可能にするが、意味的には不要
 	private Map<String,Object> attribute=new HashMap<String,Object>();//sessionに付随する属性
 	private boolean isLogout=false;
 	private SessionId sessionId;
 	private Set<LogoutEvent> logoutEvents=new HashSet<LogoutEvent>();
 	private Set<AuthSession> secandarySessions=new HashSet<AuthSession>();
-	
-	private synchronized static long getAppIdSeq(){
-		return appIdSeq++;
-	}
 	
 	public void recycle() {
 		Iterator<Object> itr=attribute.values().iterator();
@@ -56,7 +56,13 @@ public class AuthSession extends PoolBase{
 	void init(User user,String token){
 		this.user=user;
 		this.token=token;
-		this.appId=DataUtil.digestHex((serverId+getAppIdSeq()).getBytes());
+		String unique=null;
+		synchronized(serverId){
+			sidSeq++;
+			serverId.putLong(0,sidSeq);
+			unique=DataUtil.digestHex(serverId.array());
+		}
+		this.sid=unique+Authenticator.getNextRandom(sidRandom);
 	}
 	
 	public AuthSession createSecondarySession(){
@@ -156,8 +162,8 @@ public class AuthSession extends PoolBase{
 		return token;
 	}
 	
-	public String getAppId() {
-		return appId;
+	public String getSid() {
+		return sid;
 	}
 
 	public SessionId getSessionId() {
@@ -169,7 +175,16 @@ public class AuthSession extends PoolBase{
 	}
 
 	public long getLastAccessTime() {
+		if(sessionId==null){
+			return -1;
+		}
 		return sessionId.getLastAccessTime();
+	}
+	public void setLastAccessTime() {
+		if(sessionId==null){
+			return;
+		}
+		sessionId.setLastAccessTime();
 	}
 	
 	/*

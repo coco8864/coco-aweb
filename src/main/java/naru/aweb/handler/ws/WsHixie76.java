@@ -12,7 +12,7 @@ import naru.async.cache.CacheBuffer;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
-import naru.aweb.http.HeaderParser;
+import naru.aweb.util.HeaderParser;
 
 //"Sec-WebSocket-Origin: http://127.0.0.1:1280\r\n" +
 //"Sec-WebSocket-Location: ws://127.0.0.1:1280/admin/queue\r\n" +

@@ -13,23 +13,23 @@ import naru.async.pool.PoolManager;
 import naru.async.store.StoreManager;
 import naru.async.store.StoreStastics;
 import naru.async.timer.TimerManager;
-import naru.aweb.admin.PaAdmin;
+import naru.aweb.admin.AdminLinklet;
 import naru.aweb.auth.AuthSession;
 import naru.aweb.http.RequestContext;
-import naru.aweb.pa.PaManager;
+import naru.aweb.link.LinkManager;
 import net.sf.json.JSONObject;
 
 public class Broadcaster implements Timer {
 	private static Logger logger=Logger.getLogger(Broadcaster.class);	
 	private static final long BROADCAST_INTERVAL=1000;
 	private static final long LOG_WATCH_INTERVAL=300000;
-	private PaManager paManager;/*=PaManager.getInstance("/pa");*/
+	private LinkManager adminLinkManager;/*=PaManager.getInstance("/pa");*/
 	private long timerId=TimerManager.INVALID_ID;
 	private Config config;
 	
-	Broadcaster(Config config,PaManager paManager){
+	Broadcaster(Config config,LinkManager adminLinkManager){
 		this.config=config;
-		this.paManager=paManager;
+		this.adminLinkManager=adminLinkManager;
 		long interval=config.getLong("broardcastInterval", BROADCAST_INTERVAL);
 		Stastics stastics=new Stastics();
 		config.setStasticsObject(stastics);
@@ -162,7 +162,7 @@ public class Broadcaster implements Timer {
 		Stastics stastics=(Stastics)userContext;
 		stastics.update();
 		logWatch(stastics);
-		paManager.publish(PaAdmin.QNAME,PaAdmin.SUBNAME_STASTICS, JSONObject.fromObject(stastics));
+		adminLinkManager.publish(AdminLinklet.QNAME,AdminLinklet.SUBNAME_STASTICS, JSONObject.fromObject(stastics));
 		long interval=config.getLong("broardcastInterval", BROADCAST_INTERVAL);
 		timerId=TimerManager.setTimeout(interval, this, stastics);
 	}

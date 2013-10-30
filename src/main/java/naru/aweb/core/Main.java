@@ -132,7 +132,14 @@ datanucleus.validateConstraints=false
 			context.finish(false,true,startupInfo);
 		}
 		//auth‚Ì‰Šú‰»‚ÍbindŒã‚¶‚á‚È‚¢‚Æhost‚ªŠm’è‚µ‚È‚¢ê‡‚ª‚ ‚é
-		config.initAfterBind();
+		try{
+			config.initAfterBind();
+		}catch(Throwable t){
+			logger.error("fail to config initAfterBind.",t);
+			context.finish(false,true,startupInfo);
+			return;
+		}
+		
 	}
 	
 	/**

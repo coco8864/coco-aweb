@@ -9,12 +9,12 @@ import java.util.Collection;
 
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Performance;
-import naru.aweb.http.HeaderParser;
-import naru.aweb.http.ParameterParser;
-import naru.aweb.http.WebServerHandler;
+import naru.aweb.handler.WebServerHandler;
 import naru.aweb.robot.ConnectChecker;
 import naru.aweb.robot.Scenario;
 import naru.aweb.robot.ServerChecker;
+import naru.aweb.util.HeaderParser;
+import naru.aweb.util.ParameterParser;
 import net.sf.json.JSON;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -65,12 +65,12 @@ public class AdminPerfHandler extends WebServerHandler{
 		return chId;
 	}
 	
-	private String checkConnection(int count,int maxFailCount,long timeout){
+//	private String checkConnection(int count,int maxFailCount,long timeout){
 //		QueueManager queueManager=QueueManager.getInstance();
 //		String chId=queueManager.createQueue(true);
-		ConnectChecker.start(count,maxFailCount,timeout,null);
-		return "0";
-	}
+//		ConnectChecker.start(count,maxFailCount,timeout,null);
+//		return "0";
+//	}
 	
 	void doCommand(String command,ParameterParser parameter){
 		if("list".equals(command)){
@@ -129,6 +129,7 @@ public class AdminPerfHandler extends WebServerHandler{
 				responseJson(name);
 			}
 			return;
+/*
 		}else if("checkConnection".equals(command)){
 			String count=parameter.getParameter("count");
 			String maxFailCount=parameter.getParameter("maxFailCount");
@@ -138,7 +139,7 @@ public class AdminPerfHandler extends WebServerHandler{
 				chId = checkConnection(Integer.parseInt(count),Integer.parseInt(maxFailCount),0);
 			} catch (NumberFormatException e) {
 			}
-			responseJson(chId);
+			responseJson(chId);*/
 		}else if("checkServer".equals(command)){
 			String url=parameter.getParameter("url");
 			String requestCount=parameter.getParameter("requestCount");
@@ -213,7 +214,7 @@ public class AdminPerfHandler extends WebServerHandler{
 		completeResponse("404");
 	}
 	
-	public void startResponseReqBody(){
+	public void onRequestBody(){
 		try{
 			ParameterParser parameter=getParameterParser();
 			String command=parameter.getParameter("command");

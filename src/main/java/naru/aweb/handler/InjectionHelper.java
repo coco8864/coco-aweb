@@ -14,7 +14,7 @@ import java.util.Map;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.aweb.config.Config;
-import naru.aweb.http.HeaderParser;
+import naru.aweb.util.HeaderParser;
 
 import org.apache.log4j.Logger;
 import org.apache.velocity.VelocityContext;
@@ -52,7 +52,9 @@ public class InjectionHelper {
 		try {
 			File tmpFile=File.createTempFile("inj", ".tmp", config.getTmpDir());
 			out=new OutputStreamWriter(new FileOutputStream(tmpFile),"utf-8");
-			velocityEngine.mergeTemplate(injectionFileName, "utf-8", veloContext, out);
+			synchronized(velocityEngine){
+				velocityEngine.mergeTemplate(injectionFileName, "utf-8", veloContext, out);
+			}
 			out.close();
 			ByteBuffer buffer=readToBuffer(tmpFile);
 			tmpFile.delete();

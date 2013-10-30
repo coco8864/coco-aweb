@@ -13,9 +13,9 @@ import naru.aweb.config.FilterCategory;
 import naru.aweb.config.FilterEntry;
 import naru.aweb.config.FilterRole;
 import naru.aweb.filter.ListGetter;
-import naru.aweb.http.ParameterParser;
-import naru.aweb.http.WebServerHandler;
+import naru.aweb.handler.WebServerHandler;
 import naru.aweb.util.JdoUtil;
+import naru.aweb.util.ParameterParser;
 import net.sf.json.JSON;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -126,7 +126,7 @@ public class AdminFilterHandler extends WebServerHandler{
 		completeResponse("404");
 	}
 	
-	public void startResponseReqBody(){
+	public void onRequestBody(){
 		ParameterParser parameter=getParameterParser();
 		String command=parameter.getParameter("command");
 		if(command!=null){

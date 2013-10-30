@@ -10,11 +10,12 @@ import java.util.Iterator;
 import java.util.Map;
 
 import naru.aweb.config.Config;
-import naru.aweb.http.HeaderParser;
+import naru.aweb.handler.ServerBaseHandler.SCOPE;
 import naru.aweb.http.RequestContext;
-import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.util.HeaderParser;
 
+import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
@@ -28,20 +29,49 @@ public class VelocityPageHandler extends WebServerHandler {
 	private static Logger logger = Logger.getLogger(VelocityPageHandler.class);
 	private static String DEFAULT_CONTENT_TYPE="text/html; charset=utf-8";
 	private static Map<File,VelocityEngine> engineMap=Collections.synchronizedMap(new HashMap<File,VelocityEngine>());
-	private static Config config=Config.getConfig();
+	private static Config config=null;
 	private static ToolManager toolManager=null;
-	
-//	private ParameterParser paremeter;
+	private static Map<String, String> contentTypeMap = new HashMap<String, String>();
+
+	private static Config getConfig() {
+		if (config == null) {
+			config = Config.getConfig();
+		}
+		return config;
+	}
+
+	private static String calcContentType(String fileName) {
+		String contentType = contentTypeMap.get(fileName);
+		if (contentType != null) {
+			return contentType;
+		}
+		contentType = getConfig().getContentType(fileName);
+		if(contentType==null){
+			contentType=DEFAULT_CONTENT_TYPE;
+		}
+		synchronized (contentTypeMap) {
+			contentTypeMap.put(fileName, contentType);
+		}
+		return contentType;
+	}
 	
 	private static ToolManager getToolManager(){
 		if(toolManager==null){
-			ToolManager tm = new ToolManager();
-			/*
-			EasyFactoryConfiguration efConfig = new EasyFactoryConfiguration();		
-			efConfig.tool("esc", EscapeTool.class);
-			tm.configure(efConfig);
-			*/
-			File settingDir=config.getSettingDir();
+			ToolManager tm=null;
+			synchronized(VelocityPageHandler.class){
+				tm = new ToolManager();
+			}
+			/* 同時にToolManagerを作成すると以下になる模様
+			 * 2013-09-23 16:05:26,802 [thread-dispatch:2] ERROR org.apache.commons.digester.Digester - Begin event threw exception
+org.apache.commons.beanutils.ConversionException: Error converting from 'String' to 'Class' loader (instance of  naru/queuelet/loader/QueueletLoader): attempted  duplicate class definition for name: "org/apache/velocity/tools/generic/AlternatorTool"
+	at org.apache.commons.beanutils.converters.AbstractConverter.handleError(AbstractConverter.java:267)
+	at org.apache.commons.beanutils.converters.AbstractConverter.convert(AbstractConverter.java:164)
+...
+Caused by: java.lang.LinkageError: loader (instance of  naru/queuelet/loader/QueueletLoader): attempted  duplicate class definition for name: "org/apache/velocity/tools/generic/AlternatorTool"
+	at java.lang.ClassLoader.defineClass1(Native Method)
+			 * QueueletLoaderの一般的な問題かもしれないが
+			 */
+			File settingDir=getConfig().getSettingDir();
 			File configFile=new File(settingDir,"velocityTool.xml");
 			tm.configure(configFile.getAbsolutePath());
 			toolManager=tm;
@@ -72,15 +102,23 @@ public class VelocityPageHandler extends WebServerHandler {
 		return velocityEngine;
 	}
 	
-	public void startResponseReqBody(){
+	private String getContentType(String name) {
+		String contentType = (String) getAttribute(SCOPE.REQUEST,ATTRIBUTE_RESPONSE_CONTENT_TYPE);
+		if (contentType != null) {
+			return contentType;
+		}
+		return calcContentType(name);
+	}
+	
+	public void onRequestBody(){
 		MappingResult mapping=getRequestMapping();
-		VelocityEngine velocityEngine=(VelocityEngine)getRequestAttribute(ATTRIBUTE_VELOCITY_ENGINE);
-		String veloPage=(String)getRequestAttribute(ATTRIBUTE_VELOCITY_TEMPLATE);
+		VelocityEngine velocityEngine=(VelocityEngine)getAttribute(SCOPE.REQUEST,ATTRIBUTE_VELOCITY_ENGINE);
+		String veloPage=(String)getAttribute(SCOPE.REQUEST,ATTRIBUTE_VELOCITY_TEMPLATE);
 		if(veloPage==null){
 			veloPage=mapping.getResolvePath();
 		}
 		if(velocityEngine==null){
-			File veloRep=(File)getRequestAttribute(ATTRIBUTE_VELOCITY_REPOSITORY);
+			File veloRep=(File)getAttribute(SCOPE.REQUEST,ATTRIBUTE_VELOCITY_REPOSITORY);
 			if(veloRep==null){
 				veloRep=mapping.getDestinationFile();
 			}
@@ -99,13 +137,12 @@ public class VelocityPageHandler extends WebServerHandler {
 		ToolContext veloContext=toolManager.createContext();
 		veloContext.put("handler", this);
 		veloContext.put("parameter", getParameterParser());
-		RequestContext requestContext=getRequestContext();
-		veloContext.put("session", requestContext.getAuthSession());
-		veloContext.put("config", config);
-		Iterator<String> itr=getRequestAttributeNames();
+		veloContext.put("session", getAuthSession());
+		veloContext.put("config", getConfig());
+		Iterator<String> itr=getAttributeNames(SCOPE.REQUEST);
 		while(itr.hasNext()){
 			String key=itr.next();
-			Object value=getRequestAttribute(key);
+			Object value=getAttribute(SCOPE.REQUEST,key);
 			veloContext.put(key, value);
 		}
 		return veloContext;
@@ -114,16 +151,13 @@ public class VelocityPageHandler extends WebServerHandler {
 	private void merge(VelocityEngine velocityEngine,String veloPage){
 		setNoCacheResponseHeaders();//動的コンテンツなのでキャッシュさせない
 		Context veloContext=createVeloContext();
-		String contentDisposition=(String)getRequestAttribute(ATTRIBUTE_RESPONSE_CONTENT_DISPOSITION);
+		String contentDisposition=(String)getAttribute(SCOPE.REQUEST,ATTRIBUTE_RESPONSE_CONTENT_DISPOSITION);
 		if( contentDisposition!=null){
 			setHeader(HeaderParser.CONTENT_DISPOSITION_HEADER, contentDisposition);
 		}
-		String contentType=(String)getRequestAttribute(ATTRIBUTE_RESPONSE_CONTENT_TYPE);
-		if(contentType==null){
-			contentType=DEFAULT_CONTENT_TYPE;
-		}
+		String contentType=getContentType(veloPage);
 		setContentType(contentType);
-		String statusCode=(String)getRequestAttribute(ATTRIBUTE_RESPONSE_STATUS_CODE);
+		String statusCode=(String)getAttribute(SCOPE.REQUEST,ATTRIBUTE_RESPONSE_STATUS_CODE);
 		if(statusCode==null){
 			statusCode="200";
 		}
@@ -137,7 +171,9 @@ public class VelocityPageHandler extends WebServerHandler {
 			return;
 		}
 		try {
-			velocityEngine.mergeTemplate(veloPage, "utf-8", veloContext, out);
+			synchronized(velocityEngine){
+				velocityEngine.mergeTemplate(veloPage, "utf-8", veloContext, out);
+			}
 		} catch (ResourceNotFoundException e) {
 			logger.error("Velocity.mergeTemplate ResourceNotFoundException." + veloPage,e);
 		} catch (ParseErrorException e) {
@@ -152,33 +188,8 @@ public class VelocityPageHandler extends WebServerHandler {
 			} catch (IOException ignore) {
 			}
 			responseEnd();
-//			paremeter=null;
 		}
 	}
-	
-/*	
-	//velocitymacroのhandler経由でparameterが取得できるようにする
-	public String getParameter(String name){
-		if(paremeter==null){
-			return null;
-		}
-		return paremeter.getParameter(name);
-	}
-	
-	public List getParameters(String name){
-		if(paremeter==null){
-			return null;
-		}
-		return paremeter.getParameters(name);
-	}
-	
-	public Iterator getParameterNames(){
-		if(paremeter==null){
-			return null;
-		}
-		return paremeter.getParameterNames();
-	}
-*/
 	
 	public void onFailure(Object userContext, Throwable t) {
 		logger.debug("#failer.cid:" +getChannelId() +":"+t.getMessage());

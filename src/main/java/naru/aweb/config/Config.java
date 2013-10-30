@@ -10,6 +10,8 @@ import java.io.Reader;
 import java.net.Inet4Address;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -29,16 +31,20 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
 import naru.async.cache.FileCache;
-import naru.aweb.admin.PaAdmin;
+import naru.aweb.admin.AdminLinklet;
 import naru.aweb.auth.Authenticator;
 import naru.aweb.auth.Authorizer;
+import naru.aweb.auth.User;
 import naru.aweb.core.Main;
 import naru.aweb.core.RealHost;
 import naru.aweb.handler.FilterHelper;
 import naru.aweb.handler.InjectionHelper;
 import naru.aweb.handler.ReplayHelper;
+import naru.aweb.handler.ServerBaseHandler;
+import naru.aweb.handler.ServerBaseHandler.SCOPE;
+import naru.aweb.link.LinkManager;
 import naru.aweb.mapping.Mapper;
-import naru.aweb.pa.PaManager;
+import naru.aweb.mapping.Mapping;
 import naru.aweb.secure.SslContextPool;
 import naru.aweb.spdy.SpdyConfig;
 import naru.aweb.util.JdoUtil;
@@ -61,6 +67,9 @@ import org.apache.log4j.Logger;
 import org.apache.velocity.app.VelocityEngine;
 
 public class Config {
+	private static Logger logger = Logger.getLogger(Config.class);
+	private static Config config = new Config();
+	
 	private static final String USE_FILE_CACHE = "useFileCache";
 	private static final String PHANTOM_SERVER_HEADER = "phantomServerHeader";
 	private static final String KEEP_ALIVE_TIMEOUT = "keepAliveTimeout";
@@ -69,7 +78,7 @@ public class Config {
 	private static final String IS_PROXY_KEEP_ALIVE = "isProxyKeepAlive";
 	private static final String CONTENT_ENCODING = "contentEncoding";
 	private static final String CONFIG_MARK_CREATE = "_config_create_";
-	private static Logger logger = Logger.getLogger(Config.class);
+	
 	private static String PROPERTIES_ENCODING = "utf-8";
 	private static final String READ_TIMEOUT = "readTimeout";
 	private static final long READ_TIMEOUT_DEFAULT = 10000;
@@ -86,11 +95,10 @@ public class Config {
 	private static final String PATH_APPS_DOCROOT = "path.appsDocroot";
 	private static final String PATH_PUBLIC_DOCROOT = "path.publicDocroot";
 	private static final String PATH_PORTAL_DOCROOT = "path.portalDocroot";
-	private static final String PATH_ADMIN_DOCROOT = "path.adminDocroot";
 	private static final String PATH_SETTING = "path.setting";
 	private static final String PATH_INJECTION_DIR = "path.injectionDir";
-	private static Config config = new Config();
-	public static String CONF_FILENAME = "phantom.properties";
+
+	public static final String CONF_FILENAME = "phantom.properties";
 	private static final String DEBUG_TRACE="debugTrace";
 	public static final String SELF_DOMAIN = "selfDomain";
 	public static final String SELF_PORT = "selfPort";
@@ -98,13 +106,17 @@ public class Config {
 	private static final String REAL_HOSTS = "realHosts";
 	private static final String REAL_HOST = "realHost";
 
+	public static final String PASS_HASH_ALGORITHM="passHashAlgorithm";
+	public static final String PASS_SALT="passSalt";
+	public static final String OFFLINE_PASS_SALT="offlinePassSalt";
+	
 	private File adminDocumentRoot;// adminで見えるところ
 	private File authDocumentRoot;// authで見えるところ
 	private File portalDocumentRoot;// for portal
 	private File publicDocumentRoot;// 誰でも見えるところ
 	private File appsDocumentRoot;//配備先ディレクトリ
 	private File injectionDir;// 注入コンテンツを格納するディレクトリ
-	private static SSLContext sslContext;
+	private SSLContext sslContext;
 	private File phantomHome;
 	private Mapper mapper;
 	private Authenticator authenticator;
@@ -116,7 +128,7 @@ public class Config {
 	private FilterHelper filterHelper;
 	private InjectionHelper injectionHelper;
 	private Configuration configuration = null;
-	private PaManager paManager =null;
+	private LinkManager linkManager =null;
 	private Object stasticsObject;
 	private File tmpDir;
 	private DiskFileItemFactory uploadItemFactory;
@@ -217,6 +229,10 @@ public class Config {
 		}
 		random.setSeed(entoropy.getBytes());
 		return random;
+	}
+	
+	public SslContextPool getSslContextPool() {
+		return sslContextPool;
 	}
 	
 	public FileCache getFileCache() {
@@ -480,7 +496,7 @@ public class Config {
 	private boolean isAleadyTerm = false;
 
 	public void term() {
-		paManager.undeploy(PaAdmin.QNAME);
+		linkManager.undeploy(AdminLinklet.QNAME);
 		if (isAleadyTerm) {
 			return;
 		}
@@ -688,11 +704,11 @@ public class Config {
 			RealHost.addRealHost(realHost);
 		}
 		try {
-			String dir = configuration.getString(PATH_PUBLIC_DOCROOT);
-			publicDocumentRoot = new File(dir).getCanonicalFile();
-			dir = configuration.getString(PATH_PORTAL_DOCROOT);
-			portalDocumentRoot = new File(dir).getCanonicalFile();
-			dir = configuration.getString(PATH_INJECTION_DIR);
+//			String dir = configuration.getString(PATH_PUBLIC_DOCROOT);
+//			publicDocumentRoot = new File(dir).getCanonicalFile();
+//			dir = configuration.getString(PATH_PORTAL_DOCROOT);
+//			portalDocumentRoot = new File(dir).getCanonicalFile();
+			String dir = configuration.getString(PATH_INJECTION_DIR);
 			injectionDir = new File(dir).getCanonicalFile();
 			injectionHelper = new InjectionHelper(this);
 			dir = configuration.getString(PATH_APPS_DOCROOT);
@@ -748,15 +764,19 @@ public class Config {
 		
 		//adminハンドラーの設定
 		//TODO 動的に設定できるようにする
-		paManager = PaManager.getInstance("/admin");
+		Mapping adminMapping=mapper.getAdminMapping();
+		linkManager =(LinkManager)adminMapping.getAttribute(Mapping.OPTION_LINK);
+		//linkManager = LinkManager.getInstance("/admin");
+		/*
 		JSONObject subscribers=JSONObject.fromObject(
-				"{accessLog:'naru.aweb.admin.AccessLogPalet'," +
-				"chat:'naru.aweb.admin.ChatPalet'," +
-				"perf:'naru.aweb.admin.PerfPalet'" +
+				"{accessLog:'naru.aweb.admin.AccessLogLinklet'," +
+				"chat:'naru.aweb.admin.ChatLinklet'," +
+				"perf:'naru.aweb.admin.PerfLinklet'" +
 				"}");
-		paManager.deploy(PaAdmin.QNAME, "naru.aweb.admin.PaAdmin",subscribers);
-		paManager.setNextHandler(Mapping.ADMIN_HANDLER);
-		broadcaster=new Broadcaster(this,paManager);//統計情報監視の開始
+		linkManager.deploy(AdminLinklet.QNAME, "naru.aweb.admin.AdminLinklet",subscribers);
+		linkManager.setNextHandler(Mapping.ADMIN_HANDLER);
+		*/
+		broadcaster=new Broadcaster(this,linkManager);//統計情報監視の開始
 	}
 	
 	private Broadcaster broadcaster;
@@ -822,9 +842,17 @@ public class Config {
 	public ServerParser findProxyServer(boolean isSsl, String domain) {
 		return proxyFinder.findProxyServer(isSsl, domain);
 	}
-
-	public String getProxyPac(String localServer) {
-		return proxyFinder.getProxyPac(localServer);
+	public ServerParser findProxyServer(String uri) {
+		try {
+			return proxyFinder.findProxyServer(new URI(uri));
+		} catch (URISyntaxException e) {
+			logger.warn("uri format error."+uri,e);
+			return null;
+		}
+	}
+	
+	public String getProxyPac(Map param) {
+		return proxyFinder.getProxyPac(param);
 	}
 
 	public String toJson() {
@@ -1166,6 +1194,9 @@ public class Config {
 
 	//verocityマクロから利用する
 	public String getAuthUrl(){
+		if(authorizer==null){//終了間際に呼ばれた場合あり得る
+			return null;
+		}
 		return authorizer.getAuthUrl();
 	}
 
@@ -1241,8 +1272,8 @@ public class Config {
 		return spdyConfig;
 	}
 	
-	public PaManager getAdminPaManager(){
-		return paManager;
+	public LinkManager getAdminLinkManager(){
+		return linkManager;
 	}
 	
 	private VelocityEngine velocityEngine = null;
@@ -1272,4 +1303,36 @@ public class Config {
 		return velocityEngine;
 	}
 	
+	public void forwardVelocityTemplate(ServerBaseHandler handler,String template){
+		forwardVelocityTemplate(handler, template, null);
+	}
+	
+	public void forwardVelocityTemplate(ServerBaseHandler handler,String template,Map param){
+		if(param!=null){
+			for(Object key:param.keySet()){
+				handler.setAttribute(SCOPE.REQUEST,(String)key,param.get(key));
+			}
+		}
+		handler.setAttribute(SCOPE.REQUEST,ServerBaseHandler.ATTRIBUTE_VELOCITY_ENGINE,getVelocityEngine());
+		handler.setAttribute(SCOPE.REQUEST,ServerBaseHandler.ATTRIBUTE_VELOCITY_TEMPLATE,"/template/" +template);
+		handler.forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
+	}
+	
+	private  Configuration contentTypeConfig = null;
+	private Configuration getContentTypeConfig() {
+		if (contentTypeConfig == null) {
+			contentTypeConfig = getConfig().getConfiguration("ContentType");
+		}
+		return contentTypeConfig;
+	}
+	
+	public String getContentType(String fileName){
+		int pos = fileName.lastIndexOf(".");
+		String contentType=null;
+		if (pos > 0) {
+			String ext = fileName.substring(pos + 1);
+			contentType = getContentTypeConfig().getString(ext,null);
+		}
+		return contentType;
+	}
 }

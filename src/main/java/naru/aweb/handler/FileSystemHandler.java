@@ -8,25 +8,35 @@ import java.nio.ByteBuffer;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import naru.async.BufferGetter;
 import naru.async.cache.CacheBuffer;
 import naru.async.cache.FileInfo;
+import naru.aweb.config.AppcacheOption;
 import naru.aweb.config.Config;
-import naru.aweb.config.Mapping; //import naru.aweb.config.FileCache.FileCacheInfo;
-import naru.aweb.http.HeaderParser;
-import naru.aweb.http.WebServerHandler;
+import naru.aweb.handler.ServerBaseHandler.SCOPE;
+import naru.aweb.mapping.Mapping;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.util.HeaderParser;
 import naru.aweb.util.ServerParser;
 
-import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 
+/**
+ * ファイルからレスポンスを作成する、そのほかにも以下の処理をする
+ * 1)指定ファイルがディレクトリだった場合、その一覧を返却
+ * 2)/proxy.pacへのリクエストだった場合、(optionでproxy_pac_path指定)pacを返却
+ * 3)velocityPage対象パスだった場合、velocityHandlerにforward
+ * 4)phoffline.html,phoffline.appcacheだった場合、offlineコンテンツの返却
+ * @author naru
+ *
+ */
 public class FileSystemHandler extends WebServerHandler implements BufferGetter {
 	private static Logger logger = Logger.getLogger(FileSystemHandler.class);
 	private static Config config = null;// Config.getConfig();
-	private static String LISTING_TEMPLATE = "/template/listing.vsp";
-	private static Configuration contentTypeConfig = null;// config.getConfiguration("ContentType");
+	private static String LISTING_TEMPLATE = "listing.vsp";
 	private static Map<String, String> contentTypeMap = new HashMap<String, String>();
 
 	private static Config getConfig() {
@@ -36,49 +46,19 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		return config;
 	}
 
-	private static Configuration getContentTypeConfig() {
-		if (contentTypeConfig == null) {
-			contentTypeConfig = getConfig().getConfiguration("ContentType");
-		}
-		return contentTypeConfig;
-	}
-
-	private static String calcContentType(String ext) {
-		String contentType = contentTypeMap.get(ext);
+	private static String calcContentType(String fileName) {
+		String contentType = contentTypeMap.get(fileName);
 		if (contentType != null) {
 			return contentType;
 		}
-		contentType = getContentTypeConfig().getString(ext,
-				"application/octet-stream");
+		contentType = getConfig().getContentType(fileName);
+		if(contentType==null){
+			contentType="application/octet-stream";
+		}
 		synchronized (contentTypeMap) {
-			contentTypeMap.put(ext, contentType);
+			contentTypeMap.put(fileName, contentType);
 		}
 		return contentType;
-	}
-
-	// TODO adminSettingからデフォルト値を取得する
-	private static boolean defaultListing = true;
-	private static String[] defaultWelcomeFiles = new String[] { "index.html",
-			"index.htm", "index.vsp" };
-	// vsp ... "velocity server page" vsf ... "velocity server flagment"
-	private static String[] defaultVelocityExtentions = new String[] { ".vsp",
-			"vsf" };
-
-	private String[] getWelcomeFiles(MappingResult mapping) {
-		String welcomFiles = (String) mapping
-				.getOption(MappingResult.PARAMETER_FILE_WELCOME_FILES);
-		if (welcomFiles == null) {
-			return defaultWelcomeFiles;
-		}
-		return welcomFiles.split(",");
-	}
-
-	private boolean isListing(MappingResult mapping) {
-		Object listing = mapping.getOption(MappingResult.PARAMETER_FILE_LISTING);
-		if (listing == null) {
-			return defaultListing;
-		}
-		return Boolean.TRUE.toString().equalsIgnoreCase(listing.toString());
 	}
 
 	/*
@@ -89,56 +69,66 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		if (path == null) {
 			return false;
 		}
-		String velocityUse = (String) mapping.getOption(MappingResult.PARAMETER_VELOCITY_USE);
-		if ("false".equalsIgnoreCase(velocityUse)) {
+		if (!mapping.getBooleanOption(Mapping.OPTION_VELOCITY_USE,true)) {
 			return false;
 		}
-		if (path.endsWith("ph-loader.js")) {// 特別扱い
-			setRequestAttribute(ATTRIBUTE_RESPONSE_CONTENT_TYPE,
-					"application/javascript");
-			return true;
+		Pattern pattern=(Pattern)getAttribute(SCOPE.MAPPING,Mapping.OPTION_VELOCITY_PATTERN);
+		if(pattern==null){
+			return false;
 		}
-		String velocityExtentionsParam = (String) mapping.getOption(MappingResult.PARAMETER_VELOCITY_EXTENTIONS);
-		String[] velocityExtentions = defaultVelocityExtentions;
-		if (velocityExtentionsParam != null) {
-			velocityExtentions = velocityExtentionsParam.split(",");
+		Matcher matcher=null;
+		synchronized(pattern){
+			matcher=pattern.matcher(path);
 		}
-		for (int i = 0; i < velocityExtentions.length; i++) {
-			if (path.endsWith(velocityExtentions[i])) {
-				return true;
-			}
-		}
-		return false;
+		/*
+		 * .*\.vsv$|.*\.vsv$|/ph\.js|/ph\.json
+		 */
+		return matcher.matches();
 	}
 
 	private String getContentType(File file) {
-		String contentType = (String) getRequestAttribute(ATTRIBUTE_RESPONSE_CONTENT_TYPE);
+		String contentType = (String) getAttribute(SCOPE.REQUEST,ATTRIBUTE_RESPONSE_CONTENT_TYPE);
 		if (contentType != null) {
 			return contentType;
 		}
-		String name = file.getName();
-		int pos = name.lastIndexOf(".");
-		if (pos > 0) {
-			String ext = name.substring(pos + 1);
-			contentType = calcContentType(ext);
-			if (contentType != null) {
-				return contentType;
-			}
-		}
-		// 疑わしきは、OctedStream
-		return "application/octet-stream";
+		String fileName = file.getName();
+		return calcContentType(fileName);
 	}
 
 	private long getContentLength(long fileLength) {
-		Long length = (Long) getRequestAttribute(ATTRIBUTE_RESPONSE_CONTENT_LENGTH);
+		Long length = (Long) getAttribute(SCOPE.REQUEST,ATTRIBUTE_RESPONSE_CONTENT_LENGTH);
 		if (length != null) {
 			return length.longValue();
 		}
 		return fileLength;
 	}
+	
+	/**
+	 * 該当するファイルがなかった、以下を探す
+	 * 1)phoffline.html
+	 * 2)phoffline.appcache
+	 * @param path
+	 */
+	private boolean fileNotFound(MappingResult mapping,HeaderParser requestHeader,String path){
+		/* proxy.pacの場合 */
+		//if( checkPac(mapping, requestHeader, path)){
+		//	return true;
+		//}
+		/* appcacheの場合 */
+		AppcacheOption appcacheOption=(AppcacheOption)getAttribute(SCOPE.MAPPING,Mapping.OPTION_APPCACHE);
+		if(appcacheOption!=null){
+			if(appcacheOption.checkAndForward(this,path,mapping.getSourcePath())){
+				return false;
+			}
+		}
+		logger.debug("Not found." + path);
+		completeResponse("404", "file not exists");
+		return true;
+	}
 
 	private void responseBodyFromFile(CacheBuffer asyncFile) {
-		Long offset = (Long) getRequestAttribute(ATTRIBUTE_STORE_OFFSET);
+		logger.debug("FileSystemHandler#responseBodyFromFile cid:"+getChannelId()+":"+asyncFile.getFileInfo().getCanonicalFile().toString());
+		Long offset = (Long) getAttribute(SCOPE.REQUEST,ATTRIBUTE_STORE_OFFSET);
 		if (offset != null) {
 			asyncFile.position(offset);
 		}
@@ -147,7 +137,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 	}
 
 	private boolean fileListIfNessesary(MappingResult mapping,String selfPath,File dir,boolean isBase){
-		boolean listing = isListing(mapping);
+		boolean listing = mapping.getBooleanOption(Mapping.OPTION_FILE_LISTING,true);
 		if (listing && dir.isDirectory()) {// ディレクトリだったら
 			// velocityPageからリスト出力
 			return snedFileList(mapping,selfPath, dir, isBase);
@@ -162,18 +152,15 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		if (!uri.endsWith("/")) {
 			uri = uri + "/";
 		}
-		setRequestAttribute("isBase", isBase);
-		setRequestAttribute("base", uri);
+		setAttribute(SCOPE.REQUEST,"isBase", isBase);
+		setAttribute(SCOPE.REQUEST,"base", uri);
 		try {
-			setRequestAttribute("source", dir.getCanonicalFile());
+			setAttribute(SCOPE.REQUEST,"source", dir.getCanonicalFile());
 		} catch (IOException e) {
-			setRequestAttribute("source", null);
+			setAttribute(SCOPE.REQUEST,"source", null);
 		}
-		setRequestAttribute("fileList", dir.listFiles());
-
-		setRequestAttribute(ATTRIBUTE_VELOCITY_ENGINE,config.getVelocityEngine());
-		setRequestAttribute(ATTRIBUTE_VELOCITY_TEMPLATE,LISTING_TEMPLATE);
-		forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
+		setAttribute(SCOPE.REQUEST,"fileList", dir.listFiles());
+		getConfig().forwardVelocityTemplate(this, LISTING_TEMPLATE);
 		return false;// 委譲
 	}
 
@@ -211,7 +198,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		setHeader(HeaderParser.LAST_MODIFIED_HEADER, lastModified);
 		long contentLength = getContentLength(fileInfo.length());
 		setContentLength(contentLength);
-		String contentDisposition = (String) getRequestAttribute(ATTRIBUTE_RESPONSE_CONTENT_DISPOSITION);
+		String contentDisposition = (String) getAttribute(SCOPE.REQUEST,ATTRIBUTE_RESPONSE_CONTENT_DISPOSITION);
 		if (contentDisposition != null) {
 			setHeader(HeaderParser.CONTENT_DISPOSITION_HEADER,
 					contentDisposition);
@@ -223,20 +210,15 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		return false;
 	}
 
-	public void startResponseReqBody() {
+	public void onRequestBody() {
 		MappingResult mapping=getRequestMapping();
-		if(Boolean.TRUE.equals(mapping.getOption("replay"))){
+		if(mapping.getBooleanOption(Mapping.OPTION_REPLAY)){
 			ReplayHelper helper=Config.getConfig().getReplayHelper();
-//			ByteBuffer[] body=bodyPage.getBuffer();
 			if(helper.doReplay(this,null)){
 				return;//replayできた,bodyは消費されている
 			}
 		}
-		
-		if (response()) {
-			responseEnd();// TODO必要ないと思う
-			return;
-		}
+		response();//復帰値は処理に関係しない
 	}
 
 	private CacheBuffer welcomPage(File dir,String[] welcomlist){
@@ -253,17 +235,17 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 	}
 	
 	private boolean response() {
+		logger.debug("FileSystemHandler#response cid:"+getChannelId());
 		HeaderParser requestHeader = getRequestHeader();
-		String ifModifiedSince = requestHeader
-				.getHeader(HeaderParser.IF_MODIFIED_SINCE_HEADER);
+		String ifModifiedSince = requestHeader.getHeader(HeaderParser.IF_MODIFIED_SINCE_HEADER);
 		String selfPath = requestHeader.getRequestUri();
 
 		MappingResult mapping = getRequestMapping();
-		File file = (File) getRequestAttribute(ATTRIBUTE_RESPONSE_FILE);
+		File file = (File) getAttribute(SCOPE.REQUEST,ATTRIBUTE_RESPONSE_FILE);
 		if (file != null) {// レスポンスするファイルが、直接指定された場合
 		// FileCacheInfo fileCacheInfo=null;
 			boolean useCache = true;
-			if (getRequestAttribute(ATTRIBUTE_RESPONSE_FILE_NOT_USE_CACHE) == null) {
+			if (getAttribute(SCOPE.REQUEST,ATTRIBUTE_RESPONSE_FILE_NOT_USE_CACHE) == null) {
 				useCache = false;
 			}
 			CacheBuffer asyncFile = CacheBuffer.open(file, useCache);
@@ -289,7 +271,6 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		if (pos >= 0) {
 			path = path.substring(0, pos);
 		}
-
 		File baseDirectory = mapping.getDestinationFile();
 		CacheBuffer asyncFile = CacheBuffer.open(new File(baseDirectory, path));
 		FileInfo info = asyncFile.getFileInfo();
@@ -306,12 +287,10 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 			// return true;
 		} else if (!info.exists() || !info.canRead()) {
 			asyncFile.close();
-			logger.debug("Not found." + info.getCanonicalFile());
-			completeResponse("404", "file not exists");
-			return true;
+			return fileNotFound(mapping,requestHeader,path);
 		}
 		// welcomefile処理
-		String[] welcomeFiles = getWelcomeFiles(mapping);
+		String[] welcomeFiles = (String[])getAttribute(SCOPE.MAPPING,Mapping.OPTION_FILE_WELCOME_FILES);
 		if (info.isDirectory() && welcomeFiles != null) {
 			File dir=info.getCanonicalFile();
 			asyncFile.close();
@@ -360,17 +339,6 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		super.onTimeout(userContext);
 	}
 
-	/*
-	public void onFinished() {
-		logger.debug("#finished.cid:" + getChannelId());
-		if (asyncFile != null) {
-			asyncFile.close();
-			asyncFile = null;
-		}
-		super.onFinished();
-	}
-	*/
-
 	/* asyncFileからのダウンロード */
 	private CacheBuffer asyncFile;
 
@@ -388,6 +356,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 	}
 
 	public void onBufferEnd(Object userContext) {
+		logger.debug("#onBufferEnd.cid:" + getChannelId());
 		responseEnd();
 	}
 

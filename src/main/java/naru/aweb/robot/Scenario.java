@@ -14,7 +14,7 @@ import naru.async.pool.PoolManager;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.config.Performance;
-import naru.aweb.pa.PaPeer;
+import naru.aweb.link.api.LinkPeer;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -49,7 +49,7 @@ public class Scenario extends PoolBase{
 	private Performance masterPerformance;
 	private Map<String,Performance> requestPerformances=new HashMap<String,Performance>();
 	private JSONObject stat=new JSONObject();
-	private PaPeer peer;
+	private LinkPeer peer;
 	
 	private Random random=new Random();
 	
@@ -117,7 +117,7 @@ public class Scenario extends PoolBase{
 	 * @param chId
 	 * @return
 	 */
-	public static Scenario run(AccessLog[] accessLogs,JSONArray stresses,PaPeer peer){
+	public static Scenario run(AccessLog[] accessLogs,JSONArray stresses,LinkPeer peer){
 		int n=stresses.size();
 		Scenario topScenario=null;
 		Scenario lastScenario=null;
@@ -159,7 +159,7 @@ public class Scenario extends PoolBase{
 			AccessLog[] accessLogs,String name,int browserCount,int loopCount,
 			boolean isCallerKeepAlive,long thinkingTime,
 			boolean isAccessLog,boolean isResponseHeaderTrace,boolean isResponseBodyTrace,
-			PaPeer peer){
+			LinkPeer peer){
 		Scenario scenario=(Scenario)PoolManager.getInstance(Scenario.class);
 		if(scenario.setup(accessLogs,name,browserCount,loopCount,isCallerKeepAlive,thinkingTime,isAccessLog,isResponseHeaderTrace,isResponseBodyTrace,peer)){
 			scenario.start();
@@ -178,7 +178,7 @@ public class Scenario extends PoolBase{
 	public boolean setup(
 			AccessLog[] accessLogs,String name,int browserCount,int loopCount,
 			boolean isCallerkeepAlive,long thinkingTime,boolean isAccessLog,
-			boolean isResponseHeaderTrace,boolean isResponseBodyTrace,PaPeer peer){
+			boolean isResponseHeaderTrace,boolean isResponseBodyTrace,LinkPeer peer){
 		peer.ref();
 		this.peer=peer;
 		this.name=name;

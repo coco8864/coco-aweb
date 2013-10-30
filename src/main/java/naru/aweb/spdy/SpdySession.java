@@ -2,16 +2,21 @@ package naru.aweb.spdy;
 
 import java.nio.ByteBuffer;
 
+import org.apache.log4j.Logger;
+
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.async.store.Store;
-import naru.aweb.core.ServerBaseHandler;
-import naru.aweb.http.HeaderParser;
-import naru.aweb.http.KeepAliveContext;
+import naru.aweb.handler.KeepAliveContext;
+import naru.aweb.handler.ServerBaseHandler;
+import naru.aweb.handler.WebServerHandler;
+import naru.aweb.http.ChunkContext;
 import naru.aweb.http.RequestContext;
-import naru.aweb.http.WebServerHandler;
+import naru.aweb.util.HeaderParser;
 
 public class SpdySession extends PoolBase{
+	private static Logger logger=Logger.getLogger(SpdySession.class);
+	
 	private SpdyHandler spdyHandler;
 	private int streamId;
 	private ServerBaseHandler serverHandler;
@@ -56,7 +61,14 @@ public class SpdySession extends PoolBase{
 		}
 		isInputClose=isFin;
 		//readTraceを取得するため、onReadPlainではなくcallbackReadPlainを呼ぶ
-		serverHandler.callbackReadPlain(readContext,buffers);
+		try{
+			serverHandler.callbackReadPlain(readContext,buffers);
+		}catch(Throwable t){//aplが例外した場合
+			logger.error("spdy data dispatch apl error.",t);
+			//アプリが異常したのでセション終了
+			endOfSession();
+			return;
+		}
 		readContext=null;
 		if(isInputClose&&isOutputClose){
 			endOfSession();
@@ -82,6 +94,9 @@ public class SpdySession extends PoolBase{
 		endOfSession();
 	}
 	
+	private boolean isChunk=false;
+	private ChunkContext chunkContext=new ChunkContext();
+	
 	//webserverHandler側から呼び出される
 	public void responseHeader(boolean isLast,HeaderParser responseHeader){
 		if(isOutputClose){
@@ -89,10 +104,21 @@ public class SpdySession extends PoolBase{
 		}else if(isLast){
 			isOutputClose=true;
 		}
+		//SPDYにTransferEncodingは使えない
+		isChunk=false;
+		String transferEncoding=responseHeader.getHeader(HeaderParser.TRANSFER_ENCODING_HEADER);
+		if(HeaderParser.TRANSFER_ENCODING_CHUNKED.equalsIgnoreCase(transferEncoding)){
+			responseHeader.removeHeader(HeaderParser.TRANSFER_ENCODING_HEADER);
+			isChunk=true;
+			chunkContext.decodeInit(true, -1);
+		}
 		spdyHandler.responseHeader(this, isLast,responseHeader);
 	}
 	
 	public void responseBody(boolean isLast,ByteBuffer[] buffers){
+		if(isChunk){
+			buffers=chunkContext.decodeChunk(buffers);
+		}
 		if(isOutputClose){
 			PoolManager.poolBufferInstance(buffers);
 			return;

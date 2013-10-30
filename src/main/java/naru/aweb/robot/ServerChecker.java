@@ -11,14 +11,14 @@ import naru.aweb.config.Config;
 import naru.aweb.config.WebClientLog;
 import naru.aweb.http.WebClientConnection;
 import naru.aweb.http.WebClientHandler;
-import naru.aweb.pa.PaPeer;
+import naru.aweb.link.api.LinkPeer;
 import net.sf.json.JSONObject;
 
 public class ServerChecker extends PoolBase implements Timer{
 	private static final int READ_TIMEOUT_MAX=31000;
 	private static Config config=Config.getConfig();
 	
-	private PaPeer peer;
+	private LinkPeer peer;
 	private URL url;
 	
 	private String status;
@@ -59,14 +59,14 @@ public class ServerChecker extends PoolBase implements Timer{
 	private Caller caller;
 	private WebClientConnection connection;
 	
-	public static boolean start(URL url,boolean isKeepAlive,int requestCount,boolean isTrace,String browserName,PaPeer peer){
+	public static boolean start(URL url,boolean isKeepAlive,int requestCount,boolean isTrace,String browserName,LinkPeer peer){
 		ServerChecker serverChecker=(ServerChecker)PoolManager.getInstance(ServerChecker.class);
 		serverChecker.setup(url,isKeepAlive,requestCount,isTrace,browserName,peer);
 		TimerManager.setTimeout(0, serverChecker, null);
 		return true;
 	}
 
-	private void setup(URL url,boolean isKeepAlive,int requestCount,boolean isTrace,String browserName,PaPeer peer){
+	private void setup(URL url,boolean isKeepAlive,int requestCount,boolean isTrace,String browserName,LinkPeer peer){
 		peer.ref();
 		this.peer=peer;
 		this.url=url;

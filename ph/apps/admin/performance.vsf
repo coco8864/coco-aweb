@@ -198,29 +198,59 @@ function perfProgress(msg){
 perfTableRefresh();
 perfProgress();
 
-ph.admin.perfSd.onMessage(perfCheckConnect);
+ph.admin.perfSub.onMsg(perfCheckConnect);
 function perfCheckConnect(res){
   if(res.kind==='checkConnectProgress'){
-    outputCommonArea(res.connectCount+"\t"+res.time+"\t"+res.failCount+"\t"+res.useMemory+"\n",true);
-  }else if(res.kind==='checkConnectResult' && d.result==='fail'){
+    outputCommonArea(res.connectCount+"\t"+res.postCount+"\t"+res.messageCount+"\t"+res.time+"\t"+res.failCount+"\t"+res.useMemory+"\n",true);
+  }else if(res.kind==='checkConnectResult' && res.result==='fail'){
     alert('fail to checkConnect');
   }
 }
 
-function checkConnect(){
-  var connectCount=ph.jQuery('#connectCount').val();
-  if(connectCount){
-    ph.admin.perfSd.publish({kind:'checkConnect',count:parseInt(connectCount),maxFailCount:10});
-    outputCommonArea("count\ttime\tfailcount\tmemory\n")
+function wsConnect(){
+  var url=ph.jQuery('#wsUrl').val();
+  var subprotocol=ph.jQuery('#wsSubprotocol').val();
+  var origin=ph.jQuery('#wsOrigin').val();
+  var count=ph.jQuery('#wsCount').val();
+  if(count){
+    ph.admin.perfSub.publish({
+      kind:'wsConnect',
+      url:url,
+      subprotocol:subprotocol,
+      origin:origin,
+      count:parseInt(count),
+      maxFailCount:10});
+    outputCommonArea("con\tpost\tmessage\ttime\tfail\tmemory\n")
   }
   var dialog=jQuery("#commonOutputDialog");
   dialog.dialog("open");
 }
-</script>
 
-<h1>Performance list</h1>
+function wsSend(){
+  var count=ph.jQuery('#wsCount').val();
+  ph.admin.perfSub.publish({kind:'wsSend',count:parseInt(count)});
+  var dialog=jQuery("#commonOutputDialog");
+  dialog.dialog("open");
+}
+function wsDisconnect(force){
+  ph.admin.perfSub.publish({kind:'wsDisconnect',force:force});
+  var dialog=jQuery("#commonOutputDialog");
+  dialog.dialog("open");
+}
+
+
+</script>
+<h1>Websocket stress</h1>
+url:<input type="text" id="wsUrl" size="36" />
+subprotocol:<input type="text" id="wsSubprotocol" size="8"/>
+origin:<input type="text" id="wsOrigin" size="16" />
+count:<input type="text" id="wsCount" size="8" />
+<input type="button" value="connect" onClick="wsConnect();" />
+<input type="button" value="send" onClick="wsSend();" />
+<input type="button" value="disconnect" onClick="wsDisconnect(false);" />
+<input type="button" value="force" onClick="wsDisconnect(true);" />
 <hr/>
-<div>stress進捗:<span id="stTestStatus"></span><input type="button" value="stop" onclick="ph.admin.perfSd.publish({kind:'stopStress'});" id="stCancelBtn" style="display: none">
+<div>stress進捗:<span id="stTestStatus"></span><input type="button" value="stop" onclick="ph.admin.perfSub.publish({kind:'stopStress'});" id="stCancelBtn" style="display: none">
 scenario:<span id="stTestScenario"></span>
 name:<span id="stTestName"></span>
 start:<span id="stTestStartTime"></span>
@@ -230,6 +260,7 @@ loop:<span id="stTestLoop"></span>
 memory:<span id="stTestMemory"></span>%</div>
 <div id="progressbar"></div> 
 <hr/>
+<h1>Performance list</h1>
 条件入力<input type="text" id="perfQuery" value="" size="64" />
 検索サンプル:
 <select id="searchSample" size="1" onChange="ph.jQuery('#perfQuery').val(this.value);">
@@ -243,8 +274,6 @@ memory:<span id="stTestMemory"></span>%</div>
 <input type="button" value="検索" onClick="perfTableRefresh();"/>
 <input type="button" value="csv" onClick="perfToCsv();"/>
 <input type="button" value="削除" onClick="if(confirm('stressデータを削除します.よろしいですか?'))perfDelete();"/>
-count:<input type="text" id="connectCount" size="8" />
-<input type="button" value="connect" onClick="checkConnect();" />
 <div style="margin: 0.4em 0.0em; padding: 0.0em 0.0em;background: #fff none; border: solid 0pt #000;">
 <table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
 <thead>

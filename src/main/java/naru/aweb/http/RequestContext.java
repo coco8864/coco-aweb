@@ -11,7 +11,10 @@ import naru.async.pool.PoolManager;
 import naru.aweb.auth.AuthSession;
 import naru.aweb.auth.LogoutEvent;
 import naru.aweb.config.AccessLog;
+import naru.aweb.handler.KeepAliveContext;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.util.HeaderParser;
+import naru.aweb.util.ParameterParser;
 /**
  * 
  * @author Naru
@@ -111,8 +114,9 @@ public class RequestContext extends PoolBase {
 		return true;
 	}
 	
-	public void allocAccessLog() {
+	public AccessLog allocAccessLog() {
 		accessLog=(AccessLog)PoolManager.getInstance(AccessLog.class);
+		return accessLog;
 //		logger.info("$$$"+accessLog,new Exception());
 	}
 

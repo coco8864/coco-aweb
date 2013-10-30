@@ -13,20 +13,22 @@ import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
 import naru.async.store.Store;
 import naru.async.store.StoreManager;
+import naru.aweb.auth.AuthSession;
 import naru.aweb.auth.Authenticator;
 import naru.aweb.auth.Authorizer;
 import naru.aweb.auth.LogoutEvent;
 import naru.aweb.config.AccessLog;
+import naru.aweb.config.AppcacheOption;
 import naru.aweb.config.Config;
-import naru.aweb.config.Mapping;
 import naru.aweb.core.Main;
+import naru.aweb.handler.WebServerHandler;
 import naru.aweb.handler.ws.WsProtocol;
-import naru.aweb.http.HeaderParser;
-import naru.aweb.http.ParameterParser;
-import naru.aweb.http.WebServerHandler;
+import naru.aweb.mapping.Mapping;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.spdy.SpdyConfig;
 import naru.aweb.spdy.SpdyFrame;
+import naru.aweb.util.HeaderParser;
+import naru.aweb.util.ParameterParser;
 import naru.aweb.util.ServerParser;
 import net.sf.json.JSON;
 import net.sf.json.JSONObject;
@@ -202,6 +204,11 @@ public class AdminHandler extends WebServerHandler{
 			String isChache=parameter.getParameter("isChache");
 			config.setUseFileCache("true".equalsIgnoreCase(isChache));
 			responseJson(true);
+		}else if("updateAppCache".equals(cmd)){
+			int version=config.getInt(AppcacheOption.APPCACHE_KEY,0);
+			version++;
+			config.setProperty(AppcacheOption.APPCACHE_KEY, version);
+			responseJson(true);
 		}else if("setSpdy".equals(cmd)){
 			SpdyConfig spdyConfig=config.getSpsyConfig();
 			String isSpdy3=parameter.getParameter("isSpdy3");
@@ -233,6 +240,56 @@ public class AdminHandler extends WebServerHandler{
 			String sessionTimeout=parameter.getParameter("sessionTimeout");
 			Authorizer authorizer=config.getAuthorizer();
 			authorizer.setSessionTimeout(Long.parseLong(sessionTimeout));
+			String authInputTimeout=parameter.getParameter("authInputTimeout");
+			config.setProperty("authInputTimeout",authInputTimeout);
+			String authRedirectTimeout=parameter.getParameter("authRedirectTimeout");
+			config.setProperty("authRedirectTimeout",authRedirectTimeout);
+			String isAuthInternetDirect=parameter.getParameter("isAuthInternetDirect");
+			config.setProperty("isAuthInternetDirect",isAuthInternetDirect);
+			String authInternetRole=parameter.getParameter("authInternetRole");
+			config.setProperty("authInternetRole",authInternetRole);
+			String authFrameTimeout=parameter.getParameter("authFrameTimeout");
+			config.setProperty("authFrameTimeout",authFrameTimeout);
+			responseJson(true);
+		}else if("setAuthFb".equals(cmd)){
+			String useAuthFb=parameter.getParameter("useAuthFb");
+			config.setProperty("useAuthFb",useAuthFb);
+			String authFbLabel=parameter.getParameter("authFbLabel");
+			config.setProperty("authFbLabel",authFbLabel);
+			String authFbAppId=parameter.getParameter("authFbAppId");
+			config.setProperty("authFbAppId",authFbAppId);
+			String authFbAppSecret=parameter.getParameter("authFbAppSecret");
+			config.setProperty("authFbAppSecret",authFbAppSecret);
+			responseJson(true);
+		}else if("setAuthTwitter".equals(cmd)){
+			String useAuthTwitter=parameter.getParameter("useAuthTwitter");
+			config.setProperty("useAuthTwitter",useAuthTwitter);
+			String authTwitterLabel=parameter.getParameter("authTwitterLabel");
+			config.setProperty("authTwitterLabel",authTwitterLabel);
+			String authTwitterConsumerKey=parameter.getParameter("authTwitterConsumerKey");
+			config.setProperty("authTwitterConsumerKey",authTwitterConsumerKey);
+			String authTwitterConsumerSecret=parameter.getParameter("authTwitterConsumerSecret");
+			config.setProperty("authTwitterConsumerSecret",authTwitterConsumerSecret);
+			responseJson(true);
+		}else if("setAuthGoogle".equals(cmd)){
+			String useAuthGoogle=parameter.getParameter("useAuthGoogle");
+			config.setProperty("useAuthGoogle",useAuthGoogle);
+			String authGoogleLabel=parameter.getParameter("authGoogleLabel");
+			config.setProperty("authGoogleLabel",authGoogleLabel);
+			String authGoogleClientId=parameter.getParameter("authGoogleClientId");
+			config.setProperty("authGoogleClientId",authGoogleClientId);
+			String authGoogleClientSecret=parameter.getParameter("authGoogleClientSecret");
+			config.setProperty("authGoogleClientSecret",authGoogleClientSecret);
+			responseJson(true);
+		}else if("setAuthOpenid".equals(cmd)){
+			String useAuthOpenid=parameter.getParameter("useAuthOpenid");
+			config.setProperty("useAuthOpenid",useAuthOpenid);
+			String useAuthDirectOpenid=parameter.getParameter("useAuthDirectOpenid");
+			config.setProperty("useAuthDirectOpenid",useAuthDirectOpenid);
+			String authOpenidDef=parameter.getParameter("authOpenidDef");
+			Authenticator authenticator=config.getAuthenticator();
+			authenticator.setupOpenidDef(authOpenidDef);
+			config.setProperty("authOpenidDef",authOpenidDef);
 			responseJson(true);
 		}else if("setBroadcaster".equals(cmd)){
 			String interval=parameter.getParameter("interval");
@@ -267,9 +324,19 @@ public class AdminHandler extends WebServerHandler{
 			if(!"0".equals(logNumber)){
 				logName=logName +"."+logNumber;
 			}
-			setRequestAttribute(ATTRIBUTE_RESPONSE_CONTENT_DISPOSITION,"attachment; filename=\"" + logName + "\"");
-			setRequestAttribute(ATTRIBUTE_RESPONSE_FILE,new File(config.getPhantomHome(),"/log/" + logName));
-			setRequestAttribute(ATTRIBUTE_RESPONSE_FILE_NOT_USE_CACHE,ATTRIBUTE_RESPONSE_FILE_NOT_USE_CACHE);
+			setAttribute(SCOPE.REQUEST,ATTRIBUTE_RESPONSE_CONTENT_DISPOSITION,"attachment; filename=\"" + logName + "\"");
+			setAttribute(SCOPE.REQUEST,ATTRIBUTE_RESPONSE_FILE,new File(config.getPhantomHome(),"/log/" + logName));
+			setAttribute(SCOPE.REQUEST,ATTRIBUTE_RESPONSE_FILE_NOT_USE_CACHE,ATTRIBUTE_RESPONSE_FILE_NOT_USE_CACHE);
+			forwardHandler(Mapping.FILE_SYSTEM_HANDLER);
+		}else if("certificate".equals(cmd)){
+			String cerFileName=parameter.getParameter("cerFileName");
+			File serFile=config.getSslContextPool().getCerFile(cerFileName);
+			if(!serFile.exists()){
+				completeResponse("404");
+				return;
+			}
+			setAttribute(SCOPE.REQUEST,ATTRIBUTE_RESPONSE_CONTENT_DISPOSITION,"attachment; filename=\"" + serFile.getName()+ "\"");
+			setAttribute(SCOPE.REQUEST,ATTRIBUTE_RESPONSE_FILE,serFile);
 			forwardHandler(Mapping.FILE_SYSTEM_HANDLER);
 		}else if("checkPool".equals(cmd)){
 			System.gc();
@@ -379,8 +446,10 @@ public class AdminHandler extends WebServerHandler{
 		return false;
 	}
 
-	public void startResponseReqBody(){
+	public void onRequestBody(){
 		try{
+			AuthSession session=getAuthSession();
+			session.setLastAccessTime();
 			doAdmin();
 		}catch(RuntimeException e){
 			logger.warn("fail to doAdmin.",e);
@@ -404,9 +473,8 @@ public class AdminHandler extends WebServerHandler{
 			mapping.setResolvePath(path);
 		}
 		ParameterParser parameter=getParameterParser();
-		if(path.endsWith(".vsp")||path.endsWith(".vsf")){
-//			mapping.setDesitinationFile(config.getAdminDocumentRoot());
-			forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
+		if(path.endsWith(".vsp")||path.endsWith(".vsf")||path.endsWith(".html")){
+			forwardHandler(Mapping.FILE_SYSTEM_HANDLER);
 			return;
 		}else if(path.startsWith("/storeDownload")){
 			forwardHandler(Mapping.STORE_HANDLER);
@@ -421,9 +489,8 @@ public class AdminHandler extends WebServerHandler{
 				logger.error("CSRF check error.path:"+path +":cid:"+getChannelId());
 				completeResponse("403","token error.");
 			}else{
-				mapping.setOption(MappingResult.PARAMETER_VELOCITY_USE,"false");
+				mapping.setOption(Mapping.OPTION_VELOCITY_USE,false);
 				mapping.setDesitinationFile(config.getAdminDocumentRoot());
-//				mapping.setDesitinationFile(config.getPublicDocumentRoot());
 				forwardHandler(Mapping.FILE_SYSTEM_HANDLER);
 			}
 			return;

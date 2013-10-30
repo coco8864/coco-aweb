@@ -2,7 +2,7 @@ package naru.aweb.handler;
 
 import java.nio.ByteBuffer;
 
-import naru.aweb.http.HeaderParser;
+import naru.aweb.util.HeaderParser;
 
 public interface ProxyInjector {
 	public void init(ProxyHandler proxyHandler);

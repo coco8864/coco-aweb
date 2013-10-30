@@ -23,9 +23,9 @@ import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
 import naru.async.store.Store;
-import naru.aweb.http.HeaderParser;
-import naru.aweb.pa.PaPeer;
+import naru.aweb.link.api.LinkPeer;
 import naru.aweb.util.DatePropertyFilter;
+import naru.aweb.util.HeaderParser;
 import naru.aweb.util.JdoUtil;
 import net.sf.json.JSON;
 import net.sf.json.JSONObject;
@@ -37,7 +37,7 @@ import org.apache.log4j.Logger;
 /**
  * 
  * 
- * @author naru hayashi
+ * @author naru
  */
 @PersistenceCapable(identityType = IdentityType.APPLICATION,table="ACCESS_LOG")
 public class AccessLog extends PoolBase implements BufferGetter{
@@ -235,7 +235,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		return chId;
 	}
 	*/
-	public void setPeer(PaPeer peer){
+	public void setPeer(LinkPeer peer){
 		if(peer!=null){
 			peer.ref();
 		}
@@ -269,8 +269,8 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	
 	@Persistent
 	@Index(name="USER_ID_IDX")	
-	@Column(name="USER_ID",jdbcType="VARCHAR", length=16)
-	private String userId;//user–¼‚Í16•¶ŽšˆÈ‰º!!!
+	@Column(name="USER_ID",jdbcType="VARCHAR", length=1024)
+	private String userId;
 	
 	@Persistent
 	@Column(name="IPADDRESS",jdbcType="VARCHAR", length=16)
@@ -481,6 +481,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	}
 	
 	public void recycle(){
+		isPersist=false;
 		id=null;
 		startTime=null;
 		userId=localIp=ip=requestLine=statusCode=null;
@@ -522,7 +523,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 	private WebClientLog webClientLog;
 	
 	@NotPersistent
-	private PaPeer peer;
+	private LinkPeer peer;
 	
 	@NotPersistent
 	private int traceCount=1;

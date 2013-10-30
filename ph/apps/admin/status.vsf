@@ -49,13 +49,13 @@ function updateStastics(stcs){
 }
 
 function watchStastics(){
- ph.admin.stticsSd=ph.admin.cd.subscribe('admin','stastics',updateStastics);
+ ph.admin.ststicsSub=ph.admin.con.subscribe('admin','stastics',updateStastics);
 }
 
 function unwatchStastics(){
- if(ph.admin.stticsSd){
-  ph.admin.stticsSd.unsubscribe();
-  ph.admin.stticsSd=null;
+ if(ph.admin.ststicsSub){
+  ph.admin.ststicsSub.unsubscribe();
+  ph.admin.ststicsSub=null;
  }
 }
 
@@ -64,26 +64,35 @@ function isWatchCheck(){
 }
 
 function onWatchCheck(){
+	var flg;
 	if(isWatchCheck()){
 		watchStastics();
-		if(ph.useSessionStorage){
-			sessionStorage['broardcastWatch']='true';
-		}
+		flg=true;
 	}else{
 		unwatchStastics();
-		if(ph.useSessionStorage){
-			sessionStorage['broardcastWatch']='false';
-		}
+		flg=false;
 	}
+	ph.admin.storage.setItem('broardcastWatch',flg);
+}
+
+function broardcastWatch(){
+	ph.admin.storage.getItem('broardcastWatch',function(value){
+		var watchCheck=ph.jQuery('#broardcastWatchCheck');
+		if(value){
+			watchCheck.attr('checked',true);
+			watchStastics();
+		}else{
+			watchCheck.attr('checked',false);
+		}
+	});
 }
 
 ph.jQuery(function() {
 	updateStastics(${config.config.stasticsObject});
-	if(ph.useSessionStorage && sessionStorage['broardcastWatch']==='true'){
-		ph.jQuery('#broardcastWatchCheck').attr('checked',true);
-		watchStastics();
+	if(ph.admin.storage){
+		broardcastWatch();
 	}else{
-		ph.jQuery('#broardcastWatchCheck').attr('checked',false);
+		ph.admin.con.on('linked',broardcastWatch);
 	}
 });
 
@@ -95,6 +104,26 @@ function terminate(){
   function(x){
    location="$!esc.html(${config.config.authUrl})/logout";
   });
+}
+
+function suspending(){
+ if(suspendState){
+  ph.admin.con.publish("admin",{suspend:true});
+  setTimeout(suspending,1000);
+ }else{
+  ph.admin.con.publish("admin",{suspend:false});
+ }
+}
+
+var suspendState=false;
+function suspend(){
+ suspendState=!suspendState;
+ if(suspendState){
+  ph.jQuery("#suspend").val("一時停止解除");
+ }else{
+  ph.jQuery("#suspend").val("一時停止");
+ }
+ suspending();
 }
 
 function restart(){
@@ -117,6 +146,11 @@ function logdownload(type){
 	ph.jQuery('#logNumber').val(ph.jQuery('#logNumberSelect').val());
 	ph.jQuery('#logDownloadForm').submit();
 }
+function certificate(){
+	ph.jQuery('#cerFileName').val(ph.jQuery('#cerFileNameSelect').val());
+	ph.jQuery('#certificateForm').submit();
+}
+
 </script> 
 <H1>動作状況</H1>
 
@@ -127,6 +161,7 @@ function logdownload(type){
 #else
 restartCount:${config.restartCount} heapSize:${config.javaHeapSize}m<br>
 初期化:<input type="checkBox" id="restartCleanup"/> heapSize:<input type="text" size="4" id="restartHeapSize" value="${config.javaHeapSize}"/>m<input type="button" value="再起動"  onclick="restart();"/>
+<input type="button" value="一時停止" onclick="suspend();" id="suspend"/>
 <input type="button" value="停止" onclick="terminate();"/>
 #end
 
@@ -150,6 +185,20 @@ interval:$!esc.html($!{config.getString('broardcastInterval')})ms
 <tr><td>session(total-instance)</td><td id="broadcasterSession">processing</td></tr>
 </table>
 
+<Hr/>
+<H2>証明書ダウンロード</H2>
+<div>
+証明書:<select id="cerFileNameSelect" size="1">
+#if($config.sslContextPool.openssl)
+ <option value="CA/cacert.der">root</option>
+#else
+ #foreach($fileName in $config.sslContextPool.cers)
+ <option value="$!esc.html($fileName)">$!esc.html($fileName)</option>
+ #end
+#end
+</select>
+<input type="button" value="download" onclick="certificate();" />
+</div>
 <Hr/>
 <H2>ログダウンロード</H2>
 履歴:<select id="logNumberSelect" size="1">

@@ -15,20 +15,23 @@ import java.util.regex.Pattern;
 import javax.jdo.PersistenceManager;
 import javax.jdo.Query;
 
+import naru.aweb.auth.User;
 import naru.aweb.config.Config;
 import naru.aweb.config.FilterCategory;
 import naru.aweb.config.FilterEntry;
 import naru.aweb.config.FilterRole;
-import naru.aweb.config.User;
-import naru.aweb.core.ServerBaseHandler;
+import naru.aweb.handler.ServerBaseHandler.SCOPE;
 import naru.aweb.http.Cookie;
-import naru.aweb.http.HeaderParser;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.util.HeaderParser;
 import naru.aweb.util.JdoUtil;
 import naru.aweb.util.ServerParser;
 
 import org.apache.log4j.Logger;
-
+/**
+ * @author naru
+ *
+ */
 public class FilterHelper {
 	private static Logger logger = Logger.getLogger(FilterHelper.class);
 	private static Config config=Config.getConfig();
@@ -133,7 +136,7 @@ public class FilterHelper {
 	 */
 	public boolean doFilter(ProxyHandler handler){
 		logger.debug("#doFilter cid:"+handler.getChannelId());
-		User user=(User)handler.getRequestAttribute(ServerBaseHandler.ATTRIBUTE_USER);
+		User user=(User)handler.getAttribute(SCOPE.REQUEST,ServerBaseHandler.ATTRIBUTE_USER);
 		List<String> roles=user.getRolesList();
 		if(roles==null){
 			return false;

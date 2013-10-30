@@ -10,7 +10,7 @@ import java.util.zip.Deflater;
 
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
-import naru.aweb.http.HeaderParser;
+import naru.aweb.util.HeaderParser;
 
 public class NameValueBuilder {
 	private short version;
@@ -57,6 +57,9 @@ public class NameValueBuilder {
 	}
 	
 	private void putString(ByteBuffer workBuffer,String data){
+		if(data==null){
+			return;
+		}
 		try {
 			byte[] bytes=data.getBytes(SpdyFrame.ENCODE);
 			putLength(workBuffer,bytes.length);
