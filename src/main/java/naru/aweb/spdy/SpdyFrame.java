@@ -242,6 +242,7 @@ public class SpdyFrame {
 	private short slot;//v3‚Ì‚Ý
 	private int statusCode;
 	private int lastGoodStreamId;
+	private int deltaWindowSize;
 	
 	private Map<String,String[]> header;
 	private NameValueParser nameValueParser=new NameValueParser();
@@ -346,6 +347,16 @@ public class SpdyFrame {
 		return BuffersUtil.toByteBufferArray(frame);
 	}
 	
+	public ByteBuffer[] buildWindowUpdate(int streamId,int deltaWindowSize){
+		ByteBuffer frame = PoolManager.getBufferInstance();
+		frame.order(ByteOrder.BIG_ENDIAN);
+		setupControlFrame(frame, (short)version, (short)TYPE_WINDOW_UPDATE, (char)0, 8);
+		frame.putInt(streamId);
+		frame.putInt(deltaWindowSize);
+		frame.flip();
+		return BuffersUtil.toByteBufferArray(frame);
+	}
+	
 	private void parseType(){
 		switch(type){
 		case SpdyFrame.TYPE_SYN_STREAM:
@@ -389,8 +400,11 @@ public class SpdyFrame {
 				logger.debug("flag:"+flag +":id:"+id +":value:"+value);
 			}
 			break;
-		case SpdyFrame.TYPE_HEADERS:
 		case SpdyFrame.TYPE_WINDOW_UPDATE:
+			streamId=getIntFromData();
+			deltaWindowSize=getIntFromData();
+			break;
+		case SpdyFrame.TYPE_HEADERS:
 		case SpdyFrame.TYPE_SYN_REPLY://—ˆ‚È‚¢
 		}
 	}
