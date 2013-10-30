@@ -58,16 +58,14 @@ ph.jQuery(function() {
 ##ph.useWebSocket=false;
 	ph.jQuery('#dialogs').hide();
 	link=ph.admin.con=ph.link('/admin');
-    ph.admin.con.on('linked',function(){
+	var stor=ph.admin.storage=ph.admin.con.storage();
+	stor.getItem('logId',function(value){
 		ph.jQuery('#dialogs').show();
-		var stor=ph.admin.storage=ph.admin.con.storage();
-		stor.getItem('logId',function(value){
-			if(value){
-				changeEntry(value);
-			}
-		});
+		if(value){
+			changeEntry(value);
+		}
 	});
-	ph.admin.con.on('unlinked',function(){
+	ph.admin.con.onUnload(function(){
 		if(unloading)return;
 		if (confirm('!!unlinked!!\nDo you go Phantom Server Home?')){location=ph.publicWebUrl;}
 	});
@@ -101,7 +99,7 @@ ph.jQuery(function() {
 	jQuery("#userDialog").dialog('close');
 	jQuery("#commissionAuthDialog").dialog({title:'代理ログイン情報'});
 	jQuery("#commissionAuthDialog").dialog('close');
-	jQuery("#checkServerDialog").dialog({width: 600,title:'server check'});
+	jQuery("#checkServerDialog").dialog({width: 600,title:'server check',_moveToTop:function(){return null;}});
 	jQuery("#checkServerDialog").dialog('close');
 	jQuery("#commonOutputDialog").dialog({width: 500,title:'汎用出力'});
 	jQuery("#commonOutputDialog").dialog('close');
