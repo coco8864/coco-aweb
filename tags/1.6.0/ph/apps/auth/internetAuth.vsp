@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja" dir="ltr">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Pragma" content="no-cache"> 
+<meta http-equiv="Cache-Control" content="no-cache"> 
+<meta http-equiv="Expires" content="0"> 
+<link type="text/css" href="/pub/css/ph.css" rel="stylesheet" /> 
+</style>
+
+</head>
+<body>
+<div>
+<H1 class="mainTitle" style="float: left;margin: 0.0em 0.5em;padding:0em 0.0em 0.0em;">Internet Authentication</H1>
+<div style="float: right;">
+<img src="/pub/images/home.gif" title="home" onclick="location='$esc.html($config.publicWebUrl)'"/>
+<img src="/pub/images/login.gif" title="force login" onclick="location='$esc.html(${config.authUrl})/forceDigest?authId=$esc.html(${authId})'"/>
+</div>
+</div>
+<hr style="clear: both;"/>
+<ul>
+#if($config.getBoolean("useAuthFb"))
+<li><a href='$esc.html(${config.authUrl})/internetAuth/fbReq?authId=$esc.html(${authId})'>$esc.html(${config.getString('authFbLabel','facebook')})</a></li>
+#end
+#if($config.getBoolean("useAuthTwitter"))
+<li><a href='$esc.html(${config.authUrl})/internetAuth/twitterReq?authId=$esc.html(${authId})'>$esc.html(${config.getString('authTwitterLabel','twitter')})</a></li>
+#end
+#if($config.getBoolean("useAuthGoogle"))
+<li><a href='$esc.html(${config.authUrl})/internetAuth/googleReq?authId=$esc.html(${authId})'>$esc.html(${config.getString('authGoogleLabel','google(oauth)')})</a></li>
+#end
+#if($config.getBoolean("useAuthOpenid"))
+#foreach($openid in $openids.entrySet())
+<li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.html(${openid.value})'>$esc.html(${openid.key})</a></li>
+#end
+#if($config.getBoolean("useAuthDirectOpenid"))
+<li>
+<form action='$esc.html(${config.authUrl})/internetAuth/openIdReq'>
+<input type='hidden' name='authId' value='$esc.html(${authId})'/>
+openid identifier:<input type='text' size='64' name='identifier'/>
+<input type='submit' value='login'/>
+</form>
+</li>
+#end
+</ul>
+#end
+
+##username:<input type='text'></input>
+##<ul>
+##<li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("http://hcb00013.myopenid.com/")'>myopenid</a></li>
+##<li><a href='$esc.html(${config.authUrl})/internetAuth/openIdReq?authId=$esc.html(${authId})&identifier=$esc.url("hcb00013.pip.verisignlabs.com")'>verisign</a></li>
+##</ul>
+##<ul>
+</body>
+</html>

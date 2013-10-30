@@ -1,0 +1,16 @@
+[{type:'class',className:'naru.async.core.ChannelContext',limit100:200}
+,{type:'class',className:'naru.async.store.Page',limit100:512}
+,{type:'class',className:'naru.async.store.StoreCallback',limit100:128}
+,{type:'class',className:'naru.async.store.Store',limit100:512}
+,{type:'class',className:'naru.async.core.Order',limit100:512}
+,{type:'class',className:'naru.aweb.config.AccessLog',limit100:384}
+,{type:'class',className:'naru.aweb.core.DispatchHandler',limit100:100}
+,{type:'class',className:'naru.aweb.http.WebClientHandler',limit100:100}
+,{type:'class',className:'naru.aweb.handler.FileSystemHandler',limit100:100}
+,{type:'class',className:'naru.aweb.http.RequestContext',limit100:64}
+,{type:'class',className:'naru.aweb.auth.AuthSession',limit100:16}
+,{type:'array',className:'java.nio.ByteBuffer',arraySize:1,limit100:512}
+/*,{type:'buffer',bufferSize:999,limit100:999}*/
+,{type:'sslBuffer',limit100:512}
+,{type:'defaultBuffer',bufferSize:16384,limit100:512}
+]

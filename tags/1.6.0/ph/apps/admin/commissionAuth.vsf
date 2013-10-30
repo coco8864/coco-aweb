@@ -1,0 +1,143 @@
+<script type="text/javascript"> 
+
+function commissionTableRefresh(){
+	ph.log("commissionTableRefresh");
+	doPramCommand('commissionAuth','listCommissionUrl',null,function(json){
+		var commissions=ph.JSON.parse(json);
+		commissionTable(commissions);
+	});
+}
+
+function addCommissionUrl(){
+	ph.log("addCommissionUrl");
+	var param={
+		notes:ph.jQuery("#commissionAuthNotes").val(),
+		authType:ph.jQuery("#commissionAuthType").val(),
+		realm:ph.jQuery("#commissionAuthRealm").val(),
+		authMethod:ph.jQuery("#commissionAuthMethod").val(),
+		authUrl:ph.jQuery("#commissionAuthUrl").val(),
+		authBody:ph.jQuery("#commissionAuthBody").val(),
+		};
+	doPramCommand('commissionAuth','addCommissionUrl',param,function(json){
+		commissionTableRefresh();
+//		alert(json);
+	});
+}
+
+function commissionCheckList(){
+	var result=[];
+	var checkList=ph.jQuery(".commissionIdCheck");
+	for(var i=0;i<checkList.length;i++){
+		var check=checkList[i];
+		if(check.checked){
+			result.push(check.commissionId);
+		}
+	}
+	return result;
+}
+
+function getCommissionRoleList(){
+	ph.log("getCommissionRoleList");
+	var role=ph.jQuery("#commisionRole").val();
+	var param={role:role};
+	doPramCommand('commissionAuth','getRoleList',param,function(jsonIds){
+		var ids=ph.JSON.parse(jsonIds);
+		ph.log("ids:"+ids);
+		var checkList=jQuery(".commissionIdCheck");
+		for(var i=0;i<checkList.length;i++){
+			var check=checkList[i];
+			ph.log("check.commissionId:"+check.commissionId);
+			var c=ph.jQuery(check);
+			c.attr("checked","");
+			for(var j=0;j<ids.length;j++){
+				ph.log("ids[j]:"+ids[j]);
+				if(check.commissionId==ids[j]){
+					c.attr("checked","checked");
+					break;
+				}
+			}
+		}
+		alert('role:'+role +'の定義を表示');
+	});
+}
+
+function setCommissionRoleList(){
+	ph.log("setCommissionRoleList");
+	var role=ph.jQuery("#commisionRole").val();
+	var param={role:role,urlIds:commissionCheckList().join()};
+	doPramCommand('commissionAuth','setRoleList',param,function(json){
+//		alert(json);
+	});
+}
+
+function addCommisionUrl(){
+	ph.log("addCommisionUrl");
+##dialog表示
+}
+
+function commissionTable(lines){
+	ph.jQuery("#commissionData").empty();
+	var targetTag=document.getElementById("commissionData");
+	for(i in lines){
+		var trTag=document.createElement("tr");
+		commissionLine(trTag,lines[i]);
+		targetTag.appendChild(trTag);
+	}
+}
+
+##リンク付きのテーブルセル(td)作成
+function mkCommissionIdtag(commission){
+	var textNode=document.createTextNode(commission.id);
+	var aTag=document.createElement("a");
+	aTag.setAttribute("href","#");
+	aTag.setAttribute("target","logentry");
+	aTag.appendChild(textNode);
+	var inputTag=document.createElement("input");
+    inputTag.setAttribute("type","checkBox");
+    inputTag.setAttribute("class","commissionIdCheck");
+    inputTag.commissionId=commission.id;
+	var tdTag=document.createElement("td");
+	tdTag.appendChild(inputTag);
+	aTag.appendChild(textNode);
+	tdTag.appendChild(aTag);
+	jQuery(aTag).bind("click",function(){return false;});
+	return tdTag;
+}
+
+function commissionLine(trTag,commission){
+	var tdTag;
+	tdTag=mkCommissionIdtag(commission);
+	trTag.appendChild(tdTag);
+	tdTag=mkTdtag(commission.notes);
+	trTag.appendChild(tdTag);
+	tdTag=mkTdtag(commission.authType);
+	trTag.appendChild(tdTag);
+	tdTag=mkTdtag(commission.realm);
+	trTag.appendChild(tdTag);
+	tdTag=mkTdtag(commission.authMethod);
+	trTag.appendChild(tdTag);
+	tdTag=mkTdtag(commission.authUrl);
+	trTag.appendChild(tdTag);
+	tdTag=mkTdtag(commission.authBody);
+	trTag.appendChild(tdTag);
+}
+commissionTableRefresh();
+</script>
+
+<h1>Commission Auth Role設定</h1>
+<input type="button" value="reload" onClick="commissionTableRefresh();">
+<input type="button" value="追加" onClick="jQuery('#commissionAuthDialog').dialog('open');"><br/>
+role:<input type="text" id="commisionRole" value="" size="64" />
+<input type="button" value="参照" onClick="getCommissionRoleList();" />
+<input type="button" value="更新" onClick="setCommissionRoleList();" /><br/>
+<div style="margin: 0.4em 0.0em; padding: 0.0em 0.0em;background: #fff none; border: solid 0pt #000;">
+<table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
+<thead>
+<tr><th>ID</th><th>notes</th><th>type</th><th>realm</th>
+<th>method</th><th>url</th><th>body</th>
+</tr>
+</thead>
+<tbody id="commissionData"></tbody>
+</table>
+</div>
+

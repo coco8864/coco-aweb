@@ -1,0 +1,12 @@
+[
+{"name":"test1","browserCount":"10","loopCount":"1000","isCallerKeepAlive":"true",thinkingTime:1000},
+{"name":"test2","browserCount":"20","loopCount":"1000","isCallerKeepAlive":"true",thinkingTime:1000},
+{"name":"test3","browserCount":"30","loopCount":"1000","isCallerKeepAlive":"true",thinkingTime:1000},
+{"name":"test4","browserCount":"40","loopCount":"1000","isCallerKeepAlive":"true",thinkingTime:1000},
+{"name":"test5","browserCount":"50","loopCount":"1000","isCallerKeepAlive":"true",thinkingTime:1000},
+{"name":"test6","browserCount":"60","loopCount":"1000","isCallerKeepAlive":"true",thinkingTime:1000},
+{"name":"test7","browserCount":"70","loopCount":"1000","isCallerKeepAlive":"true",thinkingTime:1000},
+{"name":"test8","browserCount":"80","loopCount":"1000","isCallerKeepAlive":"true",thinkingTime:1000},
+{"name":"test9","browserCount":"90","loopCount":"1000","isCallerKeepAlive":"true",thinkingTime:1000},
+{"name":"test10","browserCount":"100","loopCount":"1000","isCallerKeepAlive":"true",thinkingTime:1000}
+]

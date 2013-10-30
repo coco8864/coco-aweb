@@ -1,0 +1,85 @@
+<H1>Chat操作</H1>
+<hr/>
+<div id="queueInfo"></div>
+<p>output
+<input type="button" value="clear" onclick="jQuery('#chatOutputTextArea').val('');"/></p>
+<textarea id="chatOutputTextArea" rows="10" cols="80" readonly="readonly">
+</textarea>
+<p>input
+<input type="button" value="send" onclick="onChatSend();"/>
+<input type="button" value="who" onclick="ph.admin.chatSd.publish({kind:'who'});"/>
+<input type="reset" value="clear" onclick="jQuery('#chatInputTextArea').val('');"/>
+<input type="checkBox" value="echoback" id="chatEchoback" checked="checked">echoback</input></p>
+<textarea id="chatInputTextArea" rows="10" cols="80">
+</textarea><br/>
+this link is send chat bookmarklet.<a id='bkmarklet'>adminChat</a>
+<script type="text/javascript">
+function onChatSend(){
+ var message=jQuery('#chatInputTextArea').val();
+ if(message===''){//空白の場合sendさせない
+  return;
+ }
+ ph.admin.chatSd.publish({
+  kind:'message',
+  message:message,
+  date:new Date(),
+  userName:'$esc.javascript($loginUser.nickname)',
+  echoback:jQuery('#chatEchoback').is(':checked')});//echoback可否
+ jQuery('#chatInputTextArea').val('');
+}
+
+(function(){
+if(ph.admin.chatSd){
+  return;
+}
+jQuery("#chatInputTextArea").resizable({
+	handles: "se"
+});
+jQuery("#chatOutputTextArea").resizable({
+	handles: "se"
+});
+
+var inputArea=ph.jQuery("#chatInputTextArea");
+//inputArea.triggerHandler('focus');
+inputArea.keydown(function(e){
+  if (e.which === 13) { // enter key was pressed
+    if(e.altKey){
+      var text=inputArea.val()+'\n';
+      inputArea.val(text);
+    }else{
+      onChatSend();
+    }
+    return false;
+  }
+  return true;
+});
+
+var chatSd=ph.admin.con.subscribe('admin','chat');
+chatSd.onMsg(
+ function(msg){
+ ##chat画面を表示していない可能性がある
+  var outputArea=jQuery('#chatOutputTextArea');
+  if(outputArea.length==0){
+    return;
+  }
+  var addText="";
+  if(msg.kind==='who'){
+    addText='who>\n' +
+    msg.users+'\n';
+  }else if(msg.kind==='message'){
+    addText=ph.admin.df_ymdhms.format(msg.date)+':'+msg.userName +'>\n' +
+    msg.message+'\n';
+  }
+  var text=addText+outputArea.val();
+  outputArea.val(text);
+});
+ph.admin.chatSd=chatSd;
+
+var bkmarklet="javascript:(function(){var d=document;var f=function(){var l=ph.link('$adminUrl$');var s=l.subscribe('admin','chat');s.publish({message:d.title+':'+d.location.href,echoback:false,userName:'bk',date:new Date(),kind:'message'});};if(window.ph){f();}else{var u='$publicWebUrl$pub/js/ph.js';var e=d.createElement('script');e.src=u;e.onload=function(){f();};d.getElementsByTagName('head')[0].appendChild(e);}})();"
+bkmarklet=bkmarklet.replace("$adminUrl$",ph.adminUrl);
+bkmarklet=bkmarklet.replace("$publicWebUrl$",ph.publicWebUrl);
+bkmarklet=bkmarklet.split(' ').join('%20');
+ph.jQuery('#bkmarklet').attr("href", bkmarklet);
+
+})();
+</script>

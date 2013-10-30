@@ -1,0 +1,31 @@
+<!DOCTYPE html> 
+<html lang="jp"> 
+<head> 
+	<meta charset="UTF-8" /> 
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<meta http-equiv="Pragma" content="no-cache"> 
+	<meta http-equiv="Cache-Control" content="no-cache"> 
+	<meta http-equiv="Expires" content="0"> 
+	<title>Welcome to Phantom Proxy</title>
+
+	<link type="text/css" href="https://49.212.107.199/pub/css/jquery-ui-1.8.2.custom.css" rel="stylesheet" />
+	<script type="text/javascript" src="https://49.212.107.199/pub/js/ph-loader.js?include=ph-auth.js"></script>
+	<link type="text/css" href="https://49.212.107.199/pub/css/ph.css" rel="stylesheet" /> 
+<style type="text/css"><!--
+table {border-collapse: collapse;}
+td,th {border:1px solid #000;text-align:left;font-size:x-small}
+.ui-resizable-se {bottom: 17px;}
+.mainTitle{ margin: 0.0em 0.5em;padding:0em 0.0em 0.0em;}
+.welcome{ margin: 0.0em 1.0em;font-size: 125.0%;}
+-->
+</style>
+	<script type="text/javascript"> 
+	ph.jQuery(function() {
+		ph.auth.getAuth('wss://49.212.107.199/queue','ws',function(x){alert(ph.JSON.stringify(x))});
+	});
+	</script>
+</head> 
+<body> 
+<H1>Phantom Proxy Test</span></H1>
+</body>
+</html>
