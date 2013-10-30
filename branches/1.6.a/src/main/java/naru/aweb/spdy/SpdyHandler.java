@@ -96,12 +96,14 @@ public class SpdyHandler extends ServerBaseHandler {
 		switch(type){
 		case SpdyFrame.TYPE_DATA_FRAME:
 			ByteBuffer[] dataBuffer=frame.getDataBuffers();
+			long length=BuffersUtil.remaining(dataBuffer);
 			if(session!=null){
 				session.onReadPlain(dataBuffer,frame.isFin());
 			}else{
 				logger.error("illegal streamId:"+streamId);
 				sendReset(streamId, SpdyFrame.RSTST_INVALID_STREAM);
 			}
+			sendWindowUpdate(streamId,(int)length);
 			break;
 		case SpdyFrame.TYPE_SYN_STREAM:
 			if(session!=null){
@@ -201,6 +203,12 @@ public class SpdyHandler extends ServerBaseHandler {
 		outFrameCount[SpdyFrame.TYPE_PING]++;
 		ByteBuffer[] pingFrame=frame.buildPIngFrame(pingId);
 		asyncWrite(null, pingFrame);
+	}
+	
+	private void sendWindowUpdate(int streamId,int deltaWindowSize){
+		outFrameCount[SpdyFrame.TYPE_WINDOW_UPDATE]++;
+		ByteBuffer[] resetFrame=frame.buildWindowUpdate(streamId, deltaWindowSize);
+		asyncWrite(null, resetFrame);
 	}
 	
 	private static final String WRITE_CONTEXT_BODY = "writeContextBody";

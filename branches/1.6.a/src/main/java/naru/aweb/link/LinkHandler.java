@@ -210,9 +210,11 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 		if(!LinkSession.TYPE_NEGOTIATE.equals(type)){
 			return false;
 		}
-		String token=negoreq.getString(LinkSession.KEY_TOKEN);
+		String token=negoreq.optString(LinkSession.KEY_TOKEN);
 		AuthSession authSession=getAuthSession();
-		if(!token.equals(authSession.getToken())){
+		String authToken=authSession.getToken();
+		if(!token.equals(authToken)){
+			logger.warn("token not match.");
 			return false;
 		}
 		
