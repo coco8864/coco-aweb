@@ -132,7 +132,7 @@ function reloadEditDialog(){
 		var TEXT_CHARSET='text/plain; charset=';
 		ph.jQuery("#textEditTextArea").val(text);
 		var contentType=jqXhr.getResponseHeader('Content-Type');
-		if(contentType.lastIndexOf(TEXT_CHARSET,0)===0){
+		if(contentType && contentType.lastIndexOf(TEXT_CHARSET,0)===0){
 			ph.jQuery("#textEditEncode").val(contentType.substring(TEXT_CHARSET.length));
 		}
 	},"html");
@@ -178,7 +178,7 @@ function openEditDialog(digest,id,requestLine,part,readonly,chunk,gzip,charset){
 			function(text,status,jqXhr){
 				var TEXT_CHARSET='text/plain; charset=';
 				var contentType=jqXhr.getResponseHeader('Content-Type');
-				if(contentType.lastIndexOf(TEXT_CHARSET,0)===0){
+				if(contentType && contentType.lastIndexOf(TEXT_CHARSET,0)===0){
 					charset=contentType.substring(TEXT_CHARSET.length);
 				}
 				_openEditDialog(digest,id,requestLine,part,readonly,text,charset,chunk,gzip);
