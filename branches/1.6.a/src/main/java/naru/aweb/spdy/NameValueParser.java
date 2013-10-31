@@ -57,18 +57,21 @@ public class NameValueParser {
 	private void setDictionary() {
 		if (version == SpdyFrame.VERSION_V2) {
 			decompresser.setDictionary(SpdyFrame.DICTIONARY_V2);
-		} else if (version == SpdyFrame.VERSION_V3) {
+		} else if (version == SpdyFrame.VERSION_V3 || version == SpdyFrame.VERSION_V31) {
 			decompresser.setDictionary(SpdyFrame.DICTIONARY_V3);
+		}else{
+			throw new UnsupportedOperationException("version:"+version);
 		}
 	}
 
 	private int getLength(){
 		if(version==SpdyFrame.VERSION_V2){
 			return (int)workBuffer.getShort();
-		}else if(version==SpdyFrame.VERSION_V3){
+		}else if(version==SpdyFrame.VERSION_V3 || version == SpdyFrame.VERSION_V31){
 			return (int)workBuffer.getInt();
+		}else{
+			throw new UnsupportedOperationException("version:"+version);
 		}
-		return -1;
 	}
 	
 	private int lengthOfName;

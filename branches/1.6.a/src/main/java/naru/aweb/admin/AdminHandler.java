@@ -211,11 +211,16 @@ public class AdminHandler extends WebServerHandler{
 			responseJson(true);
 		}else if("setSpdy".equals(cmd)){
 			SpdyConfig spdyConfig=config.getSpsyConfig();
+			String isSpdy31=parameter.getParameter("isSpdy31");
 			String isSpdy3=parameter.getParameter("isSpdy3");
 			String isSpdy2=parameter.getParameter("isSpdy2");
 			String frameLimit=parameter.getParameter("spdyFrameLimit");
 			String timeout=parameter.getParameter("spdyTimeout");
 			StringBuffer protocol=new StringBuffer();
+			if("true".equalsIgnoreCase(isSpdy31)){
+				protocol.append(SpdyFrame.PROTOCOL_V31);
+				protocol.append(",");
+			}
 			if("true".equalsIgnoreCase(isSpdy3)){
 				protocol.append(SpdyFrame.PROTOCOL_V3);
 				protocol.append(",");

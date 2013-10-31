@@ -39,10 +39,12 @@ public class SpdyHandler extends ServerBaseHandler {
 	private RealHost realHost;
 	private ServerParser acceptServer;
 	private boolean isProxy;//CONNECT‚ÌŒã‚ÉSPDY‚ªŽn‚Ü‚Á‚½‚©”Û‚©
+	private boolean isProtocol31=false;
 	
 	public boolean onHandshaked(String protocol,boolean isProxy) {
 		logger.debug("#handshaked.cid:" + getChannelId() +":"+protocol);
 		this.isProxy=isProxy;
+		isProtocol31=SpdyFrame.PROTOCOL_V31.equals(protocol);
 		frame.init(protocol,spdyConfig.getSpdyFrameLimit());
 		inFrameCount=new long[SpdyFrame.TYPE_WINDOW_UPDATE+1];
 		outFrameCount=new long[SpdyFrame.TYPE_WINDOW_UPDATE+1];
@@ -104,6 +106,9 @@ public class SpdyHandler extends ServerBaseHandler {
 				sendReset(streamId, SpdyFrame.RSTST_INVALID_STREAM);
 			}
 			sendWindowUpdate(streamId,(int)length);
+			if(isProtocol31){
+				sendWindowUpdate(0,(int)length);
+			}
 			break;
 		case SpdyFrame.TYPE_SYN_STREAM:
 			if(session!=null){
@@ -155,9 +160,15 @@ public class SpdyHandler extends ServerBaseHandler {
 			resetAll();
 			asyncClose(null);
 			break;
-		case SpdyFrame.TYPE_SETTINGS:
-		case SpdyFrame.TYPE_HEADERS:
 		case SpdyFrame.TYPE_WINDOW_UPDATE:
+			logger.debug("streamId:"+streamId+" deltaWindowSize:"+frame.getDeltaWindowSize());
+			break;
+		case SpdyFrame.TYPE_SETTINGS:
+			logger.debug("setting:");
+			break;
+		case SpdyFrame.TYPE_HEADERS:
+			logger.debug("headers:");
+			break;
 		default:
 		}
 	}
