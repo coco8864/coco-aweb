@@ -106,11 +106,13 @@ public class SpdyFrame {
 	
 	public static final String PROTOCOL_V2="spdy/2";
 	public static final String PROTOCOL_V3="spdy/3";
+	public static final String PROTOCOL_V31="spdy/3.1";
 	public static final String PROTOCOL_HTTP_11="http/1.1";
 	public static final String PROTOCOL_HTTP_10="http/1.0";
 	
 	public static final short VERSION_V2=2;
 	public static final short VERSION_V3=3;
+	public static final short VERSION_V31=31;
 	
 	public static final String ENCODE="UTF-8"; 
 	
@@ -256,6 +258,8 @@ public class SpdyFrame {
 		if(PROTOCOL_V2.equals(protocol)){
 			version=VERSION_V2;
 		}else if(PROTOCOL_V3.equals(protocol)){
+			version=VERSION_V3;
+		}else if(PROTOCOL_V31.equals(protocol)){
 			version=VERSION_V3;
 		}
 		nameValueParser.init(version);
@@ -409,6 +413,10 @@ public class SpdyFrame {
 		}
 	}
 	
+	public int getDeltaWindowSize() {
+		return deltaWindowSize;
+	}
+
 	public boolean isError(){
 		return (parseStat==ParseStat.ERROR);
 	}
