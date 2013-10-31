@@ -84,9 +84,11 @@ function updateAppCache(){
 function setSpdy(){
   var isSpdy2=ph.jQuery("#spdy2").is(':checked');
   var isSpdy3=ph.jQuery("#spdy3").is(':checked');
+  var isSpdy31=ph.jQuery("#spdy31").is(':checked');
   ph.admin.doCommand('setSpdy',{
     isSpdy2:isSpdy2,
     isSpdy3:isSpdy3,
+    isSpdy31:isSpdy31,
     spdyFrameLimit:ph.jQuery("#spdyFrameLimist").val(),
     spdyTimeout:ph.jQuery("#spdyTimeout").val()
   },
@@ -289,13 +291,17 @@ checked="checked"
 <Hr/>
 #set ($spdy2=false)
 #set ($spdy3=false)
+#set ($spdy31=false)
 #set ($spdyConfig=$config.getSpsyConfig())
 #set ($protocol=${spdyConfig.getSpdyProtocols()})
-#if($protocol.indexOf('spdy/2')>=0)
+#if($protocol.indexOf('spdy/2,')>=0)
  #set ($spdy2=true)
 #end
-#if($protocol.indexOf('spdy/3')>=0)
+#if($protocol.indexOf('spdy/3,')>=0)
  #set ($spdy3=true)
+#end
+#if($protocol.indexOf('spdy/3.1,')>=0)
+ #set ($spdy31=true)
 #end
 #set ($spdyFrameLimit=$spdyConfig.getSpdyFrameLimit())
 #set ($spdyTimeout=$spdyConfig.getSpdyTimeout())
@@ -311,6 +317,11 @@ checked="checked"
  />
 spdy/3:<input type="checkBox" name="spdy3" id="spdy3"
 #if($spdy3==true)
+checked="checked"
+#end
+ />
+spdy/3.1:<input type="checkBox" name="spdy31" id="spdy31"
+#if($spdy31==true)
 checked="checked"
 #end
  /><br/>
