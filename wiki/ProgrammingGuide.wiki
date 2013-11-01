@@ -23,7 +23,6 @@
      /* 受信 */
      sub.onMsg(function(msg){});
      }}}
-
      例)storage APIでブラウザに情報を保存、参照する
      {{{
      var link=ph.link(url);
