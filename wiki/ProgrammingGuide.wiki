@@ -18,7 +18,7 @@
   * Phantom Serverの多様な認証機能を利用
   * !WebSocketsの利用可否にかかわらずリアルタイムな通信を実現
   * bookmarkletなど3ed pertyのサイトからも安全に利用可能
-  * offline時でもブラウザにスコープを持つstorageは利用可能
+  * offline時でもブラウザにスコープを持つstorageを利用可能
   * ブラウザに保持するデータは暗号化されており、offline認証後そのユーザだけが参照可能となる
  * clientAPI
    詳細は、[https://phapp.coco.0t0.jp/api/coffee/ clientAPI]を参照ください。
