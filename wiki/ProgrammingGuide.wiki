@@ -13,25 +13,28 @@
  * アプリケーションモデル
    linkは、publish/subscribe方式のメッセージ通信と各種スコープを持つstorageサービスから構成されます。
    offline時にも、offline認証する事で、ブラウザスコープのstorageは、安全に利用することができます。
+     例)publish/subscribe APIでメッセージを送受信する
+     {{{
+     var link=ph.link(url);
+     var sub=link.subscribe('qname','subname');
+     /* 送信 */
+     sub.publish(msg);
 
-   publish/subscribe APIでメッセージを送受信する例
-    {{{
-    var link=ph.link(url);
-    var sub=link.subscribe('qname','subname');
-    sub.publish(msg);
+     /* 受信 */
+     sub.onMsg(function(msg){});
+     }}}
 
-    sub.onMsg(function(msg){});
-    }}}
-
-   storage APIでブラウザに情報を保存する例
-    {{{
-    var link=ph.link(url);
-    var storage=link.storage(ph.SCOPE.XXXX);
-    storage.setItem(key,value);
-
-    storage.getItem(key,function(value){...});
-    //storage.on(key,function(data){data.value...});/*値の変化を監視する場合*/
-    }}}
+     例)storage APIでブラウザに情報を保存、参照する
+     {{{
+     var link=ph.link(url);
+     var storage=link.storage(ph.SCOPE.SESSION_PRIVATE);
+     /* 保存 */
+     storage.setItem(key,value);
+     
+     /* 参照 */
+     storage.getItem(key,function(value){...});
+     //storage.on(key,function(data){data.value...});/*値の変化を監視する場合*/
+     }}}
 
   特徴
   * シンプルなAPI
