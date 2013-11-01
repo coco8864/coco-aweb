@@ -13,6 +13,26 @@
  * アプリケーションモデル
    linkは、publish/subscribe方式のメッセージ通信と各種スコープを持つstorageサービスから構成されます。
    offline時にも、offline認証する事で、ブラウザスコープのstorageは、安全に利用することができます。
+
+   publish/subscribe APIでメッセージを送受信する例
+    {{{
+    var link=ph.link(url);
+    var sub=link.subscribe('qname','subname');
+    sub.publish(msg);
+
+    sub.onMsg(function(msg){});
+    }}}
+
+   storage APIでブラウザに情報を保存する例
+    {{{
+    var link=ph.link(url);
+    var storage=link.storage(ph.SCOPE.XXXX);
+    storage.setItem(key,value);
+
+    storage.getItem(key,function(value){...});
+    //storage.on(key,function(data){data.value...});/*値の変化を監視する場合*/
+    }}}
+
   特徴
   * シンプルなAPI
   * Phantom Serverの多様な認証機能を利用
@@ -20,8 +40,8 @@
   * bookmarkletなど3ed pertyのサイトからも安全に利用可能
   * offline時でもブラウザにスコープを持つstorageを利用可能
   * ブラウザに保持するデータは暗号化されており、offline認証後そのユーザだけが参照可能となる
- * clientAPI
-   詳細は、[https://phapp.coco.0t0.jp/api/coffee/ clientAPI]を参照ください。
+ * ClientAPI
+   詳細は、[https://phapp.coco.0t0.jp/api/coffee/ ClientAPI]を参照ください。
    * エントリーポイントは、[https://phapp.coco.0t0.jp/api/coffee/phLink.coffee.html#ph.link ph.link]
    * pub/sub通信インタフェースは、link.subscribeの復帰オブジェクト[https://phapp.coco.0t0.jp/api/coffee/phLinkSubscription.coffee.html Subscription]です。
    * storageインタフェースは、link.srorageの復帰オブジェクト[https://phapp.coco.0t0.jp/api/coffee/phLink.coffee.html#PrivateSessionStorage Storage]です。
