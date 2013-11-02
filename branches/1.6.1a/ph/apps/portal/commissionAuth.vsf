@@ -1,0 +1,165 @@
+<script type="text/javascript"> 
+
+function commissionTableRefresh(){
+	ph.log("commissionTableRefresh");
+    var auths=[];
+    for(var url in ph.basicAuths){
+		auths.push(ph.basicAuths[url]);
+    }
+    for(var url in ph.formAuths){
+		auths.push(ph.formAuths[url]);
+    }
+	commissionTable(auths);
+}
+
+function commissionCheckList(){
+	var result=[];
+	var checkList=ph.jQuery(".authIdCheck");
+	for(var i=0;i<checkList.length;i++){
+		var check=checkList[i];
+		if(check.checked){
+			result.push(check.authId);
+		}
+	}
+	return result;
+}
+
+function editAuth(auth){
+ var param={
+  id:jQuery('#authId').text(),
+  enabled:jQuery('#authEnabled').attr("checked"),
+  notes:jQuery('#authNotes').val(),
+  forcePost:jQuery('#authForce').attr("checked"),
+  autoPost:jQuery('#authAuto').attr("checked")
+ };
+ ph.doPramCommand('commissionAuth','editAuth',param,function(json){
+  var auth=ph.JSON.parse(json);
+  ph.saveAuth(auth);
+  ph.loadAuths();
+  commissionTableRefresh();
+ });
+ jQuery('#authDialog').dialog('close');
+}
+
+function openEditAuth(auth){
+ ph.log('editCommissionAuth');
+ jQuery('#authId').text(auth.id);
+ jQuery('#authType').text(auth.authType);
+ jQuery('#realm').text(auth.realm);
+ 
+
+ jQuery('#authEnabled').attr("checked",auth.enabled);
+ jQuery('#authNotes').val(auth.notes);
+ jQuery('#authAuto').attr("checked",auth.autoPost);
+ jQuery('#authForce').attr("checked",auth.forcePost);
+// alert(id);
+ jQuery('#authDialog').dialog('open');
+}
+
+
+function removeCommissionAuths(){
+ ph.log("removeCommissionAuths");
+ var ids=commissionCheckList();
+ var param={ids:ids.join()};
+ ph.doPramCommand('commissionAuth','deleteCommissionAuths',param,function(json){
+  for(var i=0;i<ids.length;i++){
+   ph.removeAuth(ids[i]);
+  }
+  ph.loadAuths();
+  commissionTableRefresh();
+ });
+}
+
+function commissionTable(lines){
+	$("#commissionData").empty();
+	var targetTag=document.getElementById("commissionData");
+	for(i in lines){
+		var trTag=document.createElement("tr");
+		commissionLine(trTag,lines[i]);
+		targetTag.appendChild(trTag);
+	}
+}
+
+##リンク付きのテーブルセル(td)作成
+function mkAuthIdtag(auth){
+	var textNode=document.createTextNode(auth.id);
+	var aTag=document.createElement("a");
+	aTag.setAttribute("href","#");
+	aTag.appendChild(textNode);
+	var inputTag=document.createElement("input");
+    inputTag.setAttribute("type","checkBox");
+    inputTag.setAttribute("class","authIdCheck");
+    inputTag.authId=auth.id;
+	var tdTag=document.createElement("td");
+	tdTag.appendChild(inputTag);
+	aTag.appendChild(textNode);
+	tdTag.appendChild(aTag);
+	jQuery(aTag).bind("click",function(){openEditAuth(auth);return false;});
+	return tdTag;
+}
+function mkTdtag(text){
+	var textNode=document.createTextNode(text);
+	var tdTag=document.createElement("td");
+	tdTag.appendChild(textNode);
+	return tdTag;
+}
+
+function commissionLine(trTag,auth){
+	var tdTag;
+	tdTag=mkAuthIdtag(auth);
+	trTag.appendChild(tdTag);
+	tdTag=mkTdtag(auth.enabled);
+	trTag.appendChild(tdTag);
+	tdTag=mkTdtag(auth.authType);
+	trTag.appendChild(tdTag);
+	tdTag=mkTdtag(auth.isExecute);
+	trTag.appendChild(tdTag);
+	tdTag=mkTdtag(auth.notes);
+	trTag.appendChild(tdTag);
+	tdTag=mkTdtag(auth.realm);
+	trTag.appendChild(tdTag);
+
+	var textNode=document.createTextNode(auth.authUrl);
+	var aTag=document.createElement("a");
+	aTag.setAttribute("href","#");
+	aTag.appendChild(textNode);
+	jQuery(aTag).bind("click",function(){
+     if( auth.authType=='basic'){
+      selectAuth(auth.authUrl+':'+auth.realm);
+     }else{
+      selectAuth(auth.authUrl);
+     }
+     jQuery("#tabs").tabs("select",0);
+     return false;
+     });
+	var tdTag=document.createElement("td");
+	tdTag.appendChild(aTag);
+
+//	tdTag=mkTdtag(auth.authUrl);
+	trTag.appendChild(tdTag);
+	tdTag=mkTdtag(auth.autoPost);
+	trTag.appendChild(tdTag);
+	tdTag=mkTdtag(auth.forcePost);
+	trTag.appendChild(tdTag);
+	tdTag=mkTdtag(auth.actionUrl);
+	trTag.appendChild(tdTag);
+}
+commissionTableRefresh();
+</script>
+
+<h1>CommissionAuth設定</h1>
+<input type="button" value="reload" onClick="commissionTableRefresh();">
+<!--input type="button" value="追加" onClick="jQuery('#commissionAuthDialog').dialog('open');"-->
+<input type="button" value="削除" onClick="removeCommissionAuths();"><br/>
+<div style="margin: 0.4em 0.0em; padding: 0.0em 0.0em;background: #fff none; border: solid 0pt #000;">
+<table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
+<thead>
+<tr><th>ID</th><th>enebled</th><th>type</th><th>execute</th>
+<th>notes</th><th>realm</th><th>url</th>
+<th>auto</th><th>force</th><th>actionUrl</th>
+</tr>
+</thead>
+<tbody id="commissionData"></tbody>
+</table>
+</div>
+

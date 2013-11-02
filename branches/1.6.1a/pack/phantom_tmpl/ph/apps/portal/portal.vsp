@@ -1,0 +1,559 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja" dir="ltr">
+<HEAD>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Pragma" content="no-cache"> 
+<meta http-equiv="Cache-Control" content="no-cache"> 
+<meta http-equiv="Expires" content="0"> 
+<title>phPortal</title>
+	<link type="text/css" href="/pub/css/jquery-ui-1.8.2.custom.css" rel="stylesheet" />
+<style type="text/css"><!--
+td,th {border:1px solid #000;text-align:left;font-size:x-small}
+.ui-resizable-se {bottom: 17px;}
+.ui-tabs .ui-tabs-panel {padding:0.4em;}
+#tabs li .ui-icon-close { float: left; margin: 0.4em 0.2em 0 0; cursor: pointer; }
+-->
+</style>
+	<script type="text/javascript" src="/pub/js/ph-loader.js?include=ph-auth.js,ph-queue.js,ph-history.js"></script>
+	<script type="text/javascript" src="/pub/js/jquery-1.5.1.min.js"></script>
+	<script type="text/javascript" src="/pub/js/jquery-ui-1.8.2.custom.min.js"></script>
+	<script type="text/javascript" src="/pub/js/dateformat.js"></script>
+	<link type="text/css" href="/pub/css/ph.css" rel="stylesheet" /> 
+	<script type="text/javascript"><!--
+ph.rewriteUrl=function(url){
+ if( url.match(/^http:\/\//) && !url.match(/^http:\/\/inj\./)){
+  return 'http://inj.' +url.substring(7);
+ }else if( url.match(/^https:\/\//) && !url.match(/^https:\/\/inj\./)){
+  return 'https://inj.' +url.substring(8);
+ }
+ return url;
+};
+
+ph.revRewriteUrl=function(url){
+ if( url.match(/^http:\/\/inj\./)){
+  return 'http://' +url.substring(11);
+ }else if(url.match(/^https:\/\/inj\./)){
+  return 'https://' +url.substring(12);
+ }
+ return url;
+};
+
+ph.df_ymdhm = new DateFormat("yyyy/MM/dd HH:mm");
+ph.df_ymdhms = new DateFormat("yyyy/MM/dd HH:mm:ss.SSS");
+ph.df_hms = new DateFormat("HH:mm:ss.SSS");
+ph.dateFormat=function(format,date){
+ if(!date){
+  return "";
+ }else if(date.time){
+  return format.format(new Date(date.time));
+ }else{
+  return format.format(date);
+ }
+};
+
+ph.isUseSessionStorage=true;
+ph.loadAuths=function(){
+ ph.log('ph.loadAuths.ph.chId:'+ph.chId);
+ if(!ph.isUseSessionStorage){
+  return;
+ }
+ if(!sessionStorage['auth.'+ph.chId]){
+  ph.saveAuths($!{portalSession.getCommissionAuthsJson()});
+  sessionStorage['auth.'+ph.chId]=true;
+ }
+ ph.basicAuths={};
+ ph.formAuths={};
+ var regexp=new RegExp('auth.'+ph.chId+'.');
+ var n=sessionStorage.length;
+ ph.log('sessionStorage.length:'+sessionStorage.length);
+
+ for(var i=0;i<n;i++){
+//alert(i);
+  var key=sessionStorage.key(i);
+  var token=regexp.exec(key);
+  if(token==null){
+   continue;
+  }
+ph.log('sessionStorage[key]:'+sessionStorage[key]);
+  var auth=ph.JSON.parse(sessionStorage[key]);
+ph.log('auth.id:'+auth.id);
+  if(!auth.id){
+   continue;
+  }
+  ph.log('ph.loadAuths:'+auth.id+':'+sessionStorage[key]);
+  if(auth.authType=='basic'){
+   ph.basicAuths[auth.authUrl+':'+auth.realm]=auth;
+  }else if(auth.authType=='form'){
+   ph.formAuths[auth.authUrl]=auth;
+  }
+ }
+};
+
+ph.removeAuths=function(){
+ if(!ph.isUseSessionStorage){
+  return;
+ }
+ var regexp=new RegExp('auth.'+ph.chId+'.');
+ var n=sessionStorage.length;
+ for(var i=0;i<n;i++){
+  var key=sessionStorage.key(i);
+  var token=regexp.exec(key);
+  if(token==null){
+   continue;
+  }
+  sessionStorage.removeItem(key);
+ }
+};
+ph.removeAuth=function(id){
+ sessionStorage.removeItem('auth.'+ph.chId+'.'+id);
+};
+ph.saveAuth=function(auth){
+ sessionStorage['auth.'+ph.chId+'.'+auth.id]=ph.JSON.stringify(auth);
+ if(auth.authType=='basic'){
+//alert(auth.authUrl+':'+auth.realm + ':' +ph.JSON.stringify(auth));
+  ph.basicAuths[auth.authUrl+':'+auth.realm]=auth;
+ }else if(auth.authType=='form'){
+  ph.formAuths[auth.authUrl]=auth;
+ }
+ ph.log('ph.saveAuth:'+auth.id+':'+sessionStorage['auth.'+ph.chId+'.'+auth.id]);
+};
+ph.saveAuths=function(auths){
+ if(!ph.isUseSessionStorage){
+  return;
+ }
+ for(var i=0;i<auths.length;i++){
+  ph.saveAuth(auths[i]);
+ }
+};
+
+ph.formAuths={};
+ph.basicAuths={};
+ph.loginId='$loginUser.getLoginId()';
+ph.chId='${portalSession.chId}';
+
+ph.jQuery(function() {
+ ph.debug=true;
+ ph.loadAuths();//代理ログイン情報のobject化
+ ph.queue.start('/queue');
+ updateAuthList();
+// jQuery("#tabs").tabs();
+ jQuery("#tabs").tabs({
+## velocityが#{href}を#hrefに変えてしまう
+    tabTemplate: '<li><a href="#'+'{href}">#'+'{label}</a> <span url="#'+'{href}" class="ui-icon ui-icon-close">Remove Tab</span></li>',
+//    tabTemplate: '<li><a href="#{href}">#{label}</a> <span url="#{href}" class="ui-icon ui-icon-close">Remove Tab</span></li>',
+//  tabTemplate: '<li><a href="#{href}">#{label}</a></li>',
+//  tabTemplate: '<li>#{label}</li>',
+  cache:true,
+  ajaxOptions: {
+   error: function(xhr, status, index, anchor) {},
+   success: function(xhr, status, index, anchor) {}
+  },
+  select: function(event, ui) {
+   var frameNo=ph.tabIndexs[ui.index];
+   if(frameNo==undefined){
+    return;
+   }
+   ph.currentFrameNo=frameNo;
+  },
+  selected:0
+ }).find(".ui-tabs-nav").sortable({axis:'x'});
+
+ if (typeof window.postMessage == 'undefined') {
+	alert('Sorry your browser does not support the HTML5 Cross-Document Messaging.');
+	return;
+ }
+
+##ダイアログ初期化
+ jQuery("#authDialog").dialog({title:'代理ログイン情報編集'});
+ jQuery("#authDialog").dialog('close');
+
+ jQuery("#webTabDialog").dialog({title:'WebTab追加',width:400});
+ jQuery("#webTabDialog").dialog('close');
+
+##アドレスバーでのリターン
+ jQuery('.addressBar').live('keydown',function(ev){
+  if(ev.which==13){
+   var frameNo=jQuery(ev.target).parent().attr('frameNo');
+   ph.frameWebs[frameNo].go();
+  }
+ });
+
+##子フレームからのイベント通知
+ var onmessage = function(e) {
+  var data = e.data;
+  var origin = e.origin;
+  ph.log(e.data);
+  if(!e.data){
+   return true;
+  }
+  var msgObj=ph.JSON.parse(e.data);
+  var frameNo=msgObj.portalFrameNo;
+  if(!ph.frameWebs[frameNo]){
+   return;//削除された場合、nullになっている可能性あり
+  }
+  ph.frameWebs[frameNo].onMessage(msgObj);
+##Aタグがclick
+  if(msgObj.type=='click'){
+##passwordフィールを持つformがsumit
+  }else if(msgObj.type=='passwordSubmit'){
+   msgObj.documentLocationHref=ph.revRewriteUrl(msgObj.documentLocationHref);
+   var auth=ph.formAuths[msgObj.documentLocationHref];
+   if(auth && !auth.enabled){
+    return;
+   }
+##actionが、絶対pathになっているブラウザFFとそうでないブラウザCromeがある。
+   msgObj.url=ph.absolutePath(msgObj.url,msgObj.documentLocationHref);
+   auth={
+     authType:'form',
+     enabled:false,
+     autoPost:false,
+     forcePost:true,
+     notes:msgObj.title,
+     realm:msgObj.title,
+     authUrl:msgObj.documentLocationHref,
+     actionUrl:msgObj.url
+   }
+   msgObj.url=ph.revRewriteUrl(msgObj.url);
+   if( confirm('form認証情報を保存しますか？\ntitle:'+msgObj.title +'\nurl:'+msgObj.documentLocationHref)){
+     auth.enabled=true;
+     var authData=new ph.Tran(msgObj.url,msgObj.target,msgObj.type,msgObj.method,msgObj.params,msgObj.enctype);
+     auth.authData=ph.JSON.stringify(authData);
+   }
+   ph.doPramCommand('commissionAuth','saveFormAuth',auth,function(id){
+    auth.id=id;
+    auth.isExecute=true;//当該sessionで実行済み
+    ph.saveAuth(auth);
+   });
+##formがsumit
+  }else if(msgObj.type=='submit'){
+##passwordフィールドを持つpageがloadされた
+  }else if(msgObj.type=='passwordLoad'){//passwordを含む画面が表示された
+   msgObj.documentLocationHref=ph.revRewriteUrl(msgObj.documentLocationHref);
+   var auth=ph.formAuths[msgObj.documentLocationHref];
+   if(auth && auth.enabled){
+    var isPost=true;
+    if(auth.autoPost==false){
+     if(!confirm('form代理ログオンを実施しますか？\ntitle:'+auth.realm +'\nurl:'+auth.authUrl)){
+      isPost=false;
+     }
+    }
+    if(isPost){
+     ph.doPramCommand('commissionAuth','getFormAuthData',{id:auth.id},function(authData){
+       if(!authData){
+        alert('認証情報が保存されていません。form auth url:'+auth.authUrl);
+        ph.frameWebs[0].go(auth.authUrl);
+        return;
+       }
+       auth.isExecute=true;//当該sessionで実行済み
+       ph.saveAuth(auth);
+       var msg=ph.JSON.parse(authData);
+       if(!msg.url){//互換
+        msg.url=msg.action;
+       }
+       msg.type='executeSubmit';
+       ph.frameWebs[frameNo].postMessage(msg);
+      });
+    }
+   }
+##pageがloadされた
+  }else if(msgObj.type=='load'){
+##web認証実行通知、保存依頼
+  }else if(msgObj.type=='webAuth'){
+   var msgAuth=msgObj.auth;
+   var auth=ph.basicAuths[msgAuth.authUrl+':'+msgAuth.realm];
+   if(auth/*&& !msgObj.id*/){//既に存在するauthに対してwebAuthが実行された
+    auth.isExecute=true;//当該sessionで実行済み
+    ph.saveAuth(auth);
+    if(msgObj.topFrameName!=msgObj.windowName){
+     window.open(msgObj.documentLocationHref,msgObj.windowName);
+    }else{
+     ph.frameWebs[frameNo].go(msgObj.documentLocationHref);
+	}
+    return;
+   }
+   auth={
+    authType:'basic',
+    enabled:false,
+    notes:msgAuth.realm,
+    realm:msgAuth.realm,
+    authUrl:msgAuth.authUrl,
+    actionUrl:ph.revRewriteUrl(msgObj.documentLocationHref)
+   };
+   if(msgAuth.isSave){
+    auth.enabled=true;
+    auth.authData=ph.JSON.stringify({username:msgAuth.username,password:msgAuth.password});
+   }
+   ph.doPramCommand('commissionAuth','saveWebAuth',auth,function(id){
+    auth.id=id;
+    auth.isExecute=true;//当該sessionで実行済み
+    ph.saveAuth(auth);
+    if(msgObj.topFrameName!=msgObj.windowName){
+     window.open(msgObj.documentLocationHref,msgObj.windowName);
+    }else{
+     ph.frameWebs[frameNo].go(msgObj.documentLocationHref);
+	}
+   });
+  }
+ };
+// ph.jQuery(window).bind('message',onmessage);
+ if (window.addEventListener){
+  window.addEventListener('message', onmessage, false);
+ } else if (window.attachEvent){
+  window.attachEvent('onmessage', onmessage);
+ }
+
+##webTabの削除ボタンが押下された場合
+ jQuery('#tabs span.ui-icon-close').live('click', function() {
+  var url=jQuery(this).attr('url');
+  for(var i=0;i<ph.tabIndexs.length;i++){
+   if(("/portal/web.vsf?frameNo="+ph.tabIndexs[i])==url){
+    jQuery("#tabs").tabs('remove', i);
+    ph.frameWebs[ph.tabIndexs[i]]=null;
+    ph.tabIndexs.splice(i,1);
+    break;
+   }
+  }
+ });
+##追加したタブのインデックス番号を管理
+ph.tabIndexs=[];
+ph.frameWebs=[];
+ph.currentFrameNo=0;
+
+var keyPrefix=ph.loginId;
+##unloadイベント、設定情報をlocalstrageへ
+ ph.jQuery(window).unload(function(){
+  var currentWebIndex=0;
+  var webIndex=0;
+  for(var i=0;i<ph.frameWebs.length;i++){
+   var web=ph.frameWebs[i];
+   if(!web){
+    continue;
+   }
+   if(i==ph.currentFrameNo){
+    currentWebIndex=webIndex;
+   }
+   var webJson=web.toJson();
+   localStorage[keyPrefix+'.'+webIndex]=webJson;
+   webIndex++;
+  }
+  localStorage[keyPrefix+'.count']=webIndex;
+  localStorage[keyPrefix+'.current']=currentWebIndex;
+ });
+ var webcount=localStorage[keyPrefix+'.count'];
+ var currentWebIndex=localStorage[keyPrefix+'.current'];
+ if(location.search=='?cleanup'){
+  webcount=0;
+  currentWebIndex=0;
+ }
+ var isWeb0=true;
+ var currentFrameNo=0;
+ var currentTabIndex=0;
+ if(webcount){
+  for(var i=0;i<webcount;i++){
+   var webJson=localStorage[keyPrefix+'.'+i];
+   if(!webJson){
+    continue;
+   }
+   var web=ph.JSON.parse(webJson);
+   var webTab=addWebTab(web,isWeb0);
+   if(i==currentWebIndex){
+    currentFrameNo=webTab.frameNo;
+    currentTabIndex=webTab.tabIndex;
+   }
+   isWeb0=false;
+  }
+ }
+ if(isWeb0){
+  addWebTab(null,true);
+ }
+##0番目はこの機会にロード
+ ph.frameWebs[0].onload();
+ ph.frameWebs[0].action('reload');
+##currentは、ロード後内容が表示される
+ jQuery("#tabs").tabs("select",currentTabIndex);
+});//end of ph.jQuery(function()
+
+function webAction(spanTag,type){
+// alert(type);
+ var frameNo=jQuery(spanTag).parent().attr('frameNo');
+ ph.frameWebs[frameNo].action(type);
+}
+
+function updateAuthList(){
+ jQuery('#authList').find('option').remove();
+ jQuery('#authList').append('<option>login選択</option>');
+ var isList=false;
+ for(var url in ph.basicAuths){
+  var auth=ph.basicAuths[url];
+  if(auth.enabled&&auth.isExecute!=true){
+   var appendText='<option value="' + url +'">' +
+    auth.notes + '</option>';
+   jQuery('#authList').append(appendText);
+   isList=true;
+  }
+ }
+ for(var url in ph.formAuths){
+  var auth=ph.formAuths[url];
+  if(auth.enabled&&auth.isExecute!=true){
+   var appendText='<option value="' + url +'">' +
+    auth.notes + '</option>';
+   jQuery('#authList').append(appendText);
+   isList=true;
+  }
+ }
+ if(isList){
+  jQuery('#authListArea').show();
+ }else{
+  jQuery('#authListArea').hide();
+ }
+}
+
+##代理ログイン依頼で呼び出されるメソッド
+function selectAuth(url){
+ var auth=ph.basicAuths[url];
+ if(auth){
+  if(!auth.enabled){
+   alert('無効化されています。web auth url:'+url);
+   return;
+  }
+  auth.isExecute=true;//当該sessionで実行済み
+  ph.saveAuth(auth);
+  ph.frameWebs[0].go(auth.actionUrl);
+  updateAuthList();
+  return;
+ }
+ auth=ph.formAuths[url];
+ if(!auth){
+  return;//error
+ }
+ if(!auth.enabled){
+  alert('無効化されています。form auth url:'+url);
+  return;
+ }
+ auth.isExecute=true;//当該sessionで実行済み
+ ph.saveAuth(auth);
+ updateAuthList();
+ if(!auth.forcePost){
+  ph.frameWebs[0].go(auth.authUrl);
+  return;
+ }
+ //formのforce実行
+ ph.doPramCommand('commissionAuth','getFormAuthData',{id:auth.id},function(authDataText){
+   if(!authDataText){
+    alert('認証情報が保存されていません。form auth url:'+url);
+    ph.frameWebs[0].go(auth.authUrl);
+    return;
+   }
+   auth.isExecute=true;//当該sessionで実行済み
+   ph.saveAuth(auth);
+   var authData=ph.JSON.parse(authDataText);
+   if(!authData.url){//for 互換
+    authData.url=authData.action;
+   }
+   ph.frameWebs[0].submit(authData,true);
+  });
+}
+
+##webがある..localStorageからの復活,isWeb0...web0か否か
+ph.frameNoSec=0;
+function addWebTab(web,isWeb0){
+ var tabIndex=0;
+ if(!isWeb0){
+  ph.frameNoSec++;
+  var tabs=jQuery("#tabs");
+  tabIndex=tabs.tabs("length");
+ }
+ ph.tabIndexs[tabIndex]=ph.frameNoSec;
+ if(web){
+  ph.frameWebs[ph.frameNoSec]=new ph.Web(ph.frameNoSec,web);
+ }else if(isWeb0){
+  ph.frameWebs[ph.frameNoSec]=new ph.Web(ph.frameNoSec,{lavel:"web0",home:""});
+ }else{
+  var lavel=jQuery("#webTabLabel").val()||"web"+ph.frameNoSec;
+  var home=jQuery("#webTabHome").val();
+  ph.frameWebs[ph.frameNoSec]=new ph.Web(ph.frameNoSec,{lavel:lavel,home:home});
+  jQuery("#webTabLabel").val("");
+  jQuery("#webTabHome").val("");
+ }
+ ph.frameWebs[ph.frameNoSec].tabIndex=tabIndex;
+ 
+ if(isWeb0){
+  jQuery("#addressBar0").autocomplete({
+   source: ph.frameWebs[ph.frameNoSec].history.list,
+   select: function(event, ui) {ph.frameWebs[ph.frameNoSec].go();}
+  });
+//alert(ph.frameWebs[ph.frameNoSec].history.list);
+ }else if(!isWeb0){
+  jQuery("#tabs").tabs("add",
+   "/portal/web.vsf?frameNo="+ph.frameNoSec,
+   ph.frameWebs[ph.frameNoSec].lavel);
+  if(!web){
+   jQuery('#webTabDialog').dialog('close'); 
+   jQuery("#tabs").tabs("select",tabIndex);
+  }
+ }
+return ph.frameWebs[ph.frameNoSec];
+}
+
+// --></script>
+</HEAD>
+<BODY>
+<H1 style='margin:5px'>phPortal<span onclick="jQuery('#webTabDialog').dialog('open');">+</span></H1>
+<div style="text-align:right" class="welcom">$!esc.html($loginUser.loginId)さんようこそ
+<img src="/pub/images/home.gif" title="home" onclick='location="$!esc.html(${config.config.publicWebUrl})"'/>
+<img src="/pub/images/logout.gif" title="logout" onclick='location="$!esc.html(${config.config.authUrl})/logout"'/>
+</div>
+<div class="demo">
+<div id="tabs">
+	<ul>
+		<li><a href="#web0">web</a></li>
+		<li><a href="/portal/commissionAuth.vsf">commissionAuth</a></li>
+		<li><a href="/portal/chat.vsf">chat</a></li>
+		<li><a href="/portal/debug.vsf">debug</a></li>
+	</ul>
+<div id="web0" style="padding:0.4em">
+<div frameNo="0">
+<span title="戻る" onclick="webAction(this,'back');"><</span>
+<span title="進む" onclick="webAction(this,'prev');">></span>
+<span title="リロード" onclick="webAction(this,'reload');">V</span>
+<span title="中断" onclick="webAction(this,'stop');">X</span>
+<span title="ホーム" onclick="webAction(this,'home');">H</span>
+<input type="text" class="addressBar" id="addressBar0" value="http://java.sun.com/j2se/1.5.0/ja/docs/ja/api/index.html" size="72"/><!--input type="button" value="go" onclick="ph.frameWebs[0].go();"/-->
+<span id="authListArea">login:<select id="authList" size="1" onchange="selectAuth(this.value);"></select></span>
+</div>
+<iframe id="phFrameName0" name="phFrameName0" height="600" width="100%" frameborder='1' style='border:solid black 1px;'></iframe>
+</div><!-- end of win0-->
+</div>
+</div>
+<div id="debug" style="display: none">
+<p>デバッグ情報</p>
+<Hr/>
+<pre id="phDebugArea"></pre>
+</div>
+
+##commissionAuth編集用ダイアログ
+<div id="authDialog">
+id:<span id=authId></span><br/>
+type:<span id=authType></span><br/>
+realm:<span id=realm></span><br/>
+
+enabled:<input type="checkBox" id="authEnabled"/><br/>
+notes:<input id="authNotes" size="32"/><br/>
+auto:<input type="checkBox" id="authAuto"/><br/>
+force:<input type="checkBox" id="authForce"/><br/>
+<input type="button" value="save" onClick='editAuth();'>
+<input type="button" value="cancel" onClick="jQuery('#authDialog').dialog('close');">
+</div> 
+
+##WebTab追加ダイアログ
+<div id="webTabDialog">
+<label for="webTabLabel">label:</label><input id="webTabLabel" size="16"/><br/>
+<label for="webTabHome">home:</label><input id="webTabHome" size="52"/><br/>
+<input type="button" value="add" onClick='addWebTab();'>
+<input type="button" value="cancel" onClick="jQuery('#webTabDialog').dialog('close');">
+</div> 
+
+</BODY>
+</html>
+

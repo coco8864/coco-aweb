@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja" dir="ltr">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Pragma" content="no-cache"> 
+<meta http-equiv="Cache-Control" content="no-cache"> 
+<meta http-equiv="Expires" content="0"> 
+<script type="text/javascript" src="/pub/js/jquery-1.8.3.min.js"></script>
+<script type="text/javascript" src="/pub/js/ph-json2.js"></script>
+<script  type="text/javascript"><!--
+
+var bid=null;
+var token=null;
+function sendObjToParent(msg){
+  var jsonText=ph.JSON.stringify(msg);
+  parent.postMessage(jsonText,'*');
+}
+function onMessageFunc(event){
+  var msg=ph.JSON.parse(event.data);
+  if(jQuery.isArray(msg)){
+    for(var i=0;i<msg.length;i++){
+      objFromParent(msg[i]);
+    }
+  }else{
+    objFromParent(msg);
+  }
+  xhrRequest();
+}
+
+function objFromParent(msg){
+  if(msg.type==='negotiate'){
+    bid=msg.bid;
+    token=msg.token;
+    if(!msg.needRes){
+      return;
+    }
+  }
+  msgs.push(msg);
+}
+
+function waitAndXhrRequest(){
+  if(timer){
+    return;
+  }
+  ##alert('waitAndXhrRequest wait')
+  timer=setTimeout(xhrRequest,INTERVAL);
+}
+
+function xhrSuccess(text,xhr){
+  sending=false;
+  errorCount=0;
+  if(text){##受け取ったtextはそ・ままparentFrameに送信
+    parent.postMessage(text,'*');
+  }
+  if(msgs.length===0){
+    waitAndXhrRequest();
+  }else{
+    xhrRequest();
+  }
+}
+
+function xhrError(jqXhr,status,errorThrown){
+##alert('xhrError')
+  sending=false;
+  if(jqXhr.status===403){
+    sendObjToParent([{type:'close'}]);
+    sendObjToParent({load:false});
+    return;
+  }
+  errorCount++;
+  waitAndXhrRequest();
+}
+
+var sending=false;
+function xhrRequest(){
+  if(errorCount>3){##errorが３回続いたらclose
+    sendObjToParent({load:false});
+    return;
+  }
+  if(bid===null){
+    waitAndXhrRequest();
+    return;
+  }
+  if(sending){
+    return;
+  }
+  sending=true;
+  if(timer){
+    clearTimeout(timer);
+    timer=null;
+  }
+  if(msgs.length===0||msgs[0].type!=='negotiate'){
+    msgs.unshift({type:'negotiate',bid:bid,token:token,needRes:false});
+  }
+  var jsonText=ph.JSON.stringify(msgs);
+##alert('xhrRequest:'+jsonText);
+  msgs=[];
+  jQuery.ajax({
+    type: 'POST',
+    url: xhrUrl,
+    contentType : 'application/json',
+    processData: false,
+    data: jsonText,
+    success: xhrSuccess,
+    error: xhrError,
+    timeout:INTERVAL*3
+  });
+}
+
+function frameNameToUrl(frameName){
+  if( frameName.lastIndexOf(XHR_FRAME_NAME_PREFIX,0)!=0 ){
+    return null;
+  }
+  var url=frameName.substring(XHR_FRAME_NAME_PREFIX.length)+'/~xhrPolling';
+  return url;
+}
+
+var XHR_FRAME_NAME_PREFIX='__ph_xhr_';
+var INTERVAL=1000;
+var timer=null;
+var msgs=[];
+var errorCount=0;
+var xhrUrl;
+jQuery(function(){
+  xhrUrl=frameNameToUrl(window.name);
+  if(!xhrUrl){
+    return;
+  }
+  //unload後queueされてmessageを・信,subscribeは行わないTODO
+  jQuery(window).unload(function(){
+    xhrRequest(true);
+  });
+  if(window.addEventListener){
+    window.addEventListener('message',onMessageFunc, false);
+  }else if(window.attachEvent){
+    window.attachEvent('onmessage',onMessageFunc);
+  }
+  sendObjToParent({load:true});//loadされた事を親frameに通知
+  xhrRequest();
+});
+// --></script>
+</head>
+<body>
+</body>
+</html>

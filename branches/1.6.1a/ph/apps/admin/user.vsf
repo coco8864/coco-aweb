@@ -1,0 +1,148 @@
+<script type="text/javascript"> 
+var editUser=null;
+
+function doUserSave(){
+	var dialog=jQuery("#userDialog");
+	var user=editUser;
+	var command;
+	if(user){
+		command='userUpdate';
+		user.pass1=ph.jQuery("#userPassword1").val();
+		user.pass2=ph.jQuery("#userPassword2").val();
+		if(!user.pass1||user.pass1!=user.pass2){
+			delete user.pass1;//password変更依頼ではないと判断
+			delete user.pass2;
+		}
+		user.offlinePass1=ph.jQuery("#offlinePass1").val();
+		user.offlinePass2=ph.jQuery("#offlinePass2").val();
+		if(!user.offlinePass1||user.offlinePass1!=user.offlinePass2){
+			delete user.offlinePass1;//password変更依頼ではないと判断
+			delete user.offlinePass2;
+		}
+	}else{
+		user={};
+		command='userInsert';
+		user.loginId=ph.jQuery("#userLoginIdEdit").val();
+		user.pass1=ph.jQuery("#userPassword1").val();
+		user.pass2=ph.jQuery("#userPassword2").val();
+		if(!user.pass1||user.pass1!=user.pass2){
+			ph.log(user.pass1 + ":" +user.pass2);
+			alert('password error');
+			return;
+		}
+		user.offlinePass1=ph.jQuery("#offlinePass1").val();
+		user.offlinePass2=ph.jQuery("#offlinePass2").val();
+		if(!user.offlinePass1||user.offlinePass1!=user.offlinePass2){
+			ph.log(user.offlinePass1 + ":" +user.offlinePass2);
+			alert('offline password error');
+			return;
+		}
+	}
+	user.roles=ph.jQuery("#userRoles").val();
+	user.nickname=ph.jQuery("#userNickname").val();
+	ph.admin.doObjCommand('user',command,user,function(json){
+				ph.log('doUserSave:'+json);
+				userTableRefresh();
+			});
+	dialog.dialog('close');
+}
+
+function doUserDelete(){
+	var dialog=jQuery("#userDialog");
+	var user=editUser;
+	ph.dump(user);
+	ph.admin.doObjCommand('user','userDelete',user,function(json){
+				ph.log('doUerDelete:'+json);
+				userTableRefresh();
+			});
+	dialog.dialog('close');
+}
+
+function userTableRefresh(){
+	ph.log("userTableRefresh");
+	ph.admin.doPramCommand('user','userList',null,function(json){
+		var mappings=ph.JSON.parse(json);
+		userTable(mappings);
+	});
+}
+
+function userTable(lines){
+	ph.jQuery("#userData").empty();
+	var targetTag=document.getElementById("userData");
+	for(i in lines){
+		var trTag=document.createElement("tr");
+		userLine(trTag,lines[i]);
+		targetTag.appendChild(trTag);
+	}
+}
+
+function openUserDialog(isNew,user){
+	ph.jQuery("#userPassword1").val("");
+	ph.jQuery("#userPassword2").val("");
+	ph.jQuery("#offlinePass1").val("");
+	ph.jQuery("#offlinePass2").val("");
+	if(isNew){
+		ph.jQuery(".userUpdateMode").hide();
+		ph.jQuery(".userInsertMode").show();
+		ph.jQuery("#userLoginIdEdit").val("");
+		ph.jQuery("#userRoles").val("");
+		ph.jQuery("#userNickname").val("");
+	}else{
+		ph.jQuery(".userUpdateMode").show();
+		ph.jQuery(".userInsertMode").hide();
+		ph.jQuery("#userId").text(user.id);
+		ph.jQuery("#userLoginIdShow").text(user.loginId);
+		ph.jQuery("#userRoles").val(user.roles);
+		ph.jQuery("#userNickname").val(user.nickname);
+	}
+	editUser=user;
+	jQuery("#userDialog").dialog('open');
+}
+
+function userLine(trTag,user){
+	var tdTag;
+	tdTag=document.createElement("td");
+	var textNode=document.createTextNode(user.id);
+	var aTag=document.createElement("a");
+	aTag.setAttribute("href","#");
+	aTag.appendChild(textNode);
+	tdTag.appendChild(aTag);
+	ph.jQuery(aTag).bind("click",function(){
+			openUserDialog(false,user);
+			return false;
+		});
+//	tdTag=ph.admin.mkTdTag(user.id);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(user.loginId);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(user.nickname);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(user.roles);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(ph.admin.formatYmdhm(user.lastLogin));
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(ph.admin.formatYmdhm(user.changePass));
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(ph.admin.formatYmdhm(user.createDate));
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(user.loginCount);
+	trTag.appendChild(tdTag);
+}
+userTableRefresh();
+</script>
+
+<h1>User list</h1>
+<hr/>
+<input type="button" value="新規追加" onClick="openUserDialog(true);">
+<input type="button" value="reload" onClick="userTableRefresh();">
+<div style="margin: 0.4em 0.0em; padding: 0.0em 0.0em;background: #fff none; border: solid 0pt #000;">
+<table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
+<thead>
+<tr><th>ID</th><th>loginId</th><th>nickname</th><th>roles</th>
+<th>lastLogin</th><th>changePass</th><th>createDate</th><th>loginCount</th>
+</tr>
+</thead>
+<tbody id="userData"></tbody>
+</table>
+</div>
+

@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja" dir="ltr" #if( $useAppcache )manifest="$esc.html($manifest)"#end>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Pragma" content="no-cache"> 
+<meta http-equiv="Cache-Control" content="no-cache"> 
+<meta http-equiv="Expires" content="0"> 
+<script type="text/javascript" src="/pub/js/jquery-1.8.3.min.js"></script>
+<script type="text/javascript" src="/pub/js/ph-json2.js"></script>
+<script type="text/javascript" src="/pub/js/aes.js"></script>
+<script  type="text/javascript"><!--
+##親frameのlocation.href
+var OFFLINE_KEY='PaOfflineAuth'
+var parentOrigin;
+
+##このコンテンツはoffline cacheするので個別の値は保存できない
+##var offlinePassHash='$!esc.javascript(${offlinePassHash})';
+##var authInfo=ph.JSON.parse('$esc.javascript(${info})');
+##var offlinePassHash=null;
+##var authInfo=null;
+var userInfo=null;
+
+##crossDomainRequest情報
+var cdr={isIn:false,req:null};
+
+function onlineInfo(req,cb){
+  jQuery.ajax({
+    type:'POST',
+    url:'userInfo',
+    dataType:'json',
+    data:req,
+    success:function(x){
+      userInfo=x;
+      cb(x.result);},
+    error:function(x){cb({result:false});}
+  });
+}
+
+function onRequest(ev){
+  if(ev.source!==parent){
+    return;
+  }
+  if(!ev.data){
+    return;
+  }
+  var origin = ev.origin;
+  var req=ph.JSON.parse(ev.data);
+  if(parentOrigin==="*" || origin===parentOrigin){
+    if(cdr.isIn){
+      return;##parentからresponseを待たずに続けてrequestされた（異常)
+    }
+    cdr.isIn=true;
+    cdr.req=req;
+    if(req.type==="init"){
+      if(req.isOffline){
+        _response({type:"showFrame"});
+      }else{
+        onlineInfo(req,function(result){
+            response({type:"init",result:result});
+          });
+      }
+    }else if(req.type==="encrypt"){
+      if(userInfo.offlinePassHash){
+        req.encryptText=CryptoJS.AES.encrypt(req.plainText, userInfo.offlinePassHash).toString();
+      }else{
+        req.encryptText=req.plainText
+      }
+      response(req);
+    }else if(req.type==="decrypt"){
+      if(userInfo.offlinePassHash){
+        req.plainText=CryptoJS.AES.decrypt(req.encryptText, userInfo.offlinePassHash).toString(CryptoJS.enc.Utf8);
+      }else{
+        req.plainText=req.encryptText
+      }
+      response(req);
+    }else if(req.type==="logout"){
+      jQuery.ajax({
+        type:'GET',
+        url:'ajaxLogout',
+        dataType:'json',
+        success:function(x){response(x);},
+        error:function(x){response({result:false});}
+      });
+    }else if(req.type==="info"){
+      response(userInfo.authInfo);
+    }
+  }
+}
+
+function response(msg){
+  cdr.isIn=false;
+  cdr.req=null;
+  _response(msg);
+}
+
+function _response(msg){
+  var jsonMsg=ph.JSON.stringify(msg);
+  parent.postMessage(jsonMsg,parentOrigin);
+}
+
+jQuery(function(){
+  parentOrigin=decodeURIComponent(location.search.substring('?origin='.length));
+  if(parentOrigin==='file://'){
+    parentOrigin='*';
+  }
+  if(window.addEventListener){
+    window.addEventListener('message',onRequest, false);
+  }else if(window.attachEvent){
+    window.attachEvent('onmessage',onRequest);
+  }
+  _response({type:'load'});
+/*
+  var offlineInfo={};
+  var offlineInfoText=localStorage.getItem(OFFLINE_KEY);
+  if(offlineInfoText){
+    offlineInfo=ph.JSON.parse(offlineInfoText);
+  }
+  var loginId=authInfo.user.loginId;
+  var userInfoEncText=offlineInfo[loginId];
+  var userInfo;
+  if(userInfoEncText){
+    var userInfoText;
+    if(offlinePassHash){
+      userInfoText=CryptoJS.AES.decrypt(userInfoEncText, offlinePassHash).toString(CryptoJS.enc.Utf8);
+    }else{
+      userInfoText=userInfoEncText;
+    }
+    userInfo=ph.JSON.parse(userInfoText);
+  }else{
+    userInfo={onlineAuthCount:0,offlineAuthCount:0};
+  }
+##  userInfo.offlinePassHash=offlinePassHash;
+  userInfo.user=authInfo.user;
+  userInfo.onlineAuthCount++;
+
+  var userInfoText=ph.JSON.stringify(userInfo);
+  if(offlinePassHash){
+    userInfoEncText=CryptoJS.AES.encrypt(userInfoText, offlinePassHash).toString();
+  }else{
+    userInfoEncText=userInfoText;
+  }
+  offlineInfo[loginId]=userInfoEncText;
+  offlineInfoText=ph.JSON.stringify(offlineInfo);
+  localStorage.setItem(OFFLINE_KEY,offlineInfoText)
+  response(authInfo);
+*/
+/*
+  //XX {loginId1:{passCheckText:'',offlineLoginCount:99},loginId2:... }
+  //localStrageから既存のXXを取得
+  //logidIdでXXを複合かしてloginIdになることをチェック
+  //yesなら
+  //noなら
+
+  //login回数をインクリメント
+
+  //localStrageに設定
+  response({load:true});
+*/
+
+});
+// --></script>
+</head>
+<body>
+<h1>Phantom offline logon</h1>
+<div>user:<input name=userid></div>
+<div>offline password:<input type='password' name=userid></div>
+<div><input type='button' value='logon' onclick='_response({type:"hideFrame"})'></div>
+</body>
+</html>

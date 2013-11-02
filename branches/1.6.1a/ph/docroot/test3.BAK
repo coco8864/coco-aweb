@@ -1,0 +1,28 @@
+<!DOCTYPE html> 
+<html lang="jp"> 
+<head> 
+	<meta charset="UTF-8" /> 
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<meta http-equiv="Pragma" content="no-cache"> 
+	<meta http-equiv="Cache-Control" content="no-cache"> 
+	<meta http-equiv="Expires" content="0"> 
+	<title>XMLHttpRequest user/password test</title>
+	<script type="text/javascript">
+function test(user,pass){
+  var xhr=new XMLHttpRequest();
+  xhr.open( "GET" , "test.html", false );
+  xhr.onreadystatechange = function(){ 
+  if (xhr.readyState==4){ 
+    getElementById("output").innerHtml=xhr.responseText;
+    alert(xhr.responseText);
+  }};
+  xhr.send()
+}
+	</script>
+</head>
+<body>
+<H1>XMLHttpRequest user/password test</span></H1>
+<input type='button' value='test' onclick="test();"/>
+<div id="output"></div>
+</body>
+</html>
