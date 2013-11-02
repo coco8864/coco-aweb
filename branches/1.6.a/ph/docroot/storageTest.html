@@ -18,6 +18,13 @@ function outputLog(html){
   outputCounter++;
 }
 
+function scopesClear(){
+  for(i=0;i<scopes.length;i++){
+    var scope=scopes[i];
+    ph.jQuery("#"+scope+"Text").val('')
+  }
+}
+
 var link;
 var scopes=[
   ph.SCOPE.PAGE_PRIVATE,
@@ -68,6 +75,7 @@ function auth(isOffline){
     }
   });
   link.onUnload(function(){
+    scopesClear();
     ph.jQuery("#linkAuthArea input").attr('disabled','disabled');
     ph.jQuery("#storageArea input").attr('disabled','disabled');
   });
@@ -106,6 +114,7 @@ function keys(scope){
     });
 }
 ph.jQuery(function(){
+  scopesClear();
   ph.jQuery("#linkAuthArea input").attr('disabled','disabled');
   ph.jQuery("#storageArea input").attr('disabled','disabled');
 });
