@@ -201,6 +201,20 @@ public class SpdyFrame {
 	public static final int GOWST_OK = 0;
 	public static final int GOWST_PROTOCOL_ERROR = 1;
 	public static final int GOWST_INTERNAL_ERROR = 11;
+
+	/*Flags: An 8 bit value. Defined Flags:*/
+	public static final int FLAG_SETTINGS_PERSIST_VALUE =1;
+	public static final int FLAG_SETTINGS_PERSISTED =2;
+
+	/* ID: 24-bits in network byte order. Defined IDs:　*/
+	public static final int SETTINGS_UPLOAD_BANDWIDTH=1;
+	public static final int SETTINGS_DOWNLOAD_BANDWIDTH =2;
+	public static final int SETTINGS_ROUND_TRIP_TIME =3;
+	public static final int SETTINGS_MAX_CONCURRENT_STREAMS =4;
+	public static final int SETTINGS_CURRENT_CWND =5;
+	public static final int SETTINGS_DOWNLOAD_RETRANS_RATE =6;
+	public static final int SETTINGS_INITIAL_WINDOW_SIZE =7;
+	public static final int SETTINGS_CLIENT_CERTIFICATE_VECTOR_SIZE =8;
 	
 	
 	private static ByteBuffer setupControlFrame(ByteBuffer frame,short version,short type,char flags,int length){
@@ -231,7 +245,7 @@ public class SpdyFrame {
 	
 	private ParseStat parseStat;
 	private boolean c;//contorole bit
-	private short version;
+	private short version;/* frameのversion,protocolのversionとは異なる*/
 	private int dataLength;
 	private int curDataPos;
 	private char flags;
@@ -253,14 +267,13 @@ public class SpdyFrame {
 	private List<ByteBuffer> dataBuffers=new ArrayList<ByteBuffer>();
 	private long frameLimit;
 	
-	public void init(String protocol,long frameLimit){
+	public void init(short version,long frameLimit){
 		this.frameLimit=frameLimit;
-		if(PROTOCOL_V2.equals(protocol)){
-			version=VERSION_V2;
-		}else if(PROTOCOL_V3.equals(protocol)){
-			version=VERSION_V3;
-		}else if(PROTOCOL_V31.equals(protocol)){
-			version=VERSION_V3;
+		if(version==VERSION_V2){
+			this.version=VERSION_V2;
+		}else if(version==VERSION_V3 || version==VERSION_V31){
+			/* spdy3.1は、frame的には、spdy3と同じ */
+			this.version=VERSION_V3;
 		}
 		nameValueParser.init(version);
 		nameValueBuilder.init(version);
@@ -357,6 +370,18 @@ public class SpdyFrame {
 		setupControlFrame(frame, (short)version, (short)TYPE_WINDOW_UPDATE, (char)0, 8);
 		frame.putInt(streamId);
 		frame.putInt(deltaWindowSize);
+		frame.flip();
+		return BuffersUtil.toByteBufferArray(frame);
+	}
+	
+	public ByteBuffer[] buildSetting(int flags,int id,int value){
+		ByteBuffer frame = PoolManager.getBufferInstance();
+		frame.order(ByteOrder.BIG_ENDIAN);
+		setupControlFrame(frame, (short)version, (short)TYPE_SETTINGS, (char)0, 12);
+		frame.putInt(1);
+		int work=((int)flags)<<24|id;
+		frame.putInt(work);
+		frame.putInt(value);
 		frame.flip();
 		return BuffersUtil.toByteBufferArray(frame);
 	}

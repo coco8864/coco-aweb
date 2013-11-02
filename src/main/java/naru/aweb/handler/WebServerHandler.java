@@ -826,8 +826,11 @@ public class WebServerHandler extends ServerBaseHandler {
 			case RESPONSE_TRACE:
 			case TRACE:
 				if(headerBuffer==null){//SPDY経由の場合はヘッダバッファはない
-//					headerBuffer=responseHeader.getHeaderBuffer();
-					headerBuffer=BuffersUtil.toByteBufferArray(NO_HEADER.duplicate());
+					/* ヘッダ情報から逆変換 */
+					headerBuffer=responseHeader.getHeaderBuffer();
+					if(headerBuffer==null){
+						headerBuffer=BuffersUtil.toByteBufferArray(NO_HEADER.duplicate());
+					}
 				}else{
 					headerBuffer=PoolManager.duplicateBuffers(headerBuffer);
 				}

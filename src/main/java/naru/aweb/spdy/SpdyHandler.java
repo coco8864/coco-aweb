@@ -39,13 +39,21 @@ public class SpdyHandler extends ServerBaseHandler {
 	private RealHost realHost;
 	private ServerParser acceptServer;
 	private boolean isProxy;//CONNECTÇÃå„Ç…SPDYÇ™énÇ‹Ç¡ÇΩÇ©î€Ç©
-	private boolean isProtocol31=false;
+	private short version;/* protocolÇÃversion */
 	
 	public boolean onHandshaked(String protocol,boolean isProxy) {
 		logger.debug("#handshaked.cid:" + getChannelId() +":"+protocol);
 		this.isProxy=isProxy;
-		isProtocol31=SpdyFrame.PROTOCOL_V31.equals(protocol);
-		frame.init(protocol,spdyConfig.getSpdyFrameLimit());
+		if(SpdyFrame.PROTOCOL_V2.equals(protocol)){
+			version=SpdyFrame.VERSION_V2;
+		}else if(SpdyFrame.PROTOCOL_V3.equals(protocol)){
+			version=SpdyFrame.VERSION_V3;
+		}else if(SpdyFrame.PROTOCOL_V31.equals(protocol)){
+			version=SpdyFrame.VERSION_V31;
+		}else{
+			throw new IllegalArgumentException(protocol);
+		}
+		frame.init(version,spdyConfig.getSpdyFrameLimit());
 		inFrameCount=new long[SpdyFrame.TYPE_WINDOW_UPDATE+1];
 		outFrameCount=new long[SpdyFrame.TYPE_WINDOW_UPDATE+1];
 		lastGoodStreamId=0;
@@ -54,6 +62,9 @@ public class SpdyHandler extends ServerBaseHandler {
 		KeepAliveContext keepAliveContext=getKeepAliveContext();
 		realHost=keepAliveContext.getRealHost();
 		acceptServer=keepAliveContext.getAcceptServer();
+		
+		/*Å@ñ≥èåèÇ≈setting frameÇëóÇÈ */
+		sendSetting(SpdyFrame.FLAG_SETTINGS_PERSIST_VALUE,SpdyFrame.SETTINGS_MAX_CONCURRENT_STREAMS,100);
 		return false;//é©óÕÇ≈asyncReadÇµÇΩÇΩÇﬂ
 	}
 	
@@ -106,7 +117,7 @@ public class SpdyHandler extends ServerBaseHandler {
 				sendReset(streamId, SpdyFrame.RSTST_INVALID_STREAM);
 			}
 			sendWindowUpdate(streamId,(int)length);
-			if(isProtocol31){
+			if(version==SpdyFrame.VERSION_V31){
 				sendWindowUpdate(0,(int)length);
 			}
 			break;
@@ -219,6 +230,12 @@ public class SpdyHandler extends ServerBaseHandler {
 	private void sendWindowUpdate(int streamId,int deltaWindowSize){
 		outFrameCount[SpdyFrame.TYPE_WINDOW_UPDATE]++;
 		ByteBuffer[] resetFrame=frame.buildWindowUpdate(streamId, deltaWindowSize);
+		asyncWrite(null, resetFrame);
+	}
+	
+	private void sendSetting(int flags,int id,int value){
+		outFrameCount[SpdyFrame.TYPE_SETTINGS]++;
+		ByteBuffer[] resetFrame=frame.buildSetting(flags, id, value);
 		asyncWrite(null, resetFrame);
 	}
 	
@@ -361,7 +378,7 @@ public class SpdyHandler extends ServerBaseHandler {
 	}
 	
 	public int getSpdyVersion(){
-		return frame.getVersion();
+		return version;
 	}
 	public int getSpdyPri(){
 		return frame.getPriority();
