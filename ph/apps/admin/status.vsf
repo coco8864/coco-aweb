@@ -97,7 +97,7 @@ ph.jQuery(function() {
 });
 
 function terminate(){
- if(!confirm('Phantom Proxyを停止します.よろしいですか?'))return;
+ if(!confirm('Phantom Serverを停止します.よろしいですか?'))return;
  ph.admin.doCommand('terminate',{
    isRestart:false
   },
@@ -109,7 +109,8 @@ function terminate(){
 function suspending(){
  if(suspendState){
   ph.admin.con.publish("admin",{suspend:true});
-  setTimeout(suspending,1000);
+//  setTimeout(suspending,1000);
+  setInterval(suspending,1000);
  }else{
   ph.admin.con.publish("admin",{suspend:false});
  }
@@ -157,7 +158,7 @@ function certificate(){
 <Hr/>
 <H2>状態:<span id='terminateH2'>起動</span></H2>
 #if( ${config.javaHeapSize}<0)
- <input id='terminateBt' type="button" value="Phantom Proxy 停止" onclick="terminate();" />
+ <input id='terminateBt' type="button" value="Phantom Server 停止" onclick="terminate();" />
 #else
 restartCount:${config.restartCount} heapSize:${config.javaHeapSize}m<br>
 初期化:<input type="checkBox" id="restartCleanup"/> heapSize:<input type="text" size="4" id="restartHeapSize" value="${config.javaHeapSize}"/>m<input type="button" value="再起動"  onclick="restart();"/>
