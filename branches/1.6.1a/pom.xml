@@ -4,7 +4,7 @@
 	<groupId>naru.aweb</groupId>
 	<artifactId>aweb</artifactId>
 	<name>aweb</name>
-	<version>1.6.0</version>
+	<version>1.6.1</version>
 	<url>https://code.google.com/p/coco-aweb</url>
 
   <properties>
