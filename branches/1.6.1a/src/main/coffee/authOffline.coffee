@@ -1,5 +1,6 @@
 OFFLINE_KEY='LinkOffInfo:'
 OFFLINE_USERS_KEY='LinkOffUsers'
+OFFLINE_SALT_KEY='@offlinePassSalt'
 parentOrigin=null
 aplInfo=null
 userInfo=null ##{authInfo:{},offlinePassHash:''}
@@ -21,9 +22,7 @@ checkPassword=(loginId,password)->
   encryptText=localStorage.getItem(OFFLINE_KEY+loginId)
   if !encryptText
     return false
-  passHash=null
-  if password
-    passHash=calcPassHash(loginId,password)
+  passHash=calcPassHash(loginId,password)
   plainText=decryptText(encryptText,passHash)
   if plainText==null
     return false
@@ -31,17 +30,48 @@ checkPassword=(loginId,password)->
     userInfo=ph.JSON.parse(plainText)
     userInfo.offlinePassHash=passHash #passwordを省略された場合違うかもしれない
     sessionPrivatePrefix=null
-    authPrivatePrefix='$'+userInfo.authInfo.user.loginId+'.'
+    authPrivatePrefix='$'+userInfo.authInfo.user.loginId+'@'
   catch error
     return false
   return true
 
+deleteUserItem=(loginId)->
+  i=localStorage.length
+  while (i-=1) >=0
+    key=localStorage.key(i)
+    if key.lastIndexOf('$'+loginId+'@')==0
+      localStorage.removeItem(key)
+  localStorage.removeItem(OFFLINE_KEY+loginId)
+
+checkItems=(users)->
+  i=localStorage.length
+  while (i-=1) >=0
+    key=localStorage.key(i)
+    pos=key.indexOf('@')
+    loginId=null
+    if key.lastIndexOf('$')==0 && pos>0
+      loginId=key.substring(1,pos)
+    else if key.lastIndexOf('OFFLINE_KEY')==0
+      loginId=key.substring(pos+1)
+    if loginId && users[loginId]==undefined
+      localStorage.removeItem(key)
+
 getUsers=->
   usersText=localStorage.getItem(OFFLINE_USERS_KEY)
-  users={}
   if usersText
     users=ph.JSON.parse(usersText)
-  return users
+    salt=users[OFFLINE_SALT_KEY]
+    delete users[OFFLINE_SALT_KEY]
+    if salt==offlinePassSalt
+      return users
+    for loginId,nickname of users
+      deleteUserItem(loginId)
+  return {}
+
+saveUsers=(users)->
+  users[OFFLINE_SALT_KEY]=offlinePassSalt
+  usersText=ph.JSON.stringify(users)
+  localStorage.setItem(OFFLINE_USERS_KEY,usersText)
 
 saveUserInfo=->
   if !userInfo
@@ -55,8 +85,7 @@ saveUserInfo=->
   localStorage.setItem(OFFLINE_KEY+loginId,encText)
   users=getUsers()
   users[loginId]=userInfo.authInfo.user.nickname
-  usersText=ph.JSON.stringify(users)
-  localStorage.setItem(OFFLINE_USERS_KEY,usersText)
+  saveUsers(users)
 
 getUserInfo=(cb)->
   userInfoDfd=jQuery.ajax({
@@ -69,10 +98,9 @@ getUserInfo=(cb)->
     userInfo=x
     loginId=userInfo.authInfo.user.loginId
     if !userInfo.offlinePassHash
-      # passwordが設定されていない場合は、loginIdをhashした値をpasswordとする
       userInfo.offlinePassHash=calcPassHash(loginId,"")
-    sessionPrivatePrefix='#'+userInfo.authSid+'.'
-    authPrivatePrefix='$'+loginId+'.'
+    sessionPrivatePrefix='#'+userInfo.authSid+'@'
+    authPrivatePrefix='$'+loginId+'@'
     ##不要なsessionPrivateの刈り取り
     i=localStorage.length
     while (i-=1) >=0
@@ -130,6 +158,7 @@ responseAuthInfo=->
   if userInfo && userInfo.authInfo
     res.result=true
     res.authInfo=userInfo.authInfo
+    res.users=getUsers()
   else
     res.result=false
   response(res)
@@ -416,9 +445,6 @@ response=(msg)->
 offlineLogon=->
   loginId=jQuery('#loginId').val()
   password=jQuery('#password').val()
-  ##if password==""
-  ##  # passwordが設定されていない場合は、loginIdをhashした値をpasswordとする
-  ##  password=CryptoJS.SHA256(loginId).toString()
   isOffline=true
   if !checkPassword(loginId,password)
     # alert(loginId+':wrong password')
@@ -497,16 +523,30 @@ profileCancel=->
   isDisplay=false
   return
 
+removeOfflineUser=->
+  loginId=prompt('enter remove loginId')
+  if loginId==null || loginId==''
+    return
+  users=getUsers()
+  if !users[loginId]
+    return
+  deleteUserItem(loginId)
+  delete users[loginId]
+  saveUsers(users)
+
 jQuery(->
   parentOrigin=decodeURIComponent(location.search.substring('?origin='.length))
   jQuery('#logonBtn').on('click',offlineLogon)
   jQuery('#cancelBtn').on('click',offlineCancel)
   jQuery('#pfUpdateBtn').on('click',profileUpdate)
   jQuery('#pfCancelBtn').on('click',profileCancel)
+  jQuery('#pfRemoveUser').on('click',removeOfflineUser)
   if parentOrigin=='file://'
     parentOrigin='*'
   jQuery(window).on('message',onMsg)
   jQuery(window).on('storage',onStorage)
+  users=getUsers()
+  checkItems(users)
   response({type:'loadAuthFrame',result:true,offsetHeight:document.documentElement.offsetHeight})
 )
 

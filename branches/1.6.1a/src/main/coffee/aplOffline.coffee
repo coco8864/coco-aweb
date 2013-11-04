@@ -25,6 +25,18 @@ workFrameTimerId=null
 workFrameCb=null
 authInfo=null
 
+checkItems=(users)->
+  prefix="@#{aplInfo.aplPath}@"
+  i=localStorage.length
+  while (i-=1) >=0
+    key=localStorage.key(i)
+    pos=key.indexOf('@')
+    loginId=null
+    if key.lastIndexOf(prefix)==0 && pos>0
+      loginId=key.substring(prefix.length,pos)
+    if loginId && users[loginId]==undefined
+      localStorage.removeItem(key)
+
 loadAuthFrame=(authUrl)->
   authFrame[0].src=authUrl+'/~ph.vsp?origin='+location.protocol+'//'+location.host
   authFrameTimerId=setTimeout((->
@@ -52,8 +64,8 @@ onlineCheckAuthInfoSuccess=(res)->
   aplInfo.authUrl=res.authUrl
   aplInfo.loginId=res.loginId
   aplInfo.token=res.token
-  aplPrivatePrefix="@#{aplInfo.aplPath}@#{aplInfo.loginId}."
-  aplLocalPrefix="@#{aplInfo.aplPath}."
+  aplPrivatePrefix="@#{aplInfo.aplPath}@#{aplInfo.loginId}@"
+  aplLocalPrefix="%#{aplInfo.aplPath}@"
   localStorage.setItem(AUTH_URL_KEY,res.authUrl)
   loadAuthFrame(res.authUrl)
 
@@ -102,8 +114,8 @@ onAuthResponse=(res)->
     ##  _response({type:'hideFrame'})
     if res.result
       aplInfo.loginId=res.authInfo.user.loginId
-      aplPrivatePrefix="@#{aplInfo.aplPath}@#{aplInfo.loginId}."
-      aplLocalPrefix="@#{aplInfo.aplPath}."
+      aplPrivatePrefix="@#{aplInfo.aplPath}@#{aplInfo.loginId}@"
+      aplLocalPrefix="%#{aplInfo.aplPath}@"
       aplInfo.maxAge=30
       res.aplInfo=aplInfo
       res.authInfo=res.authInfo
@@ -111,6 +123,9 @@ onAuthResponse=(res)->
   else if res.type=='encrypt' || res.type=='decrypt' || res.type=='logout'
     response(res)
   else if res.type=='authInfo'
+    if res.result
+      #online logon時に無効なitemを削除する
+      checkItems(res.users)
     authInfo=res.authInfo
     response({type:'onlineAuth',result:res.result,aplInfo:aplInfo,authInfo:res.authInfo})
   else if res.type=='offlineLogout'
@@ -147,8 +162,8 @@ onlineAuthResponse=(res)->
     aplInfo.appSid=res.appSid
     aplInfo.authUrl=res.authUrl
     aplInfo.loginId=res.loginId
-    aplPrivatePrefix="@#{aplInfo.aplPath}@#{aplInfo.loginId}."
-    aplLocalPrefix="@#{aplInfo.aplPath}."
+    aplPrivatePrefix="@#{aplInfo.aplPath}@#{aplInfo.loginId}@"
+    aplLocalPrefix="%#{aplInfo.aplPath}@"
     aplInfo.token=res.token
     requestToAuthFrame({type:'authInfo',aplInfo:aplInfo})
   else
