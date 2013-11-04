@@ -70,6 +70,8 @@ function auth(isOffline){
     //bkmarklet=bkmarklet.split(' ').join('%20');
     outputLog('SESSION_PRIVATE:testKey()+:<a href="'+bkmarklet+'">storageInjection</a>');
     if(link.isAuth){
+      ph.jQuery("#loginId").text(user.loginId);
+      ph.jQuery("#nickname").text(user.nickname);
       ph.jQuery("#linkAuthArea input").removeAttr('disabled');
       ph.jQuery("#storageArea input").removeAttr('disabled');
     }
@@ -78,6 +80,8 @@ function auth(isOffline){
     scopesClear();
     ph.jQuery("#linkAuthArea input").attr('disabled','disabled');
     ph.jQuery("#storageArea input").attr('disabled','disabled');
+    ph.jQuery("#loginId").text("");
+    ph.jQuery("#nickname").text("");
   });
   for(i=0;i<scopes.length;i++){
     var scope=scopes[i];
@@ -146,6 +150,8 @@ aplUrl:<input id='aplUrl' type="text" value="/link1" style="width:256px;"/>
 <input type="button" value="link" onclick="auth(undefined);"/>
 <br />
 <div id='linkAuthArea'>
+loginid:<span id='loginId'></span><br />
+nickname:<span id='nickname'></span><br />
 <input type="button" value="profile" onclick="link.userProfile();"/>
 <input type="button" value="logout" onclick="link.logout();"/>
 <input type="button" value="unlink" onclick="link.unlink();"/><br />
