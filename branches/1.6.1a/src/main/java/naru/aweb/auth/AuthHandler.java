@@ -1,5 +1,6 @@
 package naru.aweb.auth;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -420,6 +421,9 @@ public class AuthHandler extends WebServerHandler {
 		}
 	}
 	
+	private final List<String> NO_ROLE=new ArrayList<String>();
+	private final JSONObject NO_USER=JSONObject.fromObject("{loginId:'',nickname:''}");
+	
 	private JSONObject infoObject(User user,String token){
 		JSONObject response=new JSONObject();
 		response.element("result", true);
@@ -429,8 +433,8 @@ public class AuthHandler extends WebServerHandler {
 			userRoles=user.getRolesList();
 			userJson=(JSONObject)user.toJson();
 		}else{
-			userRoles=null;
-			userJson=new JSONObject();
+			userRoles=NO_ROLE;
+			userJson=NO_USER;
 		}
 		response.element("token",token);
 		response.element("roles",userRoles);

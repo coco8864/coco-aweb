@@ -158,6 +158,7 @@ responseAuthInfo=->
   if userInfo && userInfo.authInfo
     res.result=true
     res.authInfo=userInfo.authInfo
+    # aplとuserの同期をとるため登録されているuserを付加
     res.users=getUsers()
   else
     res.result=false
