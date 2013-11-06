@@ -172,7 +172,16 @@
 										<include name="**/*.*" />
 										<exclude name="**/.svn/**/*.*" />
 									</fileset>
+							</copy>
+  							<copy todir="pack/phantom/ph/docroot/api/">
 									<fileset dir="ph/docroot/api/">
+										<include name="**/*" />
+										<include name="**/*.*" />
+										<exclude name="**/.svn/**/*.*" />
+									</fileset>
+							</copy>
+							<copy todir="pack/phantom/ph/apps/link/">
+									<fileset dir="ph/apps/link/">
 										<include name="**/*" />
 										<include name="**/*.*" />
 										<exclude name="**/.svn/**/*.*" />
