@@ -100,6 +100,7 @@ function auth(isOffline){
     }
     outputLog(linkInfo);
     if(link.isAuth){
+      ph.jQuery("#isOffline").text(link.isOffline);
       ph.jQuery("#loginId").text(user.loginId);
       ph.jQuery("#nickname").text(user.nickname);
       ph.jQuery("#linkAuthArea input").removeAttr('disabled');
@@ -110,6 +111,7 @@ function auth(isOffline){
     ph.jQuery("#linkAuthArea input").attr('disabled','disabled');
     ph.jQuery("#linkArea input").attr('disabled','disabled');
     ph.jQuery("#subArea input").attr('disabled','disabled');
+    ph.jQuery("#isOffline").text("");
     ph.jQuery("#loginId").text("");
     ph.jQuery("#nickname").text("");
   });
@@ -168,7 +170,7 @@ aplUrl:<input id='aplUrl' type="text" value="/link1" style="width:256px;"/>
 <input type="button" value="online link" onclick="auth(false);"/>
 <br />
 <div id='linkAuthArea'>
-<H2>Link operation</H2>
+isOffline:<span id='isOffline'></span><br />
 loginid:<span id='loginId'></span><br />
 nickname:<span id='nickname'></span><br />
 <input type="button" value="profile" onclick="link.userProfile();"/>
