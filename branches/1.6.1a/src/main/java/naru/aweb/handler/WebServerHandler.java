@@ -259,7 +259,8 @@ public class WebServerHandler extends ServerBaseHandler {
 	}
 
 	/**
-	 * 独自にレスポンスを返却したい人は、このメソッドをオーバライドする
+	 * 独自にレスポンスを返却したいアプリケーションは、このメソッドをオーバライドする<br/>
+	 * header到着時に通知されるため、bodyを順次処理する場合に利用する。
 	 * このメソッド呼び出し時点では、ヘッダ解析時に読み込んでしまったbody部分はrequestHeader内部に残っている点に注意
 	 * startParseBodyメソッドでは、その部分について明示的にonReadPlainメソッドを呼び出す。
 	 */
@@ -268,7 +269,7 @@ public class WebServerHandler extends ServerBaseHandler {
 	}
 
 	/**
-	 * リクエストbodyを処理したい人はこのメソッドをオーバライドして使う 。<br/>
+	 * リクエストbodyを順次処理したいアプリケーションはこのメソッドをオーバライドする 。<br/>
 	 * このメソッドの処理は、parameterで受信データを解析する<br/>
 	 * @param buffers リクエストbody
 	 */
@@ -289,8 +290,8 @@ public class WebServerHandler extends ServerBaseHandler {
 	}
 
 	/**
-	 * リクエストデータを受信したことを通知<br/>
-	 * 全リクエストを受信しきってから処理を始めるアプリケーションは、このメソッドをoverrideする。<br/>
+	 * 独自にレスポンスを返却したいアプリケーションは、このメソッドをオーバライドする<br/>
+	 * body到着時に通知される。bodyは、parameterに解析された状態で格納されている。<br/>
 	 * 受信データは、getParameterParserで取得<br/>
 	 */
 	public void onRequestBody() {

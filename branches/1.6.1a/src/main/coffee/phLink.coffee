@@ -12,11 +12,11 @@ class Link extends PhObject
  \#\#\#\# イベント
  *  **ph.EVENT.LOGIN:** 認証完了を通知
  *  **ph.EVENT.QNAMES:** qnameメソッドでcallbackを指定しなかった場合APIの完了を通知
-  *   通知={qnames:['qname1','qname2'...]},ユーザ指定ctx
+ *   通知={qnames:['qname1','qname2'...]},ユーザ指定ctx
  *  **ph.EVENT.ENCRYPT:** encryptメソッドでcallbackを指定しなかった場合APIの完了を通知
-  *   通知={encryptText:'暗号化文字列',plainText:'指定した平文']},ユーザ指定ctx
+ *   通知={encryptText:'暗号化文字列',plainText:'指定した平文']},ユーザ指定ctx
  *  **ph.EVENT.DECRYPT:** decryptメソッドでcallbackを指定しなかった場合APIの完了を通知
-  *   通知={encryptText:'指定した暗号化文字列',plainText:'平文']},ユーザ指定ctx
+ *   通知={encryptText:'指定した暗号化文字列',plainText:'平文']},ユーザ指定ctx
  *  **ph.STAT_UNLOAD:** このオブジェクトの終了を通知,onUnloadメソッドと同義
  *  **ph.STAT_READY:** このオブジェクトの準備が完了した事を通知,認証完了or認証失敗,onReadyメソッドと同義
  ###
@@ -386,11 +386,11 @@ class PrivateSessionStorage extends PhObject
 
  \#\#\#\# イベント
  *  **ph.EVENT.GET_ITEM:** getItemメソッドの復帰情報を通知
-  *   通知={key:'key1',value:'valu1'},ユーザ指定ctx
+ *   通知={key:'key1',value:'valu1'},ユーザ指定ctx
  *  **ph.EVENT.KEYS:** keysメソッドの復帰情報を通知
-  *   通知={keys:['key1','key2'...]},ユーザ指定ctx
+ *   通知={keys:['key1','key2'...]},ユーザ指定ctx
  *  **ph.EVENT.CHANGE_ITEM:** 他pageでの値変更を通知
-  *   通知={key:'key1',value:'valu1',newValue:'valu1',oldValue:'value2'}
+ *   通知={key:'key1',value:'valu1',newValue:'valu1',oldValue:'value2'}
  *  **ph.STAT_UNLOAD:** このオブジェクトの終了を通知
  ###
  constructor:(@link)->

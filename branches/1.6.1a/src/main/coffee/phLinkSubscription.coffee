@@ -3,7 +3,7 @@ class Subscription extends PhObject
   ###
   \#\#\#\# pubsubAPIのメインクラス
   Link.subscribeメソッドの復帰値として取得.このオブジェクトを通じてサーバからのデータを送受信する.
-  送受信するデータには、JSONでは表現できないDateオブジェクトやBlobオブジェクトを含める事ができる.
+  送受信するデータには、String,数値だけでなくJSONで表現できないDateオブジェクト,Blobオブジェクトを含める事ができる.
 
   \#\#\#\# イベント
   *  **ph.EVENT.MESSAGE:** サーバからのmessage受信を通知
@@ -19,19 +19,25 @@ class Subscription extends PhObject
     @load()
     return
   unsubscribe:->
-    ### subscribe終了 ###
+    ### subscribeを終了します ###
     @onLoad(@_unsubscribe)
   _unsubscribe:=>
     @_con._send({type:ph.TYPE_UNSUBSCRIBE,qname:@qname,subname:@subname})
   publish:(msg)->
-    ### 指定したmsgオブジェクトをサーバに送信 ###
+    ###
+    指定したmsgオブジェクトをサーバに送信
+    msgには、String,数値だけでなくJSONで表現できないDateオブジェクト,Blobオブジェクトを含める事ができる.
+
+     -   **msg:** publishする送信オブジェクト
+    ###
     @onLoad(@_publish,msg)
   _publish:(msg)=>
     @_con._send({type:ph.TYPE_PUBLISH,qname:@qname,subname:@subname,message:msg})
   publishForm:(formId)->
     ###
     \#\#\#\#\# formに含まれるデータを、指定したqname,dubnameにsubscribeします.
-    指定したformデータをサーバに送信,Blobをサポートしていないブラウザからでもファイルデータが送信できる.
+    Blobをサポートしていないブラウザからでもファイルデータが送信できる.
+
      -   **formId:** publishするformタグのid属性
     ###
     @onLoad(@_publishForm,formId)
@@ -57,6 +63,11 @@ class Subscription extends PhObject
     tokenInput.remove()
     qnameInput.remove()
     subnameInput.remove()
-  onMsg:(cb)->
-    ### message通知メソッドを登録.sub.on(ph.EVENT.MESSAGE,cb)と同義. ###
-    @on(ph.EVENT.MESSAGE,cb)
+  onMsg:(callback)->
+    ###
+    message通知メソッドを登録.sub.on(ph.EVENT.MESSAGE,cb)と同義. 
+    cbのパラメタは、サーバからの通知オブジェクトであり、String,数値だけでなくJSONで表現できないDateオブジェクト,Blobオブジェクトを含まれる場合がある。
+
+     -   **callback:** message受信時呼び出されるメソッド
+    ###
+    @on(ph.EVENT.MESSAGE,callback)
