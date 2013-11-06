@@ -10,6 +10,7 @@
    * !AppCache
   これらのhtml5技術は、単体では実際にアプリケーションに適用できないものがあります。たとえば、websocketの認証は、websocketの技術だけでは実装できず、Cross-document messagingを利用したAPI認証の仕組みが必要です。また、webstorageに保存したデータは誰でも参照可能な状態になるため、端末のマルチユーザ利用を想定した場合!AppCache機能を利用したoffline認証の仕組みが必要となります。
   !PhantomLinkは、phantom serverの機能を利用し、html5技術をラッピングしてapplicationの作成を助けるframeworkを提供します。
+   [https://phapp.coco.0t0.jp/link2/ デモサイト]を運用しています。
  * アプリケーションモデル
    linkは、publish/subscribe方式のメッセージ通信と各種スコープを持つstorageサービスから構成されます。
    offline時にも、offline認証する事で、ブラウザスコープのstorageは、安全に利用することができます。
