@@ -12,7 +12,7 @@
   !PhantomLinkは、phantom serverの機能を利用し、html5技術をラッピングしてapplicationの作成を助けるframeworkを提供します。
    [https://phapp.coco.0t0.jp/link2/ デモサイト]を運用しています。
  * アプリケーションモデル
-   linkは、publish/subscribe方式のメッセージ通信と各種スコープを持つstorageサービスから構成されます。
+   PhantomLinkは、publish/subscribe方式のメッセージ通信と各種スコープを持つstorageサービスから構成されます。
    offline時にも、offline認証する事で、ブラウザスコープのstorageは、安全に利用することができます。
      例)publish/subscribe APIでメッセージを送受信する
      {{{
