@@ -64,7 +64,7 @@
   * ~~任意のリクエストを送信する機能~~
   * ~~restartを3回繰り返すと終わってしまう問題対応~~
   * コード系の自動判別
-    * metaやxml宣言のコードはコンテンツの先頭付近にあるのでそれを利用
+    * ~~metaやxml宣言のコードはコンテンツの先頭付近にあるのでそれを利用~~
   * coneoleの完全!WebSocket化
     * !WebSocketリクエストの方がhttpでのリクエストより柔軟性がある
   * !WebSocketアプリ向けフレームワークが必要
@@ -77,11 +77,11 @@
     * NPNライブラリとしてname.ben.murphy,ssl_npnを利用
   * 一括してSSL運用にする機能、またその逆
   * spdyクライアント
-  * chatをカレントにしてロードしたとき未接続となる
+  * ~~chatをカレントにしてロードしたとき未接続となる~~
   * 基本認証時に長時間放置すると元に戻れなくなる
   * Storeの参照数がいいかげん
-  * Json-libのmybejason問題の修正
-  * accesslogの出力形式を標準にあわせる
+  * ~~Json-libのmybejason問題の修正~~
+  * ~~accesslogの出力形式を標準にあわせる~~
   * SPDY,websocketのaccesslogの出力形式を含めて、ドキュメントに説明する
 
 
