@@ -51,6 +51,9 @@ public class LinkManager {
 			/* subscribeが一つもない定義は、参照しているだけ　*/
 			return manager;
 		}
+		JSONObject sub=new JSONObject();
+		sub.put(ROOT_LINKLET, "naru.aweb.link.StorageLinklet");
+		manager.deploy("@storage", sub);
 		int maxSubscribe=link.optInt(MAX_SUBSCRIBES, 16);
 		String nextHandler=link.optString(NEXT_HANDLER_CLASS, FileSystemHandler.class.getName());
 		Class nextHandlerClass;
