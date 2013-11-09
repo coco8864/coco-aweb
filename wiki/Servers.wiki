@@ -42,8 +42,8 @@
  ==virtualHost==
   virtual hostを行うための定義を説明します。
   virtual hostは、webリクエストを受け付けた際の、source（どこからリクエストを受け付けるか）で表現できます。
-  * sourceServer ブラウザから、Phantom Proxyを呼び出す際のhost名を指定します。
+  * sourceServer ブラウザから、Phantom Serverを呼び出す際のhost名を指定します。
   * sourceType "WEB"を選択します
-  [Servers#webServer webサーバ]、[Servers#reverseProxyServer revers proxyサーバ]のように、ブラウザがPhantom Proxyをwebサーバと判断してリクエストする際に利用できます。
+  [Servers#webServer webサーバ]、[Servers#reverseProxyServer revers proxyサーバ]のように、ブラウザがPhantom Serverをwebサーバと判断してリクエストする際に利用できます。
 
  
