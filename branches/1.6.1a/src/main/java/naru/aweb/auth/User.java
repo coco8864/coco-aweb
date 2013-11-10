@@ -425,9 +425,36 @@ public class User {
 	public String getOfflinePassHash() {
 		return offlinePassHash;
 	}
+	
+	private static int MAX_PASS_HISTORY=8;
+	
+	private void addOfflinePassHashHistory(String curOfflinePassHash){
+		if(offlinePassHashHistory==null){
+			offlinePassHashHistory="1:"+curOfflinePassHash;
+			return;
+		}
+		StringBuilder sb=new StringBuilder();
+		String[] noPart=offlinePassHashHistory.split(":", 2);
+		int no=Integer.parseInt(noPart[0]);
+		sb.append(Integer.toString(no+1));
+		sb.append(':');
+		sb.append(curOfflinePassHash);
+		String[] part=offlinePassHashHistory.split(",");
+		int n=Math.min((MAX_PASS_HISTORY-1),part.length);
+		for(int i=0;i<n;i++){
+			sb.append(',');
+			sb.append(part[i]);
+		}
+		offlinePassHashHistory=sb.toString();
+	}
+
+	public String getOfflinePassHashHistory() {
+		return offlinePassHashHistory;
+	}
 
 	public void setOfflinePassHash(String offlinePassHash) {
 		this.offlinePassHash = offlinePassHash;
+		addOfflinePassHashHistory(offlinePassHash);
 	}
 	
 	public String getNickname() {

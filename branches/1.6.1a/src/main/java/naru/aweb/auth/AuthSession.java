@@ -203,16 +203,18 @@ public class AuthSession extends PoolBase{
 	}
 	*/
 	
-	/* AuthSessionリーク調査用
+	/* AuthSessionリーク調査用 */
+	/*
 	@Override
 	public void ref() {
 		super.ref();
-		logger.debug("ref:"+getPoolId(),new Exception());
+		logger.debug("AS ref:"+getPoolId()+":"+getRef(),new Exception());
 	}
 
 	@Override
 	public boolean unref() {
-		logger.debug("unref:"+getPoolId(),new Exception());
+		logger.debug("AS unref:"+getPoolId()+":"+getRef(),new Exception());
 		return super.unref();
-	}*/
+	}
+	*/
 }

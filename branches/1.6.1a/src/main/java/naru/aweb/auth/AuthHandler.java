@@ -492,6 +492,7 @@ public class AuthHandler extends WebServerHandler {
 		User user=authorizer.getUserByPrimaryId(cookieId);
 		if(user!=null){
 			response.element("offlinePassHash", user.getOfflinePassHash());
+			response.element("offlinePassHashHistory", user.getOfflinePassHashHistory());
 			response.element("token", authToken);
 			response.element("authSid", authSid);
 		}

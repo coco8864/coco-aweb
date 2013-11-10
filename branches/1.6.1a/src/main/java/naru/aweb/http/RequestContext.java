@@ -64,6 +64,7 @@ public class RequestContext extends PoolBase {
 			if(logountEvent!=null){
 				authSession.removeLogoutEvent(logountEvent);
 			}
+			logger.debug("registerAuthSession release authSessionPoolId:"+authSession.getPoolId() +":this:" +getPoolId());
 			authSession.unref();//requestContextからポイントされている間は開放されない
 			authSession=null;
 		}
@@ -95,6 +96,7 @@ public class RequestContext extends PoolBase {
 	}
 	//authSessionのrefカウンタはDispatchHandlerで、他認証系のライフサイクルにあわせてカウントアップされている
 	public void registerAuthSession(AuthSession authSession) {
+		logger.debug("registerAuthSession authSessionPoolId:"+authSession.getPoolId() +":this:" +getPoolId());
 		this.authSession = authSession;
 	}
 

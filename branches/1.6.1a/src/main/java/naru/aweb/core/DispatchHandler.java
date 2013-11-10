@@ -562,6 +562,8 @@ public class DispatchHandler extends ServerBaseHandler {
 				response.element(AuthHandler.APP_SID, authSession.getSid());
 				response.element(AuthHandler.LOGIN_ID, authSession.getUser().getLoginId());
 				response.element(AuthHandler.TOKEN, authSession.getToken());
+				//この処理により、リクエスト終了時にauthSessionの参照カウンタが下がる
+				requestContext.registerAuthSession(authSession);
 			}
 			mapping.unref();
 			return DispatchResponseHandler.jsonResponse(response);
@@ -732,7 +734,6 @@ public class DispatchHandler extends ServerBaseHandler {
 			mapping=checkMappingAuth(requestHeader,keepAliveContext,requestContext,mapping);
 		}
 		if(requestContext.getAuthSession()==null){
-			AuthSession.UNAUTH_SESSION.ref();
 			requestContext.registerAuthSession(AuthSession.UNAUTH_SESSION);
 		}
 		
