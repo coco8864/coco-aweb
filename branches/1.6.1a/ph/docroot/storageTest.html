@@ -7,7 +7,6 @@
   <title>PhantomLink storage test</title>
   <script type="text/javascript" src="/pub/js/ph.js"></script>
   <script type="text/javascript">
-
 var outputCounter=1;
 function outputClear(){
   ph.jQuery("#output").html("");
@@ -32,7 +31,9 @@ var scopes=[
   ph.SCOPE.APL_PRIVATE,
   ph.SCOPE.APL_LOCAL,
   ph.SCOPE.AUTH_PRIVATE,
-  ph.SCOPE.AUTH_LOCAL]
+  ph.SCOPE.AUTH_LOCAL,
+  ph.SCOPE.APL_USER,
+  ph.SCOPE.APL_GLOBAL]
 var storages={};
 
 function testKey(){
@@ -87,7 +88,7 @@ function auth(isOffline){
   });
   for(i=0;i<scopes.length;i++){
     var scope=scopes[i];
-    storages[scope]=link.storage(scope);
+    storages[scope]=link.storage(scope,'storName1');
     getItem(scope);
     storages[scope].on(testKey(),function(data){
       ph.jQuery("#"+data.scope+"Text").val(data.value)
@@ -250,6 +251,34 @@ AUTH_LOCAL:
 <input type="button" value="keys" onclick="keys(ph.SCOPE.AUTH_LOCAL);"/>
 </td>
 </tr>
+
+<tr>
+<td>
+APL_USER:
+</td>
+<td>
+<input id='aplUserText' type="text" style="width:200px;"/>
+<input type="button" value="setItem" onclick="setItem(ph.SCOPE.APL_USER);"/>
+<input type="button" value="getItem" onclick="getItem(ph.SCOPE.APL_USER);"/>
+<input type="button" value="removeItem" onclick="removeItem(ph.SCOPE.APL_USER);"/>
+<input type="button" value="keys" onclick="keys(ph.SCOPE.APL_USER);"/>
+</td>
+</tr>
+
+<tr>
+<td>
+APL_GLOBAL:
+</td>
+<td>
+<input id='aplGlobalText' type="text" style="width:200px;"/>
+<input type="button" value="setItem" onclick="setItem(ph.SCOPE.APL_GLOBAL);"/>
+<input type="button" value="getItem" onclick="getItem(ph.SCOPE.APL_GLOBAL);"/>
+<input type="button" value="removeItem" onclick="removeItem(ph.SCOPE.APL_GLOBAL);"/>
+<input type="button" value="keys" onclick="keys(ph.SCOPE.APL_GLOBAL);"/>
+</td>
+</tr>
+
+
 </table>
 </div>
 output<br />
