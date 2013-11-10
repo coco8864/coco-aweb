@@ -19,7 +19,7 @@ public class StorageLinklet implements Linklet{
 	private static final String TYPE_SET_ITEM="setItem";
 	private static final String TYPE_REMOVE_ITEM="removeItem";
 	private static final String TYPE_KEYS="keys";
-	private static final String TYPE_CHANGE_ITEM="chageItem";
+	private static final String TYPE_CHANGE_ITEM="changeItem";
 	
 	private static Logger logger=Logger.getLogger(StorageLinklet.class);
 	private LinkletCtx ctx;
@@ -89,16 +89,23 @@ public class StorageLinklet implements Linklet{
 	}
 	
 	private StorageInfo getStorageInfo(LinkPeer peer){
+		StorageInfo info=(StorageInfo)peer.getAttribute("StorageInfo");
+		if(info!=null){
+			return info;
+		}
 		String subname=peer.getSubname();
 		if(subname.startsWith(SCOPE_APL_GLOBAL)){
 			String storName=subname.substring(SCOPE_APL_GLOBAL.length());
-			return getGlobalStorageInfo(storName);
+			info=getGlobalStorageInfo(storName);
 		}else if(subname.startsWith(SCOPE_APL_USER)){
 			String storName=subname.substring(SCOPE_APL_USER.length());
 			String loginId=peer.getLoginId();
-			return getUserStorageInfo(loginId,storName);
+			info=getUserStorageInfo(loginId,storName);
+		}else{
+			throw new IllegalArgumentException(subname);
 		}
-		return null;
+		peer.setAttribute("StorageInfo", info);
+		return info;
 	}
 
 	@Override

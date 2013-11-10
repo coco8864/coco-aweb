@@ -78,7 +78,12 @@ public class LinkletWrapper implements LinkletCtx,Timer{
 		if(linklet==null){
 			return false;
 		}
-		linklet.onSubscribe(peer);
+		try{
+			linklet.onSubscribe(peer);
+		}catch(Throwable t){
+			logger.warn("onSubscribe error.",t);
+			return false;
+		}
 		return true;
 	}
 	
@@ -92,13 +97,17 @@ public class LinkletWrapper implements LinkletCtx,Timer{
 				subnamePeers.remove(peer);
 			}
 		}
-		if(exist){
-			Linklet linklet=getLinklet(peer);
-			linklet.onUnsubscribe(peer,reason);
-			return true;
-		}else{
+		if(!exist){
 			return false;
 		}
+		Linklet linklet=getLinklet(peer);
+		try{
+			linklet.onUnsubscribe(peer,reason);
+		}catch(Throwable t){
+			logger.warn("unUnsbscribe error.",t);
+			return false;
+		}
+		return true;
 	}
 	
 	void onPublish(LinkPeer peer,Object data){
@@ -119,6 +128,8 @@ public class LinkletWrapper implements LinkletCtx,Timer{
 		/*　送信データがObjectの場合*/		
 		try{
 			linklet.onPublish(peer,msg);
+		}catch(Throwable t){
+			logger.warn("onPublish error.",t);
 		}finally{
 			msg.unref();
 		}

@@ -267,24 +267,28 @@ public class LinkSession extends PoolBase implements LogoutEvent{
 			keyPeer.unref(true);
 			return;
 		}
-		unsubscribeByPeer(keyPeer);
+		LinkPeer peer=unsubscribeByPeer(keyPeer);
 		keyPeer.unref(true);
+		if(peer!=null){
+			peer.releaseSession();
+			peer.unref();
+		}
 	}
 	
 	/* API経由でのunsubscribe, clientにunsubscribe(subscribe失敗)を通知する */
-	public boolean unsubscribeByPeer(LinkPeer peer){
+	public LinkPeer unsubscribeByPeer(LinkPeer peer){
 		String qname=peer.getQname();
 		synchronized(peers){
 			peer=peers.remove(peer);
 			if(peer==null){//すでにunsubscribe済み処理はない
-				return false;
+				return null;
 			}
-			peer.releaseSession();
+			//peer.releaseSession();
 		}
 		//unsubscribeは過去に発行されたsubscribeが成功したとして通知する
 		sendSuccess(TYPE_SUBSCRIBE,qname,peer.getSubname(),"unsubscribed by api");
-		peer.unref();
-		return true;
+		//peer.unref();
+		return peer;
 	}
 	
 	public void publish(LinkMsg msg){
@@ -398,7 +402,7 @@ public class LinkSession extends PoolBase implements LogoutEvent{
 				if( ((LinkPeer)peer).unsubscribe()==false){
 					//TODO 意味不明だが停止時にループした
 					logger.error("fail to onLogout for unsubscribe",new Exception());
-					unref();//セションが終わったらPaSessionも必要なし
+					unref();//セションが終わったらLinkSessionも必要なし
 					return;
 				}
 			}

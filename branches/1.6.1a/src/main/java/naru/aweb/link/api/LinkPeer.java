@@ -1,6 +1,8 @@
 package naru.aweb.link.api;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import naru.async.AsyncBuffer;
 import naru.async.pool.PoolBase;
@@ -32,6 +34,7 @@ public class LinkPeer extends PoolBase{
 		}
 		peer.qname=qname;
 		peer.subname=subname;
+		peer.attribute.clear();
 		return peer;
 	}
 	
@@ -40,6 +43,8 @@ public class LinkPeer extends PoolBase{
 	private long linkSessionId;
 	private String qname;//queue名
 	private String subname;//subname
+	private Map<String,Object> attribute=new HashMap<String,Object>();//linkPeerに付随する属性
+	
 	
 	/**
 	 * セション情報を初期化します。<br/>
@@ -217,13 +222,18 @@ public class LinkPeer extends PoolBase{
 	 */
 	public boolean unsubscribe(String reason){
 		/* clientにunsubscribe(subscribe失敗)を通知する */
-		if( linkSession!=null && linkSession.unsubscribeByPeer(this) ){
-			/* linkletにonUnsubscribeを通知する */
-			LinkletWrapper linkletWrapper=linkManager.getLinkletWrapper(qname);
-			return linkletWrapper.onUnubscribe(this,reason);
-		}else{
+		if(linkSession==null){
 			return false;
 		}
+		LinkPeer peer=linkSession.unsubscribeByPeer(this);
+		if(peer==null){
+			return false;
+		}
+		LinkletWrapper linkletWrapper=linkManager.getLinkletWrapper(qname);
+		linkletWrapper.onUnubscribe(peer,reason);
+		peer.releaseSession();
+		peer.unref();
+		return true;
 	}
 	
 	@Override
@@ -257,4 +267,24 @@ public class LinkPeer extends PoolBase{
 			return false;
 		return true;
 	}
+	
+	/**
+	 * LinkPeerに付加した属性を取得します。
+	 * @param name 属性名
+	 * @return 属性値
+	 */
+	public Object getAttribute(String name){
+		return attribute.get(name);
+	}
+	
+	/**
+	 * LinkPeerに属性を付加します。
+	 * 
+	 * @param name　属性名
+	 * @param value 属性値
+	 */
+	public void setAttribute(String name, Object value) {
+		attribute.put(name, value);
+	}
+	
 }
