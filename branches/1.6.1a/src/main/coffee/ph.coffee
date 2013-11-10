@@ -189,7 +189,7 @@ class Ph extends PhObject
     AUTH_PRIVATE:'authPrivate' #auth localstorage key:loginid.key=value
     AUTH_LOCAL:'authLocal' #auth localstorage key:@.key=value (no enc)
     APL_USER:'aplUser'
-    APL_GROBAL:'aplGlobal'
+    APL_GLOBAL:'aplGlobal'
   }
   EVENT:{
     GET_ITEM:'@getItem'

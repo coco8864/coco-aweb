@@ -2,10 +2,11 @@
 class PhServerStorage extends PhObject
   ###
   ###
-  constructor:(@link,scope,@storName)->
+  constructor:(@link,@scope,@storName)->
     super
     @sub=@link.subscribe('@storage',scope+@storName)
-    @sub.onMsg(@_onMsg)
+    stor=@
+    @sub.onMsg((msg)->stor._onMsg(msg))
     @sub.on(ph.EVENT.ERROR,@_onTerm)
     @link.onUnload(@_onTerm)
     if @link.isLoading()
@@ -41,9 +42,8 @@ class PhServerStorage extends PhObject
     return
   _onTerm:(data)->
     @unload()
-  _onMsg:(data)=>
-    ctx=@ctxs[data.ctxIdx]
-    delete @ctxs[data.ctxIdx]
+  _onMsg:(data)->
+    ctx=@_popCtx(data.ctxIdx)
     if data.type==ph.TYPE.GET_ITEM
       if typeof(ctx)=='function'
         ctx(data.value)
@@ -56,7 +56,7 @@ class PhServerStorage extends PhObject
         return
       @trigger(ph.EVENT.KEYS,data,ctx)
     else if data.type==ph.TYPE.CHANGE_ITEM
-      data.value=data.newValue
+      data.newValue=data.value
       @trigger(ph.EVENT.CHANGE_ITEM,data)
       @trigger(data.key,data)
 

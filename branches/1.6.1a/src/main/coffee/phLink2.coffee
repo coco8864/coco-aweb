@@ -283,9 +283,9 @@ class Link extends PhObject
   if storage
     return storage
   if scope==ph.SCOPE.APL_USER || scope==ph.SCOPE.APL_GLOBAL
-    storage=new PhServerStorage(@,scope)
+    storage=new PhServerStorage(@,scope,storName)
   else
-    storage=new PhLocalStorage(@,scope,storName)
+    storage=new PhLocalStorage(@,scope)
   @storages[storKey]=storage
   return storage
  encrypt:(plainText,ctx)->

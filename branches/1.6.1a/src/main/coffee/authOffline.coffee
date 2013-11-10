@@ -155,13 +155,20 @@ decrypt=(req)->
 
 responseAuthInfo=->
   res={type:'authInfo'}
-  if userInfo && userInfo.authInfo
+  res.result=true
+  res.authInfo=userInfo.authInfo
+  # aplとuserの同期をとるため登録されているuserを付加
+  res.users=getUsers()
+  ###
+  if userInfo.authInfo.user.loginId!=""
     res.result=true
     res.authInfo=userInfo.authInfo
     # aplとuserの同期をとるため登録されているuserを付加
     res.users=getUsers()
   else
+    res.authInfo=userInfo.authInfo
     res.result=false
+  ###
   response(res)
 
 SCOPE={
@@ -305,13 +312,13 @@ onRequest=(req)->
     onChangeItemRequest(req)
   else if req.type=="logout"
     jQuery.ajax({
-      type:'GET',
+      type:'POST',
       url:'ajaxLogout',
       dataType:'json',
-      success:((x)->
+      success:((res)->
         userInfo=null
         aplInfo=null
-        response({type:'logout',result:true,x:x})),
+        response({type:'logout',result:true,detail:res})),
       error:(x)->response({type:'logout',result:false})
     })
   else if req.type=="authInfo"
