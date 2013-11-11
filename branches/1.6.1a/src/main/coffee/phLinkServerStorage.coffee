@@ -4,7 +4,7 @@ class PhServerStorage extends PhObject
   ###
   constructor:(@link,@scope,@storName)->
     super
-    @sub=@link.subscribe('@storage',scope+@storName)
+    @sub=@link.subscribe('@Storage',scope+@storName)
     stor=@
     @sub.onMsg((msg)->stor._onMsg(msg))
     @sub.on(ph.EVENT.ERROR,@_onTerm)

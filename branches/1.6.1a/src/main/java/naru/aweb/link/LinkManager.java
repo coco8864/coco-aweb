@@ -27,6 +27,7 @@ public class LinkManager {
 	private static final String MAX_SUBSCRIBES="@MaxSubscribes";//当該のqnameにsubscribeできる上限,16
 	private static final String NEXT_HANDLER_CLASS="@NextHandler";//linkletリクエストに当該しなかった場合の次のハンドラ,FileSystemHandler
 	private static final String ROOT_LINKLET="@Root";
+	private static final String STORAGE_QUEUE="@Storage";
 	private static final String STANDARD_LINKLET="@StdLinklet";//StandardLinklet.classの事
 	
 	private static Map<String,LinkManager> instances=new HashMap<String,LinkManager>();
@@ -37,7 +38,14 @@ public class LinkManager {
 			manager=new LinkManager();
 			instances.put(linkName,manager);
 		}
+		boolean useStorage=link.optBoolean(STORAGE_QUEUE,false);
 		int deployCount=0;
+		if(useStorage){
+			JSONObject sub=new JSONObject();
+			sub.put(ROOT_LINKLET, "naru.aweb.link.StorageLinklet");
+			manager.deploy(STORAGE_QUEUE, sub);
+			deployCount++;
+		}
 		for(Object q:link.keySet()){
 			String qname=(String)q;
 			if(qname.startsWith("@")){
@@ -51,9 +59,6 @@ public class LinkManager {
 			/* subscribeが一つもない定義は、参照しているだけ　*/
 			return manager;
 		}
-		JSONObject sub=new JSONObject();
-		sub.put(ROOT_LINKLET, "naru.aweb.link.StorageLinklet");
-		manager.deploy("@storage", sub);
 		int maxSubscribe=link.optInt(MAX_SUBSCRIBES, 16);
 		String nextHandler=link.optString(NEXT_HANDLER_CLASS, FileSystemHandler.class.getName());
 		Class nextHandlerClass;
