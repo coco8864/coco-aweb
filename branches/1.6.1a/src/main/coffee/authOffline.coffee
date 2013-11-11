@@ -450,6 +450,35 @@ response=(msg)->
   else
     parent.postMessage(jsonMsg,'*')
 
+_URL_PTN=/^(?:(https?:)?(?:\/\/(([^\/:]+)(?::([0-9]+))?)))?(\/?[^?#]*)(\??[^?#]*)(#?.*)/
+_URL_PART=['protocol','host','hostname','port','pathname','search','hash']
+
+parseURL=(url)->
+  result={}
+  m=String( url ).match( _URL_PTN )
+  if m
+    _URL_PART.forEach((prop,idx)->
+      if typeof m[(idx+1)] != 'undefined'
+        result[prop]=m[(idx+1)]
+      else
+        result[prop]=null
+    )
+  if result['protocol']=='http:' && result['port']==null
+    result['port']='80'
+  if result['protocol']=='https:' && result['port']==null
+    result['port']='443'
+  result
+
+equalsUrl=(url1,url2)->
+  u1=parseURL(url1)
+  u2=parseURL(url2)
+  result=true
+  _URL_PART.forEach((prop,idx)->
+    if prop!='host' && u1[prop]!=u2[prop]
+      result=false
+  )
+  result
+
 offlineLogon=->
   loginId=jQuery('#loginId').val()
   password=jQuery('#password').val()
@@ -464,7 +493,7 @@ offlineLogon=->
   authInfo=userInfo.authInfo
   check=false
   for allow in authInfo.allowUrls
-    if allow.url==offlineTargetAplUrl
+    if equalsUrl(allow.url,offlineTargetAplUrl)
       check=true
       break
   if !check

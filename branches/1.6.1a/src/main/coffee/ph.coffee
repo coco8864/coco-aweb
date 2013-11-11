@@ -224,6 +224,8 @@ class Ph extends PhObject
   _DOWNLOAD_FRAME_NAME_PREFIX:'__ph_dl_'
   _XHR_FRAME_NAME_PREFIX:'__ph_xhr_' #xhrPhFrame.vspに同じ定義あり
   _XHR_FRAME_URL:'/~xhrPhFrame'
+  _URL_PTN:/^(?:(https?:)?(?:\/\/(([^\/:]+)(?::([0-9]+))?)))?(\/?[^?#]*)(\??[^?#]*)(#?.*)/
+  _URL_PART:['protocol','host','hostname','port','pathname','search','hash']
 
   version:'$esc.javascript(${config.getString("phantomVersion")})'
   isSsl:'$esc.javascript(${handler.isSsl()})'=='true'
@@ -335,6 +337,37 @@ class Ph extends PhObject
       bases.pop()
       pathes.shift()
     return baseroot + bases.concat(pathes).join("/")
+  parseURL:(url)->
+    result={}
+    m=String( url ).match( @_URL_PTN )
+    if m
+      @_URL_PART.forEach((prop,idx)->
+        if typeof m[(idx+1)] != 'undefined'
+          result[prop]=m[(idx+1)]
+        else
+          result[prop]=null
+      )
+    result['defaultPort']=false
+    if result['protocol']=='http:'
+      if result['port']==null
+        result['port']='80'
+      if result['port']=='80'
+        result['defaultPort']=true
+    if result['protocol']=='https:'
+      if result['port']==null
+        result['port']='443'
+      if result['port']=='443'
+        result['defaultPort']=true
+    result
+  equalsUrl:(url1,url2)->
+    u1=@parseURL(url1)
+    u2=@parseURL(url2)
+    result=true
+    @_URL_PART.forEach((prop,idx)->
+      if prop!='host' && u1[prop]!=u2[prop]
+        result=false
+    )
+    result
   scriptUrl:(script)->
     if script.match(/^http/)
       return script
