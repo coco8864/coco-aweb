@@ -2,7 +2,7 @@
 
 =Phantom Serverとは=
   == 汎用サーバ ==
-    Phantom Proxyは、プロキシーとして動作するだけではなく、汎用サーバとして利用できます。管理コンソールは、Phantom Server上で動作するアプリケーションとして実装されています。
+    Phantom Serverは、プロキシーとして動作するだけではなく、汎用サーバとして利用できます。管理コンソールは、Phantom Server上で動作するアプリケーションとして実装されています。
     Phantom Serverはライトウェイトな、以下の機能を持つ汎用サーバです。
     * http/https proxyサーバ
     * http/https webサーバ(SPDY対応)
