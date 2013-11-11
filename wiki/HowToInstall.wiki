@@ -39,7 +39,7 @@ JAVA_HOME=javaインストールディレクトリ
 {{{
 #This setting is enabled when the cleanup and initial startup.Referred to by ph.ini.properties
 #Information from the browsers to point to this server
-phantom.selfDomain=ブラウザからこのサーバを呼ぶためのipもしくはhost名
+#phantom.selfDomain=ブラウザからこのサーバを呼ぶためのipもしくはhost名
 phantom.selfPort=サーバを動作させるポート番号
 }}}
     以降${selfDomain},${selfPort}とします。ローカルプロキシーとして使用する場合は、編集の必要はありません。(${selfDomain}:127.0.0.1,${selfPort}:1280)
