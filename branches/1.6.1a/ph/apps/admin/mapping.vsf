@@ -48,16 +48,24 @@ function mappingTable(lines){
 function mappingLine(trTag,mapping){
 	var tdTag;
 	tdTag=document.createElement("td");
+
+	//trTag.appendChild(tdTag);
+	var inputTag=document.createElement("input");
+	inputTag.setAttribute("type","checkBox");
+	//tdTag=document.createElement("td");
+	tdTag.appendChild(inputTag);
+	inputTag.setAttribute('disabled','disabled')
+	if(mapping.enabled){
+		inputTag.setAttribute('checked','checked')
+	}
+	//tdTag=ph.admin.mkTdTag(mapping.enabled);
+
 	var textNode=document.createTextNode(mapping.id);
 	var aTag=document.createElement("a");
 	aTag.setAttribute("href","#");
 	aTag.appendChild(textNode);
 	tdTag.appendChild(aTag);
 	jQuery(aTag).bind("click",function(){
-##jsonlibの問題からoptionsは先頭にスペースをつけて送信されてくる
-			if(mapping.options.charAt(0)===' '){
-				mapping.options=mapping.options.substring(1);
-			}
 			jQuery('#mappingDialog .map1').show();
 			jQuery('#mappingDialog .map2').hide();
 			jQuery("#mappingId").text(mapping.id);
@@ -83,8 +91,6 @@ function mappingLine(trTag,mapping){
 			jQuery("#mappingDialog").dialog('open');
 			return false;
 		});
-	trTag.appendChild(tdTag);
-	tdTag=ph.admin.mkTdTag(mapping.enabled);
 	trTag.appendChild(tdTag);
 
 	if(mapping.sourceUrl){
@@ -326,7 +332,7 @@ selfDomain:<input type="text" id="selfDomain" size="64" value="$!esc.html($!{con
 <div style="margin: 0.4em 0.0em; padding: 0.0em 0.0em;background: #fff none; border: solid 0pt #000;">
 <table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
 <thead>
-<tr><th title='id'>ID</th><th title='enabled'>en</th><th title='notes'>notes</th><th title='realHostName'>realHost</th>
+<tr><th title='id'>[en]ID</th><th title='notes'>notes</th><th title='realHostName'>realHost</th>
 <th title='sourceType'>source</th><th title='secureType'>secure</th><th title='sourceServer'>srcServer</th><th title='sourcePath'>srcPath</th>
 <th title='destinationType'>desType</th>
 ##<th title='destinationType'>desType</th><th title='destinationServer'>desServer</th><th title='destinationPath'>desPath</th>
