@@ -56,7 +56,7 @@ public class SpdyConfig {
 		isSpdyAvailable=false;
 		spdyProtocols = config.getString(SPDY_PROTOCOLS);
 		if(spdyProtocols==null){
-			spdyProtocols=SpdyFrame.PROTOCOL_V3+","+SpdyFrame.PROTOCOL_V2+","+SpdyFrame.PROTOCOL_HTTP_11;
+			spdyProtocols=SpdyFrame.PROTOCOL_V31+","+SpdyFrame.PROTOCOL_V3+","+SpdyFrame.PROTOCOL_V2+","+SpdyFrame.PROTOCOL_HTTP_11;
 		}
 		protocols=spdyProtocols.split(",");
 		spdyTimeout=config.getLong(SPDY_TIMEOUT,60000);

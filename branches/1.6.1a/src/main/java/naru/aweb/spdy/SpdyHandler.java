@@ -65,6 +65,8 @@ public class SpdyHandler extends ServerBaseHandler {
 		
 		/*Å@ñ≥èåèÇ≈setting frameÇëóÇÈ */
 		sendSetting(SpdyFrame.FLAG_SETTINGS_PERSIST_VALUE,SpdyFrame.SETTINGS_MAX_CONCURRENT_STREAMS,100);
+		//sendSetting(SpdyFrame.FLAG_SETTINGS_PERSIST_VALUE,SpdyFrame.SETTINGS_INITIAL_WINDOW_SIZE,1024*1024*10);
+		sendWindowUpdate(0,(int)1024*1024*10);
 		return false;//é©óÕÇ≈asyncReadÇµÇΩÇΩÇﬂ
 	}
 	
@@ -110,6 +112,7 @@ public class SpdyHandler extends ServerBaseHandler {
 		case SpdyFrame.TYPE_DATA_FRAME:
 			ByteBuffer[] dataBuffer=frame.getDataBuffers();
 			long length=BuffersUtil.remaining(dataBuffer);
+			logger.debug("TYPE_DATA_FRAME length:"+length);
 			if(session!=null){
 				session.onReadPlain(dataBuffer,frame.isFin());
 			}else{

@@ -124,12 +124,15 @@ datanucleus.validateConstraints=false
 		boolean isUseSslBuffer=config.getBoolean("isUseSslBuffer", true);
 		setupPool(maxClients,isUseSslBuffer);
 		
+		/* port‚ÍŠJ‚¢‚Ä‚à‰Šú‰»‚ª‚·‚Ş‚Ü‚Åaccept‚ğ‹‘”Û‚·‚é */
+		config.setProperty(Config.REFUSE_ACCEPT,true);
 		mainInstance=this;
 		Main.context=context;
 		if( !RealHost.bindAll(true) ){
 			/* Šù‚Éport‚ªg‚í‚ê‚Ä‚¢‚½ê‡‚±‚±‚ğ’Ê‚é */
 			logger.error("fail to bindAll.");
 			context.finish(false,true,startupInfo);
+			return;
 		}
 		//auth‚Ì‰Šú‰»‚ÍbindŒã‚¶‚á‚È‚¢‚Æhost‚ªŠm’è‚µ‚È‚¢ê‡‚ª‚ ‚é
 		try{
@@ -139,7 +142,7 @@ datanucleus.validateConstraints=false
 			context.finish(false,true,startupInfo);
 			return;
 		}
-		
+		config.setProperty(Config.REFUSE_ACCEPT,false);
 	}
 	
 	/**

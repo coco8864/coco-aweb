@@ -191,7 +191,7 @@ public class Authorizer implements Timer{
 	}
 	
 	public void registerSessionId(SessionId sessionId){
-		byte[] bytes = (byte[]) PoolManager.getArrayInstance(byte.class, 16);
+		byte[] bytes = new byte[16];//(byte[]) PoolManager.getArrayInstance(byte.class, 16);
 		Map<String, SessionId> ids=getIds(sessionId.getType());
 		Map<String, SessionId> authIds=null;
 		if(sessionId.getType()==Type.TEMPORARY){
@@ -226,7 +226,7 @@ public class Authorizer implements Timer{
 					break;
 				}
 			}
-			PoolManager.poolArrayInstance(bytes);
+			//PoolManager.poolArrayInstance(bytes);
 		}
 	}
 	

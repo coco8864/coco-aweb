@@ -110,6 +110,8 @@ public class Config {
 	public static final String PASS_SALT="passSalt";
 	public static final String OFFLINE_PASS_SALT="offlinePassSalt";
 	
+	public static final String REFUSE_ACCEPT="refuseAccept";
+	
 	private File adminDocumentRoot;// adminで見えるところ
 	private File authDocumentRoot;// authで見えるところ
 	private File portalDocumentRoot;// for portal
@@ -766,16 +768,6 @@ public class Config {
 		//TODO 動的に設定できるようにする
 		Mapping adminMapping=mapper.getAdminMapping();
 		linkManager =(LinkManager)adminMapping.getAttribute(Mapping.OPTION_LINK);
-		//linkManager = LinkManager.getInstance("/admin");
-		/*
-		JSONObject subscribers=JSONObject.fromObject(
-				"{accessLog:'naru.aweb.admin.AccessLogLinklet'," +
-				"chat:'naru.aweb.admin.ChatLinklet'," +
-				"perf:'naru.aweb.admin.PerfLinklet'" +
-				"}");
-		linkManager.deploy(AdminLinklet.QNAME, "naru.aweb.admin.AdminLinklet",subscribers);
-		linkManager.setNextHandler(Mapping.ADMIN_HANDLER);
-		*/
 		broadcaster=new Broadcaster(this,linkManager);//統計情報監視の開始
 	}
 	

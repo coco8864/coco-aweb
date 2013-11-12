@@ -39,7 +39,7 @@ public class AdminLinklet implements Linklet {
 				return;
 			}
 			if(System.currentTimeMillis()-suspendTime>=3000){
-				config.setProperty("phantomSuspend",false);
+				config.setProperty(Config.REFUSE_ACCEPT,false);
 				isSuspend=false;
 			}
 		}
@@ -90,15 +90,15 @@ public class AdminLinklet implements Linklet {
 		}else{
 			boolean isSuspend=parameter.getBoolean("suspend");
 			synchronized(this){
-				config.setProperty("phantomSuspend",isSuspend);
+				config.setProperty(Config.REFUSE_ACCEPT,isSuspend);
 				this.isSuspend=isSuspend;
 			}
 			if(isSuspend){
 				ctx.setInterval(1000);
+				suspendTime=System.currentTimeMillis();
 			}else{
 				ctx.setInterval(-1);
 			}
-			suspendTime=System.currentTimeMillis();
 		}
 	}
 	

@@ -392,10 +392,10 @@ public class WsClientHandler extends SslHandler implements Timer {
 		}
 		header.setHeader("Sec-WebSocket-Version", "8");//401‚Æ‚Í•Ô‹p‚³‚ê‚Ä‚à¢‚é‚©‚çversion 8
 		
-		byte[] keyBytes = (byte[]) PoolManager.getArrayInstance(byte.class, 16);
+		byte[] keyBytes = new byte[16];//(byte[]) PoolManager.getArrayInstance(byte.class, 16);
 		random.nextBytes(keyBytes);
 		String key=DataUtil.digestBase64Sha1(keyBytes);
-		PoolManager.poolArrayInstance(keyBytes);
+		//PoolManager.poolArrayInstance(keyBytes);
 		acceptKey=DataUtil.digestBase64Sha1((key+GUID).getBytes());
 		header.setHeader("Sec-WebSocket-Key", key);
 		

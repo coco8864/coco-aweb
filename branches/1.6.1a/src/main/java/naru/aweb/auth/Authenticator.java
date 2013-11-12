@@ -67,11 +67,11 @@ public class Authenticator {
 	}
 	
 	public static String getNextRandom(SecureRandom random){
-		byte[] bytes = (byte[]) PoolManager.getArrayInstance(byte.class, 16);
+		byte[] bytes = new byte[16];//(byte[]) PoolManager.getArrayInstance(byte.class, 16);
 		String nonce=null;
 		random.nextBytes(bytes);
 		nonce=DataUtil.byteToString(bytes);
-		PoolManager.poolArrayInstance(bytes);
+//		PoolManager.poolArrayInstance(bytes);
 		return nonce;
 	}
 	

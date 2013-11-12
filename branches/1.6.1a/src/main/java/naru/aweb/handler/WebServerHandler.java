@@ -927,7 +927,7 @@ public class WebServerHandler extends ServerBaseHandler {
 		responseWriteBodyApl += BuffersUtil.remaining(buffers);
 		SpdySession spdySession=getSpdySession();
 		if(spdySession!=null){
-			spdySesponseBody(spdySession,buffers);
+			spdyResponseBody(spdySession,buffers);
 			return;
 		}
 		boolean isCallbackOnWrittenBody = false;
@@ -1239,7 +1239,7 @@ public class WebServerHandler extends ServerBaseHandler {
 	}
 	
 	/* spdyの場合、firstBody出力時にヘッダを出力、バッファ処理はしない */
-	private void spdySesponseBody(SpdySession spdySession,ByteBuffer[] buffers){
+	private void spdyResponseBody(SpdySession spdySession,ByteBuffer[] buffers){
 		if (isFlushFirstResponse == false){
 			if(firstBody == null) {
 				firstBody=buffers;

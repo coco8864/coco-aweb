@@ -25,13 +25,13 @@ public class LinkMsg extends PoolBase implements Map{
 		return wrap(null);
 	}
 	public static LinkMsg wrap(Map root){
-		LinkMsg paData=(LinkMsg)PoolManager.getInstance(LinkMsg.class);
+		LinkMsg linkData=(LinkMsg)PoolManager.getInstance(LinkMsg.class);
 		if(root==null){
-			paData.root=new HashMap();
+			linkData.root=new HashMap();
 		}else{
-			paData.root=new HashMap(root);
+			linkData.root=new HashMap(root);
 		}
-		return paData;
+		return linkData;
 	}
 
 	public void clear() {
@@ -110,6 +110,13 @@ public class LinkMsg extends PoolBase implements Map{
 		for(Object value:values()){
 			if(value instanceof LinkMsg){
 				((LinkMsg)value).unref();
+			}
+			if(value instanceof List){
+				for(Object obj:(List)value){
+					if(obj instanceof LinkMsg){
+						((LinkMsg)obj).unref();
+					}
+				}
 			}
 		}
 		root=null;

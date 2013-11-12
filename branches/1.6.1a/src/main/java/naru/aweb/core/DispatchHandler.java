@@ -111,13 +111,12 @@ public class DispatchHandler extends ServerBaseHandler {
 	public void onStartRequest() {
 		logger.debug("#startRequest.cid:" + getChannelId());
 		headerPage.recycle();
-//		startTotalReadLength=getTotalReadLength();
-//		startTotalWriteLength=getTotalWriteLength();
 		asyncRead(null);
 	}
 
 	public void onAccepted(Object userContext) {
-		if(getConfig().getBoolean("phantomSuspend", false)){
+		if(getConfig().getBoolean(Config.REFUSE_ACCEPT, false)){
+			logger.debug("accept refused");
 			asyncClose(null);//ˆêŽž’âŽ~
 			return;
 		}
