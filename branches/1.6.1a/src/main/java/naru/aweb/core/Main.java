@@ -174,7 +174,8 @@ datanucleus.validateConstraints=false
 					continue;
 				}
 				SSLEngine sslEngine=config.getSslEngine(null);
-				PoolManager.setupBufferPool(sslEngine.getSession().getPacketBufferSize(), limit100*client_100);
+				int sslBufferSize=sslEngine.getSession().getPacketBufferSize();
+				PoolManager.setupBufferPool(sslBufferSize,limit100*client_100);
 			}else if("defaultBuffer".equals(type)){
 				int bufferSize=info.getInt("bufferSize");
 				PoolManager.changeDefaultBuffer(bufferSize,limit100*client_100);
