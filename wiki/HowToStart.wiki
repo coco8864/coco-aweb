@@ -20,7 +20,7 @@ create CONFIG table（初回のみ）
 generate key cn:127.0.0.1 exitValue:0（初回のみ）
 mainHost listen start address:0.0.0.0/0.0.0.0:1280
 selfDomain:${ホスト名}
-adminUrl:https://${ホスト名}:1280/admin(ここにアクセスすればconsoleが開きます)
+adminUrl:https://${ホスト名}:1280/admin(ここにアクセスすればConsoleが開きます)
 WatchDeamonQueuelet:start success:phantom Thu Nov 03 20:43:19 JST 2011 interval:60000（起動後１分後）
 }}}
    * 起動シェルに"cleanup"引数を付加した場合、既存の設定内容をクリアして起動します。
