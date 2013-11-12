@@ -109,8 +109,7 @@ function terminate(){
 function suspending(){
  if(suspendState){
   ph.admin.con.publish("admin",{suspend:true});
-//  setTimeout(suspending,1000);
-  setInterval(suspending,1000);
+  setTimeout(suspending,1000);
  }else{
   ph.admin.con.publish("admin",{suspend:false});
  }
