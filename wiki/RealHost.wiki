@@ -8,7 +8,7 @@
 mappingタブ RealHost設定
 }}}
 
- realHostで受け付けたリクエストは、受信したデータからプロトコルを判定します。同一のrealHostで全てのプロトコル(web/proxy,http/https,!WebSocket)に対応するできます。
+ realHostで受け付けたリクエストは、受信したデータからプロトコルを判定します。同一のrealHostで全てのプロトコル(web/proxy,http/https,!WebSocket)に対応できます。
 
  == mainHost ==
   nameが"mainHost"のrealHostは、認証やConsoleを動作させるため特別なrealHostとなっています。停止することができず、編集した場合、次回Phantom Proxy起動時に有効となります。
