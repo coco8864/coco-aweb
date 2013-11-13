@@ -90,7 +90,9 @@ function setSpdy(){
     isSpdy3:isSpdy3,
     isSpdy31:isSpdy31,
     spdyFrameLimit:ph.jQuery("#spdyFrameLimist").val(),
-    spdyTimeout:ph.jQuery("#spdyTimeout").val()
+    spdyTimeout:ph.jQuery("#spdyTimeout").val(),
+    maxConcurrentStreams:ph.jQuery("#spdyMaxConcurrentStreams").val(),
+    serverWindowSize:ph.jQuery("#spdyServerWindowSize").val()
   },
   function(x){
 ##Spdy設定完了
@@ -305,6 +307,9 @@ checked="checked"
 #end
 #set ($spdyFrameLimit=$spdyConfig.getSpdyFrameLimit())
 #set ($spdyTimeout=$spdyConfig.getSpdyTimeout())
+#set ($spdyMaxConcurrentStreams=$spdyConfig.getMaxConcurrentStreams())
+#set ($spdyServerWindowSize=$spdyConfig.getServerWindowSize())
+
 <H2 onclick="ph.jQuery('#spdySetting').toggle();">+Spdy設定</H2>
 <div class="settingItem" id="spdySetting">
 #if($spdyConfig.isSpdyAvailable)
@@ -327,6 +332,8 @@ checked="checked"
  /><br/>
 spdyTimeout:<input type="text" name="spdyTimeout" id="spdyTimeout" value="${spdyTimeout}"/><br/>
 spdyFrameLimit:<input type="text" name="spdyFrameLimit" id="spdyFrameLimit" value="${spdyFrameLimit}"/><br/>
+maxConcurrentStreams:<input type="text" name="spdyMaxConcurrentStreams" id="spdyMaxConcurrentStreams" value="${spdyMaxConcurrentStreams}"/><br/>
+serverWindowSize:<input type="text" name="spdyServerWindowSize" id="spdyServerWindowSize" value="${spdyServerWindowSize}"/><br/>
 <input type="button" value="設定" onclick="setSpdy();" /><br/>
 </div>
 
