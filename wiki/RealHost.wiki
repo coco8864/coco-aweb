@@ -5,7 +5,7 @@
 
  realHostは、Consoleの以下から設定できます。
 {{{
-settingタブ RealHost設定
+mappingタブ RealHost設定
 }}}
 
  realHostで受け付けたリクエストは、受信したデータからプロトコルを判定します。同一のrealHostで全てのプロトコル(web/proxy,http/https,!WebSocket)に対応するできます。
