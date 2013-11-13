@@ -40,6 +40,8 @@ public class SpdyHandler extends ServerBaseHandler {
 	private ServerParser acceptServer;
 	private boolean isProxy;//CONNECT‚ÌŒã‚ÉSPDY‚ªŽn‚Ü‚Á‚½‚©”Û‚©
 	private short version;/* protocol‚Ìversion */
+	private int curServerWindowSize;
+	private int limitServerWindowSize;
 	
 	public boolean onHandshaked(String protocol,boolean isProxy) {
 		logger.debug("#handshaked.cid:" + getChannelId() +":"+protocol);
@@ -64,9 +66,13 @@ public class SpdyHandler extends ServerBaseHandler {
 		acceptServer=keepAliveContext.getAcceptServer();
 		
 		/*@–³ðŒ‚Åsetting frame‚ð‘—‚é */
-		sendSetting(SpdyFrame.FLAG_SETTINGS_PERSIST_VALUE,SpdyFrame.SETTINGS_MAX_CONCURRENT_STREAMS,100);
-		//sendSetting(SpdyFrame.FLAG_SETTINGS_PERSIST_VALUE,SpdyFrame.SETTINGS_INITIAL_WINDOW_SIZE,1024*1024*10);
-		sendWindowUpdate(0,(int)1024*1024*10);
+		sendSetting(SpdyFrame.FLAG_SETTINGS_PERSIST_VALUE,SpdyFrame.SETTINGS_MAX_CONCURRENT_STREAMS,spdyConfig.getMaxConcurrentStreams());
+		curServerWindowSize=spdyConfig.getServerWindowSize();
+		limitServerWindowSize=spdyConfig.getServerWindowSize()/4;//windowsize‚ª1/4ˆÈ‰º‚É‚È‚é‚Ü‚Åupdate‚µ‚È‚¢
+		sendSetting(SpdyFrame.FLAG_SETTINGS_PERSIST_VALUE,SpdyFrame.SETTINGS_INITIAL_WINDOW_SIZE,curServerWindowSize-(64*1024));
+		if(version==SpdyFrame.VERSION_V31){
+			sendWindowUpdate(0,curServerWindowSize-(64*1024));
+		}
 		return false;//Ž©—Í‚ÅasyncRead‚µ‚½‚½‚ß
 	}
 	
@@ -119,10 +125,21 @@ public class SpdyHandler extends ServerBaseHandler {
 				logger.error("illegal streamId:"+streamId);
 				sendReset(streamId, SpdyFrame.RSTST_INVALID_STREAM);
 			}
+			curServerWindowSize-=length;
+			if(limitServerWindowSize>curServerWindowSize){
+				length=spdyConfig.getServerWindowSize()-curServerWindowSize;
+				sendWindowUpdate(streamId,(int)length);
+				if(version==SpdyFrame.VERSION_V31){
+					sendWindowUpdate(0,(int)length);
+				}
+				curServerWindowSize+=length;
+			}
+			/*
 			sendWindowUpdate(streamId,(int)length);
 			if(version==SpdyFrame.VERSION_V31){
 				sendWindowUpdate(0,(int)length);
 			}
+			*/
 			break;
 		case SpdyFrame.TYPE_SYN_STREAM:
 			if(session!=null){

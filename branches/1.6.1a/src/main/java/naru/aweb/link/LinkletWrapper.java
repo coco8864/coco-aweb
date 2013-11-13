@@ -244,7 +244,7 @@ public class LinkletWrapper implements LinkletCtx,Timer{
 			count++;
 		}
 		envelope.unref(true);
-		blob.unref();
+		//blob.unref();
 		return count;
 	}
 	

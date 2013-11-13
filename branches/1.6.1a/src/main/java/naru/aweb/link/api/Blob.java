@@ -47,6 +47,7 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 	public static Blob create(File file,boolean deleteOnFinish){
 		CacheBuffer buffer=CacheBuffer.open(file);
 		Blob blob=create(buffer);
+		buffer.unref();//Blob‚Ì‰ð•ú‚Æ‚Æ‚à‚É‰ð•ú‚·‚é‚æ‚¤‚É‚·‚é
 		if(deleteOnFinish){
 			blob.deleteFile=file;
 		}
@@ -55,7 +56,11 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 	
 	public static Blob create(ByteBuffer[] byteBuffer){
 		CacheBuffer buffer=CacheBuffer.open(byteBuffer);
-		return create(buffer);
+		try{
+			return create(buffer);
+		}finally{
+			buffer.unref();//Blob‚Ì‰ð•ú‚Æ‚Æ‚à‚É‰ð•ú‚·‚é‚æ‚¤‚É‚·‚é
+		}
 	}
 	
 	public static Blob create(CacheBuffer buffer){

@@ -46,8 +46,11 @@ public interface Linklet {
 	
 	/**
 	 * ブラウザがpublishした際に呼び出されるイベント通知<br/>
+	 * 送信データには、BlobやDate型のデータが含まれる場合がある。<br />
+	 * dataは、メソッド復帰後解放される。メソッド復帰後も利用する場合は、data.refメソッドを呼び出し利用してください。
+	 * その後、必要なくなったタイミングでunrefメソッドで解放してください。<br />
 	 * @param peer　送信した端末情報、サーバ側からmessageした場合は、LinkSessionが設定されない。
-	 * @param data　送信されたデータ、BlobやDateを含めることができる
+	 * @param data　送信されたデータ
 	 */
 	void onPublish(LinkPeer peer,LinkMsg data);
 	

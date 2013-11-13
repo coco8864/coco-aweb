@@ -139,7 +139,9 @@ public class Envelope extends PoolBase{
 		if(obj instanceof Blob){
 			int idx=blobs.size();
 			String key=BLOB_VALUE_NAME_PREFIX + idx;
-			blobs.add((Blob)obj);
+			Blob blob=(Blob)obj;
+			blobs.add(blob);
+			blob.ref();//Envelope‰ğ•ú‚Éˆê‚É‰ğ•ú‚³‚ê‚È‚¢‚æ‚¤‚É‚·‚é
 			return 	key;
 		}else if(obj instanceof Date){
 			int idx=dates.size();

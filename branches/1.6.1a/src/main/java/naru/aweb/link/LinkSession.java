@@ -198,6 +198,7 @@ public class LinkSession extends PoolBase implements LogoutEvent{
 	private Map<String,Blob>downloadBlobs=Collections.synchronizedMap(new HashMap<String,Blob>());
 	
 	public synchronized void download(JSONObject message,Blob blob){
+		blob.ref();
 		downloadBlobs.put(message.getString(KEY_KEY),blob);
 		sendJson(message);
 	}

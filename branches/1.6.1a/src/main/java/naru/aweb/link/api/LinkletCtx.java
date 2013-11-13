@@ -13,8 +13,7 @@ import java.util.Set;
 public interface LinkletCtx{
 	/**
 	 * subscribe中の全peerにmessageを送信する<br/>
-	 * dataはMap型を想定、Blobが含まれていた場合は、処理後解放さる。<br/>
-	 * (message呼び出し後もそのblobが必要な場合は、参照カウンターをrefにて調整要)<br/>
+	 * dataはこのメソッドでは解放(unref)されません。<br/>
 	 * @param data 送信データ
 	 * @return 送信した端末数
 	 */
@@ -22,6 +21,7 @@ public interface LinkletCtx{
 	
 	/**
 	 * subnameにsubscribe中の端末にmessageを送信する<br/>
+	 * dataはこのメソッドでは解放(unref)されません。<br/>
 	 * @param data 送信データ
 	 * @param subname
 	 * @return　送信した端末数
@@ -30,6 +30,7 @@ public interface LinkletCtx{
 	
 	/**
 	 * excptPeers以外でsubnameにsubscribe中の端末で、messageを送信する<br/>
+	 * dataはこのメソッドでは解放(unref)されません。<br/>
 	 * @param data 送信データ
 	 * @param subname
 	 * @param excptPeers　送信しない端末情報
@@ -39,6 +40,7 @@ public interface LinkletCtx{
 	
 	/**
 	 * excptPeers以外でsubnameにsubscribe中の端末に、messageを送信する<br/>
+	 * dataはこのメソッドでは解放(unref)されません。<br/>
 	 * @param data 送信データ
 	 * @param subname
 	 * @param excptPeer　送信しない端末情報
@@ -48,6 +50,7 @@ public interface LinkletCtx{
 	
 	/**
 	 * excptPeers以外でpeersに含まれる端末に、messageを送信する<br/>
+	 * dataはこのメソッドでは解放(unref)されません。<br/>
 	 * @param data 送信データ
 	 * @param peers 送信する端末情報
 	 * @param excptPeers　送信しない端末情報
@@ -57,6 +60,7 @@ public interface LinkletCtx{
 	
 	/**
 	 * excptPeers以外でpeersに含まれる端末に、messageを送信する<br/>
+	 * dataはこのメソッドでは解放(unref)されません。<br/>
 	 * @param data 送信データ
 	 * @param peers 送信する端末情報
 	 * @param excptPeer　送信しない端末情報
@@ -66,8 +70,7 @@ public interface LinkletCtx{
 	
 	/**
 	 * ブラウザにblobをダウンロードさせる<br/>
-	 * blobは処理後解放される。<br/>
-	 * (download呼び出し後もそのblobが必要な場合は、参照カウンターをrefにて調整要)<br/>
+	 * blobは、処理後解放されません<br/>
 	 * @param blob ダウンロードさせるBlobデータ
 	 * @param peers 送信する端末情報
 	 * @param excptPeer　送信しない端末情報

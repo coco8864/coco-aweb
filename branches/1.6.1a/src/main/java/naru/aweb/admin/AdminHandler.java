@@ -216,6 +216,8 @@ public class AdminHandler extends WebServerHandler{
 			String isSpdy2=parameter.getParameter("isSpdy2");
 			String frameLimit=parameter.getParameter("spdyFrameLimit");
 			String timeout=parameter.getParameter("spdyTimeout");
+			String maxConcurrentStreams=parameter.getParameter("maxConcurrentStreams");
+			String serverWindowSize=parameter.getParameter("serverWindowSize");
 			StringBuffer protocol=new StringBuffer();
 			if("true".equalsIgnoreCase(isSpdy31)){
 				protocol.append(SpdyFrame.PROTOCOL_V31);
@@ -236,6 +238,12 @@ public class AdminHandler extends WebServerHandler{
 			}
 			if(timeout!=null){
 				spdyConfig.setSpdyTimeout(Long.parseLong(timeout));
+			}
+			if(maxConcurrentStreams!=null){
+				spdyConfig.setMaxConcurrentStreams(Integer.parseInt(maxConcurrentStreams));
+			}
+			if(serverWindowSize!=null){
+				spdyConfig.setServerWindowSize(Integer.parseInt(serverWindowSize));
 			}
 			responseJson(true);
 		}else if("setAuth".equals(cmd)){

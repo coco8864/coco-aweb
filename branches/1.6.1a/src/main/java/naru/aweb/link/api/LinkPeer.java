@@ -161,6 +161,7 @@ public class LinkPeer extends PoolBase{
 	
 	/**
 	 * blobデータをブラウザにダウンロードさせます<br/>
+	 * blobは呼び出しの中では解放されません。<br/>
 	 * @param blob 送信データ
 	 */
 	public void download(Blob blob){

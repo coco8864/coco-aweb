@@ -108,13 +108,19 @@ public class LinkMsg extends PoolBase implements Map{
 			return;
 		}
 		for(Object value:values()){
-			if(value instanceof LinkMsg){
-				((LinkMsg)value).unref();
+			//if(value instanceof LinkMsg){
+			//	((LinkMsg)value).unref();
+			//}
+			if(value instanceof PoolBase){
+				((PoolBase)value).unref();
 			}
 			if(value instanceof List){
 				for(Object obj:(List)value){
-					if(obj instanceof LinkMsg){
-						((LinkMsg)obj).unref();
+					//if(obj instanceof LinkMsg){
+					//	((LinkMsg)obj).unref();
+					//}
+					if(obj instanceof PoolBase){
+						((PoolBase)obj).unref();
 					}
 				}
 			}
