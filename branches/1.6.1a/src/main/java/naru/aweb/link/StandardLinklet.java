@@ -28,23 +28,23 @@ public class StandardLinklet implements Linklet{
 
 	@Override
 	public void onSubscribe(LinkPeer peer) {
-		logger.info("onSubscribe.peer:"+peer);
+		logger.debug("onSubscribe.peer:"+peer);
 	}
 
 	@Override
 	public void onUnsubscribe(LinkPeer peer, String reason) {
-		logger.info("onUnsubscribe.peer:"+peer+":"+reason);
+		logger.debug("onUnsubscribe.peer:"+peer+":"+reason);
 	}
 
 	@Override
 	public void onPublish(LinkPeer peer, LinkMsg data) {
-		logger.info("onPublish(LinkMsg).peer:"+peer+":"+data);
+		logger.debug("onPublish(LinkMsg).peer:"+peer+":"+data);
 		ctx.message(data,peer.getSubname(),peer);
 	}
 	
 	@Override
 	public void onPublish(LinkPeer peer, String data) {
-		logger.info("onPublish(String).peer:"+peer+":"+data);
+		logger.debug("onPublish(String).peer:"+peer+":"+data);
 		ctx.message(data,peer.getSubname(),peer);
 	}
 }

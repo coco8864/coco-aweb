@@ -144,6 +144,7 @@ public class PerfLinklet implements Linklet,Event {
 				parameter.put("reason","doStress error");
 				peer.message(parameter);
 			}
+			publishPeer.unref();
 		}else if("stressFile".equals(kind)){
 			stressFileList=parameter.getString("list");
 			stressFilePeer=peer;
