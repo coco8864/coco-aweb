@@ -12,5 +12,6 @@
 ,{type:'array',className:'java.nio.ByteBuffer',arraySize:1,limit100:512}
 /*,{type:'buffer',bufferSize:999,limit100:999}*/
 ,{type:'sslBuffer',limit100:512}
+,{type:'buffer',bufferSize:1024,limit100:256}
 ,{type:'defaultBuffer',bufferSize:16384,limit100:512}
 ]
