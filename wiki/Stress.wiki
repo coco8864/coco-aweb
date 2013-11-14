@@ -27,7 +27,7 @@
     * thinking time : ループする際に待ち合わせる時間 ここでは、1000(1秒)とします。
     * keepAlive : 負荷テスト中にkeepAliveを行うか否か、ここでははチェックします。
     * accessLog : 負荷テスト中にaccessLogを採取するか否か、ここでははチェックします。
-    Phantom Proxy側の処理が増えます。後で１つ１つのリクエストを確認する必要がないのであれば、チェックは必要ありません。
+    Phantom Server側の処理が増えます。後で１つ１つのリクエストを確認する必要がないのであれば、チェックは必要ありません。
     * responseHeaderTrace : 負荷テスト中にresponseHeaderをトレースするか否か、ここでははチェックします。
     accessLogをチェックした場合に有効になります。Phantom Proxy側の処理が増えます。後で１つ１つのresponseHeaderを確認する必要がないのであれば、チェックは必要ありません。
     * responseBodyTrace : 負荷テスト中にresponseHeaderをトレースするか否か、ここでははチェックします。
