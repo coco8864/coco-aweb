@@ -3,6 +3,10 @@
 = 新着情報=
 
  Phatom Server(Proxy)の改版情報を提供します。
+ ==  2013.11.14 Phatom Server1.6.1 公開 ==
+ * 性能改善
+ * SPDY3.1対応
+ * !PhantomLink storageにserver側のstorage APL_USER,APL_GLOBALを追加
  ==  2013.10.28 Phatom Server1.6.0 公開 ==
  * Application Frameworkを名称!PhantomLinkに変更、strorage機能を追加
  * !PhantomLinkのdocument&テストアプリを追加
