@@ -29,11 +29,18 @@
     * accessLog : 負荷テスト中にaccessLogを採取するか否か、ここでははチェックします。
     Phantom Server側の処理が増えます。後で１つ１つのリクエストを確認する必要がないのであれば、チェックは必要ありません。
     * responseHeaderTrace : 負荷テスト中にresponseHeaderをトレースするか否か、ここでははチェックします。
-    accessLogをチェックした場合に有効になります。Phantom Proxy側の処理が増えます。後で１つ１つのresponseHeaderを確認する必要がないのであれば、チェックは必要ありません。
+    accessLogをチェックした場合に有効になります。後で１つ１つのresponseHeaderを確認する必要がないのであれば、チェックは必要ありません。
     * responseBodyTrace : 負荷テスト中にresponseHeaderをトレースするか否か、ここでははチェックします。
-    accessLogをチェックした場合に有効になります。Phantom Proxy側の処理が増えます。後で１つ１つのresponseBodyTraceを確認する必要がないのであれば、チェックは必要ありません。
+    accessLogをチェックした場合に有効になります。後で１つ１つのresponseBodyTraceを確認する必要がないのであれば、チェックは必要ありません。
+   負荷オプションは、以下のようなjsonファイルから指定する事もできます。繰り返し、一括してテストする場合に有効です。
+{{{
+[
+{"name":"test1","browserCount":"10","loopCount":"1000","isCallerKeepAlive":"true",thinkingTime:1000},
+{"name":"test2","browserCount":"20","loopCount":"1000","isCallerKeepAlive":"true",thinkingTime:1000}
+]
+}}}
+  # 進捗は、stressタブのプログレスバーで確認できます。
   # statusタブのchannelの項目が10＋数個となり、10ブラウザのシミュレーションである事が確認できます。
-  # 負荷テストが終了すると、メッセージボックスでかかった時間が表示されます。
   # stressタブを開くとリクエスト性能の一覧が表示されます。集計項目は以下です。
     * 全リクエストの総和
     * requestLineおよびstatuCodeが同一のリクエストで集計
