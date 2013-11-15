@@ -10,7 +10,7 @@
   # [http://code.google.com/p/coco-async/ naru.async]
    スケーラビリティ性能を志向したqueuelet上の通信ライブラリ
   # [http://code.google.com/p/coco-aweb/ naru.aweb]（このプロジェクト）
-   Phantom Proxy本体、naru.asyncを利用したプロトコルハンドリングとアプリケーション処理
+   Phantom Server本体、naru.asyncを利用したプロトコルハンドリングとアプリケーション処理
 
  == ファイル構成 ==
  Phantom Serverのファイル構成について説明します。
