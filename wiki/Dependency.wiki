@@ -1,9 +1,9 @@
 #summary 依存ライブラリ
 
 = 依存ライブラリ =
- Phatom Proxyは、以下のOpen Souceや仕様を利用しています。
+ Phatom Serverは、以下のOpen Souceや仕様を利用しています。
 
- 実行環境:Java SE 6以上
+ 実行環境:Java SE 6以上(SPDYを利用するためには7)
 
  # client side
   * jQuery 1.8.3
