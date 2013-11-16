@@ -13,13 +13,12 @@ import naru.async.pool.PoolManager;
 import naru.async.store.Page;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
-import naru.aweb.config.Mapping;
-import naru.aweb.http.HeaderParser;
-import naru.aweb.http.KeepAliveContext;
 import naru.aweb.http.WebClient;
 import naru.aweb.http.WebClientHandler;
-import naru.aweb.http.WebServerHandler;
+import naru.aweb.mapping.Mapping;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.spdy.SpdySession;
+import naru.aweb.util.HeaderParser;
 import naru.aweb.util.ServerParser;
 
 import org.apache.log4j.Logger;
@@ -34,9 +33,6 @@ import org.apache.log4j.Logger;
 public class ProxyHandler extends  WebServerHandler implements WebClient{
 	private static Logger logger=Logger.getLogger(ProxyHandler.class);
 	private static Config config=Config.getConfig();
-	private static String OPTION_INJECTOR="injector";
-	private static String OPTION_REPLAY="replay";
-	private static String OPTION_FILTER="filter";
 	private boolean isReplay=false;
 	private boolean isTryAgain=false;//レスポンスヘッダを見てもう一度リクエストしなおしたいと判断した場合
 	private boolean isReplace=false;//リクエストヘッダを見てコンテンツを置き換えると判断した場合,置き換えコンテンツは、injectコンテンツとして挿入
@@ -47,11 +43,16 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 	private WebClientHandler webClientHandler;
 	
 	//response時のヘッダ編集対象
+	private boolean isRequestEnd=false;//isRequestEndは、一回以上呼ばれないようにする
+	private boolean isResponseHeader=false;//レスポンスを受信していなければ独自でエラーを返却する
 	private List<String> removeResponseHeaders=new ArrayList<String>();
 	private Map<String,String> addResponseHeaders=new HashMap<String,String>();
 	
 	public void recycle() {
-		isTryAgain=isReplay=isReplace=false;
+		isResponseHeader=isRequestEnd=isTryAgain=isReplay=isReplace=false;
+		if(webClientHandler!=null){
+			webClientHandler.endRequest();
+		}
 		webClientHandler=null;
 		bodyPage.recycle();
 		if(injector!=null){
@@ -89,7 +90,11 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 		String path=mapping.getResolvePath();
 		String resolveDigest=AccessLog.calcResolveDigest(requestHeader.getMethod(),mapping.isResolvedHttps(),targetHostServer.toString(),path,requestHeader.getQuery());
 		AccessLog accessLog=getAccessLog();
-		accessLog.setResolveDigest(resolveDigest);
+		if(accessLog!=null){
+			accessLog.setResolveDigest(resolveDigest);
+		}else{
+			logger.warn("accessLog is null",new Throwable());
+		}
 	}
 	
 	private void editRequestHeader(HeaderParser requestHeader) {
@@ -132,6 +137,7 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 		webClientHandler=getWebClientHandler(keepAliveContext,requestHeader);
 		//認証ヘッダやIF_MODIFIED_SINCE_HEADERの調整
 		editRequestHeader(requestHeader);
+		
 		long connectTimeout=config.getConnectTimeout();
 		boolean rc=webClientHandler.startRequest(this, null,connectTimeout,requestHeader, isCallerKeepAlive, keepAliveTimeout);
 		if(rc==false){
@@ -146,9 +152,9 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 	}
 	
 	//ブラウザからのリクエストヘッダは受信しきった、さあレスポンしてください...ってメソッド
-	public void startResponse(){
+	public void onRequestHeader(){
 		MappingResult mapping=getRequestMapping();
-		if(Boolean.TRUE.equals(mapping.getOption(OPTION_FILTER))){
+		if(mapping.getBooleanOption(Mapping.OPTION_FILTER)){
 			FilterHelper helper=config.getFilterHelper();
 			if(helper.doFilter(this)==false){
 				logger.debug("filter blocked");
@@ -157,7 +163,7 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 		}
 		
 		InjectionHelper helper=config.getInjectionHelper();
-		injector=helper.getInjector((String)mapping.getOption(OPTION_INJECTOR));
+		injector=helper.getInjector((String)mapping.getOption(Mapping.OPTION_INJECTOR));
 		if(injector!=null){
 			injector.init(this);
 			injector.onRequestHeader(getRequestHeader());
@@ -166,7 +172,7 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 //			portalSession=PortalSession.getPortalSession(this);
 //			portalSession.onRequestHeader(this);
 //		}
-		if(Boolean.TRUE.equals(mapping.getOption(OPTION_REPLAY))){
+		if(mapping.getBooleanOption(Mapping.OPTION_REPLAY)){
 			isReplay=true;
 		}else{
 			if(doProxy()==false){
@@ -190,7 +196,7 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 	 * replayの場合、処理を開始する
 	 * 
 	 */
-	public void startResponseReqBody(){
+	public void onRequestBody(){
 		if(!isReplay){
 			return;
 		}
@@ -232,6 +238,9 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 
 	public void onResponseBody(Object userContext,ByteBuffer[] buffer) {
 		logger.debug("#responseBody.cid:"+getChannelId());
+		if(isRequestEnd){
+			return;
+		}
 		if(isTryAgain||isReplace){
 			PoolManager.poolBufferInstance(buffer);
 			return;//再実行時レスポンスbodyは捨てる
@@ -260,6 +269,10 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 	}
 	
 	public void onResponseHeader(Object userContext,HeaderParser responseHeader) {
+		if(isRequestEnd){
+			return;
+		}
+		isResponseHeader=true;
 		logger.debug("#responseHeader.cid:"+getChannelId());
 		long injectLength=0;
 		boolean isInject=false;
@@ -322,12 +335,26 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 			removeHeader(HeaderParser.TRANSFER_ENCODING_HEADER);
 		}
 	}
-
+	
+	private boolean requestEnd(){
+		if(isRequestEnd){
+			return false;
+		}
+		isRequestEnd=true;
+		webClientHandler=null;
+		KeepAliveContext keepAliveContext=getKeepAliveContext();
+		keepAliveContext.setWebClientHandler(null);
+		return true;
+	}
+	
 	public void onRequestEnd(Object userContext,int stat) {
 		logger.debug("#webClientEnd.cid:"+getChannelId());
+		if(requestEnd()==false){
+			return;
+		}
 		if(isTryAgain){
 			isTryAgain=false;
-			startResponse();
+			onRequestHeader();
 			return;//再実行時レスポンスbodyは捨てる
 		}
 		//contents追加処理
@@ -344,17 +371,19 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 //			InjectionHelper helper=config.getInjectionHelper();
 //			helper.doInject(injectContext, this, null);
 //		}
-		if(getResponseStatusCode()==null){//レスポンスヘッダが確定していない
-			completeResponse("500","no response");
-		}else{
+		if(isResponseHeader){//レスポンスヘッダが確定していない
 			responseEnd();
+		}else{
+			completeResponse("500","no response");
 		}
 	}
 
 	public void onRequestFailure(Object userContext,int stat,Throwable t) {
 		logger.debug("#webClientFailure.cid:"+getChannelId()+":"+stat,t);
-		String statusCode=getResponseStatusCode();
-		if(statusCode!=null){
+		if(requestEnd()==false){
+			return;
+		}
+		if(isResponseHeader){
 			responseEnd();
 		}else{
 			//headerをレスポンスする事なく異常となった

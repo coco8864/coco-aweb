@@ -4,15 +4,27 @@
 	<groupId>naru.aweb</groupId>
 	<artifactId>aweb</artifactId>
 	<name>aweb</name>
-	<version>1.5.0</version>
+	<version>1.6.1</version>
 	<url>https://code.google.com/p/coco-aweb</url>
 
   <properties>
-    <naru.async.version>1.3.0</naru.async.version>
+    <naru.async.version>1.3.1</naru.async.version>
     <queuelet-boot.version>1.2.0</queuelet-boot.version>
     <queuelet-common.version>1.2.2</queuelet-common.version>
     <queuelet-system.version>1.2.3</queuelet-system.version>
   </properties>
+
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <charset>UTF-8</charset>
+        </configuration>
+      </plugin>
+    </plugins>
+  </reporting>
 
 	<build>
 		<plugins>
@@ -27,32 +39,85 @@
 					<target>1.6</target>
 				</configuration>
 			</plugin>
-
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.9.1</version>
+        <configuration>
+                    <reportOutputDirectory>${basedir}/ph/docroot/api</reportOutputDirectory>
+                    <destDir>java</destDir>
+                    <show>public</show>
+                    <nohelp>true</nohelp>
+                    <overview>${basedir}/src/main/java/overview.html</overview>
+                    <nodeprecated>true</nodeprecated>
+                    <nodeprecatedlist>true</nodeprecatedlist>
+                    <sourceFileIncludes>
+			<include>mapping/MappingResult.java</include>
+			<include>mapping/Mapping.java</include>
+			<include>handler/WebServerHandler.java</include>
+			<include>handler/ServerBaseHandler.java</include>
+			<include>handler/ws/WebSocketHandler.java</include>
+			<include>link/api/Blob.java</include>
+			<include>link/api/Linklet.java</include>
+			<include>link/api/LinkletCtx.java</include>
+			<include>link/api/LinkPeer.java</include>
+			<include>link/api/LinkMsg.java</include>
+			<include>util/HeaderParser.java</include>
+			<include>util/ParameterParser.java</include>
+			<include>util/ServerParser.java</include>
+                    </sourceFileIncludes>
+		<sourcepath>${basedir}/src/main/java/naru/aweb</sourcepath>
+        </configuration>
+      </plugin>
     <plugin>
       <groupId>com.theoryinpractise</groupId>
       <artifactId>coffee-maven-plugin</artifactId>
-      <version>1.4.0</version>
+      <version>1.4.7</version>
 
       <configuration>
          <bare>false</bare>
-         <!--minifiedFile>${basedir}/ph/apps/docroot/pub/js/admin.js</minifiedFile>
+         <!--minifiedFile>${basedir}/ph/docroot/pub/js/admin.js</minifiedFile>
          <setOfFilesToMinify>
             <directory>${project.build.directory}/coffee</directory>
             <includes>
                 <include>*.js</include>
             </includes>
          </setOfFilesToMinify-->
-
          <!--coffeeOutputDirectory>${project.build.directory}/coffee</coffeeOutputDirectory-->
-         <coffeeOutputDirectory>${basedir}/ph/apps/docroot/pub/js</coffeeOutputDirectory>
-         <compileIndividualFiles>true</compileIndividualFiles>
+         <coffeeOutputDirectory>${basedir}/ph/docroot/pub/js</coffeeOutputDirectory>
+         <compileIndividualFiles>false</compileIndividualFiles>
          <coffeeJoinSets>
             <joinSet>
-                <id>ph-pa</id>
+                <id>authOffline</id>
                 <fileSet>
                     <directory>${basedir}/src/main/coffee</directory>
                     <includes>
-                        <include>ph-pa.coffee</include>
+                        <include>authOffline.coffee</include>
+                    </includes>
+                </fileSet>
+            </joinSet>
+            <joinSet>
+                <id>aplOffline</id>
+                <fileSet>
+                    <directory>${basedir}/src/main/coffee</directory>
+                    <includes>
+                        <include>aplOffline.coffee</include>
+                    </includes>
+                </fileSet>
+            </joinSet>
+            <joinSet>
+                <id>ph</id>
+                <fileSet>
+                    <directory>${basedir}/src/main/coffee</directory>
+                    <includes>
+                        <include>ph.coffee</include>
+                        <include>phLink.coffee</include>
+                        <include>phLinkSessionStorage.coffee</include>
+                        <include>phLinkLocalStorage.coffee</include>
+                        <include>phLinkServerStorage.coffee</include>
+                        <include>phLinkConnection.coffee</include>
+                        <include>phLinkSubscription.coffee</include>
+                        <include>phLinkEnvelope.coffee</include>
                     </includes>
                 </fileSet>
             </joinSet>
@@ -74,7 +139,7 @@
 				<version>3.1.1</version>
 				<configuration>
 					<fork>false</fork>
-					<mappingIncludes>naru/aweb/config/*.class</mappingIncludes>
+					<mappingIncludes>naru/aweb/**/*.class</mappingIncludes>
 					<log4jConfiguration>
 						${project.build.outputDirectory}/log4j.properties
 					</log4jConfiguration>
@@ -106,12 +171,28 @@
 							</delete>
   							<copy todir="pack/phantom/">
 									<fileset dir="pack/phantom_tmpl/">
+										<include name="**/*" />
+										<include name="**/*.*" />
+										<exclude name="**/.svn/**/*.*" />
+									</fileset>
+							</copy>
+  							<copy todir="pack/phantom/ph/docroot/api/">
+									<fileset dir="ph/docroot/api/">
+										<include name="**/*" />
+										<include name="**/*.*" />
+										<exclude name="**/.svn/**/*.*" />
+									</fileset>
+							</copy>
+							<copy todir="pack/phantom/ph/apps/link/">
+									<fileset dir="ph/apps/link/">
+										<include name="**/*" />
 										<include name="**/*.*" />
 										<exclude name="**/.svn/**/*.*" />
 									</fileset>
 							</copy>
 							<copy todir="pack/phantom/ph/apps/admin/">
 								<fileset dir="ph/apps/admin/">
+									<include name="~ph.vsp" />
 									<include name="admin.vsp" />
 									<include name="adminjs.vpf" />
 									<include name="status.vsf" />
@@ -125,16 +206,20 @@
 									<include name="setting.vpf" />
 									<include name="trace.vpf" />
 									<include name="dialogs.vpf" />
+									<include name="authentication.vsf" />
 								</fileset>
 							</copy>
 							<copy todir="pack/phantom/ph/apps/auth/">
 								<fileset dir="ph/apps/auth/">
+									<include name="~ph.appcache" />
+									<include name="~ph.vsp" />
 									<include name="authFrame.vsp" />
 									<include name="crossDomainFrame.vsp" />
 									<include name="basicForm.vsp" />
 									<include name="creanupAuthHeader.vsp" />
 									<include name="digestForm.vsp" />
 									<include name="webAuthenticate.vsp" />
+									<include name="internetAuth.vsp" />
 								</fileset>
 							</copy>
 							<copy todir="pack/phantom/ph/setting/">
@@ -154,16 +239,19 @@
            </replacetokens>
        </filterchain>
 							</copy>
-							<copy todir="pack/phantom/ph/apps/docroot/">
-								<fileset dir="ph/apps/docroot/">
+							<copy todir="pack/phantom/ph/docroot/">
+								<fileset dir="ph/docroot/">
 									<include name="favicon.ico" />
 									<include name="index.html" />
-									<include name="pub/js/ph-queue.js" />
-									<include name="pub/js/ph-loader.js" />
-									<include name="pub/js/ph-auth.js" />
+									<include name="storageTest.html" />
+									<include name="pubsubTest.html" />
+									<include name="pub/js/authOffline.js" />
+									<include name="pub/js/aplOffline.js" />
+									<include name="pub/js/ph-link.js" />
 									<include name="pub/js/ph-json2.js" />
 									<include name="pub/js/ph-jqnoconflict.js" />
-									<include name="pub/js/ph-pa.js" />
+									<include name="pub/js/ph.js" />
+									<include name="pub/js/phOnline.js" />
 								</fileset>
 							</copy>
 							<copy todir="pack/phantom/ph/lib/">
@@ -177,6 +265,9 @@
 									<include name="self.pac" />
 									<include name="listing.vsp" />
 									<include name="xhrFrame.vsp" />
+									<include name="~ph.appcache" />
+									<include name="~ph.html" />
+									<include name="~xhrPaFrame.vsp" />
 								</fileset>
 							</copy>
 							<mkdir dir="pack/phantom/watch"/>
@@ -409,32 +500,40 @@
 			<artifactId>velocity-tools-generic</artifactId>
 			<version>2.0-beta1</version>
 		</dependency>
-
 <dependency>
   <groupId>name.ben.murphy</groupId>
   <artifactId>ssl_npn</artifactId>
   <version>0.2-SNAPSHOT</version>
-</dependency>  
-
-		
+</dependency>
 <dependency>
 	<groupId>org.eclipse.jetty.spdy</groupId>
 	<artifactId>spdy-jetty</artifactId>
 	<version>8.1.7.v20120910</version>
-</dependency>		
-
-
-
+</dependency>
 <dependency>
         <groupId>org.seleniumhq.selenium</groupId>
         <artifactId>selenium-remote-control</artifactId>
         <version>2.0b3</version>
-</dependency>  
-
+</dependency>
 <dependency>
     <groupId>org.seleniumhq.selenium</groupId>
     <artifactId>selenium-support</artifactId>
     <version>2.0b3</version>
+</dependency>
+<dependency>
+    <groupId>org.openid4java</groupId>
+    <artifactId>openid4java</artifactId>
+    <version>0.9.7</version>
+</dependency>
+<dependency>
+    <groupId>org.twitter4j</groupId>
+    <artifactId>twitter4j-core</artifactId>
+    <version>[3.0,)</version>
+</dependency>
+<dependency>
+    <groupId>org.apache.httpcomponents</groupId>
+    <artifactId>httpclient</artifactId>
+    <version>4.0.1</version>
 </dependency>
 	</dependencies>
 	<repositories>

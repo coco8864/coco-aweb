@@ -12,10 +12,11 @@ import naru.async.pool.PoolManager;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.core.DispatchHandler;
-import naru.aweb.core.ServerBaseHandler;
-import naru.aweb.http.HeaderParser;
-import naru.aweb.http.KeepAliveContext;
+import naru.aweb.core.RealHost;
+import naru.aweb.handler.KeepAliveContext;
+import naru.aweb.handler.ServerBaseHandler;
 import naru.aweb.http.RequestContext;
+import naru.aweb.util.HeaderParser;
 import naru.aweb.util.ServerParser;
 
 /**
@@ -35,15 +36,43 @@ public class SpdyHandler extends ServerBaseHandler {
 	private char rcvGoawayStatusCode;
 	private long readLength;
 	private long writeLength;
+	private RealHost realHost;
+	private ServerParser acceptServer;
+	private boolean isProxy;//CONNECTの後にSPDYが始まったか否か
+	private short version;/* protocolのversion */
+	private int curServerWindowSize;
+	private int limitServerWindowSize;
 	
-	public boolean onHandshaked(String protocol) {
+	public boolean onHandshaked(String protocol,boolean isProxy) {
 		logger.debug("#handshaked.cid:" + getChannelId() +":"+protocol);
-		frame.init(protocol,spdyConfig.getSpdyFrameLimit());
+		this.isProxy=isProxy;
+		if(SpdyFrame.PROTOCOL_V2.equals(protocol)){
+			version=SpdyFrame.VERSION_V2;
+		}else if(SpdyFrame.PROTOCOL_V3.equals(protocol)){
+			version=SpdyFrame.VERSION_V3;
+		}else if(SpdyFrame.PROTOCOL_V31.equals(protocol)){
+			version=SpdyFrame.VERSION_V31;
+		}else{
+			throw new IllegalArgumentException(protocol);
+		}
+		frame.init(version,spdyConfig.getSpdyFrameLimit());
 		inFrameCount=new long[SpdyFrame.TYPE_WINDOW_UPDATE+1];
 		outFrameCount=new long[SpdyFrame.TYPE_WINDOW_UPDATE+1];
 		lastGoodStreamId=0;
 		sendGoawayStatusCode=rcvGoawayStatusCode='*';
 		readLength=writeLength=0;
+		KeepAliveContext keepAliveContext=getKeepAliveContext();
+		realHost=keepAliveContext.getRealHost();
+		acceptServer=keepAliveContext.getAcceptServer();
+		
+		/*　無条件でsetting frameを送る */
+		sendSetting(SpdyFrame.FLAG_SETTINGS_PERSIST_VALUE,SpdyFrame.SETTINGS_MAX_CONCURRENT_STREAMS,spdyConfig.getMaxConcurrentStreams());
+		curServerWindowSize=spdyConfig.getServerWindowSize();
+		limitServerWindowSize=spdyConfig.getServerWindowSize()/4;//windowsizeが1/4以下になるまでupdateしない
+		sendSetting(SpdyFrame.FLAG_SETTINGS_PERSIST_VALUE,SpdyFrame.SETTINGS_INITIAL_WINDOW_SIZE,curServerWindowSize-(64*1024));
+		if(version==SpdyFrame.VERSION_V31){
+			sendWindowUpdate(0,curServerWindowSize-(64*1024));
+		}
 		return false;//自力でasyncReadしたため
 	}
 	
@@ -88,12 +117,29 @@ public class SpdyHandler extends ServerBaseHandler {
 		switch(type){
 		case SpdyFrame.TYPE_DATA_FRAME:
 			ByteBuffer[] dataBuffer=frame.getDataBuffers();
+			long length=BuffersUtil.remaining(dataBuffer);
+			logger.debug("TYPE_DATA_FRAME length:"+length);
 			if(session!=null){
 				session.onReadPlain(dataBuffer,frame.isFin());
 			}else{
 				logger.error("illegal streamId:"+streamId);
 				sendReset(streamId, SpdyFrame.RSTST_INVALID_STREAM);
 			}
+			curServerWindowSize-=length;
+			if(limitServerWindowSize>curServerWindowSize){
+				length=spdyConfig.getServerWindowSize()-curServerWindowSize;
+				sendWindowUpdate(streamId,(int)length);
+				if(version==SpdyFrame.VERSION_V31){
+					sendWindowUpdate(0,(int)length);
+				}
+				curServerWindowSize+=length;
+			}
+			/*
+			sendWindowUpdate(streamId,(int)length);
+			if(version==SpdyFrame.VERSION_V31){
+				sendWindowUpdate(0,(int)length);
+			}
+			*/
 			break;
 		case SpdyFrame.TYPE_SYN_STREAM:
 			if(session!=null){
@@ -110,9 +156,13 @@ public class SpdyHandler extends ServerBaseHandler {
 			HeaderParser requestHeader=requestContext.getRequestHeader();
 			//ヘッダの内容を設定、ここにSpdyのVLが関係してくるので、SpdyFrameの中で実行
 			frame.setupHeader(requestHeader);
-			ServerParser server=requestHeader.getServer();
-			server.ref();
-			keepAliveContext.setAcceptServer(server);
+			ServerParser server=null;
+			if(isProxy){//proxyの場合は、ヘッダからproxy先を見つける
+				server=requestHeader.getServer();
+			}
+			acceptServer.ref();
+			/* spdy固有のkeepAlive初期化 */
+			keepAliveContext.setSpdyAcceptServer(acceptServer,realHost,server);
 			logger.debug("url:" + requestHeader.getRequestUri());
 			//KeepAliveContextからSpdySessionを作る
 			session=SpdySession.create(this, streamId, keepAliveContext,frame.isFin());
@@ -141,8 +191,15 @@ public class SpdyHandler extends ServerBaseHandler {
 			resetAll();
 			asyncClose(null);
 			break;
+		case SpdyFrame.TYPE_WINDOW_UPDATE:
+			logger.debug("streamId:"+streamId+" deltaWindowSize:"+frame.getDeltaWindowSize());
+			break;
 		case SpdyFrame.TYPE_SETTINGS:
+			logger.debug("setting:");
+			break;
 		case SpdyFrame.TYPE_HEADERS:
+			logger.debug("headers:");
+			break;
 		default:
 		}
 	}
@@ -188,6 +245,18 @@ public class SpdyHandler extends ServerBaseHandler {
 		outFrameCount[SpdyFrame.TYPE_PING]++;
 		ByteBuffer[] pingFrame=frame.buildPIngFrame(pingId);
 		asyncWrite(null, pingFrame);
+	}
+	
+	private void sendWindowUpdate(int streamId,int deltaWindowSize){
+		outFrameCount[SpdyFrame.TYPE_WINDOW_UPDATE]++;
+		ByteBuffer[] resetFrame=frame.buildWindowUpdate(streamId, deltaWindowSize);
+		asyncWrite(null, resetFrame);
+	}
+	
+	private void sendSetting(int flags,int id,int value){
+		outFrameCount[SpdyFrame.TYPE_SETTINGS]++;
+		ByteBuffer[] resetFrame=frame.buildSetting(flags, id, value);
+		asyncWrite(null, resetFrame);
 	}
 	
 	private static final String WRITE_CONTEXT_BODY = "writeContextBody";
@@ -271,6 +340,10 @@ public class SpdyHandler extends ServerBaseHandler {
 		logger.debug("#finished.cid:"+getChannelId());
 		resetAll();
 		AccessLog accessLog=getAccessLog();
+		if(accessLog==null){
+			super.onFinished();
+			return;
+		}
 		accessLog.endProcess();
 		KeepAliveContext keepAliveContext=getKeepAliveContext();
 		accessLog.setRealHost(keepAliveContext.getRealHost().getName());
@@ -316,11 +389,16 @@ public class SpdyHandler extends ServerBaseHandler {
 		dispatchHandler.setKeepAliveContext(session.getKeepAliveContext());
 		session.setServerHandler(dispatchHandler);
 		dispatchHandler.getRequestContext().setAttribute(ATTRIBUTE_SPDY_SESSION, session);
-		dispatchHandler.mappingHandler();
+		try{
+			dispatchHandler.mappingHandler();
+		}catch(Throwable t){//aplが例外した場合
+			logger.error("spdy dispatch apl error.",t);
+			session.onRst(-1);
+		}
 	}
 	
 	public int getSpdyVersion(){
-		return frame.getVersion();
+		return version;
 	}
 	public int getSpdyPri(){
 		return frame.getPriority();

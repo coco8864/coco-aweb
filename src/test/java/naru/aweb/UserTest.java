@@ -7,7 +7,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import naru.aweb.config.User;
+import naru.aweb.auth.User;
 import naru.queuelet.test.TestBase;
 
 public class UserTest extends TestBase {

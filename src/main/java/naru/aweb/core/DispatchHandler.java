@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.Date;
 import java.util.List;
 
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
 import org.apache.log4j.Logger;
@@ -18,19 +19,22 @@ import naru.aweb.auth.AuthSession;
 import naru.aweb.auth.Authorizer;
 import naru.aweb.auth.MappingAuth;
 import naru.aweb.auth.SessionId; //import naru.aweb.auth.Authenticator;
+import naru.aweb.auth.User;
 import naru.aweb.config.AccessLog;
+import naru.aweb.config.AppcacheOption;
 import naru.aweb.config.Config;
-import naru.aweb.config.Mapping;
-import naru.aweb.config.User;
-import naru.aweb.http.HeaderParser;
-import naru.aweb.http.KeepAliveContext;
+import naru.aweb.handler.KeepAliveContext;
+import naru.aweb.handler.ServerBaseHandler;
+import naru.aweb.handler.WebServerHandler;
+import naru.aweb.handler.ServerBaseHandler.SCOPE;
 import naru.aweb.http.RequestContext;
-import naru.aweb.http.WebServerHandler;
 import naru.aweb.mapping.Mapper;
+import naru.aweb.mapping.Mapping;
 import naru.aweb.mapping.MappingResult;
 import naru.aweb.spdy.SpdyConfig;
 import naru.aweb.spdy.SpdyHandler;
 import naru.aweb.spdy.SpdySession;
+import naru.aweb.util.HeaderParser;
 import naru.aweb.util.ServerParser;
 import net.sf.json.JSONObject;
 
@@ -107,12 +111,15 @@ public class DispatchHandler extends ServerBaseHandler {
 	public void onStartRequest() {
 		logger.debug("#startRequest.cid:" + getChannelId());
 		headerPage.recycle();
-//		startTotalReadLength=getTotalReadLength();
-//		startTotalWriteLength=getTotalWriteLength();
 		asyncRead(null);
 	}
 
 	public void onAccepted(Object userContext) {
+		if(getConfig().getBoolean(Config.REFUSE_ACCEPT, false)){
+			logger.debug("accept refused");
+			asyncClose(null);//一時停止
+			return;
+		}
 		setReadTimeout(getConfig().getAcceptTimeout());// Connection Flood 攻撃対応で比較的短く設定
 		logger.debug("#accepted.cid:" + getChannelId());
 		isFirstRead = true;
@@ -176,8 +183,7 @@ public class DispatchHandler extends ServerBaseHandler {
 	public void onReadPlain(Object userContext, ByteBuffer[] buffers) {
 		logger.debug("#onReadPlain.cid:" + getChannelId()+ ":buffers.hashCode:" + buffers.hashCode());
 		if(isSpdyAvailable){
-			getRequestContext().allocAccessLog();
-			AccessLog accessLog = getAccessLog();
+			AccessLog accessLog = getRequestContext().allocAccessLog();
 			accessLog.setStartTime(startTime);
 			accessLog.setConnectTime(connectTime);
 			accessLog.setHandshakeTime(handshakeTime);
@@ -189,7 +195,7 @@ public class DispatchHandler extends ServerBaseHandler {
 			SpdyHandler handler=(SpdyHandler)forwardHandler(SpdyHandler.class);
 			if(handler!=null){
 				logger.debug("#onReadPlain.cid:" + getChannelId()+ "fowardHandler nextProtocol:"+nextProtocol );
-				handler.onHandshaked(nextProtocol);
+				handler.onHandshaked(nextProtocol,connectHeaderLength!=0);
 				handler.onReadPlain(userContext, buffers);
 				return;
 			}
@@ -246,10 +252,7 @@ public class DispatchHandler extends ServerBaseHandler {
 		if (user != null) {
 			accessLog.setUserId(user.getLoginId());
 		}
-		//if(Boolean.TRUE.equals(mapping.getOption("skipPhlog"))){
-		//	accessLog.setSkipPhlog(true);
-		//}
-		if(Boolean.TRUE.equals(mapping.getOption("shortFormatLog"))){
+		if(mapping.getBooleanOption(Mapping.OPTION_SHORT_FORMAT_LOG)){
 			accessLog.setShortFormat(true);
 		}
 		
@@ -364,7 +367,7 @@ public class DispatchHandler extends ServerBaseHandler {
 		if (auth != null) {
 			user = auth.getUser();
 		}
-		setRequestAttribute(ServerBaseHandler.ATTRIBUTE_USER, user);
+		setAttribute(SCOPE.REQUEST,ServerBaseHandler.ATTRIBUTE_USER, user);
 		// 処理の起点がaccessLogの中に採られる
 		setupTraceLog(realHostName, requestHeader, mapping, user,isWs);
 		setRequestMapping(mapping);
@@ -376,7 +379,7 @@ public class DispatchHandler extends ServerBaseHandler {
 			return;
 		}
 		logger.debug("responseObject:cid:" + getChannelId() + ":" + responseHandler + ":" + this);
-		responseHandler.startResponse();
+		responseHandler.onRequestHeader();
 	}
 
 	private static final String SSL_PROXY_OK_CONTEXT = "sslProxyOkContext";
@@ -515,12 +518,16 @@ public class DispatchHandler extends ServerBaseHandler {
 			switch(stat){
 			case SUCCESS:
 				response.element("result", true);
-				response.element(AuthHandler.APP_ID, authSession.getAppId());
-				response.element("token", authSession.getToken());
+				response.element(AuthHandler.AUTH_URL,config.getAuthUrl());
+				response.element(AuthHandler.APP_SID, authSession.getSid());
+				response.element(AuthHandler.LOGIN_ID, authSession.getUser().getLoginId());
+				response.element(AuthHandler.TOKEN, authSession.getToken());
 				break;
 			case PUBLIC:
 				response.element("result", true);
-				response.element(AuthHandler.APP_ID, "public");
+				response.element(AuthHandler.AUTH_URL,config.getAuthUrl());
+				response.element(AuthHandler.APP_SID, "public");
+				response.element(AuthHandler.LOGIN_ID, "public");
 				break;
 			case FAIL:
 				response.element("result", false);
@@ -535,10 +542,34 @@ public class DispatchHandler extends ServerBaseHandler {
 	private MappingResult checkPhAuth(HeaderParser requestHeader,
 			KeepAliveContext keepAliveContext,RequestContext requestContext, 
 			MappingResult mapping) {
-		String authMark=(String)getRequestAttribute(AuthHandler.AUTH_MARK);
-		
-		String cookieId=(String)getRequestAttribute(SessionId.SESSION_ID);
-		if(cookieId!=null){
+		String path = mapping.getResolvePath();
+		AppcacheOption appcacheOption=(AppcacheOption)mapping.getAttribute(Mapping.OPTION_APPCACHE);
+		String authMark=(String)getAttribute(SCOPE.REQUEST,AuthHandler.AUTH_MARK);
+		String cookieId=(String)getAttribute(SCOPE.REQUEST,SessionId.SESSION_ID);
+		if(authMark!=null && (authMark.equals(AuthHandler.QUERY_XHR_CHECK)||authMark.equals(AuthHandler.QUERY_XHR_WS_CHECK))){
+			//XHR経由で認証チェックが来た場合
+			AuthSession authSession=null;
+			if(cookieId!=null){
+				ServerParser domain=requestHeader.getServer();
+				boolean isSsl=isSsl();
+				authSession=getAuthorizer().getAuthSessionBySecondaryId(cookieId,mapping.getMapping(),isSsl,domain);
+			}
+			JSONObject response=new JSONObject();
+			response.element("result", true);
+			response.element(AuthHandler.AUTH_URL,config.getAuthUrl());
+			if(authSession!=null){
+				response.element(AuthHandler.APP_SID, authSession.getSid());
+				response.element(AuthHandler.LOGIN_ID, authSession.getUser().getLoginId());
+				response.element(AuthHandler.TOKEN, authSession.getToken());
+				//この処理により、リクエスト終了時にauthSessionの参照カウンタが下がる
+				requestContext.registerAuthSession(authSession);
+			}
+			mapping.unref();
+			return DispatchResponseHandler.jsonResponse(response);
+		}else if(appcacheOption!=null && appcacheOption.isAppachePath(path)){
+			//offline対象は、認証の対象にしない
+			return mapping;
+		}else if(cookieId!=null){
 			//TODO もっと適切な場所がないか？
 			ServerParser domain=requestHeader.getServer();
 			boolean isSsl=isSsl();
@@ -567,6 +598,7 @@ public class DispatchHandler extends ServerBaseHandler {
 		List<String> mappingRoles = mapping.getRolesList();
 		if (mappingRoles.size() == 0) {// 認証を必要としない,/pub,/proxy.pac,/auth
 			if(authMark!=null){
+				mapping.unref();
 				return authMarkResponse(authMark,AUTH_STAT.PUBLIC,null);
 			}
 			return mapping;
@@ -576,7 +608,7 @@ public class DispatchHandler extends ServerBaseHandler {
 			authMark=AuthHandler.AUTHORIZE_MARK;
 		}
 		//認可処理
-		setRequestAttribute(AuthHandler.AUTHORIZE_MARK,authMark);
+		setAttribute(SCOPE.REQUEST,AuthHandler.AUTHORIZE_MARK,authMark);
 		mapping.forwardAuth();
 		return mapping;
 	}
@@ -649,19 +681,24 @@ public class DispatchHandler extends ServerBaseHandler {
 		/* cookieIdは切り取ってrequestAttributeに移し変える */
 		String cookieId=requestHeader.getAndRemoveCookieHeader(SessionId.SESSION_ID);
 		if(cookieId!=null){
-			setRequestAttribute(SessionId.SESSION_ID, cookieId);
+			setAttribute(SCOPE.REQUEST,SessionId.SESSION_ID, cookieId);
 		}
 		String query=requestHeader.getQuery();
 		if(isWs==false && query!=null){
 			if(query.startsWith(AuthHandler.QUERY_CD_CHECK)){
-				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_CHECK);
+				setAttribute(SCOPE.REQUEST,AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_CHECK);
 			}else if(query.startsWith(AuthHandler.QUERY_CD_WS_CHECK)){
-				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_WS_CHECK);
+				setAttribute(SCOPE.REQUEST,AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_WS_CHECK);
 				isWs=true;
 			}else if(query.startsWith(AuthHandler.QUERY_CD_SET)){
-				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_SET);
+				setAttribute(SCOPE.REQUEST,AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_SET);
 			}else if(query.startsWith(AuthHandler.QUERY_CD_WS_SET)){
-				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_WS_SET);
+				setAttribute(SCOPE.REQUEST,AuthHandler.AUTH_MARK, AuthHandler.AUTH_CD_WS_SET);
+				isWs=true;
+			}else if(query.startsWith(AuthHandler.QUERY_XHR_CHECK)){
+				setAttribute(SCOPE.REQUEST,AuthHandler.AUTH_MARK, AuthHandler.QUERY_XHR_CHECK);
+			}else if(query.startsWith(AuthHandler.QUERY_XHR_WS_CHECK)){
+				setAttribute(SCOPE.REQUEST,AuthHandler.AUTH_MARK, AuthHandler.QUERY_XHR_WS_CHECK);
 				isWs=true;
 //			}else if(query.startsWith("__PH_AUTH_AUTHORIZE__")){
 //				setRequestAttribute(AuthHandler.AUTH_MARK, AuthHandler.AUTH_AUTHORIZE);
@@ -696,7 +733,6 @@ public class DispatchHandler extends ServerBaseHandler {
 			mapping=checkMappingAuth(requestHeader,keepAliveContext,requestContext,mapping);
 		}
 		if(requestContext.getAuthSession()==null){
-			AuthSession.UNAUTH_SESSION.ref();
 			requestContext.registerAuthSession(AuthSession.UNAUTH_SESSION);
 		}
 		
@@ -714,7 +750,13 @@ public class DispatchHandler extends ServerBaseHandler {
 	public SSLEngine getSSLEngine() {
 		KeepAliveContext keepAliveContext = getKeepAliveContext();
 		ServerParser sslServer = keepAliveContext.getProxyTargetServer();
-		SSLEngine engine=getConfig().getSslEngine(sslServer);
+		SSLEngine engine;
+		if(sslServer==null){
+			SSLContext sslContext=keepAliveContext.getRealHost().getSslContext();
+			engine=sslContext.createSSLEngine(null, 443);
+		}else{
+			engine=getConfig().getSslEngine(sslServer);
+		}
 		if(keepAliveContext.getRealHost().isSpdyAvailable()){
 			SpdyConfig spdyConfig=getConfig().getSpsyConfig();
 			spdyConfig.setNextProtocols(engine);

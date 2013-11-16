@@ -124,15 +124,25 @@ datanucleus.validateConstraints=false
 		boolean isUseSslBuffer=config.getBoolean("isUseSslBuffer", true);
 		setupPool(maxClients,isUseSslBuffer);
 		
+		/* port‚ÍŠJ‚¢‚Ä‚à‰Šú‰»‚ª‚·‚Ş‚Ü‚Åaccept‚ğ‹‘”Û‚·‚é */
+		config.setProperty(Config.REFUSE_ACCEPT,true);
 		mainInstance=this;
 		Main.context=context;
 		if( !RealHost.bindAll(true) ){
 			/* Šù‚Éport‚ªg‚í‚ê‚Ä‚¢‚½ê‡‚±‚±‚ğ’Ê‚é */
 			logger.error("fail to bindAll.");
 			context.finish(false,true,startupInfo);
+			return;
 		}
 		//auth‚Ì‰Šú‰»‚ÍbindŒã‚¶‚á‚È‚¢‚Æhost‚ªŠm’è‚µ‚È‚¢ê‡‚ª‚ ‚é
-		config.initAfterBind();
+		try{
+			config.initAfterBind();
+		}catch(Throwable t){
+			logger.error("fail to config initAfterBind.",t);
+			context.finish(false,true,startupInfo);
+			return;
+		}
+		config.setProperty(Config.REFUSE_ACCEPT,false);
 	}
 	
 	/**
@@ -164,7 +174,8 @@ datanucleus.validateConstraints=false
 					continue;
 				}
 				SSLEngine sslEngine=config.getSslEngine(null);
-				PoolManager.setupBufferPool(sslEngine.getSession().getPacketBufferSize(), limit100*client_100);
+				int sslBufferSize=sslEngine.getSession().getPacketBufferSize();
+				PoolManager.setupBufferPool(sslBufferSize,limit100*client_100);
 			}else if("defaultBuffer".equals(type)){
 				int bufferSize=info.getInt("bufferSize");
 				PoolManager.changeDefaultBuffer(bufferSize,limit100*client_100);

@@ -10,10 +10,18 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.Proxy.Type;
+import java.net.ProxySelector;
+import java.net.SocketAddress;
+import java.net.URI;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -32,6 +40,7 @@ import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
+import naru.aweb.util.HttpUtil;
 import naru.aweb.util.ServerParser;
 
 /**
@@ -40,7 +49,7 @@ import naru.aweb.util.ServerParser;
  * 
  * 3)は先頭のみを対象とする
  */
-public class ProxyFinder {
+public class ProxyFinder extends ProxySelector{
 	private static Logger logger = Logger.getLogger(ProxyFinder.class);
 	private static final String NEXT_FIND_PROXY_FOR_URL_FUNC_NAME = "NextFindProxyForURL";
 	private static final ServerParser DIRECT = new ServerParser(null, 0);
@@ -63,7 +72,7 @@ public class ProxyFinder {
 	private Set<String> securePhantomDomians;
 	private Map<String, ServerParser> proxyServerCash;
 	private Map<String, ServerParser> urlProxyCash;
-	private Map<String, String> phantomPacCash;
+//	private Map<String, String> phantomPacCash;
 	private String selfDomain;
 	private int proxyPort;
 
@@ -71,37 +80,26 @@ public class ProxyFinder {
 		return NEXT_FIND_PROXY_FOR_URL_FUNC_NAME;
 	}
 
-	public static String contents(URL url) throws IOException {
-		InputStream is = url.openStream();
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		byte[] buf = new byte[1024];
-		while (true) {
-			int len = is.read(buf);
-			if (len < 0) {
-				break;
-			}
-			baos.write(buf, 0, len);
-		}
-		is.close();
-		String contents = new String(baos.toByteArray(), "iso8859_1");
-		baos.close();
-		return contents;
-	}
-
-	private String merge(String template, String localHost) {
+	private String merge(String template, Map param) {
 		VelocityContext veloContext = new VelocityContext();
 		veloContext.put("proxyFinder", this);
-		veloContext.put("localHost", localHost);
-		veloContext.put("localServer", selfDomain);
+		if(param!=null){
+			for(Object key:param.keySet()){
+				Object value=param.get(key);
+				veloContext.put((String)key, value);
+			}
+		}
 		Writer out = null;
 		try {
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			out = new OutputStreamWriter(baos, "utf-8");
 			VelocityEngine ve = config.getVelocityEngine();
-			ve.mergeTemplate(template, "utf-8", veloContext, out);
+			synchronized(ve){
+				ve.mergeTemplate(template, "utf-8", veloContext, out);
+			}
 			out.close();
-			String result = new String(baos.toByteArray(), "iso8859_1");
-			logger.debug("----marge result start:template:"+ template+":localHost:"+localHost);
+			String result = new String(baos.toByteArray(), "utf-8");
+			logger.debug("----marge result start:template:"+ template);
 			logger.debug(result);
 			logger.debug("----marge result end----");
 			return result;
@@ -163,26 +161,6 @@ public class ProxyFinder {
 			ScriptEngine pacScriptEngine = factory.getEngineByName("JavaScript");
 			if(pacScriptEngine==null){
 				logger.error("fail to getEngineByName(JavaScript) pacScriptEngine is null");
-				logger.error("SecurityManager:"+System.getSecurityManager());
-				for(ScriptEngineFactory f:factory.getEngineFactories()){
-					logger.error(f.getEngineName() +":" + f.getEngineVersion() +":" + f.getLanguageName());
-				}
-				ClassLoader ctxtLoader = Thread.currentThread().getContextClassLoader();
-				logger.error("ctxtLoader:"+ctxtLoader);
-				Enumeration configs = ctxtLoader.getResources("META-INF/services/"+ScriptEngineFactory.class);
-				logger.error("ContextClassLoader configs:"+configs);
-				while(configs.hasMoreElements()){
-					Object o=configs.nextElement();
-					logger.error("ContextClassLoader loaderScriptEngineFactory resouce:" + o);
-				}
-				ClassLoader loader = ClassLoader.getSystemClassLoader();
-				configs = loader.getResources("META-INF/services/"+ScriptEngineFactory.class);
-				logger.error("SystemClassLoader:"+loader);
-				logger.error("SystemClassLoader configs:"+configs);
-				while(configs.hasMoreElements()){
-					Object o=configs.nextElement();
-					logger.error("SystemClassLoader loaderScriptEngineFactory resouce:" + o);
-				}
 				return false;
 			}else{
 				logger.info("pacScriptEngine:" + pacScriptEngine.getClass().getName());
@@ -228,10 +206,10 @@ public class ProxyFinder {
 	}
 	
 	public boolean updatePac(File phantomHome,Set<String> httpPhantomDomians, Set<String> securePhantomDomians){
-		phantomPacCash.clear();//PhantomDomiansが変更されるとpacが変わる
+//		phantomPacCash.clear();//PhantomDomiansが変更されるとpacが変わる
 		this.httpPhantomDomians = httpPhantomDomians;
 		this.securePhantomDomians = securePhantomDomians;
-		
+		/*
 		String localPac=getProxyPac(selfDomain+":"+proxyPort);
 		OutputStream localPacOs=null;
 		try {
@@ -249,6 +227,8 @@ public class ProxyFinder {
 				}
 			}
 		}
+		*/
+		return true;
 	}
 
 	public void term(){
@@ -296,11 +276,10 @@ public class ProxyFinder {
 		this.pacScriptInvoker = null;
 		this.proxyServerCash = new HashMap<String, ServerParser>();
 		this.urlProxyCash = new HashMap<String, ServerParser>();
-		this.phantomPacCash = new HashMap<String, String>();
 		this.selfDomain=selfDomain;
 		this.proxyPort=proxyPort;
 		if (pacUrl != null) {// pacでproxyを決める設定
-			if( loadPac(contents(pacUrl))==false){
+			if( loadPac(HttpUtil.get(pacUrl.toString(),false))==false){
 				return false;
 			}
 			this.nextPac = pac.replaceAll("FindProxyForURL",NEXT_FIND_PROXY_FOR_URL_FUNC_NAME);
@@ -326,19 +305,15 @@ public class ProxyFinder {
 			assert (secureProxyServer == null);
 			this.isUseProxy = false;
 		}
+		ProxySelector.setDefault(this);
 		return true;
 	}
 
 	/*
 	 * ブラウザに返却するproxyPacを作成
 	 */
-	public String getProxyPac(String localHost) {
-		String pac = phantomPacCash.get(localHost);
-		if (pac == null) {
-			pac = merge("/template/proxy.pac", localHost);
-			phantomPacCash.put(localHost, pac);
-		}
-		return pac;
+	public String getProxyPac(Map param) {
+		return merge("/template/proxy.pac", param);
 	}
 
 	public ServerParser findProxyServer(boolean isSsl, String host) {
@@ -357,8 +332,13 @@ public class ProxyFinder {
 			return findProxyServer("http://" + host, host);
 		}
 	}
+	
+	public ServerParser findProxyServer(URI uri) {
+		ServerParser proxyServer=findProxyServer(uri.toString(),uri.getHost());
+		return proxyServer;
+	}
 
-	public ServerParser findProxyServer(String url, String host) {
+	private ServerParser findProxyServer(String url, String host) {
 		if (!isUseProxy) {
 			return null;
 		}
@@ -405,4 +385,24 @@ public class ProxyFinder {
 		}
 		return null;
 	}
+
+	@Override
+	public void connectFailed(URI uri, SocketAddress addr, IOException ioe) {
+		logger.warn("ProxyFinder connectFailed:"+uri,ioe);
+	}
+
+	@Override
+	public List<Proxy> select(URI uri) {
+		ServerParser proxyServer=findProxyServer(uri);
+		Proxy proxy;
+		if(proxyServer==null){
+			proxy=Proxy.NO_PROXY;
+		}else if("socket".equals(uri.getScheme())){
+			proxy=new Proxy(Type.SOCKS,new InetSocketAddress(proxyServer.getHost(),proxyServer.getPort()));
+		}else{
+			proxy=new Proxy(Type.HTTP,new InetSocketAddress(proxyServer.getHost(),proxyServer.getPort()));
+		}
+		return Arrays.asList(proxy);
+	}
+
 }

@@ -207,11 +207,13 @@ public class JdoUtil {
 			tx.begin();
 			pm.makePersistent(obj);
 			tx.commit();
-//			pm.makeTransient(obj);//再利用するために必要?
+//			pm.detachCopy(obj);
+//			pm.makeTransient(obj);//再利用するために必要?これがあるとobjの内容がクリアされて困る
 		}finally{
 			if(tx.isActive()){
 				tx.rollback();
 			}
+//			resetPersistenceManager();
 		}
 	}
 

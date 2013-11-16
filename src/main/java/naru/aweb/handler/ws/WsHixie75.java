@@ -9,7 +9,7 @@ import naru.async.AsyncBuffer;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
-import naru.aweb.http.HeaderParser;
+import naru.aweb.util.HeaderParser;
 
 public class WsHixie75 extends WsProtocol {
 	static private Logger logger=Logger.getLogger(WsHixie75.class);

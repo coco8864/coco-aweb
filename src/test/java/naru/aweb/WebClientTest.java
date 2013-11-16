@@ -9,13 +9,13 @@ import java.nio.ByteBuffer;
 import naru.async.pool.PoolManager;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.WebClientLog;
-import naru.aweb.http.HeaderParser;
 import naru.aweb.http.WebClient;
 import naru.aweb.http.WebClientConnection;
 import naru.aweb.http.WebClientHandler;
 import naru.aweb.robot.Browser;
 import naru.aweb.robot.CallScheduler;
 import naru.aweb.robot.Caller;
+import naru.aweb.util.HeaderParser;
 import naru.queuelet.test.TestBase;
 
 import org.junit.After;

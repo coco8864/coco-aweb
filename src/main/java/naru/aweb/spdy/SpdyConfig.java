@@ -10,6 +10,9 @@ public class SpdyConfig {
 	private static final String SPDY_PROTOCOLS = "spdyProtocols";
 	private static final String SPDY_TIMEOUT = "spdyTimeout";
 	private static final String SPDY_FRAME_LIMIT = "spdyFrameLimit";
+	private static final String SPDY_MAX_CONCURRENT_STREAMS = "spdyMaxConcurrentStreams";
+	private static final String SPDY_SERVER_WINDOW_SIZE = "spdyServerWindowSize";
+	
 	
 	private Config config;
 	private boolean isSpdyAvailable;
@@ -18,7 +21,17 @@ public class SpdyConfig {
 	private long spdyTimeout;
 	private long spdyFrameLimit;//8192à»è„Ç™ïKê{
 	private String[] protocols;
+	private int maxConcurrentStreams;
+	private int serverWindowSize;
 	
+	public int getMaxConcurrentStreams() {
+		return maxConcurrentStreams;
+	}
+
+	public int getServerWindowSize() {
+		return serverWindowSize;
+	}
+
 	public boolean isSpdyAvailable(){
 		return isSpdyAvailable;
 	}
@@ -50,17 +63,29 @@ public class SpdyConfig {
 		config.setProperty(SPDY_FRAME_LIMIT, spdyFrameLimit);
 		this.spdyFrameLimit = spdyFrameLimit;
 	}
+	
+	public void setMaxConcurrentStreams(int maxConcurrentStreams) {
+		config.setProperty(SPDY_MAX_CONCURRENT_STREAMS, maxConcurrentStreams);
+		this.maxConcurrentStreams = maxConcurrentStreams;
+	}
+
+	public void setServerWindowSize(int serverWindowSize) {
+		config.setProperty(SPDY_SERVER_WINDOW_SIZE, serverWindowSize);
+		this.serverWindowSize = serverWindowSize;
+	}
 
 	public SpdyConfig(Config config){
 		this.config=config;
 		isSpdyAvailable=false;
 		spdyProtocols = config.getString(SPDY_PROTOCOLS);
 		if(spdyProtocols==null){
-			spdyProtocols=SpdyFrame.PROTOCOL_V3+","+SpdyFrame.PROTOCOL_V2+","+SpdyFrame.PROTOCOL_HTTP_11;
+			spdyProtocols=SpdyFrame.PROTOCOL_V31+","+SpdyFrame.PROTOCOL_V3+","+SpdyFrame.PROTOCOL_V2+","+SpdyFrame.PROTOCOL_HTTP_11;
 		}
 		protocols=spdyProtocols.split(",");
 		spdyTimeout=config.getLong(SPDY_TIMEOUT,60000);
 		spdyFrameLimit=config.getLong(SPDY_FRAME_LIMIT,2048000);
+		maxConcurrentStreams=config.getInt(SPDY_MAX_CONCURRENT_STREAMS,100);
+		serverWindowSize=config.getInt(SPDY_SERVER_WINDOW_SIZE,1024*1024*10);
 		
 		//ê›íËÇ™SpdyÇégÇ§éñÇéwé¶ÇµÇƒÇ¢ÇÈÇ±Ç∆
 		boolean useSslStdProvider=config.getBoolean("useSslStdProvider", false);

@@ -9,8 +9,7 @@ import java.util.Set;
 
 import naru.async.Timer;
 import naru.async.timer.TimerManager;
-import naru.aweb.config.User;
-import naru.aweb.http.HeaderParser;
+import naru.aweb.util.HeaderParser;
 import net.sf.json.JSONObject;
 
 /**

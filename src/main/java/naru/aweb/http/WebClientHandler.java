@@ -14,6 +14,7 @@ import naru.async.ssl.SslHandler;
 import naru.async.timer.TimerManager;
 import naru.aweb.config.Config;
 import naru.aweb.robot.CallScheduler;
+import naru.aweb.util.HeaderParser;
 
 public class WebClientHandler extends SslHandler implements Timer {
 	private static final int STAT_INIT = 0;
@@ -523,6 +524,10 @@ public class WebClientHandler extends SslHandler implements Timer {
 			requestContentLength = 0;
 		}
 		return startRequest(webClient,userContext,connectTimeout,requestHeaderBuffer,requestContentLength, isCallerkeepAlive, keepAliveTimeout);
+	}
+	
+	public final void endRequest(){
+		setWebClient(null);
 	}
 	
 	public final void requestBody(ByteBuffer[] buffers) {

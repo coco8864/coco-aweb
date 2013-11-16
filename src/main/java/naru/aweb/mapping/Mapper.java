@@ -10,16 +10,14 @@ import java.util.TreeSet;
 import javax.jdo.Extent;
 import javax.jdo.PersistenceManager;
 
-import naru.aweb.admin.AdminHandler;
 import naru.aweb.auth.AuthHandler;
 import naru.aweb.auth.Authorizer;
 import naru.aweb.auth.MappingAuth;
+import naru.aweb.auth.User;
 import naru.aweb.config.Config;
-import naru.aweb.config.Mapping;
-import naru.aweb.config.User;
-import naru.aweb.config.Mapping.SecureType;
-import naru.aweb.config.Mapping.SourceType;
 import naru.aweb.core.RealHost;
+import naru.aweb.mapping.Mapping.SecureType;
+import naru.aweb.mapping.Mapping.SourceType;
 import naru.aweb.util.JdoUtil;
 import naru.aweb.util.ServerParser;
 import net.sf.json.JSONObject;
@@ -33,12 +31,6 @@ import org.apache.log4j.Logger;
  *
  */
 public class Mapper {
-	private static final String OPTION_AUTH = "auth";//mappingベースで認証する場合に設定
-	private static final String OPTION_PAC = "pac";//proxy処理をpacに反映する場合、trueを設定する
-	private static final String OPTION_PEEK = "peek";//ssl proxyの動作をする場合、falseを設定
-	private static final String OPTION_PUBLIC_WEB = "publicWeb";//js等固定のコンテンツをダウンロードするURLを計算するため
-	private static final String OPTION_ADMIN_HANDLER = "adminHandler";//adminへのURLを計算するため
-	private static final String OPTION_AUTH_HANDLER = "authHandler";//authHandlerにtureを設定
 	private static Logger logger = Logger.getLogger(Mapper.class);
 	private Config config;
 	
@@ -46,22 +38,11 @@ public class Mapper {
 	private Set<Mapping> entryMappings=new HashSet<Mapping>();
 	private Set<Mapping> activeMappings=new TreeSet<Mapping>(Mapping.mappingComparator);
 	private Set<Mapping> activeSslProxyMappings=new TreeSet<Mapping>(Mapping.mappingComparator);
-//	private Mapping authMapping;
-	
-	private Set<Mapping> activeWebMappings=new TreeSet<Mapping>(Mapping.mappingComparator);
-	private Set<Mapping> activeProxyMappings=new TreeSet<Mapping>(Mapping.mappingComparator);
-	private Set<Mapping> activeWsMappings=new TreeSet<Mapping>(Mapping.mappingComparator);
-	private Set<Mapping> activePeekSslProxyMappings=new TreeSet<Mapping>(Mapping.mappingComparator);
 	
 	//pacから利用
 	private Set<String> securePhantomDomains=new HashSet<String>();
 	private Set<String> httpPhantomDomains=new HashSet<String>();
-//	private RealHost proxyPacRealHost;//pacに出力する自サーバ情報
-
-//	private RealHost adminRealHost;
-//	private boolean isAdminSsl;
-//	private RealHost publicWebRealHost;
-//	private boolean isPublicWebSsl;
+	private Mapping adminMapping;//admin
 	private Mapping authMapping=null;//認証用mapping
 	private String publicWebUrl;
 	private String adminUrl;
@@ -74,6 +55,10 @@ public class Mapper {
 	}
 	
 	public void updateMapping(Mapping mapping){
+	}
+	
+	public Iterator<Mapping> mappingIterator(){
+		return entryMappings.iterator();
 	}
 	
 	private void unloadMappings(){
@@ -94,19 +79,24 @@ public class Mapper {
 		while(itr.hasNext()){
 			Mapping mapping=itr.next();
 			pm.makeTransient(mapping);
-//			System.out.println("json:"+mapping.toJson());
 			if(mapping.setup()==false){//TODO mapping.setupがfalseで復帰したらすべてrollbackすべき?
 				logger.error("fail to mapping setup.id:" + mapping.getId()+":note:"+mapping.getNotes());
 				continue;
 			}
 			loadMapping(mapping);
 		}
+		for(Mapping mapping:activeMappings){
+			mapping.setupAppcache();
+		}
 	}
 	
 	private void setupAuthUrl(Mapping mapping){
 		authMapping=mapping;
 		Authorizer authorizer=config.getAuthorizer();
-		String selfDomain = config.getString("selfDomain");
+		String authDomain=mapping.getSourceServer();
+		if(authDomain==null||authDomain.equals("")){
+			authDomain = config.getString("selfDomain");
+		}
 		String realHostName=mapping.getRealHostName();
 		RealHost realHost=RealHost.getRealHost(realHostName);
 		if(realHost==null){
@@ -115,7 +105,7 @@ public class Mapper {
 		}
 		authorizer.setupAuthUrl( (mapping.getSecureType()==SecureType.SSL), 
 								mapping.getSourcePath(), 
-								selfDomain,
+								authDomain,
 								realHost.getBindPort() );
 	}
 	
@@ -123,12 +113,16 @@ public class Mapper {
 		return authMapping;
 	}
 	
+	public Mapping getAdminMapping() {
+		return adminMapping;
+	}
+	
 	private void loadMapping(Mapping mapping){
 		entryMappings.add(mapping);
 		if(!mapping.isEnabled()){
 			return;
 		}
-		if(Boolean.FALSE.equals(mapping.getOption(OPTION_PEEK))){
+		if(Boolean.FALSE.equals(mapping.getOption(Mapping.OPTION_PEEK))){
 			synchronized(activeSslProxyMappings){//ssl proxyは特殊なため別管理
 				activeSslProxyMappings.add(mapping);
 			}
@@ -139,7 +133,7 @@ public class Mapper {
 		}
 		String selfDomain=config.getSelfDomain();
 		RealHost realHost=RealHost.getRealHost(mapping.getRealHostName());
-		if(Boolean.TRUE.equals(mapping.getOption(OPTION_ADMIN_HANDLER))){
+		if(Boolean.TRUE.equals(mapping.getOption(Mapping.OPTION_ADMIN_HANDLER))){
 			StringBuilder sb=new StringBuilder();
 			String sourceServer=mapping.getSourceServer();
 			if(sourceServer==null || "".equals(sourceServer)){
@@ -155,10 +149,11 @@ public class Mapper {
 			sb.append(realHost.getBindPort());
 			sb.append(mapping.getSourcePath());
 			adminUrl=sb.toString();
+			adminMapping=mapping;
 			System.out.println("adminUrl:"+adminUrl);
 		}
 		
-		Object publicWeb=mapping.getOption(OPTION_PUBLIC_WEB);//publicWebのportとプロトコルを知るため
+		Object publicWeb=mapping.getOption(Mapping.OPTION_PUBLIC_WEB);//publicWebのportとプロトコルを知るため
 		if(Boolean.TRUE.equals(publicWeb)){
 			StringBuilder sb=new StringBuilder();
 			String sourceServer=mapping.getSourceServer();
@@ -176,14 +171,13 @@ public class Mapper {
 			sb.append(mapping.getSourcePath());
 			publicWebUrl=sb.toString();
 		}
-		//pacは複数のmappingにあってよいが、そのrealHostは同一である事
 //		Object authHandler=mapping.getOption(OPTION_AUTH_HANDLER);
 		if(AuthHandler.class.getName().equals(mapping.getDestinationServer())){
 			setupAuthUrl(mapping);//authorizerにauthマッピング定義を教える
 		}
 		
 		//mapping auth定義
-		Object auth=mapping.getOption(OPTION_AUTH);
+		Object auth=mapping.getOption(Mapping.OPTION_AUTH);
 		if(auth!=null&&auth instanceof JSONObject){
 			MappingAuth mappingAuth=new MappingAuth(config.getAuthenticator());
 			if( mappingAuth.init((JSONObject)auth, mapping.getSourceType()==SourceType.PROXY) ){
@@ -191,7 +185,7 @@ public class Mapper {
 			}
 		}
 		
-		Object pac=mapping.getOption(OPTION_PAC);//pacに反映するか否か
+		Object pac=mapping.getOption(Mapping.OPTION_PAC);//pacに反映するか否か
 		if(!Boolean.TRUE.equals(pac)){
 			return;
 		}
@@ -208,7 +202,7 @@ public class Mapper {
 				break;
 			}
 			break;
-		case WEB:
+		default:
 		}
 	}
 	

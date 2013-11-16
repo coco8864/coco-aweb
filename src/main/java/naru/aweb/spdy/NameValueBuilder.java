@@ -10,7 +10,7 @@ import java.util.zip.Deflater;
 
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
-import naru.aweb.http.HeaderParser;
+import naru.aweb.util.HeaderParser;
 
 public class NameValueBuilder {
 	private short version;
@@ -27,7 +27,7 @@ public class NameValueBuilder {
 	private void setDictionary() {
 		if (version == SpdyFrame.VERSION_V2) {
 			compresser.setDictionary(SpdyFrame.DICTIONARY_V2);
-		} else if (version == SpdyFrame.VERSION_V3) {
+		} else if (version == SpdyFrame.VERSION_V3||version == SpdyFrame.VERSION_V31) {
 			compresser.setDictionary(SpdyFrame.DICTIONARY_V3);
 		}
 	}
@@ -50,13 +50,16 @@ public class NameValueBuilder {
 //		workBuffer.clear();
 		if(version==SpdyFrame.VERSION_V2){
 			workBuffer.putShort((short)data);
-		}else if(version==SpdyFrame.VERSION_V3){
+		}else if(version==SpdyFrame.VERSION_V3||version==SpdyFrame.VERSION_V31){
 			workBuffer.putInt(data);
 		}
 //		compresser.setInput(workBuffer.array(),0,workBuffer.position());
 	}
 	
 	private void putString(ByteBuffer workBuffer,String data){
+		if(data==null){
+			return;
+		}
 		try {
 			byte[] bytes=data.getBytes(SpdyFrame.ENCODE);
 			putLength(workBuffer,bytes.length);
@@ -79,13 +82,13 @@ public class NameValueBuilder {
 		putLength(workBuffer,headerNames.size()+2);
 		if (version == SpdyFrame.VERSION_V2) {
 			putString(workBuffer,"status");
-		} else if (version == SpdyFrame.VERSION_V3) {
+		} else if (version == SpdyFrame.VERSION_V3||version == SpdyFrame.VERSION_V31) {
 			putString(workBuffer,":status");
 		}
 		putString(workBuffer,status);
 		if (version == SpdyFrame.VERSION_V2) {
 			putString(workBuffer,"version");
-		} else if (version == SpdyFrame.VERSION_V3) {
+		} else if (version == SpdyFrame.VERSION_V3||version == SpdyFrame.VERSION_V31) {
 			putString(workBuffer,":version");
 		}
 		putString(workBuffer,v);
