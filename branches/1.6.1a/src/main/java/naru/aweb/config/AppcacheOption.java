@@ -3,16 +3,18 @@ package naru.aweb.config;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 
+import naru.async.store.DataUtil;
 import naru.aweb.handler.WebServerHandler;
 import naru.aweb.handler.ServerBaseHandler.SCOPE;
 import naru.aweb.http.Cookie;
@@ -44,7 +46,7 @@ public class AppcacheOption {
 	public static final String APPCACHE_KEY="appcacheVersion";
 	private static final String HTML_PATTERN=".*\\.html$|.*\\.htm$|.*\\.vsp$";
 	
-	private static final String DEFAULT_CACHE_FILE_PATTERN=".*\\.html$|.*\\.htm$|.*\\.css$|.*\\.js$|.*\\.jpg$|.*\\.png$|.*\\.gif$";
+	//private static final String DEFAULT_CACHE_FILE_PATTERN=".*\\.html$|.*\\.htm$|.*\\.css$|.*\\.js$|.*\\.jpg$|.*\\.png$|.*\\.gif$";
 	private static final String DEFAULT_MANIFEST_PATH="/~ph.appcache";
 	private static final String DEFAULT_CACHE_HTML_PATH="/~ph.vsp";
 	private static final String[] PH_JS_INCLUDE_JS={"ph.js","jquery-1.8.3.min.js","ph-jqnoconflict.js","ph-json2.js","ph-link.js"};
@@ -59,8 +61,8 @@ public class AppcacheOption {
 	private String cacheHtmlPath;
 	private File destinationFile;
 	private String sourcePath;
-	private String cacheFilePattern;
-	private Set<String> cachePaths=new HashSet<String>();
+	//private String cacheFilePattern;
+	private Set<String> cachePaths=new TreeSet<String>();
 	private int currentAppacheVersion=0;
 	private String homePath;
 	
@@ -70,7 +72,7 @@ public class AppcacheOption {
 		this.enabled=options.optBoolean("enabled",true);
 		this.manifestPath=options.optString("manifestPath",DEFAULT_MANIFEST_PATH);
 		this.cacheHtmlPath=options.optString("cacheHtmlPath",DEFAULT_CACHE_HTML_PATH);
-		this.cacheFilePattern=options.optString("cacheFilePattern",DEFAULT_CACHE_FILE_PATTERN);
+		//this.cacheFilePattern=options.optString("cacheFilePattern",DEFAULT_CACHE_FILE_PATTERN);
 		if("/".equals(sourcePath)){
 			manifestAbsPath=manifestPath;
 			this.homePath=options.optString("homePath","/index.html");
@@ -83,7 +85,7 @@ public class AppcacheOption {
 		setup();
 	}
 	
-	private void setup(){
+	private String setup(){
 		cachePaths.clear();
 		Pattern htmlPattern=Pattern.compile(HTML_PATTERN);
 		Set<File>htmlFiles=new HashSet<File>();
@@ -94,7 +96,7 @@ public class AppcacheOption {
 			addPath("/pub/js/"+path,cachePaths);
 		}
 		if(destinationFile==null){
-			return;
+			return null;
 		}
 		collectFile(destinationFile,htmlPattern,htmlFiles);
 		Iterator<File> itr=htmlFiles.iterator();
@@ -109,10 +111,30 @@ public class AppcacheOption {
 		for(String path:checkHtmlFiles){
 			addPath(path,cachePaths);
 		}
+		
+		File rootDir=config.getPublicDocumentRoot();
+		StringBuilder sb=new StringBuilder("\n");
 		logger.info("sourcePath:"+sourcePath +" currentAppacheVersion:"+currentAppacheVersion);
 		for(String path:cachePaths){
-			logger.info(path);
+			File f=new File(rootDir,path);
+			sb.append(path);
+			sb.append(":");
+			sb.append(f.length());
+			sb.append(":");
+			sb.append(f.lastModified());
+			sb.append("\n");
 		}
+		MessageDigest messageDigest;
+		try {
+			messageDigest=MessageDigest.getInstance("MD5");
+		} catch (NoSuchAlgorithmException e) {
+			throw new RuntimeException(e);
+		}
+		byte[] digestByte=messageDigest.digest(sb.toString().getBytes());
+		String digest=DataUtil.byteToString(digestByte);
+		logger.info("appcache:"+ destinationFile+":digest:"+digest);
+		logger.debug(sb.toString());
+		return digest;
 	}
 	
 	private void collectFile(File file,Pattern pattern,Set<File>files){
@@ -188,17 +210,17 @@ public class AppcacheOption {
 	}
 	
 	
-	private void checkAppcacheManifest(WebServerHandler handler,String phappcache,String cookieKey,int appcacheVersion){
+	private void checkAppcacheManifest(WebServerHandler handler,String phappcache,String cookieKey,String identifier){
 		if("unused".equals(phappcache)){
 			handler.completeResponse("404", "file not exists");
 		}else{
-			forwardAppcacheTemplate(handler, phappcache, "~ph.appcache",cookieKey,appcacheVersion);
+			forwardAppcacheTemplate(handler, phappcache, "~ph.appcache",cookieKey,identifier);
 		}
 	}
 	
 	private static Set<String> NON_PATHS=new HashSet<String>();
 	
-	private void forwardAppcacheTemplate(WebServerHandler handler,String phappcache,String template,String cookieKey,int appcacheVersion){
+	private void forwardAppcacheTemplate(WebServerHandler handler,String phappcache,String template,String cookieKey,String identifier){
 		boolean useAppcache=!"unused".equals(phappcache);
 		boolean appcacheMode=!"off".equals(phappcache);
 		Set<String> cachePaths=NON_PATHS;
@@ -210,10 +232,11 @@ public class AppcacheOption {
 		handler.setAttribute(SCOPE.REQUEST,"useAppcache", useAppcache);
 		handler.setAttribute(SCOPE.REQUEST,"appcacheMode", appcacheMode);
 		handler.setAttribute(SCOPE.REQUEST,"cachePaths", cachePaths);
-		handler.setAttribute(SCOPE.REQUEST,APPCACHE_KEY, appcacheVersion);
+		handler.setAttribute(SCOPE.REQUEST,APPCACHE_KEY, identifier);
 		config.forwardVelocityTemplate(handler,template);
 	}
 	
+	private String appcacheDigest;
 	/**
 	 * パラメタが冗長だが早く計算するため
 	 * モードは、on/off/clean/refreshの4つ
@@ -232,18 +255,18 @@ public class AppcacheOption {
 		}
 		int appcacheVersion=config.getInt(APPCACHE_KEY, 0);
 		if(currentAppacheVersion!=appcacheVersion){
-			setup();
+			appcacheDigest=setup();
 			currentAppacheVersion=appcacheVersion;
 		}
 		String cookieKey="phappcache"+sourcePath.replaceAll("/", "_");
 		String cookie=handler.getRequestHeader().getHeader(HeaderParser.COOKIE_HEADER);
 		String phappcache=Cookie.parseHeader(cookie, cookieKey, null);
 		if(path.equals(manifestPath)){
-			checkAppcacheManifest(handler,phappcache,cookieKey,appcacheVersion);
+			checkAppcacheManifest(handler,phappcache,cookieKey,appcacheDigest+":"+appcacheVersion);
 			return true;
 		}
 		if(path.equals(cacheHtmlPath)){
-			forwardAppcacheTemplate(handler,phappcache,path.substring(1),cookieKey,appcacheVersion);//先頭の"/"を削除
+			forwardAppcacheTemplate(handler,phappcache,path.substring(1),cookieKey,appcacheDigest+":"+appcacheVersion);//先頭の"/"を削除
 			return true;
 		}
 		return false;

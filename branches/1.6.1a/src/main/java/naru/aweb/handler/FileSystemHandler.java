@@ -110,10 +110,6 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 	 * @param path
 	 */
 	private boolean fileNotFound(MappingResult mapping,HeaderParser requestHeader,String path){
-		/* proxy.pac�̏ꍇ */
-		//if( checkPac(mapping, requestHeader, path)){
-		//	return true;
-		//}
 		/* appcache�̏ꍇ */
 		AppcacheOption appcacheOption=(AppcacheOption)getAttribute(SCOPE.MAPPING,Mapping.OPTION_APPCACHE);
 		if(appcacheOption!=null){

@@ -37,13 +37,26 @@ checkItems=(users)->
     if loginId && users[loginId]==undefined
       localStorage.removeItem(key)
 
+isLoading=false
+
 loadAuthFrame=(authUrl)->
   authFrame[0].src=authUrl+'/~ph.vsp?origin='+location.protocol+'//'+location.host
-  authFrameTimerId=setTimeout((->
-      authFrameTimerId=null
-      _response({type:'loadAplFrame',result:false,cause:'frameTimeout'}))
-    ,authFrameTimeout
-    )
+  isLoading=false
+  authFrame.on('load',->
+    if isLoading
+      return
+    setTimeout(->
+      if isLoading
+        return
+      ph.log('apl frame onload')
+      _response({type:'loadAplFrame',result:false,cause:'frameTimeout'})
+    ,100)
+  )
+  ##authFrameTimerId=setTimeout((->
+  ##    authFrameTimerId=null
+  ##    _response({type:'loadAplFrame',result:false,cause:'frameTimeout'}))
+  ##  ,authFrameTimeout
+  ##  )
 
 requestToAuthFrame=(msg)->
   jsonMsg=ph.JSON.stringify(msg)
@@ -104,7 +117,9 @@ onMsg=(qjev)->
     onWorkResponse(res)
 
 onAuthResponse=(res)->
-  if res.type=='loadAuthFrame' #AuthFrameのロード完了
+  if res.type=='loading'
+    isLoading=true
+  else if res.type=='loadAuthFrame' #AuthFrameのロード完了
     clearTimeout(authFrameTimerId)
     authFrameTimerId=null
     res.type='loadAplFrame'
@@ -401,6 +416,8 @@ _response=(msg)->
     alert('aplOffline response:'+jsonMsg)
   else
     parent.postMessage(jsonMsg,'*')
+
+_response({type:'loading'})
 
 jQuery(->
   if window==parent #直接呼び出された場合は、appcache controle画面

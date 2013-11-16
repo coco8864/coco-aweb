@@ -75,15 +75,13 @@ class Connection extends PhObject
     if @stat==ph.STAT_OPEN
       # 接続直後に切れるのはwebsocketが使えないと考える
       if @useWs==true
-        @unload()
-        @stat=ph.INIT
+        @__onClose(event.reason)
         return
       @isWs=false
       @_openXhr()
       return
     else if @stat!=ph.STAT_CONNECT
-      @unload()
-      @stat=ph.INIT
+      @__onClose(event.reason)
       return
     @stat=ph.STAT_IDLE
     @_openWebSocket()
@@ -177,6 +175,8 @@ class Connection extends PhObject
     if @isUnload()
       ph.log('aleady closed')
       return
+    #一旦つながっていたのに接続できなくなるのはセションタイムアウトと判断 TODO:403
+    @link.trigger(ph.EVENT.LOGOUT,{type:'logout'},@link)
     @_setBid(null)
     @unload()
     @stat=ph.STAT_CLOSE

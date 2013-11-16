@@ -62,6 +62,7 @@ function calcStatus(){
   return 'DOWNLOADING';
  case appCache.UPDATEREADY:  // UPDATEREADY == 4
   appCache.swapCache();
+  location.reload();
   return 'UPDATEREADY';
  case appCache.OBSOLETE: // OBSOLETE == 5
   return 'OBSOLETE';

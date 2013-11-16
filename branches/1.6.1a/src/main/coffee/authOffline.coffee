@@ -467,6 +467,8 @@ parseURL=(url)->
     result['port']='80'
   if result['protocol']=='https:' && result['port']==null
     result['port']='443'
+  if result['pathname']==''
+    result['pathname']='/'
   result
 
 equalsUrl=(url1,url2)->
@@ -513,7 +515,7 @@ offlineLogon=->
 offlineCancel=->
   jQuery('logonId').val('')
   jQuery('password').val('')
-  response({type:'offlineAuth',result:false,cause:'cancel'})
+  ## response({type:'offlineAuth',result:false,cause:'cancel'})
   response({type:'hideFrame'})
   isDisplay=false
   return
@@ -586,4 +588,5 @@ jQuery(->
   checkItems(users)
   response({type:'loadAuthFrame',result:true,offsetHeight:document.documentElement.offsetHeight})
 )
+response({type:'loading'})
 

@@ -358,6 +358,8 @@ class Ph extends PhObject
         result['port']='443'
       if result['port']=='443'
         result['defaultPort']=true
+    if result['pathname']==''
+      result['pathname']='/'
     result
   equalsUrl:(url1,url2)->
     u1=@parseURL(url1)
@@ -386,7 +388,7 @@ class Ph extends PhObject
       else
         if callback
           callback()
-    sc.onerror = ->
+    sc.onerror = (ev)->
       sc.parentNode.removeChild(sc)
       if errorcb
         errorcb(sc.src)

@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 
 import naru.async.Timer;
-import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
 import naru.async.timer.TimerManager;
 import naru.aweb.auth.SessionId.Type;

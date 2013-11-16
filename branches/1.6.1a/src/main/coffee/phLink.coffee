@@ -11,6 +11,7 @@ class Link extends PhObject
 
  \#\#\#\# イベント
  *  **ph.EVENT.LOGIN:** 認証完了を通知
+ *  **ph.EVENT.LOGOUT:** セションタイムアウトを通知
  *  **ph.EVENT.QNAMES:** qnameメソッドでcallbackを指定しなかった場合APIの完了を通知
  *   通知={qnames:['qname1','qname2'...]},ユーザ指定ctx
  *  **ph.EVENT.ENCRYPT:** encryptメソッドでcallbackを指定しなかった場合APIの完了を通知
@@ -39,6 +40,8 @@ class Link extends PhObject
      if link.ppStorage
       link.ppStorage.unload()
       link.ppStorage=null
+     link.unlink()
+     ## link.trigger(ph.EVENT.LOGOUT,{type:'logout'},link)
      return
     )
   ph.on(ph.EVENT.MESSAGE,@_onMessage)
@@ -51,17 +54,22 @@ class Link extends PhObject
      "src='#{link.keyUrl}/~ph.vsp'>" + 
      "</iframe>")
    ph.jQuery("body").append(link._frame)
-   # link._frame.on('load',->ph.log('apl frame onload'))
-   link._frameTimerId=setTimeout((->
-     link._frameTimerId=null
-     link._frame.remove()
-     link.isAuth=false
-     link.cause='apl frame load timeout'
-     link.trigger(ph.EVENT.ERROR,{type:'link',keyUrl:link.keyUrl,cause:link.cause,detail:'loadFrame'},link)
-     link.unload(link)
-     return)
-    ,ph.authFrameTimeout*2
-    )
+   ph.isLoading=false
+   #IE10では、postmessage経由のloadingより'load'イベントが先に届く
+   link._frame.on('load',->
+     if ph.isLoading
+       return
+     setTimeout(->
+       if ph.isLoading
+         return
+       ph.log('apl frame onload')
+       link._frame.remove()
+       link.isAuth=false
+       link.cause='apl frame load error'
+       link.trigger(ph.EVENT.ERROR,{type:'link',keyUrl:link.keyUrl,cause:link.cause,detail:'loadFrame'},link)
+       link.unload(link)
+     ,100)
+     )
    )
   ph.on(@STAT_UNLOAD,->link.unlink())
   @
@@ -107,6 +115,8 @@ class Link extends PhObject
   catch error
     return
   res=ph.JSON.parse(ev.data)
+  if res.type=='loading'
+   ph.isLoading=true
   if res.type=='encrypt'
    if res.ctxIdx
     ctx=@ctxs[res.ctxIdx]
