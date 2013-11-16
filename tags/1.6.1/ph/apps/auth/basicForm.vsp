@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="jp">
+<head>
+<title>Phatom Server Login</title>
+</head>
+<body>
+<h1>Phatom Server Login(basic)</h1>
+<p>Please input username and password</p>
+<form action='$esc.html(${config.authUrl})/basicForm' method='post'>
+<input type='hidden' name='authId' value='$esc.html(${authId})'/>
+<div>username:<input type='text' name='ph_username' value='' size="32"/></div>
+<div>password:<input type='password' name='ph_password' value='' size="32"/></div>
+<div><input type='submit' value='login'/></div>
+</form>
+</body>
+</html>

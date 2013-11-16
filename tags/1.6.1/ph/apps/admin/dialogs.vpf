@@ -1,0 +1,412 @@
+<script type="text/javascript"><!--
+function editSave(){
+	var textArea=ph.jQuery("#textEditTextArea");
+	if( textArea.attr("readonly") ){
+		alert('could not save');
+		jQuery('#textEdit').dialog('close');
+		return;
+	}
+	ph.jQuery("#traceSaveButton").removeAttr("disabled");
+	trace.isEdit=true;
+	var part=ph.jQuery("#textEditPart").text();
+	trace[part]=textArea.val();
+	trace[part+"Encode"]=ph.jQuery("#textEditEncode").val();
+	if(part=="requestHeader"){
+		ph.jQuery("#requestHeader").text(trace[part]);
+		ph.jQuery("#requestHeaderDigest").text('[editting]');
+	}else if(part=="requestBody"){
+		ph.jQuery("#requestBody").text('[editting]');
+	}else if(part=="responseHeader"){
+		ph.jQuery("#responseHeader").text(trace[part]);
+		ph.jQuery("#responseHeaderDigest").text('[editting]');
+	}else if(part=="responseBody"){
+		ph.jQuery("#responseBody").text('[editting]');
+	}
+	jQuery('#textEdit').dialog('close');
+}
+
+function doStress(){
+	window.location.hash = "#stressTab";
+	if(ph.jQuery('#isStressFile').is(':checked')){
+		ph.jQuery('#fileStressAccessLogList').val( ph.jQuery('#stressAccessLogList').text() );
+		ph.admin.perfSub.publishForm('stressFileForm');
+##		ph.jQuery('#stressFileForm').submit();
+	}else{
+		ph.admin.perfSub.publish({
+			kind:'stress',
+			name:ph.jQuery('#stressName').val(),
+			list:ph.jQuery('#stressAccessLogList').text(),
+			browserCount:ph.jQuery('#stressBrowserCount').val(),
+			loopCount:ph.jQuery('#loopCount').val(),
+			thinkingTime:ph.jQuery('#thinkingTime').val(),
+			time:ph.jQuery('#stressTime').val(),##未使用
+			keepAlive:ph.jQuery('#stressKeepAlive').is(':checked'),
+			accessLog:ph.jQuery('#stressAccessLog').is(':checked'),
+			tesponseHeaderTrace:ph.jQuery('#stressTesponseHeaderTrace').is(':checked'),
+			tesponseBodyTrace:ph.jQuery('#stressTesponseBodyTrace').is(':checked')
+			}
+		);
+	}
+	ph.jQuery(".logIdCheck").attr("checked",false);
+	jQuery('#stress').dialog('close');
+}
+function updateStressDialog(){
+	if(ph.jQuery('#isStressFile').is(':checked')){
+		ph.jQuery('.stressFile').show();
+		ph.jQuery('.stressItem').hide();
+	}else{
+		ph.jQuery('.stressFile').hide();
+		ph.jQuery('.stressItem').show();
+		if(ph.jQuery('#stressAccessLog').is(':checked')){
+			ph.jQuery('.stressTrace').attr('disabled',false)
+		}else{
+			ph.jQuery('.stressTrace').attr('disabled',true)
+		}
+	}
+}
+
+function perfCheckServer(res){
+  if(res.kind==='checkServerProgress'){
+    ph.dump(res);
+    ph.jQuery("#checkStatus").text(res.status);
+    ph.jQuery("#checkUrl").text(res.url);
+    ph.jQuery("#checkIsUseProxy").text(res.useProxy);
+    ph.jQuery("#checkProxyServer").text(res.proxyServer);
+    ph.jQuery("#checkStatusLine").text(res.statusLine);
+    ph.jQuery("#checkServer").text(res.serverHeader);
+    ph.jQuery("#checkConnection").text(res.connectionHeader);
+    ph.jQuery("#checkProxyConnection").text(res.proxyConnectionHeader);
+    ph.jQuery("#checkKeepAliveHeader").text(res.keepAliveHeader);
+
+    ph.jQuery("#checkContentType").text(res.contentType);
+    ph.jQuery("#checkContentLength").text(res.contentLength);
+##  ph.jQuery("#checkTransferEncoding").text(res.transferEncoding);
+##  ph.jQuery("#checkContentEncoding").text(res.contentEncoding);
+
+    ph.jQuery("#checkConnectTime").text(res.connectTimes);
+    ph.jQuery("#checkSslProxyTime").text(res.sslProxyTimes);
+    ph.jQuery("#checkHandshakeTime").text(res.handshakeTimes);
+    ph.jQuery("#checkRequestHeaderTime").text(res.requestHeaderTimes);
+    ph.jQuery("#checkResponseHeaderTime").text(res.responseHeaderTimes);
+    ph.jQuery("#checkResponseBodyTime").text(res.responseBodyTimes);
+  }else if(res.kind==='accessLog'){
+    updateEntry(res);
+  }else if(res.kind==='stressProgress'){
+	if(typeof perfProgress!='undefined'){perfProgress(res);}
+  }else if(res.kind==='checkServerResult' && d.result==='fail'){
+    alert('fail to checkServer');
+  }
+}
+
+function checkServer(){
+  var url=ph.jQuery("#checkReqUrl").val();
+  var isKeepAlive=ph.jQuery("#checkKeepAlive").is(':checked');
+  var isTrace=ph.jQuery("#checkTrace").is(':checked');
+  var requestCount=parseInt(ph.jQuery("#checkRequestCount").val());
+  ph.admin.perfSub.publish(
+    {kind:'checkServer',url:url,isKeepAlive:isKeepAlive,isTrace:isTrace,requestCount:requestCount}
+  );
+}
+
+function reloadEditDialog(){
+//	var dialog=ph.jQuery("#textEdit");
+	var digest=ph.jQuery("#textEditDigest").val();
+	ph.jQuery("#textEditTextArea").val("");
+	var url="storeDownload?storeDigest="+encodeURIComponent(digest);
+	var encode=ph.jQuery("#textEditEncode").val();
+	if(encode!=""){
+//		url+="&encode="+encode;
+		url+="&Content-Type=text/plain;%20charset="+encode;
+		
+	}else{
+//		url+="&encode=utf-8";
+//		url+="&Content-Type=text/plain;%20charset=utf-8";
+	}
+	if(ph.jQuery("#textEditGzip").is(":checked")){
+		url+="&zgip=true"
+	}
+	if(ph.jQuery("#textEditChunk").is(":checked")){
+		url+="&chunk=true"
+	}
+	ph.jQuery.get(url,null, function(text,state,jqXhr){
+		var TEXT_CHARSET='text/plain; charset=';
+		ph.jQuery("#textEditTextArea").val(text);
+		var contentType=jqXhr.getResponseHeader('Content-Type');
+		if(contentType && contentType.lastIndexOf(TEXT_CHARSET,0)===0){
+			ph.jQuery("#textEditEncode").val(contentType.substring(TEXT_CHARSET.length));
+		}
+	},"html");
+}
+
+function _openEditDialog(digest,id,requestLine,part,readonly,editText,encode,chunk,gzip){
+	ph.jQuery("#textEditChunk").attr("checked",chunk);
+	ph.jQuery("#textEditGzip").attr("checked",gzip);
+
+	ph.jQuery("#textEditDigest").val(digest);
+	ph.jQuery("#textEditEncode").val(encode);
+	ph.jQuery("#textEditId").text(id);
+	ph.jQuery("#textEditRequestLine").text(requestLine);
+	ph.jQuery("#textEditPart").text(part);
+	ph.jQuery("#textEditTextArea").val(editText);
+	ph.jQuery("#textEditTextArea").attr("readonly",readonly);
+
+	var dialog=jQuery("#textEdit");
+	dialog.dialog("option", "position", 'center');
+	dialog.dialog("open");
+}
+
+function openEditDialog(digest,id,requestLine,part,readonly,chunk,gzip,charset){
+	
+	if(trace[part]!=null){
+		_openEditDialog(digest,id,requestLine,part,readonly,trace[part],trace[part+'Encode'],chunk,gzip);
+	}else{
+		if(!digest){
+			_openEditDialog(null,id,requestLine,part,readonly,trace[part],trace[part+'Encode'],chunk,gzip);
+			return;
+		}
+		var url='storeDownload?storeDigest='+encodeURIComponent(digest);
+		if(chunk){
+			url+='&chunk=true'
+		}
+		if(gzip){
+			url+='&zgip=true'
+		}
+		if(charset){
+			url+='&Content-Type=text/plain;%20charset=' + charset;
+		}
+		ph.jQuery.get(url,null,
+			function(text,status,jqXhr){
+				var TEXT_CHARSET='text/plain; charset=';
+				var contentType=jqXhr.getResponseHeader('Content-Type');
+				if(contentType && contentType.lastIndexOf(TEXT_CHARSET,0)===0){
+					charset=contentType.substring(TEXT_CHARSET.length);
+				}
+				_openEditDialog(digest,id,requestLine,part,readonly,text,charset,chunk,gzip);
+		},"html");
+	}
+}
+
+function outputCommonArea(text,append){
+  var orgText;
+  if(append){
+    orgText=ph.jQuery("#commonOutputTextArea").val();
+  }else{
+    orgText="";
+  }
+  orgText=ph.jQuery("#commonOutputTextArea").val(orgText+text);
+}
+
+// --></script>
+##イメージ表示用ダイアログ
+<div id="imageBox">
+<div>id:<span id="imageBoxId"></span></div>
+<div>requestLine:<span id="imageBoxRequestLine"></span></div>
+<img id="imageBoxImage">
+<div style="float:right"><input type="button" value="close" onClick="jQuery('#imageBox').dialog('close')"/></div>
+</div>
+
+##テキスト編集用ダイアログ
+<div id="textEdit">
+<div>id:<span id="textEditId"></span></div>
+<div>requestLine:<span id="textEditRequestLine"></span></div>
+<div>part:<span id="textEditPart"></span></div>
+<div><label for="textEditDigest">digest:</label><input type="text" id="textEditDigest" size="32"/></div>
+<div><label for="textEditChunk">chunk:</label><input type="checkBox" id="textEditChunk" /><label for="textEditGzip">gzip:</label><input type="checkBox" id="textEditGzip" /><label for="textEditEncode">encode:</label><input id="textEditEncode" type="text"/><input type="button" value="reload" onClick="reloadEditDialog();"></div>
+<textarea name="textEditTextArea" id="textEditTextArea" rows="24" cols="72" ></textarea>
+<div style="float:right"><input type="button" value="save" onClick="editSave();"/><input type="button" value="cancel" onClick="jQuery('#textEdit').dialog('close');"/></div>
+</div> 
+
+##負荷テスト用ダイアログ
+<div id="stress">
+accessLog list:<span id="stressAccessLogList"></span><br/>
+file指定:<input id="isStressFile" type="checkBox" onclick="updateStressDialog();">
+<hr/>
+<div class="stressItem">
+test name:<input id="stressName" type="text" value="test"><br/>
+browser count:<input id="stressBrowserCount" type="text" value="100"><br/>
+loop count:<input id="loopCount" type="text" value="1000"><br/>
+thinking time:<input id="thinkingTime" type="text" value="0"><br/>
+<!--time(s):<input id="stressTime" type="text"><br/> -->
+keepAlive:<input id="stressKeepAlive" type="checkBox"><br/>
+accessLog:<input id="stressAccessLog" type="checkBox" onclick="updateStressDialog();" >
+headerTrace:<input class="stressTrace" disabled='disabled' id="stressTesponseHeaderTrace" type="checkBox">
+bodyTrace:<input class="stressTrace" disabled='disabled' id="stressTesponseBodyTrace" type="checkBox">
+</div>
+<div class="stressFile" style="display:none">
+<form id="stressFileForm">
+json file:<input type="file" name="stressFile" id="stressFile"/>
+<input type="hidden" name="list" id="fileStressAccessLogList"/>
+<input type="hidden" name="kind" value="stressFile"/>
+</form>
+</div>
+<input type="button" value="ok" onClick='doStress()'>
+<input type="button" value="cancel" onClick="jQuery('#stress').dialog('close')">
+</div> 
+
+##checkServer用ダイアログ
+<div id="checkServerDialog">
+request count:<select id="checkRequestCount" size="1">
+<option value="1">1</option>
+<option value="2">2</option>
+<option value="4">4</option>
+</select> keepAlive:<input id="checkKeepAlive" type="checkBox"> trace:<input id="checkTrace" type="checkBox"> <br/>
+url:<input id="checkReqUrl" type="text" size="80" value=''><br/>
+<input type="button" value="check" onClick='checkServer();'>
+<input type="button" value="clear" onClick='ph.jQuery("#checkReqUrl").val("");'>
+<input type="button" value="cancel" onClick="jQuery('#checkServerDialog').dialog('close');"><br/>
+<hr/>
+status:<span id="checkStatus"></span><br/>
+url:<span id="checkUrl"></span><br/>
+<h3>Connection infomation</h3>
+<ul>
+<li>isUseProxy:<span id="checkIsUseProxy"></span></li>
+<li>proxyServer:<span id="checkProxyServer"></span></li>
+</ul>
+<h3>Header infomation</h3>
+<ul>
+<li>statusLine:<b><span id="checkStatusLine"></span></b></li>
+<li>Server:<b><span id="checkServer"></span></b></li>
+<li>Connection:<b><span id="checkConnection"></span></b></li>
+<li>ProxyConnection:<b><span id="checkProxyConnection"></span></b></li>
+<li>KeepAlive:<b><span id="checkKeepAliveHeader"></span></b></li>
+<li>ContentType:<b><span id="checkContentType"></span></b></li>
+<li>ContentLength(real):<b><span id="checkContentLength"></span></b></li>
+##<li>TransferEncoding:<b><span id="checkTransferEncoding"></span></b></li>
+##<li>ContentEncoding:<b><span id="checkContentEncoding"></span></b></li>
+</ul>
+<h3>Performance</h3>
+<ul>
+<li>connectTime:<b><span id="checkConnectTime"></span></b></li>
+<li>sslProxyTime:<b><span id="checkSslProxyTime"></span></b></li>
+<li>handshakeTime:<b><span id="checkHandshakeTime"></span></b></li>
+<li>requestHeaderTime:<b><span id="checkRequestHeaderTime"></span></b></li>
+<li>responseHeaderTime:<b><span id="checkResponseHeaderTime"></span></b></li>
+<li>responseBodyTime:<b><span id="checkResponseBodyTime"></span></b></li>
+##readTimeout:<b><span id="checkReadTimeout"></span></b></li>
+##maxClients:<span id="checkMaxClients"></span></li>
+##listenBacklog:<span id="checkListenBacklog"></span></li>
+</ul>
+</div> 
+
+##mapping入力用ダイアログ
+<div id="mappingDialog">
+<div class="map1">
+id:<span id="mappingId"></span>
+enable:<input id="mappingEnabled" type="checkBox">
+</div><div>
+notes:<input id="mappingNotes" type="text" size="64">
+</div><div>
+realHost:<select id="mappingRealHost" size="1">
+</select>
+</div><div  class="map1">
+sourceType:<select id="mappingSourceType" size="1">
+<option value="PROXY">PROXY</option>
+<option value="WEB">WEB</option>
+<option value="WS">WS</option>
+<option value="WS_PROXY">WS_PROXY</option>
+</select>
+</div><div class="map1 map3">
+secureType:<select id="mappingSecureType" size="1">
+<option value="PLAIN">PLAIN</option>
+<option value="SSL">SSL</option>
+</select>
+</div><div class="map1">
+sourceServer:<input id="mappingSourceServer" type="text" size="64">
+</div><div class="map1 map3">
+sourcePath:<input id="mappingSourcePath" type="text" size="64">
+</div><div class="map1">
+destinationType:<select id="mappingDestinationType" size="1">
+<option value="HTTP">HTTP</option>
+<option value="HTTPS">HTTPS</option>
+<option value="WS">WS</option>
+<option value="WSS">WSS</option>
+<option value="FILE">FILE</option>
+<option value="HANDLER">HANDLER</option>
+</select>
+</div><div class="map1">
+destinationServer:<input id="mappingDestinationServer" type="text" size="64">
+</div><div class="map1">
+destinationPath:<input id="mappingDestinationPath" type="text" size="64">
+</div><div>
+roles:<input id="mappingRoles" type="text" size="64"><br/>
+</div><div class="map1">
+options:<textArea id="mappingOptions"rows="4" cols="64"></textArea>
+</div><div>
+</div><div class="map2">
+destinationUrl:<input id="mappingDestinationUrl" type="text" size="72">
+</div><div class="map2">
+trace:<input id="mappingTrace" type="checkBox">
+</div><div>
+<input type="button" value="save" onClick='doMappingCommand("mappingUpdate");' class="map1">
+<input type="button" value="save new" onClick='doMappingCommand("mappingInsert");' class="map1">
+<input type="button" value="delete" onClick='doMappingCommand("mappingDelete");' class="map1">
+<input type="button" value="create" onClick='mappingInsert2();' class="map2">
+<input type="button" value="cancel" onClick="jQuery('#mappingDialog').dialog('close')">
+</div>
+</div> 
+
+##realHost入力用ダイアログ
+<div id="realHostDialog">
+name:<input id="realHostName" type="text" size="40"><br/>
+init:<input id="realHostInitBind" type="checkBox"><br/>
+bindHost:<input id="realHostBindHost" type="text" size="40"><br/>
+bindPort:<input id="realHostBindPort" type="text" size="40"><br/>
+backlog:<input id="realHostBacklog" type="text" size="40"><br/>
+sslCommonName:<input id="realHostSslCommonName" type="text" size="50"><br/>
+##virtualHosts:<input id="realHostVirtualHosts" type="text" size="40"><br/>virtualHostsは使われていない
+whiteIpPattern:<input id="realHostWhitePattern" type="text" size="50"><br/>
+blackIpPattern:<input id="realHostBlackPattern" type="text" size="50"><br/>
+<input type="button" value="save" onClick="realHostCreate()">
+<input  id="realHostDelete" type="button" value="delete" onClick="ph.admin.doObjCommand('realHost','realHostDelete',{name:ph.jQuery('#realHostName').val()},realHostList)">
+<input id="realHostBindButton" type="button" value="bind" onClick="ph.admin.doObjCommand('realHost','realHostBind',{name:ph.jQuery('#realHostName').val()},realHostList)">
+<input id="realHostUnbindButton" type="button" value="unbind" onClick="ph.admin.doObjCommand('realHost','realHostUnbind',{name:ph.jQuery('#realHostName').val()},realHostList)">
+<input type="button" value="cancel" onClick="jQuery('#realHostDialog').dialog('close')">
+</div> 
+
+##user入力用ダイアログ
+<div id="userDialog">
+<div class="userUpdateMode">
+id:<span id="userId"></span><br/>
+loginId:<span id="userLoginIdShow"></span><br/>
+</div>
+<div class="userInsertMode" style="display: none">
+loginId:<input id="userLoginIdEdit" type="text" size="64"><br/>
+</div>
+nickname:<input id="userNickname" type="text" size="64"><br/>
+roles:<input id="userRoles" type="text" size="64"><br/>
+password1:<input id="userPassword1" type="password" size="64"><br/>
+password2:<input id="userPassword2" type="password" size="64"><br/>
+offlinePass1:<input id="offlinePass1" type="password" size="64"><br/>
+offlinePass2:<input id="offlinePass2" type="password" size="64"><br/>
+##lastLogin:<span id="userlastLogin"><br/>一覧で見えてるから必要なし
+##changePass:<span id="userchangePass"><br/>
+##createDate:<span id="usercreateDate"><br/>
+<input type="button" value="save" onClick='doUserSave();'>
+<input type="button" value="delete" onClick='doUserDelete();' class="userUpdateMode">
+<input type="button" value="cancel" onClick="jQuery('#userDialog').dialog('close')">
+</div> 
+
+##commisionAuth入力用ダイアログ
+<div id="commissionAuthDialog">
+notes:<input id="commissionAuthNotes" size="64"><br/>
+type:<select id="commissionAuthType" size="1">
+<option value="basic">basic</option>
+<option value="form">form</option>
+</select><br/>
+realm:<input id="commissionAuthRealm" size="64"><br/>
+method:<select id="commissionAuthMethod" size="1">
+<option value="GET">GET</option>
+<option value="POST">POST</option>
+</select><br/>
+url:<input id="commissionAuthUrl" size="64"><br/>
+body:<input id="commissionAuthBody" size="64"><br/>
+<input type="button" value="save" onClick='addCommissionUrl();'>
+<input type="button" value="cancel" onClick="jQuery('#commissionAuthDialog').dialog('close')">
+</div> 
+
+##commonOutputダイアログ
+<div id="commonOutputDialog">
+<textarea name="commonOutputTextArea" id="commonOutputTextArea" rows="24" cols="72" ></textarea><br/>
+<input type="button" value="close" onClick="jQuery('#commonOutputDialog').dialog('close')">
+</div> 
+

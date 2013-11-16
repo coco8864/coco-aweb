@@ -1,0 +1,9 @@
+CACHE MANIFEST
+#appcacheVersion:$appcacheVersion,appcacheMode:$appcacheMode,phappcacheCookieKey:$phappcacheCookieKey authFrameTimeout:${config.getString("authFrameTimeout","5000")}
+CACHE:
+#foreach($file in $cachePaths)
+${file}
+#end
+NETWORK:
+*
+

@@ -1,0 +1,207 @@
+
+
+49.212.107.199
+
+www40405u.sakura.ne.jp
+coco8864@aroma.ocn.ne.jp
+
+
+naru3copenssl_server.cnf
+
+/etc/pki/tls/misc/CA
+/etc/ssl/CA/private/./cakey.pem
+
+[root@www40405u naru]# /etc/pki/tls/misc/CA -newca
+CA certificate filename (or enter to create)
+
+Making CA certificate ...
+Generating a 2048 bit RSA private key
+....................................................................+++
+................................+++
+writing new private key to '/etc/ssl/CA/private/./cakey.pem'
+Enter PEM pass phrase:
+Verifying - Enter PEM pass phrase:
+-----
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+-----
+Country Name (2 letter code) [XX]:JP
+State or Province Name (full name) []:Shizuoka
+Locality Name (eg, city) [Default City]:Numazu-shi
+Organization Name (eg, company) [Default Company Ltd]:phantom Project
+Organizational Unit Name (eg, section) []:phantom Project
+Common Name (eg, your name or your server's hostname) []:www40405u.sakura.ne.jp
+Email Address []:coco8864@aroma.ocn.ne.jp
+
+Please enter the following 'extra' attributes
+to be sent with your certificate request
+A challenge password []:
+An optional company name []:
+Using configuration from /etc/pki/tls/openssl.cnf
+Enter pass phrase for /etc/ssl/CA/private/./cakey.pem:
+Check that the request matches the signature
+Signature ok
+Certificate Details:
+        Serial Number:
+            c8:7c:a3:41:6f:29:f3:15
+        Validity
+            Not Before: Aug 24 02:58:00 2013 GMT
+            Not After : Aug 19 02:58:00 2033 GMT
+        Subject:
+            countryName               = JP
+            stateOrProvinceName       = Shizuoka
+            organizationName          = phantom Project
+            organizationalUnitName    = phantom Project
+            commonName                = www40405u.sakura.ne.jp
+            emailAddress              = coco8864@aroma.ocn.ne.jp
+        X509v3 extensions:
+            X509v3 Subject Key Identifier:
+                2F:80:AA:FD:9E:94:40:D5:35:16:56:3D:3F:83:AF:E8:BA:00:AF:56
+            X509v3 Authority Key Identifier:
+                keyid:2F:80:AA:FD:9E:94:40:D5:35:16:56:3D:3F:83:AF:E8:BA:00:AF:56
+
+            X509v3 Basic Constraints:
+                CA:TRUE
+Certificate is to be certified until Aug 19 02:58:00 2033 GMT (7300 days)
+
+Write out database with 1 new entries
+Data Base Updated
+[root@www40405u naru]#
+
+[root@www40405u naru]# openssl x509 -in /etc/ssl/CA/cacert.pem -text
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number:
+            c8:7c:a3:41:6f:29:f3:15
+        Signature Algorithm: sha1WithRSAEncryption
+        Issuer: C=JP, ST=Shizuoka, O=phantom Project, OU=phantom Project, CN=www40405u.sakura.ne.jp/emailAddress=coco8864@aroma.ocn.ne.jp
+        Validity
+            Not Before: Aug 24 02:58:00 2013 GMT
+            Not After : Aug 19 02:58:00 2033 GMT
+        Subject: C=JP, ST=Shizuoka, O=phantom Project, OU=phantom Project, CN=www40405u.sakura.ne.jp/emailAddress=coco8864@aroma.ocn.ne.jp
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (2048 bit)
+                Modulus:
+                    00:fe:42:d1:36:16:0f:16:9b:ad:24:c0:11:2f:f2:
+                    c4:ed:82:a4:e2:c2:2e:a7:02:0d:12:ed:62:fb:a1:
+                    93:6f:f6:5f:11:43:e6:52:1e:c1:43:37:e3:95:83:
+                    fa:94:1e:e8:29:0f:75:82:7b:a1:6c:c4:da:53:1a:
+                    f2:df:3c:ab:1e:8d:52:37:92:93:08:87:a0:dc:15:
+                    38:c8:d6:8c:c7:4a:30:66:3b:c6:38:ad:0f:a3:17:
+                    44:c9:25:40:76:88:3c:ec:c2:ba:54:2d:9b:6d:2a:
+                    52:b7:74:83:d1:88:e7:a1:12:d1:ec:bb:54:0d:99:
+                    b3:c9:67:17:19:c7:9a:7f:13:33:15:0c:4a:80:d0:
+                    6d:26:17:61:b4:28:0d:21:f2:15:48:78:2e:dd:57:
+                    2d:8f:14:92:04:d9:b8:ba:36:31:24:62:2a:13:65:
+                    e1:cc:23:a4:98:0c:e2:55:e9:89:1c:45:8e:0d:48:
+                    2a:b2:18:5f:bb:0c:bc:b8:40:7a:78:e1:45:85:76:
+                    ed:94:9e:58:d8:3b:84:d1:98:e4:d1:2d:95:d8:63:
+                    b0:f9:2d:2c:5c:31:1a:08:9a:08:4b:ed:38:0e:81:
+                    35:ad:ea:d9:4b:a1:eb:ff:4b:81:c8:d8:df:4c:33:
+                    74:72:2c:1b:3a:cd:1d:20:08:e0:46:00:18:a3:ac:
+                    33:a7
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Subject Key Identifier:
+                2F:80:AA:FD:9E:94:40:D5:35:16:56:3D:3F:83:AF:E8:BA:00:AF:56
+            X509v3 Authority Key Identifier:
+                keyid:2F:80:AA:FD:9E:94:40:D5:35:16:56:3D:3F:83:AF:E8:BA:00:AF:56
+
+            X509v3 Basic Constraints:
+                CA:TRUE
+    Signature Algorithm: sha1WithRSAEncryption
+        1f:30:e0:ad:46:cb:3e:8b:12:26:5a:7d:51:68:28:7a:43:0e:
+        4d:70:9b:7c:f0:40:55:ab:6f:ad:ca:58:a8:7d:3d:98:9a:ea:
+        05:fe:d4:d2:23:ea:61:fc:fe:cc:be:0f:5e:b8:7c:4e:0e:98:
+        c6:cb:e6:f8:0b:ea:07:e2:9e:ca:5c:cd:98:7c:fe:d4:a1:2e:
+        aa:9e:c2:01:33:eb:b9:dd:cb:f6:16:d4:7d:60:5f:0e:33:a5:
+        32:4c:c2:26:bb:4a:19:37:2d:c4:61:10:17:dd:97:92:94:03:
+        98:1d:05:4a:6a:af:44:5d:2f:ea:45:61:f2:51:22:5f:60:59:
+        54:07:66:b3:a6:f9:3b:7f:16:91:04:5e:ee:64:4e:4e:db:70:
+        79:d4:4a:77:d4:a0:c5:66:8b:60:e1:b3:28:c5:ab:f9:8a:d6:
+        00:42:48:68:11:62:29:c0:3c:f6:b5:73:fb:04:11:dc:ec:ce:
+        96:4a:90:29:d0:1c:b0:6c:c6:23:53:24:24:5a:01:bf:6d:a4:
+        91:5d:86:ee:09:9a:85:e1:24:0e:90:50:19:c1:21:c7:63:ff:
+        84:35:9e:2c:1f:1a:fe:85:54:9d:78:52:ae:3e:03:7f:87:e7:
+        f9:a6:dd:e4:9a:84:31:96:6a:11:14:0d:c2:de:a5:a9:05:bd:
+        58:50:03:b6
+-----BEGIN CERTIFICATE-----
+MIIEETCCAvmgAwIBAgIJAMh8o0FvKfMVMA0GCSqGSIb3DQEBBQUAMIGeMQswCQYD
+VQQGEwJKUDERMA8GA1UECAwIU2hpenVva2ExGDAWBgNVBAoMD3BoYW50b20gUHJv
+amVjdDEYMBYGA1UECwwPcGhhbnRvbSBQcm9qZWN0MR8wHQYDVQQDDBZ3d3c0MDQw
+NXUuc2FrdXJhLm5lLmpwMScwJQYJKoZIhvcNAQkBFhhjb2NvODg2NEBhcm9tYS5v
+Y24ubmUuanAwHhcNMTMwODI0MDI1ODAwWhcNMzMwODE5MDI1ODAwWjCBnjELMAkG
+A1UEBhMCSlAxETAPBgNVBAgMCFNoaXp1b2thMRgwFgYDVQQKDA9waGFudG9tIFBy
+b2plY3QxGDAWBgNVBAsMD3BoYW50b20gUHJvamVjdDEfMB0GA1UEAwwWd3d3NDA0
+MDV1LnNha3VyYS5uZS5qcDEnMCUGCSqGSIb3DQEJARYYY29jbzg4NjRAYXJvbWEu
+b2NuLm5lLmpwMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA/kLRNhYP
+FputJMARL/LE7YKk4sIupwINEu1i+6GTb/ZfEUPmUh7BQzfjlYP6lB7oKQ91gnuh
+bMTaUxry3zyrHo1SN5KTCIeg3BU4yNaMx0owZjvGOK0PoxdEySVAdog87MK6VC2b
+bSpSt3SD0YjnoRLR7LtUDZmzyWcXGceafxMzFQxKgNBtJhdhtCgNIfIVSHgu3Vct
+jxSSBNm4ujYxJGIqE2XhzCOkmAziVemJHEWODUgqshhfuwy8uEB6eOFFhXbtlJ5Y
+2DuE0Zjk0S2V2GOw+S0sXDEaCJoIS+04DoE1rerZS6Hr/0uByNjfTDN0ciwbOs0d
+IAjgRgAYo6wzpwIDAQABo1AwTjAdBgNVHQ4EFgQUL4Cq/Z6UQNU1FlY9P4Ov6LoA
+r1YwHwYDVR0jBBgwFoAUL4Cq/Z6UQNU1FlY9P4Ov6LoAr1YwDAYDVR0TBAUwAwEB
+/zANBgkqhkiG9w0BAQUFAAOCAQEAHzDgrUbLPosSJlp9UWgoekMOTXCbfPBAVatv
+rcpYqH09mJrqBf7U0iPqYfz+zL4PXrh8Tg6Yxsvm+AvqB+KeylzNmHz+1KEuqp7C
+ATPrud3L9hbUfWBfDjOlMkzCJrtKGTctxGEQF92XkpQDmB0FSmqvRF0v6kVh8lEi
+X2BZVAdms6b5O38WkQRe7mROTttwedRKd9SgxWaLYOGzKMWr+YrWAEJIaBFiKcA8
+9rVz+wQR3OzOlkqQKdAcsGzGI1MkJFoBv22kkV2G7gmaheEkDpBQGcEhx2P/hDWe
+LB8a/oVUnXhSrj4Df4fn+abd5JqEMZZqERQNwt6lqQW9WFADtg==
+-----END CERTIFICATE-----
+[root@www40405u naru]#
+
+WINDOWS
+D:\prj\aweb\ph\security>keytool -certreq -file 192.168.1.39.csr -alias phantom -keystore cacerts_192.168.1.30
+
+
+
+
+# 
+openssl ca -config /etc/pki/tls/openssl_server.cnf -in 192.168.1.30.csr -keyfile /etc/ssl/CA/private/cakey.pem -cert /etc/ssl/CA/cacert.pem -out 192.168.1.30.pem
+
+openssl ca -in 192.168.1.30.csr -keyfile /etc/ssl/CA/private/cakey.pem -cert /etc/ssl/CA/cacert.pem  -out 192.168.1.30.pem -policy policy_everything
+
+
+
+
+WINDOWS
+D:\prj\aweb\ph\security>
+keytool -importcert -alias phantom -keystore cacerts_192.168.1.30 -file 192.168.1.30.pem
+
+
+ -file 192.168.1.39.csr -alias phantom -
+keystore cacerts_192.168.1.30
+
+
+
+/*
+ * keytool -genkey -alias phantom -keystore cacerts_127.0.0.1 -storepass changeit -keypass changeit  -validity 1461 -dname "OU=phantom Project, O=coco8864, L=Numazu-shi, ST=Shizuoka, C=JP, CN=127.0.0.1"
+ */
+//					"C:\\jdk1.5.0_18\\bin\\keytool.exe",
+					keytool,
+					"-genkey",
+					"-keyalg","RSA",
+					"-keysize","1024",
+					"-validity","1461",
+//					"-storetype","JKS",
+					"-alias","phantom",
+					"-keypass",password,
+					"-storepass",password,
+					"-dname","C=JP, ST=Shizuoka, L=Numazu-shi, O=coco8864, OU=phantom Project ,CN="+cn,
+					"-keystore",trustStoreFile.getAbsolutePath()
+
+
+/etc/pki/tls/misc/CA -newca -config /etc/pki/tls/openssl_server.cnf
+
+
+openssl ca -config /home/naru/phantom3/ph/security/CA/openssl-ca.cnf -keyfile /home/naru/phantom3/ph/security/CA/private/cakey.pem -cert /home/naru/phantom3/ph/security/CA/cacert.pem -in /home/naru/phantom3/ph/security/x.csr -out /home/naru/phantom3/ph/security/x.crt -passin pass:cachangeit
+
+
+ -batch

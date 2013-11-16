@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head> 
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta charset="UTF-8" /> 
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>PhantomLink pub/sub test</title>
+  <script type="text/javascript" src="/pub/js/ph.js"></script>
+  <script type="text/javascript">
+var outputCounter=1;
+function outputClear(){
+  ph.jQuery("#output").html("");
+}
+function outputLog(html){
+  var orgHtml=ph.jQuery("#output").html();
+  ph.jQuery("#output").html("*"+outputCounter+"*<br />"+html+"<br />"+orgHtml);
+  outputCounter++;
+}
+function outputBlob(blob){
+  if(typeof URL.createObjectURL!=='function'){
+    return;
+  }
+  var url=URL.createObjectURL(blob);
+  if(blob.type.indexOf('image')>=0){
+    outputImg(url,blob.name);
+  }else{
+    outputDownload(url,blob.name);
+  }
+}
+
+function outputImg(url,title){
+  outputLog("<img src='"+url+ "' title='" +title + "'/>");
+}
+
+function outputDownload(url,name){
+  //TODO ie10
+  outputLog("<a download='" + name +"' href='"+url+ "'>" + name +"</a>");
+}
+
+function onError(msg){
+  outputLog("error:"+ph.JSON.stringify(msg));
+}
+
+var link;
+var sub;
+function subscribe(){
+  var qname=ph.jQuery("#qname").val();
+  var subname=ph.jQuery("#subname").val();
+  outputLog('subscribe("'+qname+'","' +subname+'")');
+  sub=link.subscribe(qname,subname);
+  sub.on(ph.EVENT.ERROR,onError);
+  ph.jQuery("#subArea input").removeAttr('disabled');
+  sub.onMsg(function(msg){//TODO
+    outputLog("onMsg:"+ph.JSON.stringify(msg));
+    if(msg.source==='drop'){
+      for(var i=0;i<msg.data.length;i++){
+        outputBlob(msg.data[i]);
+      }
+    }else if(msg.source==='formPublish'){
+      outputBlob(msg.data);
+    }
+  });
+  sub.onUnload(function(){
+    outputLog('unsubscribed:qname='+qname+' subname=' +subname);
+    ph.jQuery("#subArea input").attr('disabled','disabled');
+    sub=null
+  });
+  var bkmarklet="javascript:(function(){var d=document;var f=function(){var l=ph.link('$adminUrl$');var s=l.subscribe('$qname$','$subname$');s.onMsg(function(x){if(x){eval(x);}});};if(window.ph){f();}else{var u='$publicWebUrl$pub/js/ph.js';var e=d.createElement('script');e.src=u;e.onload=function(){f();};d.getElementsByTagName('head')[0].appendChild(e);}})();"
+  bkmarklet=bkmarklet.replace("$qname$",ph.jQuery("#qname").val());
+  bkmarklet=bkmarklet.replace("$subname$",ph.jQuery("#subname").val());
+  bkmarklet=bkmarklet.replace("$adminUrl$",link.keyUrl);
+  bkmarklet=bkmarklet.replace("$publicWebUrl$",ph.publicWebUrl);
+  //bkmarklet=bkmarklet.split(' ').join('%20');
+  outputLog('subInjection:<a href="'+bkmarklet+'">subInjection</a>');
+}
+
+function aplUrl(){
+  return ph.jQuery("#aplUrl").val();
+}
+
+function auth(isOffline){
+  if(link!=null){
+    link.unlink();
+  }
+  link=ph.link(aplUrl(),isOffline);
+  link.on(ph.EVENT.ERROR,onError);
+  link.onReady(function(){
+    var linkInfo=
+    "isOffline:"+link.isOffline + "<br />"
+    + "isAuth:"+link.isAuth + "<br />"
+    + "isConnect:"+link.isAuth + "<br />"
+    + " keyUrl:"+link.keyUrl + "<br />";
+    if(link.isAuth){
+      var user=link.authInfo.user;
+      linkInfo +="loginId:"+ user.loginId + "<br />";
+      linkInfo +="nickname:"+ user.nickname ;
+      //linkInfo +="user:"+ ph.JSON.stringify(link.authInfo.user);
+    }else{
+      linkInfo +="cause:"+ link.cause ;
+    }
+    outputLog(linkInfo);
+    if(link.isAuth){
+      ph.jQuery("#isOffline").text(link.isOffline);
+      ph.jQuery("#loginId").text(user.loginId);
+      ph.jQuery("#nickname").text(user.nickname);
+      ph.jQuery("#linkAuthArea input").removeAttr('disabled');
+      ph.jQuery("#linkArea input").removeAttr('disabled');
+    }
+  });
+  link.onUnload(function(){
+    ph.jQuery("#linkAuthArea input").attr('disabled','disabled');
+    ph.jQuery("#linkArea input").attr('disabled','disabled');
+    ph.jQuery("#subArea input").attr('disabled','disabled');
+    ph.jQuery("#isOffline").text("");
+    ph.jQuery("#loginId").text("");
+    ph.jQuery("#nickname").text("");
+  });
+}
+
+ph.jQuery(function(){
+// ドラッグドロップからの入力
+  ph.jQuery("#subArea").bind("drop", function (e) {
+    var files = e.originalEvent.dataTransfer.files;
+    outputLog('publish drop file');
+    alert('publish file:'+files[0].name);
+    var data={data:files,source:'drop'};
+    try{
+      sub.publish(data);
+    }catch(e){
+    ph.log(e);
+    }
+    return false;
+  })
+  .bind("dragenter", function () {
+    // false を返してデフォルトの処理を実行しないようにする
+    return false;
+  })
+  .bind("dragover", function () {
+    // false を返してデフォルトの処理を実行しないようにする
+    return false;
+  });
+  ph.jQuery("#linkAuthArea input").attr('disabled','disabled');
+  ph.jQuery("#linkArea input").attr('disabled','disabled');
+  ph.jQuery("#subArea input").attr('disabled','disabled');
+  //ph.debug=true;
+});
+
+  </script>
+  <link type="text/css" href="/pub/css/ph.css" rel="stylesheet" /> 
+  <style type="text/css"><!--
+  #outputArea {
+    margin-right: 20px;
+    height: 200px;
+    background: #ddd;
+    overflow: auto;
+  }
+  -->
+  </style>
+</head>
+<body>
+<H1>PhantomLink pub/sub test</H1>
+<a href='/admin' target='adminWnd'>admin</a>|
+<a href='storageTest.html' target='_blank'>storageTest</a>|
+<a href='pubsubTest.html' target='_blank'>pubsubTest</a>|
+<a href='javascript:location.reload()'>reload</a>|
+<a href='#' onclick='outputClear();'>output clear</a>
+<hr/>
+<div id="authInfo">
+aplUrl:<input id='aplUrl' type="text" value="/link1" style="width:256px;"/>
+<input type="button" value="online link" onclick="auth(false);"/>
+<br />
+<div id='linkAuthArea'>
+isOffline:<span id='isOffline'></span><br />
+loginid:<span id='loginId'></span><br />
+nickname:<span id='nickname'></span><br />
+<input type="button" value="profile" onclick="link.userProfile();"/>
+<input type="button" value="logout" onclick="link.logout();"/>
+<input type="button" value="unlink" onclick="link.unlink();"/><br />
+</div>
+</div>
+<hr/>
+<div id="linkArea">
+<b>link operation</b><br />
+qname:<input id='qname' type="text" value="qname1" style="width:100px;"/>
+subname:<input id='subname' type="text" value="subname1" style="width:100px;"/>
+<input type="button" value="sbscribe" onclick="subscribe();"/><br />
+<input type='text' id='directPublishData' value='directPublishData'/>
+<input type="button" value="direct publish" 
+  onclick="link.publish(ph.jQuery('#qname').val(),{data:ph.jQuery('#directPublishData').val(),source:'directPublish'});"/><br />
+<input type="button" value="qnames" 
+  onclick="link.qnames(function(qnames){outputLog('qnames:'+ph.JSON.stringify(qnames));});"/>
+</div>
+<hr/>
+<div id="subArea">
+<b>subscription operation</b><br />
+<input type='text' id='publishData' value='publishData'/>
+<input type="button" value="publish string" 
+  onclick="outputLog('publish string');sub.publish(ph.jQuery('#publishData').val());"/>
+<input type="button" value="publish object" 
+  onclick="outputLog('publish object');sub.publish({data:ph.jQuery('#publishData').val(),source:'objectPublish'});"/>
+<input type="button" value="publish bin" 
+  onclick="outputLog('publish bin');sub.publish({data:ph.stringToArrayBuffer(ph.jQuery('#publishData').val()),source:'binaryPublish'});"/>
+<form id='publishFormTest'>
+<input type='file' name='data' />
+<input type='hidden' name='source' value='formPublish'/>
+<input type="button" value="publishForm" 
+  onclick="outputLog('publish form');sub.publishForm('publishFormTest');"/>
+</form>
+<p>ここにファイルをドロップするとpublishします</p>
+<input type="button" value="unsubscribe" onclick="sub.unsubscribe();"/>
+</div>
+<hr/>
+output<br />
+<div id="outputArea">
+<div id="output"></div>
+</div>
+
+<!--div id="debug">
+<Hr/>
+<input type="button" value="出力クリア" onclick="ph.jQuery('#phDebugArea').text('');"/>
+<pre id="phDebugArea"></pre>
+</div-->
+</body>
+</html>

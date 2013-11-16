@@ -1,0 +1,152 @@
+<script type="text/javascript"> 
+##realHost„ÅÆ‰∏?°?tr)„Çí‰ΩúÊ?
+function realHostLine(realHost){
+	var trTag=document.createElement("tr");
+	var name=realHost.name;
+	var tdTag;
+	var aInput=document.createElement("input");
+	aInput.setAttribute("type","button");
+	aInput.setAttribute("value","Ë®≠ÂÆ?);
+	ph.jQuery(aInput).bind("click",function(){
+			realHostDialog(realHost);
+			return false;
+		});
+	tdTag=ph.admin.mkTdTag(name,aInput);
+	trTag.appendChild(tdTag);
+	if(realHost.binding){
+		tdTag=ph.admin.mkTdTag("Ëµ∑Âã?);
+	}else{
+		tdTag=ph.admin.mkTdTag("ÂÅúÊ≠¢");
+	}
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(realHost.initBind);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(realHost.bindHost);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(realHost.bindPort);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(realHost.backlog);
+	trTag.appendChild(tdTag);
+//	var tdTag=ph.admin.mkTdTag(realHost.virtualHosts);
+//	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(realHost.blackPattern);
+	trTag.appendChild(tdTag);
+	tdTag=ph.admin.mkTdTag(realHost.whitePattern);
+	trTag.appendChild(tdTag);
+	return trTag;
+}
+
+function realHostDialog(realHost){
+	ph.jQuery('#realHostName').val(realHost.name);
+	ph.jQuery('#realHostInitBind').attr("checked",realHost.initBind);
+	ph.jQuery('#realHostBindHost').val(realHost.bindHost);
+	ph.jQuery('#realHostBindPort').val(realHost.bindPort);
+	ph.jQuery('#realHostBacklog').val(realHost.backlog);
+	ph.jQuery('#realHostSslCommonName').val(realHost.sslCommonName);
+	ph.jQuery('#realHostBlackPattern').val(realHost.blackPattern);
+	ph.jQuery('#realHostWhitePattern').val(realHost.whitePattern);
+	if(realHost.name=='mainHost'){//mainHost„ÅØunbind‰∏çÂèØ
+		ph.jQuery('#realHostDelete').hide();
+		ph.jQuery('#realHostBindButton').hide();
+		ph.jQuery('#realHostUnbindButton').hide();
+	}else if(realHost.name==''){//Êñ∞Ë¶?
+		ph.jQuery('#realHostDelete').hide();
+		ph.jQuery('#realHostBindButton').hide();
+		ph.jQuery('#realHostUnbindButton').hide();
+	}else if(realHost.binding){
+		ph.jQuery('#realHostDelete').show();
+		ph.jQuery('#realHostBindButton').hide();
+		ph.jQuery('#realHostUnbindButton').show();
+	}else{
+		ph.jQuery('#realHostDelete').show();
+		ph.jQuery('#realHostBindButton').show();
+		ph.jQuery('#realHostUnbindButton').hide();
+	}
+	jQuery('#realHostDialog').dialog('open');
+}
+
+
+##realHosts table„Çí‰ΩúÊ?
+function realHostList(realHostsStr){
+	ph.log("realHostList");
+	var realHosts=ph.JSON.parse(realHostsStr);
+	ph.jQuery("#realHostData").empty();
+	var targetTag=document.getElementById("realHostData");
+	for(var i=0;i<realHosts.length;i++){
+		var trTag=realHostLine(realHosts[i]);
+		targetTag.appendChild(trTag);
+	}
+	jQuery('#realHostDialog').dialog('close');
+}
+
+##realHost„Çí‰ΩúÊ?
+function realHostCreate(){
+ var realHost={
+  name:ph.jQuery("#realHostName").val(),
+  initBind:ph.jQuery("#realHostInitBind").attr("checked"),
+  bindHost:ph.jQuery("#realHostBindHost").val(),
+  bindPort:ph.jQuery("#realHostBindPort").val(),
+  backlog:ph.jQuery("#realHostBacklog").val(),
+  sslCommonName:ph.jQuery("#realHostSslCommonName").val(),
+//  virtualHosts:ph.jQuery("#realHostVirtualHosts").val().split(",")
+  virtualHosts:[],
+  blackPattern:ph.jQuery("#realHostBlackPattern").val(),
+  whitePattern:ph.jQuery("#realHostWhitePattern").val()
+ };
+// alert(ph.JSON.stringify(realHost));
+ ph.admin.doObjCommand('realHost','realHostInsert',realHost,realHostList);
+}
+
+function setTimeouts(){
+ ph.admin.doCommand('setTimeouts',{
+  acceptTimeout:ph.jQuery("#acceptTimeout").val(),
+  connectTimeout:ph.jQuery("#connectTimeout").val(),
+  readTimeout:ph.jQuery("#readTimeout").val(),
+  writeTimeout:ph.jQuery("#writeTimeout").val()
+  },
+  function(x){
+##setTimeoutsÂÆå‰∫?
+  });
+}
+
+function setBroadcaster(){
+ ph.admin.doCommand('setBroadcaster',{
+  interval:ph.jQuery("#broardcastInterval").val()
+  },
+  function(x){
+##setTimeoutsÂÆå‰∫?
+  });
+}
+
+##realHost‰∏?¶ß„ÇíË°®Á§∫
+ph.admin.doPramCommand('realHost','realHostList',null,realHostList);
+</script> 
+<H1>AsyncÊìç‰Ω?/H1>
+
+<Hr/>
+<H2 onclick="ph.jQuery('#realHostDiv').toggle();">+real hostË®≠ÂÆ?/H2>
+<div id="realHostDiv">
+<input type="button" value="Êñ∞Ë¶? onClick="realHostDialog({name:'',realHostInitBind:false,bindHost:'*',bindPort:'',backlog:'100',binding:false});">
+<table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
+<thead>
+<tr><th>name</th><th>Áä∂ÊÖ?/th><th>init</th><th>bindHost</th><th>bindPort</th><th>backlog</th><th>blackIpPattern</th><th>whiteIpPattern</th></tr>
+</thead>
+<tbody id="realHostData"></tbody>
+</table>
+</div>
+
+<Hr/>
+<H2 onclick="ph.jQuery('#timeoutDiv').toggle();">+timeoutË®≠ÂÆ?/H2>
+<div id="timeoutDiv">
+acceptTimeout??input type="text" id="acceptTimeout" size="8" value="$!esc.html($!{config.acceptTimeout})"/>ms<br>
+connectTimeout??input type="text" id="connectTimeout" size="8" value="$!esc.html($!{config.connectTimeout})"/>ms<br>
+readTimeout??input type="text" id="readTimeout" size="8" value="$!esc.html($!{config.readTimeout})"/>ms<br>
+writeTimeout??input type="text" id="writeTimeout" size="8" value="$!esc.html($!{config.writeTimeout})"/>ms<br>
+<input type="button" value="Ë®≠ÂÆ? onclick="setTimeouts();" /><br/>
+</div>
+
+<Hr/>
+<H2>ÂÅúÊ≠¢</H2>
+<input type="button" onclick="ph.admin.doCommand('terminate');" value="terminate" />
+</table>
+

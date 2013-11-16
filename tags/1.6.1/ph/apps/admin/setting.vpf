@@ -1,0 +1,354 @@
+<script type="text/javascript"> 
+function setProxy(){
+ ph.admin.doCommand('setProxy',{
+   pacUrl:ph.jQuery("#proxyPacUrl").val(),
+   proxyServer:ph.jQuery("#proxyServer").val(),
+   sslProxyServer:ph.jQuery("#sslProxyServer").val(),
+   exceptProxyDomains:ph.jQuery("#exceptProxyDomains").val()
+  },
+  function(ret){
+	var retObj=ph.JSON.parse(ret);
+	if(retObj.result){
+		alert('proxy設定完了');
+		return;
+	}
+	ph.jQuery("#proxyPacUrl").val(retObj.pacUrl);
+	ph.jQuery("#proxyServer").val(retObj.proxyServer);
+	ph.jQuery("#sslProxyServer").val(retObj.sslProxyServer);
+	ph.jQuery("#exceptProxyDomains").val(retObj.exceptProxyDomains);
+	alert('proxy設定失敗');
+  });
+}
+function setKeepAlive(){
+ ph.admin.doCommand('setKeepAlive',{
+   isWebKeepAlive:ph.jQuery("#isWebKeepAlive").is(':checked'),
+   isProxyKeepAlive:ph.jQuery("#isProxyKeepAlive").is(':checked'),
+   maxKeepAliveRequests:ph.jQuery("#maxKeepAliveRequests").val(),
+   keepAliveTimeout:ph.jQuery("#keepAliveTimeout").val(),
+   contentEncoding:ph.jQuery("#contentEncoding").val(),
+   allowChunked:ph.jQuery("#allowChunked").is(':checked')
+  },
+  function(x){
+##setKeepAlive完了
+    alert('KeepAlive設定完了');
+  });
+}
+
+function setHtml5(){
+ var specs="";
+ if(ph.jQuery("#isUseHixie75").is(':checked')){
+  specs+='hixie75,';
+ }
+ if(ph.jQuery("#isUseHixie76").is(':checked')){
+  specs+='hixie76,';
+ }
+ if(ph.jQuery("#isUseHybi10").is(':checked')){
+  specs+='hybi10';
+ }
+
+ ph.admin.doCommand('setHtml5',{
+   websocketSpecs:specs,
+   webSocketMessageLimit:ph.jQuery("#webSocketMessageLimit").val(),
+   webSocketPingInterval:ph.jQuery("#webSocketPingInterval").val(),
+   isWebSocketLog:ph.jQuery("#webSocketLog").is(':checked'),
+   isUseSessionStorage:true,
+##ph.jQuery("#isUseSessionStorage").is(':checked'),
+   isUseCrossDomain:true
+##ph.jQuery("#isUseCrossDomain").is(':checked')
+  },
+  function(x){
+##setHtml5完了
+    alert('websocket設定完了');
+  });
+}
+
+function setFileCache(){
+  var isFileCache=ph.jQuery("#isFileCache").is(':checked');
+  ph.admin.doCommand('setFileCache',{
+    isChache:isFileCache,
+    isFlush:!isFileCache
+  },
+  function(x){
+##FileCache設定完了
+    alert('FileCache設定完了');
+  });
+}
+
+function updateAppCache(){
+  ph.admin.doCommand('updateAppCache',{},
+  function(x){
+    alert('AppCache更新依頼完了');
+  });
+}
+
+function setSpdy(){
+  var isSpdy2=ph.jQuery("#spdy2").is(':checked');
+  var isSpdy3=ph.jQuery("#spdy3").is(':checked');
+  var isSpdy31=ph.jQuery("#spdy31").is(':checked');
+  ph.admin.doCommand('setSpdy',{
+    isSpdy2:isSpdy2,
+    isSpdy3:isSpdy3,
+    isSpdy31:isSpdy31,
+    spdyFrameLimit:ph.jQuery("#spdyFrameLimist").val(),
+    spdyTimeout:ph.jQuery("#spdyTimeout").val(),
+    maxConcurrentStreams:ph.jQuery("#spdyMaxConcurrentStreams").val(),
+    serverWindowSize:ph.jQuery("#spdyServerWindowSize").val()
+  },
+  function(x){
+##Spdy設定完了
+    alert('Spdy設定完了');
+  });
+}
+
+function setAuth(){
+  var scheme=ph.jQuery("#authScheme").val();
+  ph.admin.doCommand('setAuth',{
+   scheme:scheme,
+## logoutUrlは、デフォルトで自サーバの情報を参照している。
+## 自サーバの情報を変更した場合追従した方がよいが、既に覚えている情報を上書きすることができない
+## 変更できない設定値とする
+##   logoutUrl:ph.jQuery("#authLogoutUrl").val(),
+   sessionTimeout:ph.jQuery("#authSessionTimeout").val()
+  },
+  function(x){
+    ph.jQuery("#curSchme").text(scheme);
+    alert('Authentication設定完了');
+##setAuth完了
+  });
+}
+
+function accessLogDeleteQuery(query){
+	ph.admin.accessLogSub.publish({command:'deleteQuery',query:query});
+}
+
+function accessLogExportQuery(query){
+	ph.admin.accessLogSub.publish({command:'exportQuery',query:query});
+}
+
+function accessLogImort(){
+	var files=ph.jQuery('#importsFile').prop('files');
+	if(files.length<=0){
+		alert('fileが選択されていません');
+		return;
+	}
+	ph.admin.accessLogSub.publishForm('importsForm');
+##	ph.jQuery('#importsForm')[0].reset();
+}
+
+
+function setTimeouts(){
+ ph.admin.doCommand('setTimeouts',{
+  acceptTimeout:ph.jQuery("#acceptTimeout").val(),
+  connectTimeout:ph.jQuery("#connectTimeout").val(),
+  readTimeout:ph.jQuery("#readTimeout").val(),
+  writeTimeout:ph.jQuery("#writeTimeout").val()
+  },
+  function(x){
+    alert('Timeout設定完了');
+##setTimeouts完了
+  });
+}
+
+var isShowdebugTab=false;
+function showDebug(){
+  if(isShowdebugTab){
+    jQuery('#debugLi').hide();
+    isShowdebugTab=false;
+  }else{
+    isShowdebugTab=true;
+    window.location.hash = '#debugTab';
+  }
+}
+
+ph.jQuery(function(){
+  ph.jQuery(".settingItem").hide();
+});
+</script> 
+<H1>設定</H1>
+
+<Hr/>
+<H2 onclick="ph.jQuery('#timeoutDiv').toggle();">+Timeout設定</H2>
+<div class="settingItem" id="timeoutDiv">
+<p>通信タイムアウトを設定します</p>
+acceptTimeout:<input type="text" id="acceptTimeout" size="8" value="$!esc.html($!{config.acceptTimeout})"/>ms<br>
+connectTimeout:<input type="text" id="connectTimeout" size="8" value="$!esc.html($!{config.connectTimeout})"/>ms<br>
+readTimeout:<input type="text" id="readTimeout" size="8" value="$!esc.html($!{config.readTimeout})"/>ms<br>
+writeTimeout:<input type="text" id="writeTimeout" size="8" value="$!esc.html($!{config.writeTimeout})"/>ms<br>
+<input type="button" value="設定" onclick="setTimeouts();" /><br/>
+</div>
+
+<Hr/>
+<H2 onclick="ph.jQuery('#accesslogDiv').toggle();">+AccessLogs操作</H2>
+<div class="settingItem" id="accesslogDiv">
+<p>ログ、トレースデータを移出、移入することで別環境で採取した資料を取り扱うことができます</p>
+<form id="importsForm">
+<input type="hidden" name="command" value="import" />
+移入ファイル指定:<input type="file" name="importsFile" id="importsFile" />
+<input type="button" value="移入" onclick="accessLogImort();"/><br/>
+</form>
+全AccessLog削除:<input type="button" onclick="accessLogDeleteQuery('');" value="削除" /><br/>
+全AccessLog移出:<input type="button" onclick="accessLogExportQuery('');" value="移出" /><br/>
+</div>
+
+<Hr/>
+<H2 onclick="ph.jQuery('#replayDiv').toggle();">+Replay File登録</H2>
+<div class="settingItem" id="replayDiv">
+<p>Replay機能で返却するコンテンツを登録することができます</p>
+<form method="post" enctype="multipart/form-data" action="replayUpload" target="uploadFrame">
+<input type="hidden" name="token" value="$esc.html(${session.token})"/>
+path:<input type="text" name="replaypath" id="replaypath" size="64"/>
+file:<input type="file" name="replayFile" id="replayFile" />
+<input type="submit" value="登録"/><br/>
+</form>
+全ReplayFile削除:<input type="button" onclick="ph.admin.doCommand('replayDelete');" value="削除" />
+</div>
+
+<Hr/>
+<H2 onclick="ph.jQuery('#proxyDiv').toggle();">+Proxy設定</H2>
+<div class="settingItem" id="proxyDiv">
+<p>http/httpsのネットワーク環境を設定してください</p>
+pacUrl:<input type="text" name="proxyPacUrl" id="proxyPacUrl" size="64" value="$!esc.html($!{config.getString('pacUrl')})"/><br>
+proxyServer:<input type="text" name="proxyServer" id="proxyServer" size="32" value="$!esc.html($!{config.getString('proxyServer')})"/><br>
+sslProxyServer:<input type="text" name="sslProxyServer" id="sslProxyServer" size="32" value="$!esc.html($!{config.getString('sslProxyServer')})"/><br>
+exceptProxyDomains:<input type="text" name="exceptProxyDomains" id="exceptProxyDomains" size="64" value="$!esc.html($!{config.getString('exceptProxyDomains')})"/><br/>
+<input type="button" value="設定" onclick="setProxy();" /><br/>
+</div>
+
+<Hr/>
+<H2 onclick="ph.jQuery('#keepAliveDiv').toggle();">+KeepAlive設定</H2>
+<div class="settingItem" id="keepAliveDiv">
+<p>httpプロトコルに関する設定を行います</p>
+isWebKeepAlive:<input type="checkBox" name="isWebKeepAlive" id="isWebKeepAlive"
+#if(${config.getBoolean('isWebKeepAlive')})
+checked="checked"
+#end
+/><br/>
+isProxyKeepAlive:<input type="checkBox" name="isProxyKeepAlive" id="isProxyKeepAlive"
+#if(${config.getBoolean('isProxyKeepAlive')})
+checked="checked"
+#end
+/><br/>
+maxKeepAliveRequests:<input type="text" name="maxKeepAliveRequests" id="maxKeepAliveRequests" size="4" value="$!esc.html($!{config.getString('maxKeepAliveRequests')})"/><br/>
+keepAliveTimeout:<input type="text" name="keepAliveTimeout" id="keepAliveTimeout" size="8" value="$!esc.html($!{config.getString('keepAliveTimeout')})"/>ms<br/>
+contentEncoding:<select id="contentEncoding" size="1">
+<option value="non">non</option>
+<option value="gzip"
+#if($config.getString('contentEncoding') && "gzip"==$config.getString('contentEncoding'))
+selected="selected"
+#end
+>gzip</option>
+</select><br/>
+allowChunked:<input type="checkBox" name="allowChunked" id="allowChunked"
+#if(${config.getBoolean('allowChunked')})
+checked="checked"
+#end
+/><br/>
+<input type="button" value="設定"  onclick="setKeepAlive();"/><br/>
+</div>
+
+<Hr/>
+<H2 onclick="ph.jQuery('#html5Div').toggle();">+Websocket</H2>
+<div class="settingItem" id="html5Div">
+WebSocket spec:hixie75:<input type="checkBox" name="isUseHixie75" id="isUseHixie75"
+#if(${config.getString('websocketSpecs').indexOf('hixie75')}>=0)
+checked="checked"
+#end
+/>
+hixie76:<input type="checkBox" name="isUseHixie76" id="isUseHixie76"
+#if(${config.getString('websocketSpecs').indexOf('hixie76')}>=0)
+checked="checked"
+#end
+/>
+hybi10:<input type="checkBox" name="isUseHybi10" id="isUseHybi10"
+#if(${config.getString('websocketSpecs').indexOf('hybi10')}>=0)
+checked="checked"
+#end
+/>
+<br/>
+WebSocketMessageLimit:<input type="text" name="webSocketMessageLimit" id="webSocketMessageLimit"
+value="${config.getInt('webSocketMessageLimit',2048000)}"
+>byte<br/>
+WebSocketPingInterval:<input type="text" name="webSocketPingInterval" id="webSocketPingInterval"
+value="${config.getInt('webSocketPingInterval',0)}"
+>ms<br/>
+isWebSocketLog:<input type="checkBox" name="webSocketLog" id="webSocketLog"
+#if(${config.getBoolean('isWebSocketLog',false)})
+checked="checked"
+#end
+><br/>
+
+##Web Storage sessionStorage:<input type="checkBox" name="isUseSessionStorage" id="isUseSessionStorage"
+###if(${config.getBoolean('useSessionStorage',true)})
+##checked="checked"
+###end
+##/><br>
+##Cross-document messaging:<input type="checkBox" name="isUseCrossDomain" id="isUseCrossDomain"
+###if(${config.getBoolean('useCrossDomain',true)})
+##checked="checked"
+###end
+##/><br>
+<input type="button" value="設定" onclick="setHtml5();" /><br/>
+</div>
+
+<Hr/>
+#set ($spdy2=false)
+#set ($spdy3=false)
+#set ($spdy31=false)
+#set ($spdyConfig=$config.getSpsyConfig())
+#set ($protocol=${spdyConfig.getSpdyProtocols()})
+#if($protocol.indexOf('spdy/2,')>=0)
+ #set ($spdy2=true)
+#end
+#if($protocol.indexOf('spdy/3,')>=0)
+ #set ($spdy3=true)
+#end
+#if($protocol.indexOf('spdy/3.1,')>=0)
+ #set ($spdy31=true)
+#end
+#set ($spdyFrameLimit=$spdyConfig.getSpdyFrameLimit())
+#set ($spdyTimeout=$spdyConfig.getSpdyTimeout())
+#set ($spdyMaxConcurrentStreams=$spdyConfig.getMaxConcurrentStreams())
+#set ($spdyServerWindowSize=$spdyConfig.getServerWindowSize())
+
+<H2 onclick="ph.jQuery('#spdySetting').toggle();">+Spdy設定</H2>
+<div class="settingItem" id="spdySetting">
+#if($spdyConfig.isSpdyAvailable)
+spdy disabled
+#end
+spdy/2:<input type="checkBox" name="spdy2" id="spdy2"
+#if($spdy2==true)
+checked="checked"
+#end
+ />
+spdy/3:<input type="checkBox" name="spdy3" id="spdy3"
+#if($spdy3==true)
+checked="checked"
+#end
+ />
+spdy/3.1:<input type="checkBox" name="spdy31" id="spdy31"
+#if($spdy31==true)
+checked="checked"
+#end
+ /><br/>
+spdyTimeout:<input type="text" name="spdyTimeout" id="spdyTimeout" value="${spdyTimeout}"/><br/>
+spdyFrameLimit:<input type="text" name="spdyFrameLimit" id="spdyFrameLimit" value="${spdyFrameLimit}"/><br/>
+maxConcurrentStreams:<input type="text" name="spdyMaxConcurrentStreams" id="spdyMaxConcurrentStreams" value="${spdyMaxConcurrentStreams}"/><br/>
+serverWindowSize:<input type="text" name="spdyServerWindowSize" id="spdyServerWindowSize" value="${spdyServerWindowSize}"/><br/>
+<input type="button" value="設定" onclick="setSpdy();" /><br/>
+</div>
+
+<Hr/>
+<H2 onclick="ph.jQuery('#fileCache').toggle();">+Cache設定</H2>
+<div class="settingItem" id="fileCache">
+file cache:<input type="checkBox" name="isFileCache" id="isFileCache"
+#if(${config.fileCache.useCache()})
+checked="checked"
+#end
+ onclick='setFileCache();' /><br/>
+appCache:<input type="button" name="appCache" id="appCache" value="update" onclick='updateAppCache();'/><br/>
+
+</div>
+
+<Hr/>
+<H2 onclick='showDebug();' title='open script debug tab'>script debug</H2>
+
