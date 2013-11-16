@@ -65,6 +65,11 @@ ph.jQuery(function() {
 			changeEntry(value);
 		}
 	});
+	ph.admin.con.on(ph.EVENT.LOGOUT,function(){
+		//セションタイムアウト
+		unloading=true;
+		location=ph.publicWebUrl;
+	});
 	ph.admin.con.onUnload(function(){
 		if(unloading)return;
 		if (confirm('!!unlinked!!\nDo you go Phantom Server Home?')){location=ph.publicWebUrl;}

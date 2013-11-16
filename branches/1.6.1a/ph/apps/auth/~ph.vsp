@@ -17,8 +17,19 @@ function loginIdsOnchange(){
  var loginId=jQuery('#loginIds').val();
  jQuery('#loginId').val(loginId);
 }
-
-// --></script>
+function onUpdateready(e){
+  var appCache = window.applicationCache;
+  appCache.swapCache();
+  location.reload();
+}
+jQuery(function() {
+  if (window.applicationCache) {
+    var appCache = window.applicationCache;
+    appCache.addEventListener('updateready', onUpdateready, false);
+    appCache.update();
+  }
+});
+</script>
 </head>
 <body>
 ######################################################
