@@ -48,7 +48,8 @@ function auth(isOffline){
   if(link!=null){
     link.unlink();
   }
-  link=ph.link(aplUrl(),isOffline);
+  var url=aplUrl();
+  link=ph.link(url,isOffline);
   link.onReady(function(){
     var linkInfo=
     "isOffline:"+link.isOffline + "<br />"
@@ -85,6 +86,9 @@ function auth(isOffline){
     ph.jQuery("#isOffline").text("");
     ph.jQuery("#loginId").text("");
     ph.jQuery("#nickname").text("");
+  });
+  sub.on(ph.EVENT.LOGOUT,function(){
+    outputLog('logout:'+url);
   });
   for(i=0;i<scopes.length;i++){
     var scope=scopes[i];

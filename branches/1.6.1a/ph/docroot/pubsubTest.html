@@ -82,7 +82,8 @@ function auth(isOffline){
   if(link!=null){
     link.unlink();
   }
-  link=ph.link(aplUrl(),isOffline);
+  var url=aplUrl();
+  link=ph.link(url,isOffline);
   link.on(ph.EVENT.ERROR,onError);
   link.onReady(function(){
     var linkInfo=
@@ -114,6 +115,9 @@ function auth(isOffline){
     ph.jQuery("#isOffline").text("");
     ph.jQuery("#loginId").text("");
     ph.jQuery("#nickname").text("");
+  });
+  sub.on(ph.EVENT.LOGOUT,function(){
+    outputLog('logout:'+url);
   });
 }
 
