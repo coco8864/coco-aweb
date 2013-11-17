@@ -2,7 +2,7 @@
 
 =Phantom Serverとは=
   == アプリケーションサーバ ==
-   Phantom Serverは、httpだけではく、websocketをはじめwebを構成するあらゆるプロトコルを利用してアプリケーションを作るための基盤となるサーバです。サポートしているプロトコルは以下です。
+   Phantom Serverは、http通信だけではく、websocket通信等web環境を構成するあらゆるプロトコルを利用してアプリケーションを作るための基盤となるサーバです。サポートしているプロトコルは以下です。
     * http/https webサーバ(SPDY3.1対応)
     * websocketサーバ
     * http/https proxyサーバ
