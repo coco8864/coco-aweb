@@ -7,11 +7,11 @@ Phantom Serverの起動方法、停止方法を説明します。起動はコマ
  # 起動シェルを実行してください。
   * Windowsの場合
 {{{
-   >${phantom}\bin\run.bat
+>${phantom}\bin\run.bat
 }}}
   * Unix系の場合
 {{{
-   #${phantom}\bin\run.sh
+#${phantom}\bin\run.sh
 }}}
   以下のメッセージがコンソールに出力されます。
 {{{
@@ -27,15 +27,15 @@ WatchDeamonQueuelet:start success:phantom Thu Nov 03 20:43:19 JST 2011 interval:
  # 以下がブラウザから表示できるようになります。
   * Phntom Server Home
 {{{
-  http://${selfDomain}:${selfPort}/
-  https://${selfDomain}:${selfPort}/
+http://${selfDomain}:${selfPort}/
+https://${selfDomain}:${selfPort}/
 }}}
-   初期値:http://127.0.0.1:1280/ and https://127.0.0.1:1280/
+   初期値:https://IPアドレス:1280/
   * Phntom Server Console（以降Console)
 {{{
-  https://${selfDomain}:${selfPort}/admin
+https://${selfDomain}:${selfPort}/admin
 }}}
-   初期値:https://127.0.0.1:1280/admin 
+   初期値:https://IPアドレス:1280/admin 
    初期ログイン情報:admin/admin
 
 == 停止方法 ==
