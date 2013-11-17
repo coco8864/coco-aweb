@@ -5,7 +5,55 @@
 {{{
 2013-11-11 00:31:16,806 153.131.140.251 - "GET /pub/images/login.gif HTTP/1.1" 200 883 3#mainHost,sslWeb,F,-,-,0,1,2,0,15,31|2|23|3
 }}}
-
+ * リクエスト受付時刻
+ * ip
+ * loginId
+  認証未の場合-
+ * requestLine
+  * SPDYレポートの場合
+  例
+{{{
+ "in[0:0 1:2 2:0 3:0 4:2 5:0 6:0 7:0 8:0 9:1]out[0:2 1:0 2:2 3:0 4:1 5:0 6:0 7:1 8:0 9:0]lastGoodStreamId:3"
+}}}
+   * 0 TYPE_DATA_FRAME
+   * 1 TYPE_SYN_STREAM
+   * 2 TYPE_SYN_REPLY
+   * 3 TYPE_RST_STREAM
+   * 4 TYPE_SETTINGS
+   * 6 TYPE_PING
+   * 7 TYPE_GOAWAY
+   * 8 TYPE_HEADERS
+   * 9 TYPE_WINDOW_UPDATE
+ * statusCode
+ * response length
+ * 処理時間(ms)
+ * #
+ * realHost名
+ * sourceType
+  * plainWeb
+  * sslWeb
+  * plainProxy
+  * sslProxy
+  * ws
+  * wss
+  * wsHandshake
+  * wsOnMessage
+  * wsPostMessage
+  * simulate
+  * spdy
+ * destinationType
+ * contentEncoding
+ * transferEncoding
+ * requestHeaderTime
+ * requestBodyTime
+ * responseHeaderTime
+ * responseBodyTime
+ * channnelId(cid)
+ * spdy情報
+  * spdyVersion
+  * channdelId
+  * straemId
+  * spdyPri
 
 = Pool log =
 Console stautsタブ 統計情報にある!PoolCheckボタンを押下した際ph.logに出力されるログ
