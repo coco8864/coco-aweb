@@ -25,6 +25,7 @@ WatchDeamonQueuelet:start success:phantom Thu Nov 03 20:43:19 JST 2011 interval:
 }}}
    * 起動シェルに"cleanup"引数を付加した場合、既存の設定内容をクリアして起動します。
  # 以下がブラウザから表示できるようになります。
+  この時[Mapping mapping]SSL証明書の登録をしない場合ブラウザが警告を表示します。
   * Phntom Server Home
 {{{
 http://${selfDomain}:${selfPort}/
