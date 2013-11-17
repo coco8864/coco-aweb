@@ -1,16 +1,14 @@
 #summary アプリケーションサーバとして利用する場合
 
 = アプリケーションサーバとして利用する場合 =
-
 Phantom Serverはアプリケーションサーバとして利用する事ができます。
 
+ == facebookを認証に利用する場合 ==
 
-= facebookを認証に利用する場合 =
+ == mapping定義 ==
+  === Linklet application ===
+  === Handler application ===
 
-= mapping定義 =
-== Linklet ==
-== Handler ==
+ ==publis/subscribe appliction==
 
-=publis/subscribe appliction=
-
-=storage application=
+ ==storage application==
