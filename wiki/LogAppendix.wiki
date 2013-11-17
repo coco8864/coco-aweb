@@ -58,9 +58,9 @@
 = Pool log =
 Console stautsタブ 統計情報にある!PoolCheckボタンを押下した際ph.logに出力されるログ
 {{{
-2013-11-17 22:34:04,488 [thread-dispatch:1] INFO  naru.async.pool.Pool - naru.aweb.handler.FileSystemHandler():90:7:0:7:7:1000:0
-2013-11-17 22:34:04,492 [thread-dispatch:1] INFO  naru.async.pool.Pool - java.nio.ByteBuffer(16384):15597:13:0:13:13:5120:0
-2013-11-17 22:34:04,493 [thread-dispatch:1] INFO  naru.async.pool.Pool - java.nio.ByteBuffer[1]:10763:8:1:7:8:5120:0
+... - naru.aweb.handler.FileSystemHandler():90:7:0:7:7:1000:0
+... - java.nio.ByteBuffer(16384):15597:13:0:13:13:5120:0
+... - java.nio.ByteBuffer[1]:10763:8:1:7:8:5120:0
 }}}
  * 対象class名
   * ()内の数字は、java.nio.ByteBufferのバッファ長
