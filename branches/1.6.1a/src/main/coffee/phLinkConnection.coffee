@@ -75,7 +75,11 @@ class Connection extends PhObject
     if @stat==ph.STAT_OPEN
       # 接続直後に切れるのはwebsocketが使えないと考える
       if @useWs==true
-        @__onClose(event.reason)
+        if event.reason
+          @__onClose(event.reason)
+        else
+          # websocketのresponse status codeはaplからわからない。確実な方法ではないが403と判断
+          @__onClose("logout")
         return
       @isWs=false
       @_openXhr()
@@ -176,7 +180,8 @@ class Connection extends PhObject
       ph.log('aleady closed')
       return
     #一旦つながっていたのに接続できなくなるのはセションタイムアウトと判断 TODO:403
-    @link.trigger(ph.EVENT.LOGOUT,{type:'logout'},@link)
+    if msg=='logout'
+      @link.trigger(ph.EVENT.LOGOUT,{type:'logout'},@link)
     @_setBid(null)
     @unload()
     @stat=ph.STAT_CLOSE
@@ -197,7 +202,7 @@ class Connection extends PhObject
     if msg.requestType==ph.TYPE_SUBSCRIBE
       @__endOfSubscribe(msg)
     else if msg.requestType==ph.TYPE_CLOSE
-      @__onClose(msg)
+      @__onClose(msg.reason)
     else if msg.requestType==ph.TYPE_QNAMES
       message=msg.message
       ctxIdx=message.ctxIdx
@@ -224,7 +229,7 @@ class Connection extends PhObject
     if msg.type==ph.TYPE_NEGOTIATE
       @__onMsgNego(msg)
     else if msg.type==ph.TYPE_CLOSE
-      @__onClose(msg)
+      @__onClose(msg.reason)
     else if msg.type==ph.TYPE_DOWNLOAD
       ph.log('download.msg.key:'+msg.key)
       form=ph.jQuery("<form method='POST' target='#{@_downloadFrameName}' action='#{@connectXhrUrl}/~download'>" +
