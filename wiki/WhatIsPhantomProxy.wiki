@@ -8,7 +8,7 @@
     * http/https proxyサーバ
    プロトコルを跨いだ統一的な認証機構を持ち、複数のプロトコルを組み合わせたWebアプリケーションを作る際の基本的な機能を提供しています。
    Phantom Serverはすべてのプロトコルを単一のポートでサービスする等、ライトウェイトな構成でありながら、単体で１万コネクションを超える接続にも耐えられるスケーラビリティも兼ね備えた、サーバです。<br/>
-   Phantom Serverには、websocket,webstorageをはじめhtml5の機能を簡単かつ有効に利用できるApplication Framework !PhantomLinkを搭載しています。
+   Phantom Serverでは、websocket,webstorageをはじめとするhtml5技術をラッピングしてapplicationの作成を助けるApplication Framework !PhantomLinkを提供します。
 
   == Web調査ツール ==
     Phantom Serverは、当初、通信トレースを採取、編集、再送する機能を持つ開発用ツールとして開発されました。この側面では、ローカルプロキシ機能を基本としていますが、ブラウザからの操作だけで利用できるところが同種のツールと異なる特徴です。
