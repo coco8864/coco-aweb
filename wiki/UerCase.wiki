@@ -12,7 +12,7 @@
    * [Servers#virtualHost virtual host]
 
  ==アプリケーションサーバとして利用する場合==
-  facebookを認証に、websocketをはじめhtml5技術を利用するアプリケーションを例にアプリケーションの作成・運用について説明します。
+  facebookを認証に、websocketをはじめhtml5技術を利用するアプリケーションを例にアプリケーションの作成・運用する方法について説明します。
   * [ApplictionServerUse#facebook_authentication facebookを認証に利用する設定]
   * [ApplictionServerUse#server_module server資源の配置]
   * [ApplictionServerUse#client_module client資源の配置]
