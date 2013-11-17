@@ -5,15 +5,12 @@
 Phantom Serverはアプリケーションサーバとして利用する事ができます。
 
 
-= Details =
+= facebookを認証に利用する場合 =
 
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
+= mapping定義 =
+== Linklet ==
+== Handler ==
 
-==publis/subscribe appliction==
-facebookで認証、websocketを利用したアプリケーション
+=publis/subscribe appliction=
 
-
-==storage application==
+=storage application=
