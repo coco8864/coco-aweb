@@ -10,7 +10,7 @@
   * 30.0.1599.101 m
   * 31.0.1650.57 m
    chromeのappCacheは、コンテンツを置き換えても反映されない事がある。
-   ここchrome://appcache-internals/で明示的に削除できる。
+   [chrome://appcache-internals/ ここ]で明示的に削除できる。
 
  = <img src='http://windows.microsoft.com/favicon.ico?dmy.png' height='16' width='16'>Internat Explorer =
   * 8.0.6001.18702
