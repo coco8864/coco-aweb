@@ -1,4 +1,7 @@
 #summary 実装したい機能、あった方がよい機能を列挙します
+  * websockteの負荷ツール
+  * SPDYクライアント&負荷ツール
+  * Linkletのjavascript化
   * ~~SPDY3.1対応~~
   * クライアント機能でCookie管理
   * 各種設定の失敗が通知されない
@@ -63,11 +66,11 @@
     * ~~現状実装は、draft-ietf-hybi-thewebsocketprotocol-00~~
   * ~~任意のリクエストを送信する機能~~
   * ~~restartを3回繰り返すと終わってしまう問題対応~~
-  * コード系の自動判別
+  * ~~コード系の自動判別~~
     * ~~metaやxml宣言のコードはコンテンツの先頭付近にあるのでそれを利用~~
   * coneoleの完全!WebSocket化
     * !WebSocketリクエストの方がhttpでのリクエストより柔軟性がある
-  * !WebSocketアプリ向けフレームワークが必要
+  * ~~!WebSocketアプリ向けフレームワークが必要~~PhantomLink
     * file upload/download
   * 性能基礎データの採取,pahntom proxy|apache|nginx 
     * グラフ表示
@@ -75,14 +78,14 @@
    SPDYにJava7以上が必要、Java6の場合SPDYは使えない理由は2つ
     * java.util.zip.Deflater#deflateメソッドの第4パラメタDeflater.FULL_FLUSH
     * NPNライブラリとしてname.ben.murphy,ssl_npnを利用
-  * 一括してSSL運用にする機能、またその逆
+  * ~~一括してSSL運用にする機能、またその逆~~必要なし常にSSL
   * spdyクライアント
   * ~~chatをカレントにしてロードしたとき未接続となる~~
   * 基本認証時に長時間放置すると元に戻れなくなる
   * Storeの参照数がいいかげん
   * ~~Json-libのmybejason問題の修正~~
   * ~~accesslogの出力形式を標準にあわせる~~
-  * SPDY,websocketのaccesslogの出力形式を含めて、ドキュメントに説明する
+  * ~~SPDY,websocketのaccesslogの出力形式を含めて、ドキュメントに説明する~~
 
 
 できそうだけど基本やらない方針
