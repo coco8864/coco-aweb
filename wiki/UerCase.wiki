@@ -5,7 +5,7 @@
  利用シーンに沿って具体的な使用方法を説明します。
 
  ==アプリケーションサーバとして利用する場合==
-  以下のようなアプリケーションの作成・運用
+  以下のようなアプリケーションの作成・運用したい場合に利用できます。
   * [ApplictionServerUse#pubsub facebookで認証、websocketを利用したアプリケーション]
   * [ApplictionServerUse#storage offline機能を持ちながらブラウザ側で安全にデータを保持するwebアプリケーション]
 
