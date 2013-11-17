@@ -1,8 +1,8 @@
-#summary 利用シーンに沿った使用方法
+#summary 利用シーン
 
 = 利用シーン =
 
- 利用シーンに沿って具体的な使用方法を説明します。
+ Phantom Serverの具体的な使用方法を説明します。
 
  ==汎用サーバとして利用する場合==
   * [Servers 汎用サーバ]
@@ -12,7 +12,7 @@
    * [Servers#virtualHost virtual host]
 
  ==アプリケーションサーバとして利用する場合==
-  以下のようなアプリケーションの作成・運用したい場合に利用できます。
+  Phantom Serverは、以下のようなアプリケーションの作成・運用したい場合に利用できます。
   * [ApplictionServerUse#publis/subscribe_appliction facebookで認証、websocketを利用したアプリケーション]
   * [ApplictionServerUse#storage_application offline機能を持ちながらブラウザ側で安全にデータを保持するwebアプリケーション]
 
