@@ -35,15 +35,15 @@ JAVA_HOME=javaインストールディレクトリ
  # 必要な場合、以下定義ファイルにネットワーク環境を記述してください。
   ローカルプロキシーとして使用し、ポート1280が使用可能で、webアクセスにproxyサーバの必要がない環境では、編集の必要はありません。
    ${phantom}/ph/setting/ph.env.properties
-   * インストールしたサーバの情報を設定してください。
+  * インストールしたサーバの情報を設定してください。
 {{{
 #This setting is enabled when the cleanup and initial startup.Referred to by ph.ini.properties
 #Information from the browsers to point to this server
 #phantom.selfDomain=ブラウザからこのサーバを呼ぶためのipもしくはhost名
 phantom.selfPort=サーバを動作させるポート番号
 }}}
-    以降${selfDomain},${selfPort}とします。ローカルプロキシーとして使用する場合は、編集の必要はありません。(${selfDomain}:127.0.0.1,${selfPort}:1280)
-   * このサーバからwebアクセスする際に使用するproxyサーバの情報を設定してください。
+  以降${selfDomain},${selfPort}とします。ローカルプロキシーとして使用する場合は、編集の必要はありません。(${selfDomain}:IPアドレス,${selfPort}:1280)
+  * このサーバからwebアクセスする際に使用するproxyサーバの情報を設定してください。
 {{{
 #This setting is enabled when the cleanup and initial startup.Referred to by ph.ini.properties
 #Proxy information used by this server
@@ -52,7 +52,7 @@ phantom.proxyServer=http proxyのipまたはホスト名:ポート番号
 phantom.sslProxyServer=https proxyのipまたはホスト名:ポート番号
 phantom.exceptProxyDomains=proxyを使わないホスト一覧を設定してください。
 }}}
-    phantom.pacUrlが指定された場合、以降は無視されます。いずれも設定しない場合、proxyサーバを利用しません。
+  phantom.pacUrlが指定された場合、以降は無視されます。いずれも設定しない場合、proxyサーバを利用しません。
  # クライアント環境にSSL証明書を登録してください。
    SSL運用する場合には、クライアントに必要証明書を信頼されたルート証明機関に登録してください。
    Phantom Serverは、動的にSSL証明書を作成します。作成されて証明書は以下Server上のファイルもしくはConsoleから取得できます。(インストール方法は、Windowsの場合ファイルのダブルクリックで登録できます）
