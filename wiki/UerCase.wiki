@@ -13,8 +13,10 @@
 
  ==アプリケーションサーバとして利用する場合==
   Phantom Serverは、以下のようなアプリケーションの作成・運用したい場合に利用できます。
-  * [ApplictionServerUse#publis/subscribe_appliction facebookで認証、websocketを利用したアプリケーション]
-  * [ApplictionServerUse#storage_application offline機能を持ちながらブラウザ側で安全にデータを保持するwebアプリケーション]
+  * [ApplictionServerUse#facebookを認証に利用する場合 facebookを認証に利用する場合]
+  * [ApplictionServerUse#mapping定義 mapping定義]
+  * [ApplictionServerUse#publis/subscribe_appliction publish/subscribe applictaion]
+  * [ApplictionServerUse#storage_application storage application]
 
  ==Web調査ツールとして利用する場合==
   * [Stress 負荷テスト]
