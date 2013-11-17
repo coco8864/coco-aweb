@@ -12,8 +12,8 @@
    * [Servers#virtualHost virtual host]
 
  ==アプリケーションサーバとして利用する場合==
-  Phantom Serverは、以下のようなアプリケーションの作成・運用したい場合に利用できます。
-  * [ApplictionServerUse#facebook_authentication facebookを認証に利用する場合]
+  facebookを認証に、websocketをはじめhtml5技術を利用するアプリケーションの作成・運用する事ができます。
+  * [ApplictionServerUse#facebook_authentication facebookを認証に利用する設定]
   * [ApplictionServerUse#server_module server資源の配置]
   * [ApplictionServerUse#client_module client資源の配置]
 
