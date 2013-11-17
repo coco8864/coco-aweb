@@ -1,17 +1,17 @@
 #summary Phantom Serverの概要を説明します。
 
 =Phantom Serverとは=
-  == 汎用サーバ ==
-    Phantom Serverは、プロキシーとして動作するだけではなく、汎用サーバとして利用できます。管理コンソールは、Phantom Server上で動作するアプリケーションとして実装されています。
-    Phantom Serverはライトウェイトな、以下の機能を持つ汎用サーバです。
-    * http/https proxyサーバ
-    * http/https webサーバ(SPDY対応)
+  == アプリケーションサーバ ==
+   Phantom Serverは、httpだけではく、websocketをはじめwebを構成するあらゆるプロトコルを利用してアプリケーションを作るための基盤となるサーバです。サポートしているプロトコルは以下です。
+    * http/https webサーバ(SPDY3.1対応)
     * websocketサーバ
-    複数のプロトコルを組み合わせたWebアプリケーションを作る際の基本的な機能を提供しています。http/httpsとwebsocketを組み合わせたアプリケーションを作成する場合、認証を共有できるなど便利に利用できます。
-    Phantom Serverには、websocket,webstorageをはじめhtml5の機能を簡単かつ有効に利用できるApplication Framework !PhantomLinkを搭載しています。
+    * http/https proxyサーバ
+   Phantom Serverはすべてのプロトコルを単一のポートでサービスする等、ライトウェイトな構成でありながら、単体で１万コネクションを超える接続にも耐えられるスケーラビリティも兼ね備えた、サーバです。
+   プロトコルを跨いだ統一的な認証機構を持ち、複数のプロトコルを組み合わせたWebアプリケーションを作る際の基本的な機能を提供しています。<br/>
+   Phantom Serverには、websocket,webstorageをはじめhtml5の機能を簡単かつ有効に利用できるApplication Framework !PhantomLinkを搭載しています。
 
   == Web調査ツール ==
-    Phantom Serverは、通信トレースを採取、編集、再送する機能を持つプロキシー、Webアプリケーションです。直接的には、開発用のツールとして利用できます。ブラウザからの操作だけで利用できるところが同種のツールと異なる特徴です。
+    Phantom Serverは、当初、通信トレースを採取、編集、再送する機能を持つ開発用ツールとして開発されました。この側面では、ローカルプロキシ機能を基本としていますが、ブラウザからの操作だけで利用できるところが同種のツールと異なる特徴です。
 
    ===="Phantom"====
      "Phantom"という名称は、ブラウザとproxyサーバ間で決められた実際には存在しないホスト名に対して機能するところから採りました。
@@ -19,10 +19,11 @@
      Phantom Serverは、プレフィクスに意味を持たせて機能を提供します。
 
  = 機能 =
+   * 認証機能
+   * html5 appliction framewark(!PhantomLink)
    * 通信トレース採取機能
    * サーバのシミュレート機能
    * ブラウザのシミュレート機能
-   * 認証機能
    * proxyサーバ
    * SSL proxyサーバ
    * webサーバ(SPDY対応)
