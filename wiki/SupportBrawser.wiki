@@ -42,6 +42,7 @@ chrome://appcache-internals/
     # network.websocket.override-security-block の値を"true"に変更
   * 7.0
   * 20.0.1
+  * 25.0
 
  = <img src='http://jp.opera.com/favicon.ico?dmy.png' height='16' width='16'>Opera =
   * 11.10 Build 2092
