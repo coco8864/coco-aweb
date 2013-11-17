@@ -1322,7 +1322,7 @@ public class Config {
 		int pos = fileName.lastIndexOf(".");
 		String contentType=null;
 		if (pos > 0) {
-			String ext = fileName.substring(pos + 1);
+			String ext = fileName.substring(pos + 1).toLowerCase();
 			contentType = getContentTypeConfig().getString(ext,null);
 		}
 		return contentType;

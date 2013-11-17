@@ -539,7 +539,7 @@ public class Mapping{
 				File destFile=new File(destinationPath);
 				if(destFile.isAbsolute()){
 					this.destinationFile=destFile.getCanonicalFile();
-				}else{//fileの場合は、PhantomHomeからの相対パス
+				}else{//FILEの場合は、phantomHomeからの相対パス
 					this.destinationFile=new File(config.getPhantomHome(),destinationPath).getCanonicalFile();
 				}
 				} catch (IOException e1) {
@@ -552,7 +552,7 @@ public class Mapping{
 				File destFile=new File(destinationPath);
 				if(destFile.isAbsolute()){
 					this.destinationFile=destFile.getCanonicalFile();
-				}else{//fileの場合は、appsRootからの相対パス
+				}else{//HANDLEの場合は、appsRootからの相対パス
 					this.destinationFile=new File(config.getAppsDocumentRoot(),destinationPath).getCanonicalFile();
 				}
 				} catch (IOException e1) {

@@ -64,7 +64,7 @@ function xhrError(jqXhr,status,errorThrown){
 ##alert('xhrError')
   sending=false;
   if(jqXhr.status===403){
-    sendObjToParent([{type:'close'}]);
+    sendObjToParent([{type:'close',reason:'logout'}]);
     sendObjToParent({load:false});
     return;
   }

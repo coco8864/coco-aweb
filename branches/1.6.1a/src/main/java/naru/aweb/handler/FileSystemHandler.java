@@ -296,7 +296,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 				return fileListIfNessesary(mapping, selfPath, dir,"/".equals(path));
 			}
 			info=asyncFile.getFileInfo();
-			if (info.exists() && info.canRead() && !path.endsWith("/")) {
+			if (info.exists() && info.canRead() && !selfPath.endsWith("/")) {
 				asyncFile.close();
 				// もし、URIが"/"で終わっていなかったら相対が解決できないので、リダイレクト
 				ServerParser selfServer = requestHeader.getServer();
