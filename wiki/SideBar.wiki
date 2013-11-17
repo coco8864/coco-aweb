@@ -30,6 +30,7 @@
  * [ProgrammingGuide プログラムガイド]
  * [SupportBrawser ブラウザ]
  * [Dependency dependency]
+ * [LogAppendix ログ]
  * [Structure 構成]
  * todo
   * [ToDoView view]
