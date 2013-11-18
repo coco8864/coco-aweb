@@ -124,9 +124,10 @@ public class StorageLinklet implements Linklet{
 	}
 
 	@Override
-	public void onSubscribe(LinkPeer peer) {
+	public boolean onSubscribe(LinkPeer peer) {
 		StorageInfo info=getStorageInfo(peer);
 		info.peers.add(peer);
+		return true;
 	}
 
 	@Override

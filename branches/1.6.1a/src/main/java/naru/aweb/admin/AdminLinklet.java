@@ -46,7 +46,8 @@ public class AdminLinklet implements Linklet {
 	}
 
 	@Override
-	public void onSubscribe(LinkPeer peer) {
+	public boolean onSubscribe(LinkPeer peer) {
+		return true;
 	}
 
 	@Override

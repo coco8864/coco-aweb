@@ -35,8 +35,9 @@ public class ChatLinklet implements Linklet {
 	}
 
 	@Override
-	public void onSubscribe(LinkPeer peer) {
+	public boolean onSubscribe(LinkPeer peer) {
 		names.put(peer, peer.getLoginId());
+		return true;
 	}
 
 	@Override

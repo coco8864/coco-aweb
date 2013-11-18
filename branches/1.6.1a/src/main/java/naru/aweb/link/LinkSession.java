@@ -228,10 +228,12 @@ public class LinkSession extends PoolBase implements LogoutEvent{
 		String qname=msg.getString(KEY_QNAME);
 		String subname=msg.optString(KEY_SUBNAME,null);
 		LinkletWrapper linkletWrapper=linkManager.getLinkletWrapper(qname);
+		/*linklet‚ª‚Ý‚Â‚©‚ç‚È‚©‚Á‚½*/
 		if(linkletWrapper==null){
 			sendError(TYPE_SUBSCRIBE,qname, subname,"not found qname");
 			return;
 		}
+		
 		LinkPeer keyPeer=LinkPeer.create(linkManager,this, qname, subname);
 		synchronized(peers){
 			LinkPeer peer=peers.get(keyPeer);
@@ -239,22 +241,18 @@ public class LinkSession extends PoolBase implements LogoutEvent{
 				keyPeer.unref(true);
 				return;
 			}
-			peers.put(keyPeer, keyPeer);
 		}
 		/*subscribeãŒÀ‚ð’´‚¦‚½*/
 		if(peers.size()>linkManager.getMaxSubscribe()){
 			logger.warn("maxSubscribe over."+path+":"+loginId);
-			synchronized(peers){
-				peers.remove(keyPeer);
-			}
 			sendError(TYPE_SUBSCRIBE,qname, subname,"maxSubscribe over");
 		}
-		/*linklet‚ª‚Ý‚Â‚©‚ç‚È‚©‚Á‚½*/
-		if( linkletWrapper.onSubscribe(keyPeer)==false){
-			logger.warn("not found linklet."+qname+":"+subname);
+		if( linkletWrapper.onSubscribe(keyPeer)){
 			synchronized(peers){
-				peers.remove(keyPeer);
+				peers.put(keyPeer, keyPeer);
 			}
+		}else{
+			logger.warn("not found linklet."+qname+":"+subname);
 			sendError(TYPE_SUBSCRIBE,qname, subname,"not found subname");
 		}
 	}

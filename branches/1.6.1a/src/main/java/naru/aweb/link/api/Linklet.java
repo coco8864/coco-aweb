@@ -33,9 +33,11 @@ public interface Linklet {
 	
 	/**
 	 * ブラウザのsubscribe時に呼び出されるイベント通知<br/>
+	 * 当該のpeerをsubscribeするか否かを判定する<br/>
 	 * @param peer subscribeした端末情報
+	 * @return 許可する場合 true
 	 */
-	void onSubscribe(LinkPeer peer);
+	boolean onSubscribe(LinkPeer peer);
 	
 	/**
 	 * ブラウザがunsubscribe時に呼び出されるイベント通知<br/>

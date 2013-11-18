@@ -27,8 +27,9 @@ public class StandardLinklet implements Linklet{
 	}
 
 	@Override
-	public void onSubscribe(LinkPeer peer) {
+	public boolean onSubscribe(LinkPeer peer) {
 		logger.debug("onSubscribe.peer:"+peer);
+		return true;
 	}
 
 	@Override

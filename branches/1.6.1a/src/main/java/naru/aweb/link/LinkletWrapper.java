@@ -66,6 +66,22 @@ public class LinkletWrapper implements LinkletCtx,Timer{
 				logger.warn("onSubscribe aleady stop");
 				return false;
 			}
+		}
+		Linklet linklet=getLinklet(peer);
+		if(linklet==null){
+			return false;
+		}
+		boolean isAdd;
+		try{
+			isAdd=linklet.onSubscribe(peer);
+		}catch(Throwable t){
+			logger.warn("onSubscribe error.",t);
+			return false;
+		}
+		if(isAdd==false){
+			return false;
+		}
+		synchronized(peers){
 			peers.add(peer);
 			Set<LinkPeer> subnamePeers=subnamePeersMap.get(subname);
 			if(subnamePeers==null){
@@ -73,16 +89,6 @@ public class LinkletWrapper implements LinkletCtx,Timer{
 				subnamePeersMap.put(subname,subnamePeers);
 			}
 			subnamePeers.add(peer);
-		}
-		Linklet linklet=getLinklet(peer);
-		if(linklet==null){
-			return false;
-		}
-		try{
-			linklet.onSubscribe(peer);
-		}catch(Throwable t){
-			logger.warn("onSubscribe error.",t);
-			return false;
 		}
 		return true;
 	}
