@@ -175,10 +175,6 @@ public class WebClientHandler extends SslHandler implements Timer {
 				}
 			}
 		}
-		if (requestContentWriteLength >= requestContentLength) {
-			//レスポンスヘッダの読み込み要求は、リクエスト開始時に行う
-//			asyncRead(CONTEXT_HEADER);
-		}
 	}
 
 	public void onConnected(Object userContext) {
