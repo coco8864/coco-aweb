@@ -36,6 +36,7 @@
   * commons-pool	1.2
   * ezmorph	1.0.6
   * ant-launcher	1.7.0
+  * ssl_npn 0.2-SNAPSHOT
   * jdo-api	3.0
   * servlet-api	2.4
   * transaction-api	1.1
