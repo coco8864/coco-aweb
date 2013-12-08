@@ -26,7 +26,6 @@ import naru.aweb.config.Config;
 import naru.aweb.handler.KeepAliveContext;
 import naru.aweb.handler.ServerBaseHandler;
 import naru.aweb.handler.WebServerHandler;
-import naru.aweb.handler.ServerBaseHandler.SCOPE;
 import naru.aweb.http.RequestContext;
 import naru.aweb.mapping.Mapper;
 import naru.aweb.mapping.Mapping;
