@@ -19,7 +19,6 @@ import javax.net.ssl.SSLContext;
 import org.apache.log4j.Logger;
 
 import naru.async.ChannelHandler;
-import naru.async.ChannelHandler.IpBlockType;
 import naru.aweb.config.Config;
 import naru.aweb.util.ServerParser;
 /*
@@ -250,7 +249,7 @@ public class RealHost {
 		int backlog=realHost.getBacklog();
 		Pattern blackPattern=createPattern(realHost.getBlackPattern());
 		Pattern whitePattern=createPattern(realHost.getWhitePattern());
-		handler=ChannelHandler.accept(realHost,address, backlog, DispatchHandler.class,IpBlockType.whiteBlack,blackPattern,whitePattern);
+		handler=ChannelHandler.accept(realHost,address, backlog, DispatchHandler.class,true,blackPattern,whitePattern);
 		if(handler==null){//bind‚ÉŽ¸”s‚µ‚½
 			realHost.completeUnbind();
 			logger.warn("fail to accept."+name+":"+address);
