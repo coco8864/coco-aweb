@@ -325,23 +325,25 @@ public class KeepAliveContext extends PoolBase {
 		if(handler!=setupedHandler){
 			throw new IllegalStateException("fail to endOfResponse.setupedHandler:"+setupedHandler);
 		}
-		if(!isKeepAlive || handler.isHandlerClosed()){
+		if(!isKeepAlive/* || handler.isHandlerClosed()*/){
 			setWebClientHandler(null);
 			logger.debug("commitResponse done end of keepAlive.handler:"+handler);
 			closeServerHandleOnce(handler);
 			return false;
 		}
+		/*
 		if(handler.orderCount()!=0){//–¢Š®—¹‚Ìorder(write)‚ªŽc‚Á‚Ä‚¢‚é
 			logger.debug("commitResponse.left order wait for done write");
 			return false;
 		}
+		*/
 		setupedHandler=null;
 		if(webClientHandler!=null){
 			if(!webClientHandler.isKeepAlive()){
 				setWebClientHandler(null);
 			}
 		}
-		logger.debug("commitResponse.handler.orderCount():"+handler.orderCount());
+		//logger.debug("commitResponse.handler.orderCount():"+handler.orderCount());
 		logger.debug("commitResponse done keepAlive.handler:"+handler);
 		logger.debug("commitResponse done keepAlive.webClientHandler:"+webClientHandler);
 		isSendLastChunk=isChunked=isProxy=isKeepAlive=isAllowChunked=false;
