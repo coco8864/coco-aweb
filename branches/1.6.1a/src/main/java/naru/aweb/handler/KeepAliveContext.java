@@ -242,9 +242,9 @@ public class KeepAliveContext extends PoolBase {
 	private WebServerHandler setupedHandler;
 	public boolean prepareResponse(WebServerHandler handler,HeaderParser responseHeader,long commitContentLength) {
 		logger.debug("prepareResponse handler.cid:"+handler+ ":webClientHandler.cid:"+webClientHandler);
-		if(setupedHandler!=null){
-			throw new IllegalStateException("fail to setup."+setupedHandler);
-		}
+		//if(setupedHandler!=null){
+		//	throw new IllegalStateException("fail to setup."+setupedHandler);
+		//}
 		//response‚ªŠm’è‚µ‚Ä‚¢‚È‚¢B
 		if(responseHeader.getStatusCode()==null){
 			isKeepAlive=false;
@@ -326,6 +326,7 @@ public class KeepAliveContext extends PoolBase {
 			throw new IllegalStateException("fail to endOfResponse.setupedHandler:"+setupedHandler);
 		}
 		if(!isKeepAlive/* || handler.isHandlerClosed()*/){
+			setupedHandler=null;
 			setWebClientHandler(null);
 			logger.debug("commitResponse done end of keepAlive.handler:"+handler);
 			closeServerHandleOnce(handler);
