@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Set;
 
 import naru.async.Timer;
-import naru.async.cache.CacheBuffer;
+import naru.async.cache.Cache;
 import naru.async.timer.TimerManager;
 import naru.aweb.auth.AuthSession;
 import naru.aweb.config.Config;
@@ -157,7 +157,7 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 	 * WebSocket‚Ìê‡‚ÍAmsg‚Í‚P‚Â‚Ã‚Â“Í‚­
 	 */
 	@Override
-	public void onMessage(CacheBuffer prot) {
+	public void onMessage(Cache prot) {
 		//onMessage‚ÉƒoƒCƒiƒŠ‚ğ‘—‚Á‚Ä‚­‚é‚Ì‚ÍAnegtiationŒã,publish
 		if(!isNegotiated){
 			//negotiation¸”s,’v–½“I‰ñü’f

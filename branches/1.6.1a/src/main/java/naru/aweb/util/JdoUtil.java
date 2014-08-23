@@ -100,6 +100,7 @@ public class JdoUtil {
 		if(pm==null){
 			return;
 		}
+		pm.evictAll();
 		Transaction tx=pm.currentTransaction();
 		if(tx.isActive()){
 			tx.rollback();

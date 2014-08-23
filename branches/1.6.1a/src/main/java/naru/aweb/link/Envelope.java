@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import naru.async.AsyncBuffer;
-import naru.async.cache.CacheBuffer;
+import naru.async.cache.Cache;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.aweb.link.api.Blob;
@@ -224,7 +224,7 @@ public class Envelope extends PoolBase{
 	
 	/* protocol data -> user obj
 	 */
-	public static LinkMsg unpack(CacheBuffer prot){
+	public static LinkMsg unpack(Cache prot){
 		if(!prot.isInTopBuffer()){
 			prot.unref();
 			throw new UnsupportedOperationException("Envelope parse");

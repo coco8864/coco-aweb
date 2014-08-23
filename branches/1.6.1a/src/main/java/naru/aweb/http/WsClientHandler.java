@@ -12,7 +12,7 @@ import org.apache.log4j.Logger;
 
 import naru.async.AsyncBuffer;
 import naru.async.Timer;
-import naru.async.cache.CacheBuffer;
+import naru.async.cache.Cache;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
@@ -130,7 +130,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 			stat = STAT_REQUEST_HEADER;
 			logger.debug("startRequest requestHeaderBuffer length:"+BuffersUtil.remaining(requestHeaderBuffer)+":"+getPoolId()+":cid:"+getChannelId());
 			requestHeaderLength=BuffersUtil.remaining(requestHeaderBuffer);
-			asyncWrite(CONTEXT_HEADER, PoolManager.duplicateBuffers(requestHeaderBuffer));
+			asyncWrite(PoolManager.duplicateBuffers(requestHeaderBuffer), CONTEXT_HEADER);
 		}
 	}
 	
@@ -153,7 +153,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 			sb.append("\r\nContent-Length: 0\r\n\r\n");
 			ByteBuffer buf = ByteBuffer.wrap(sb.toString().getBytes());
 //				sslProxyActualWriteTime=System.currentTimeMillis();
-			asyncWrite(CONTEXT_SSL_PROXY_CONNECT, BuffersUtil.toByteBufferArray(buf));
+			asyncWrite(BuffersUtil.toByteBufferArray(buf), CONTEXT_SSL_PROXY_CONNECT);
 			asyncRead(CONTEXT_SSL_PROXY_CONNECT);
 			return;
 		} else if(webClientConnection.isHttps()){
@@ -220,7 +220,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 			}
 			return;
 		}
-		super.onRead(userContext, buffers);
+		super.onRead(buffers, userContext);
 	}
 	
 	private void sendClose(short code,String reason){
@@ -231,7 +231,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 		}
 		isSendClose=true;
 		ByteBuffer[] closeBuffer=WsHybiFrame.createCloseFrame(true,code,reason);
-		asyncWrite(null, closeBuffer);
+		asyncWrite(closeBuffer, null);
 	}
 	
 	private void doFrame(){
@@ -287,7 +287,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 			break;
 		case WsHybiFrame.PCODE_BINARY:
 			logger.debug("WsClientHandler#doFrame pcode BINARY");
-			onWcMessage(CacheBuffer.open(payloadBuffers));
+			onWcMessage(Cache.open(payloadBuffers));
 			break;
 		case WsHybiFrame.PCODE_CLOSE:
 			logger.debug("WsClientHandler#doFrame pcode CLOSE");
@@ -298,7 +298,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 		case WsHybiFrame.PCODE_PING:
 			logger.debug("WsClientHandler#doFrame pcode PING");
 			ByteBuffer[] pongBuffer=WsHybiFrame.createPongFrame(true, payloadBuffers);
-			asyncWrite(null, pongBuffer);
+			asyncWrite(pongBuffer, null);
 			break;
 		case WsHybiFrame.PCODE_PONG:
 			logger.debug("WsClientHandler#doFrame pcode PONG");
@@ -325,7 +325,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 		PoolManager.poolArrayInstance(buffers);//配列を返却
 	}
 	
-	public void onReadPlain(Object userContext, ByteBuffer[] buffers) {
+	public void onReadPlain(ByteBuffer[] buffers, Object userContext) {
 		logger.debug("#readPlain.cid:" + getChannelId());
 		if (userContext == CONTEXT_MESSAGE) {
 			parseFrame(buffers);
@@ -416,7 +416,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 		Throwable error;
 		if(stat==STAT_INIT){
 			synchronized (this) {
-				if(asyncConnect(this, webClientConnection.getRemoteServer(), webClientConnection.getRemotePort(), connectTimeout)){
+				if(asyncConnect(webClientConnection.getRemoteServer(), webClientConnection.getRemotePort(), connectTimeout, this)){
 					//この時点で既にリクエストが終了してしまっている事がある...
 					stat = STAT_CONNECT;
 					setReadTimeout(config.getReadTimeout());
@@ -435,7 +435,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 	
 	public final void postMessage(String message){
 		ByteBuffer[] buffers=WsHybiFrame.createTextFrame(true, message);
-		asyncWrite(CONTEXT_MESSAGE,buffers);
+		asyncWrite(buffers,CONTEXT_MESSAGE);
 	}
 	
 	public final void postMessage(AsyncBuffer message){
@@ -497,7 +497,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 		}
 	}
 	
-	private void onWcMessage(CacheBuffer message) {
+	private void onWcMessage(Cache message) {
 		logger.debug("#message binary cid:"+getChannelId());
 		if (wsClient != null) {
 			wsClient.onWcMessage(userContext, message);

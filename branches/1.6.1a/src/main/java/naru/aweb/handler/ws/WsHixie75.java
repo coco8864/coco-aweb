@@ -183,7 +183,7 @@ public class WsHixie75 extends WsProtocol {
 			return;
 		}
 		bufs[2]=ByteBuffer.wrap(END_FRAME);
-		handler.asyncWrite(null,bufs);
+		handler.asyncWrite(bufs,null);
 	}
 
 	/* ƒAƒvƒŠ‚ªpostMessage‚ğŒÄ‚Ño‚µ‚½ */

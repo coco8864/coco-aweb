@@ -176,10 +176,10 @@ public class DispatchHandler extends ServerBaseHandler {
 				return;
 			}
 		}
-		super.onRead(userContext, buffers);
+		super.onRead(buffers, userContext);
 	}
 
-	public void onReadPlain(Object userContext, ByteBuffer[] buffers) {
+	public void onReadPlain(ByteBuffer[] buffers, Object userContext) {
 		logger.debug("#onReadPlain.cid:" + getChannelId()+ ":buffers.hashCode:" + buffers.hashCode());
 		if(isSpdyAvailable){
 			AccessLog accessLog = getRequestContext().allocAccessLog();
@@ -195,7 +195,7 @@ public class DispatchHandler extends ServerBaseHandler {
 			if(handler!=null){
 				logger.debug("#onReadPlain.cid:" + getChannelId()+ "fowardHandler nextProtocol:"+nextProtocol );
 				handler.onHandshaked(nextProtocol,connectHeaderLength!=0);
-				handler.onReadPlain(userContext, buffers);
+				handler.onReadPlain(buffers, userContext);
 				return;
 			}
 			//既にcloseされていた
@@ -404,8 +404,8 @@ public class DispatchHandler extends ServerBaseHandler {
 		requestHeader.recycle();
 		
 		//CONNECTリクエストに対して成功(200)を返却する
-		asyncWrite(SSL_PROXY_OK_CONTEXT, 
-				BuffersUtil.toByteBufferArray(ByteBuffer.wrap(ProxyOkResponse)));
+		asyncWrite(BuffersUtil.toByteBufferArray(ByteBuffer.wrap(ProxyOkResponse)), 
+				SSL_PROXY_OK_CONTEXT);
 		return null;
 	}
 

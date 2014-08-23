@@ -157,7 +157,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 				scheduler.scheduleWrite(CONTEXT_HEADER, headerBuf);
 			}else{
 				headerActualWriteTime=System.currentTimeMillis();
-				asyncWrite(CONTEXT_HEADER, headerBuf);
+				asyncWrite(headerBuf, CONTEXT_HEADER);
 			}
 			//requestHeaderBuffer=null;
 			if (requestBodyBuffer != null) {
@@ -171,7 +171,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 					scheduler.scheduleWrite(CONTEXT_BODY, buffer);
 				}else{
 					bodyActualWriteTime=System.currentTimeMillis();
-					asyncWrite(CONTEXT_BODY, buffer);
+					asyncWrite(buffer, CONTEXT_BODY);
 				}
 			}
 		}
@@ -200,7 +200,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 					scheduler.scheduleWrite(CONTEXT_SSL_PROXY_CONNECT, BuffersUtil.toByteBufferArray(buf));
 				}else{
 					sslProxyActualWriteTime=System.currentTimeMillis();
-					asyncWrite(CONTEXT_SSL_PROXY_CONNECT, BuffersUtil.toByteBufferArray(buf));
+					asyncWrite(BuffersUtil.toByteBufferArray(buf), CONTEXT_SSL_PROXY_CONNECT);
 				}
 				asyncRead(CONTEXT_SSL_PROXY_CONNECT);
 				return;
@@ -264,10 +264,10 @@ public class WebClientHandler extends SslHandler implements Timer {
 			sslOpen(true);
 			return;
 		}
-		super.onRead(userContext, buffers);
+		super.onRead(buffers, userContext);
 	}
 
-	public void onReadPlain(Object userContext, ByteBuffer[] buffers) {
+	public void onReadPlain(ByteBuffer[] buffers, Object userContext) {
 		logger.debug("#readPlain.cid:" + getChannelId());
 		if (userContext == CONTEXT_BODY) {
 			stat = STAT_RESPONSE_BODY;
@@ -412,7 +412,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 		isKeepAlive = false;
 		asyncClose(userContext);
 		onRequestFailure(stat,t);
-		super.onFailure(userContext, t);
+		super.onFailure(t, userContext);
 	}
 	
 	public void onTimeout(Object userContext) {
@@ -481,7 +481,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 			return true;
 		}else if(stat==STAT_INIT){
 			synchronized (this) {
-				if(asyncConnect(this, webClientConnection.getRemoteServer(), webClientConnection.getRemotePort(), connectTimeout)){
+				if(asyncConnect(webClientConnection.getRemoteServer(), webClientConnection.getRemotePort(), connectTimeout, this)){
 					//この時点で既にリクエストが終了してしまっている事がある...
 					stat = STAT_CONNECT;
 					setReadTimeout(config.getReadTimeout());
@@ -544,7 +544,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 			if(bodyActualWriteTime<=0){
 				bodyActualWriteTime=System.currentTimeMillis();
 			}
-			asyncWrite(CONTEXT_BODY, requestBodyBuffer);
+			asyncWrite(requestBodyBuffer, CONTEXT_BODY);
 		}
 		requestBodyBuffer=null;
 		if (requestContentWriteLength >= requestContentLength) {

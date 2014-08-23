@@ -255,7 +255,7 @@ public class WebServerHandler extends ServerBaseHandler {
 		}
 		ByteBuffer[] body = requestHeader.getBodyBuffer();
 		// bodyは、必ずこのオブジェクトのreadメソッドを通過させる。nullでもこの中からasyncReadが出るので必要
-		onReadPlain(null, body);
+		onReadPlain(body, null);
 	}
 
 	/**
@@ -693,7 +693,7 @@ public class WebServerHandler extends ServerBaseHandler {
  * リロードした時だけ,表示に問題はなさそう
  */
 //		BuffersUtil.hexDump("WebServerHandler#internalWriteBody",buffers);
-		if (asyncWrite(writeContext, buffers)) {
+		if (asyncWrite(buffers, writeContext)) {
 			responseWriteBody += length;
 			return true;
 		}
@@ -781,7 +781,7 @@ public class WebServerHandler extends ServerBaseHandler {
 				wsAccessLog.decTrace();
 			}
 		}
-		asyncWrite(WRITE_CONTEXT_HEADER, headerBuffer);
+		asyncWrite(headerBuffer, WRITE_CONTEXT_HEADER);
 //		if (responsePeek != null) {
 //			pushWritePeekStore(responsePeek);
 //		}
@@ -894,7 +894,7 @@ public class WebServerHandler extends ServerBaseHandler {
 			return;// 何をしても無駄
 		}
 		traceHeader(isHeaderOnlyResponse,headerBuffer);
-		asyncWrite(WRITE_CONTEXT_LAST_HEADER, headerBuffer);
+		asyncWrite(headerBuffer, WRITE_CONTEXT_LAST_HEADER);
 		if(isHeaderOnlyResponse){
 			return;
 		}
@@ -970,7 +970,7 @@ public class WebServerHandler extends ServerBaseHandler {
 	 * 生のリクエストボディを処理したい場合は、overrideする<br/>
 	 * @param buffers 生のリクエストボディ
 	 */
-	public void onReadPlain(Object userContext, ByteBuffer[] buffers) {
+	public void onReadPlain(ByteBuffer[] buffers, Object userContext) {
 		logger.debug("#onReadPlain cid:" + getChannelId());
 		ChunkContext requestChunkContext=getRequestContext().getRequestChunkContext();
 		if (requestChunkContext.isEndOfData()) {
@@ -1286,5 +1286,6 @@ public class WebServerHandler extends ServerBaseHandler {
 			spdySession.responseBody(true, lastBuffer);
 		}
 		doAccessLog();
+		System.currentTimeMillis();
 	}
 }

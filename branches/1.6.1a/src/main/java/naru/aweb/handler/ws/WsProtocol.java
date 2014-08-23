@@ -12,7 +12,7 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 
 import naru.async.AsyncBuffer;
-import naru.async.cache.CacheBuffer;
+import naru.async.cache.Cache;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
@@ -214,7 +214,7 @@ public abstract class WsProtocol extends PoolBase{
 		}
 	}
 	
-	protected void callBinaryOnMessage(CacheBuffer message){
+	protected void callBinaryOnMessage(Cache message){
 		try {
 			//traceOnMessage‚ÍAbuffers‚ğÁ”ï‚µ‚È‚¢
 //			handler.traceOnMessage(message.popTopBuffer());//TODO •¡”buffer‚É‚È‚Á‚½ê‡

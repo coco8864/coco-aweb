@@ -8,7 +8,7 @@ import org.apache.log4j.Logger;
 
 import naru.async.AsyncBuffer;
 import naru.async.BufferGetter;
-import naru.async.cache.CacheBuffer;
+import naru.async.cache.Cache;
 import naru.async.cache.FileInfo;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolBase;
@@ -35,7 +35,7 @@ import net.sf.json.JSONObject;
  */
 public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 	private static Logger logger = Logger.getLogger(Blob.class);
-	private CacheBuffer buffer;
+	private Cache buffer;
 	private long offset;
 	private long size;
 	private String name;
@@ -45,7 +45,7 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 	private File deleteFile;
 	
 	public static Blob create(File file,boolean deleteOnFinish){
-		CacheBuffer buffer=CacheBuffer.open(file);
+		Cache buffer=Cache.open(file);
 		Blob blob=create(buffer);
 		buffer.unref();//BlobÇÃâï˙Ç∆Ç∆Ç‡Ç…âï˙Ç∑ÇÈÇÊÇ§Ç…Ç∑ÇÈ
 		if(deleteOnFinish){
@@ -55,7 +55,7 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 	}
 	
 	public static Blob create(ByteBuffer[] byteBuffer){
-		CacheBuffer buffer=CacheBuffer.open(byteBuffer);
+		Cache buffer=Cache.open(byteBuffer);
 		try{
 			return create(buffer);
 		}finally{
@@ -63,12 +63,12 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 		}
 	}
 	
-	public static Blob create(CacheBuffer buffer){
+	public static Blob create(Cache buffer){
 		return create(buffer,0,buffer.bufferLength());
 	}
 	
 	/* bufferÇÕÅABlobèIóπéûÇ…äJï˙Ç≥ÇÍÇÈ */
-	public static Blob create(CacheBuffer buffer,long offset,long size){
+	public static Blob create(Cache buffer,long offset,long size){
 		Blob blob=(Blob)PoolManager.getInstance(Blob.class);
 		buffer.ref();
 		blob.buffer=buffer;

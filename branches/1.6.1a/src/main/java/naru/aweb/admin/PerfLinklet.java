@@ -2,14 +2,9 @@ package naru.aweb.admin;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.ByteBuffer;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import naru.async.BufferGetter;
-import naru.async.pool.BuffersUtil;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.link.api.Blob;

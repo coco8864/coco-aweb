@@ -1,39 +1,16 @@
 <html>
 <body>
-このドキュメントは、Phantom Server上で動作するアプリケーションを作成するためのものである。
-APIには、PhantomLink pub/subAPIに対応するLinkletと、低位層で一般的なweb,proxy,websocketリクエストを処理するHandlerがある。
-作成したclassもしくはjarファイルを以下に配置することで利用可能となる。
+このドキュメントは、phantom server上で動作するアプリケーションを作成するためのものである。
+APIには、PhantomLink pub/subAPIを処理するlinkletと、低位層で一般的なweb,proxy,websocketリクエストを処理するhandlerがある。
+<h2>linklet</h2>
+
+<h2>handler</h2>
 <ul>
-<li>${install}/ph/lib/${作成したjar}</li>
-<li>${install}/ph/class/${作成したclass}</li>
+<li>link</li>
+<li>handler</li>
+<li>web handler</li>
+<li>websocket handler</li>
 </ul>
-<h2>Linklet</h2>
-一つのインスタンスが作成されそこにClientAPIのpublis/subscribeメソッド呼び出しが通知される。(Servletのライフサイクルと同じ)
-clientへのmessage送信は、initメソッドに渡されるLinkletCtxオブジェクトのmessageメソッドで実施する。
-送信されたmessageは、ClientAPI Subscription Class onMsgで登録するメソッドに通知される。
-送受信オブジェクトには、JSONで表現できる文字列、数字だけでなく、Blob,Dateを含む事が可能でclientではそれぞれBlob,Dateオブジェクトとして参照。送信できる。
-<h3>定義方法</h3>
-mappingには、destinationType:HANDLER destinationServer:naru.aweb.link.LinkHandlerを設定、optionsに以下のようなjson文字列を設定
-<div>link.subscribe('qname1','subname2')に反応するlinkletの定義</div>
-<pre>
-{link:{{@literal @LinkName}:"link2",qname1:{subname1:"${Linkletをimplementして作成したapplication class名"}}},sessionUpdate:false,appcache:{}}
-</pre>
-<h2>Handler</h2>
-mappingのsource定義にmatchした場合呼び出されるclass。リクエスト毎にオブジェクトが対応する。(Servletのreqeustと同じライフサイクル)
-リクエストの種類によりWebServerHandler,WebSocketHandler２種類のHandlerがある。
-<h3>定義方法</h3>
-mappingに、destinationType:HANDLER destinationServer:"Handlerをextendsして作成したapplication class名"を設定
-<h4>WebServerHandler</h4>
-このクラスを継承してhttp,https,http proxyリクエストに対応するアプリケーションを作成。
-header受信完了は、onRequestHeaderメソッドに通知される(Servletのserviceメソッド相当)。
-body受信完了は、onRequestBodyメソッドに通知される。body情報はparameterParserに保持されている。
-ファイルのアップロードは、ファイル経由で保持するためメモリを圧迫する懸念はない。
-<h4>WebSocketHandler</h4>
-このクラスを継承してWebSocketに対応するアプリケーションを作成。
-WebSocketの開始は、onWsOpenメソッドに通知される。
-WebSocketの終了は、onWsCloseメソッドに通知される。
-データ受信は、受信したデータ種別により、別々のonMessagemメソッドに通知される。
-clientにデータ送信する場合には、送信するデータ種別により、別々のpostMessageメソッドを呼び出す。
 </body>
 </html>
 

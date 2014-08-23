@@ -249,7 +249,7 @@ public class RealHost {
 		int backlog=realHost.getBacklog();
 		Pattern blackPattern=createPattern(realHost.getBlackPattern());
 		Pattern whitePattern=createPattern(realHost.getWhitePattern());
-		handler=ChannelHandler.accept(realHost,address, backlog, DispatchHandler.class,true,blackPattern,whitePattern);
+		handler=ChannelHandler.accept(DispatchHandler.class,address, backlog, true,blackPattern,whitePattern,realHost);
 		if(handler==null){//bind‚ÉŽ¸”s‚µ‚½
 			realHost.completeUnbind();
 			logger.warn("fail to accept."+name+":"+address);

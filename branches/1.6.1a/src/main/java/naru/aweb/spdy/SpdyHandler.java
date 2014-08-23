@@ -76,7 +76,7 @@ public class SpdyHandler extends ServerBaseHandler {
 		return false;//自力でasyncReadしたため
 	}
 	
-	public void onReadPlain(Object userContext, ByteBuffer[] buffers) {
+	public void onReadPlain(ByteBuffer[] buffers, Object userContext) {
 //		BuffersUtil.hexDump("SPDY c->s row data",buffers);
 		readLength+=BuffersUtil.remaining(buffers);
 		try {
@@ -205,10 +205,10 @@ public class SpdyHandler extends ServerBaseHandler {
 	}
 	
 	@Override
-	public void onFailure(Object userContext, Throwable t) {
+	public void onFailure(Throwable t,Object userContext) {
 		logger.warn("onFailure.cid:"+getChannelId(),t);
 		sendGoaway(SpdyFrame.GOWST_INTERNAL_ERROR);
-		super.onFailure(userContext, t);
+		super.onFailure(t, userContext);
 	}
 
 	@Override
@@ -231,32 +231,32 @@ public class SpdyHandler extends ServerBaseHandler {
 		}
 		outFrameCount[SpdyFrame.TYPE_GOAWAY]++;
 		ByteBuffer[] resetFrame=frame.buildGoaway(lastGoodStreamId, statusCode);
-		asyncWrite(null, resetFrame);
+		asyncWrite(resetFrame, null);
 	}
 	
 	
 	private void sendReset(int streamId,int statusCode){
 		outFrameCount[SpdyFrame.TYPE_RST_STREAM]++;
 		ByteBuffer[] resetFrame=frame.buildRstStream(streamId, statusCode);
-		asyncWrite(null, resetFrame);
+		asyncWrite(resetFrame, null);
 	}
 	
 	private void sendPing(int pingId){
 		outFrameCount[SpdyFrame.TYPE_PING]++;
 		ByteBuffer[] pingFrame=frame.buildPIngFrame(pingId);
-		asyncWrite(null, pingFrame);
+		asyncWrite(pingFrame, null);
 	}
 	
 	private void sendWindowUpdate(int streamId,int deltaWindowSize){
 		outFrameCount[SpdyFrame.TYPE_WINDOW_UPDATE]++;
 		ByteBuffer[] resetFrame=frame.buildWindowUpdate(streamId, deltaWindowSize);
-		asyncWrite(null, resetFrame);
+		asyncWrite(resetFrame, null);
 	}
 	
 	private void sendSetting(int flags,int id,int value){
 		outFrameCount[SpdyFrame.TYPE_SETTINGS]++;
 		ByteBuffer[] resetFrame=frame.buildSetting(flags, id, value);
-		asyncWrite(null, resetFrame);
+		asyncWrite(resetFrame, null);
 	}
 	
 	private static final String WRITE_CONTEXT_BODY = "writeContextBody";
@@ -287,7 +287,7 @@ public class SpdyHandler extends ServerBaseHandler {
 		}
 		ByteBuffer[] synReplyFrame=frame.buildSynReply(spdySession.getStreamId(),flags,responseHeader);
 		outFrameCount[SpdyFrame.TYPE_SYN_REPLY]++;
-		asyncWrite(new SpdyCtx(spdySession,WRITE_CONTEXT_HEADER), synReplyFrame);
+		asyncWrite(synReplyFrame,new SpdyCtx(spdySession,WRITE_CONTEXT_HEADER));
 	}
 	
 	public void responseBody(SpdySession spdySession,boolean isFin,ByteBuffer[] body){
@@ -297,13 +297,13 @@ public class SpdyHandler extends ServerBaseHandler {
 		}
 		ByteBuffer[] dataFrame=frame.buildDataFrame(spdySession.getStreamId(), flags, body);
 		outFrameCount[SpdyFrame.TYPE_DATA_FRAME]++;
-		asyncWrite(new SpdyCtx(spdySession,WRITE_CONTEXT_BODY), dataFrame);
+		asyncWrite(dataFrame,new SpdyCtx(spdySession,WRITE_CONTEXT_BODY));
 	}
 	
 	/* 同期するためにオーバライド,けどそもそもsynchronizedがいい */
-	public synchronized boolean asyncWrite(Object context,ByteBuffer[] buffers){
+	public synchronized boolean asyncWrite(ByteBuffer[] buffers,Object context){
 		writeLength+=BuffersUtil.remaining(buffers);
-		return super.asyncWrite(context,buffers);
+		return super.asyncWrite(buffers,context);
 	}
 	
 	@Override

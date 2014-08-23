@@ -12,7 +12,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import naru.async.BufferGetter;
-import naru.async.cache.CacheBuffer;
+import naru.async.cache.Cache;
 import naru.async.cache.FileInfo;
 import naru.aweb.config.AppcacheOption;
 import naru.aweb.config.Config;
@@ -121,7 +121,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		return true;
 	}
 
-	private void responseBodyFromFile(CacheBuffer asyncFile) {
+	private void responseBodyFromFile(Cache asyncFile) {
 		logger.debug("FileSystemHandler#responseBodyFromFile cid:"+getChannelId()+":"+asyncFile.getFileInfo().getCanonicalFile().toString());
 		Long offset = (Long) getAttribute(SCOPE.REQUEST,ATTRIBUTE_STORE_OFFSET);
 		if (offset != null) {
@@ -161,7 +161,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 
 	// 存在確認済みのファイルをレスポンスする。
 	private boolean sendFile(MappingResult mapping, File baseDirectory,
-			String path, String ifModifiedSince, CacheBuffer asyncFile) {
+			String path, String ifModifiedSince, Cache asyncFile) {
 		if (isVelocityUse(mapping, path)) {
 			// TODO ちゃんとする
 			mapping.setResolvePath(path);// 加工後のpathを設定
@@ -216,10 +216,10 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		response();//復帰値は処理に関係しない
 	}
 
-	private CacheBuffer welcomPage(File dir,String[] welcomlist){
-		CacheBuffer asyncFile=null;
+	private Cache welcomPage(File dir,String[] welcomlist){
+		Cache asyncFile=null;
 		for(String welcom:welcomlist){
-			asyncFile=CacheBuffer.open(new File(dir,welcom));
+			asyncFile=Cache.open(new File(dir,welcom));
 			FileInfo info=asyncFile.getFileInfo();
 			if(info.exists()&&info.canRead()&&info.isFile()){
 				return asyncFile;
@@ -243,7 +243,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 			if (getAttribute(SCOPE.REQUEST,ATTRIBUTE_RESPONSE_FILE_NOT_USE_CACHE) == null) {
 				useCache = false;
 			}
-			CacheBuffer asyncFile = CacheBuffer.open(file, useCache);
+			Cache asyncFile = Cache.open(file, useCache);
 			FileInfo fileInfo = asyncFile.getFileInfo();
 			if (!fileInfo.exists()) {
 				logger.debug("Not found." + file.getAbsolutePath());
@@ -267,7 +267,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 			path = path.substring(0, pos);
 		}
 		File baseDirectory = mapping.getDestinationFile();
-		CacheBuffer asyncFile = CacheBuffer.open(new File(baseDirectory, path));
+		Cache asyncFile = Cache.open(new File(baseDirectory, path));
 		FileInfo info = asyncFile.getFileInfo();
 		if (info.isError()) {
 			logger.warn("fail to getCanonicalPath.");
@@ -325,7 +325,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 	public void onFailure(Object userContext, Throwable t) {
 		logger.debug("#failer.cid:" + getChannelId() + ":" + t.getMessage());
 		asyncClose(userContext);
-		super.onFailure(userContext, t);
+		super.onFailure(t, userContext);
 	}
 
 	public void onTimeout(Object userContext) {
@@ -335,7 +335,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 	}
 
 	/* asyncFileからのダウンロード */
-	private CacheBuffer asyncFile;
+	private Cache asyncFile;
 
 	public void onWrittenBody() {
 		logger.debug("#writtenBody.cid:" + getChannelId());

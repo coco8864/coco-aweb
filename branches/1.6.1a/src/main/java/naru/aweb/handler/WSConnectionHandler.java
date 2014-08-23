@@ -1,6 +1,6 @@
 package naru.aweb.handler;
 
-import naru.async.cache.CacheBuffer;
+import naru.async.cache.Cache;
 import naru.async.pool.PoolBase;
 import naru.aweb.config.Config;
 import naru.aweb.handler.ws.WebSocketHandler;
@@ -45,7 +45,7 @@ public class WSConnectionHandler extends WebSocketHandler {
 	}
 
 	@Override
-	public void onMessage(CacheBuffer msgs) {
+	public void onMessage(Cache msgs) {
 		logger.debug("#message bin cid:"+getChannelId());
 		if(msgs instanceof PoolBase){
 			((PoolBase)msgs).unref();

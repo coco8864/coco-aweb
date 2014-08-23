@@ -194,7 +194,7 @@ Caused by: java.lang.LinkageError: loader (instance of  naru/queuelet/loader/Que
 	public void onFailure(Object userContext, Throwable t) {
 		logger.debug("#failer.cid:" +getChannelId() +":"+t.getMessage());
 		asyncClose(userContext);
-		super.onFailure(userContext, t);
+		super.onFailure(t, userContext);
 	}
 
 	public void onTimeout(Object userContext) {

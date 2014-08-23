@@ -28,7 +28,7 @@ public class SpdySession extends PoolBase{
 	
 	public static SpdySession create(SpdyHandler spdyHandler,int streamId,KeepAliveContext keepAliveContext,boolean isInputClose){
 		SpdySession session=(SpdySession)PoolManager.getInstance(SpdySession.class);
-		session.spdyHandler=spdyHandler;
+		session.setSpdyHandler(spdyHandler);
 		session.streamId=streamId;
 		session.isInputClose=isInputClose;
 		session.isOutputClose=false;
@@ -41,10 +41,36 @@ public class SpdySession extends PoolBase{
 		sb.append('|');
 		sb.append(spdyHandler.getSpdyPri());
 		session.sessionInfo=sb.toString();
-		session.keepAliveContext=keepAliveContext;
+		session.setKeepAliveContext(keepAliveContext);
 		return session;
 	}
 	
+	@Override
+	public void recycle(){
+		setSpdyHandler(null);
+		setKeepAliveContext(null);
+	}
+	
+	private void setKeepAliveContext(KeepAliveContext keepAliveContext) {
+		if(keepAliveContext!=null){
+			keepAliveContext.ref();
+		}
+		if(this.keepAliveContext!=null){
+			this.keepAliveContext.unref();
+		}
+		this.keepAliveContext=keepAliveContext;
+	}
+
+	private void setSpdyHandler(SpdyHandler spdyHandler) {
+		if(spdyHandler!=null){
+			spdyHandler.ref();
+		}
+		if(this.spdyHandler!=null){
+			this.spdyHandler.unref();
+		}
+		this.spdyHandler=spdyHandler;
+	}
+
 	private void endOfSession(){
 		spdyHandler.endOfSession(streamId);
 		if(serverHandler!=null){
@@ -158,6 +184,12 @@ public class SpdySession extends PoolBase{
 	}
 
 	public void setServerHandler(ServerBaseHandler serverHandler) {
+		if(serverHandler!=null){
+			serverHandler.ref();
+		}
+		if(this.serverHandler!=null){
+			this.serverHandler.ref();
+		}
 		this.serverHandler = serverHandler;
 	}
 	
@@ -177,6 +209,17 @@ public class SpdySession extends PoolBase{
 	
 	public String spdyInfo(){
 		return sessionInfo;
+	}
+	
+	@Override
+	public void ref(){
+		super.ref();
+		logger.debug("#+#.cid:"+getPoolId(),new Throwable());
+	}
+	@Override
+	public boolean unref(){
+		logger.debug("#-#.cid:"+getPoolId(),new Throwable());
+		return super.unref();
 	}
 	
 }

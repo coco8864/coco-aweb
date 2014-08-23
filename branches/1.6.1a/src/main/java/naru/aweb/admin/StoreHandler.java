@@ -238,7 +238,7 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 
 	public void onFailure(Object userContext, Throwable t) {
 		logger.debug("#failer.cid:" + getChannelId() + ":" + t.getMessage());
-		super.onFailure(userContext, t);
+		super.onFailure(t, userContext);
 	}
 
 	public void onTimeout(Object userContext) {

@@ -8,7 +8,7 @@ import java.security.NoSuchAlgorithmException;
 import org.apache.log4j.Logger;
 
 import naru.async.AsyncBuffer;
-import naru.async.cache.CacheBuffer;
+import naru.async.cache.Cache;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
@@ -161,7 +161,7 @@ public class WsHixie76 extends WsProtocol {
 		PoolManager.poolBufferInstance(handshakeBody);//配列、中身ごと回収
 		handshakeBody=null;
 		
-		handler.asyncWrite(null,BuffersUtil.toByteBufferArray(ByteBuffer.wrap(response)));
+		handler.asyncWrite(BuffersUtil.toByteBufferArray(ByteBuffer.wrap(response)),null);
 
 		handshakeStat=2;
 		frameMode=FRAME_MODE_END;
@@ -290,7 +290,7 @@ public class WsHixie76 extends WsProtocol {
 			return;
 		}
 		bufs[2]=ByteBuffer.wrap(END_FRAME);
-		handler.asyncWrite(null,bufs);
+		handler.asyncWrite(bufs,null);
 	}
 
 	/* アプリがpostMessageを呼び出した */

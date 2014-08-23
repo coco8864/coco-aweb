@@ -6,7 +6,7 @@ package naru.aweb.handler.ws;
 import java.nio.ByteBuffer;
 
 import naru.async.AsyncBuffer;
-import naru.async.cache.CacheBuffer;
+import naru.async.cache.Cache;
 import naru.aweb.auth.LogoutEvent;
 import naru.aweb.handler.WebServerHandler;
 import naru.aweb.http.RequestContext;
@@ -105,7 +105,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	 * binaryメッセージを受信したことを通知します。
 	 * @param msgs 受信メッセージ
 	 */
-	public abstract void onMessage(CacheBuffer  msgs);
+	public abstract void onMessage(Cache  msgs);
 	
 	/**
 	 * WebSocket接続中にセションきれた場合の通知
@@ -196,10 +196,10 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	 * データを受信したことを通知<br/>
 	 * overrideしない<br/>
 	 */
-	public void onReadPlain(Object userContext, ByteBuffer[] buffers) {
+	public void onReadPlain(ByteBuffer[] buffers, Object userContext) {
 		logger.debug("#read.cid:"+getChannelId());
 		if(!isWs){
-			super.onReadPlain(userContext, buffers);
+			super.onReadPlain(buffers, userContext);
 			return;
 		}
 		wsProtocol.onBuffer(buffers);
@@ -214,7 +214,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		if(isWs){
 			closeWebSocket("500");
 		}
-		super.onFailure(userContext, t);
+		super.onFailure(t, userContext);
 	}
 
 	/**
