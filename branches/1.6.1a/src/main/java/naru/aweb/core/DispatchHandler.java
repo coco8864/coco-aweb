@@ -159,7 +159,8 @@ public class DispatchHandler extends ServerBaseHandler {
 		return true;
 	}
 
-	public void onRead(Object userContext, ByteBuffer[] buffers) {
+	@Override
+	public void onRead(ByteBuffer[] buffers,Object userContext) {
 		logger.debug("#onRead.cid:" + getChannelId() + ":buffers.hashCode:"+ buffers.hashCode());
 		if (isFirstRead) {
 			if (startTime == null) {// keepAliveからのリクエストの場合ここがリクエストの基点となる
@@ -179,6 +180,7 @@ public class DispatchHandler extends ServerBaseHandler {
 		super.onRead(buffers, userContext);
 	}
 
+	@Override
 	public void onReadPlain(ByteBuffer[] buffers, Object userContext) {
 		logger.debug("#onReadPlain.cid:" + getChannelId()+ ":buffers.hashCode:" + buffers.hashCode());
 		if(isSpdyAvailable){
