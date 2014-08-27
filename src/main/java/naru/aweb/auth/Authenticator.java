@@ -1,5 +1,8 @@
 package naru.aweb.auth;
 
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.Date;
@@ -7,6 +10,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -17,10 +22,10 @@ import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
 import naru.async.timer.TimerManager;
 import naru.aweb.config.Config;
-import naru.aweb.config.User;
-import naru.aweb.http.HeaderParser;
-import naru.aweb.http.ParameterParser;
-import naru.aweb.http.WebServerHandler;
+import naru.aweb.handler.WebServerHandler;
+import naru.aweb.handler.ServerBaseHandler.SCOPE;
+import naru.aweb.util.HeaderParser;
+import naru.aweb.util.ParameterParser;
 
 /*
  * 注意：認証が必要ない場合もPROXY_AUTHORIZATION_HEADERやCookieヘッダを削除する必要がある。
@@ -44,8 +49,13 @@ public class Authenticator {
 	public static final String DIGEST="Digest";//Digest認証
 	public static final String BASIC_FORM="BasicForm";//Form認証
 	public static final String DIGEST_FORM="DigestForm";//Form認証
+	public static final String INTERNET_AUTH="InternetAuth";//facebook,google,openId認証,
+	//http://d.hatena.ne.jp/vividcode/20111025/1319547289 fasebook
+	//https://developers.google.com/accounts/docs/OpenID?hl=ja#gsa_example google
 	private static SecureRandom nonceRandom;
 	private static SecureRandom tokenRandom;
+	private static MessageDigest passDigest;
+	private static MessageDigest digestAuthDigest;//digest認証は、MD5
 	
 	//loginidとUserのマップ、最新情報を保持,任意のタイミングでDBに格納すれば忘れてもよい
 	private Map<String,User> loginIdUserMap=Collections.synchronizedMap(new HashMap<String,User>());
@@ -56,12 +66,12 @@ public class Authenticator {
 		return authSession;
 	}
 	
-	private static String getNextRandom(SecureRandom random){
-		byte[] bytes = (byte[]) PoolManager.getArrayInstance(byte.class, 16);
+	public static String getNextRandom(SecureRandom random){
+		byte[] bytes = new byte[16];//(byte[]) PoolManager.getArrayInstance(byte.class, 16);
 		String nonce=null;
 		random.nextBytes(bytes);
 		nonce=DataUtil.byteToString(bytes);
-		PoolManager.poolArrayInstance(bytes);
+//		PoolManager.poolArrayInstance(bytes);
 		return nonce;
 	}
 	
@@ -95,19 +105,20 @@ public class Authenticator {
 		return user;
 	}
 	
-	private User createUser(String loginId,String password,String roles){
+	public User createUser(String loginId,String nickname,String password,String roles){
 		if(DUMMY_USER_NAME.equals(loginId)){
 			//DUMMY_USER_NAMEでは登録できなくする
 			return null;
 		}
 		User user=new User();
 		user.setLoginId(loginId);
-		
-		user.changePassword(password, realm);
+		user.setNickname(nickname);
+		user.changePassword(this,password, realm);
+		//本物のpassowrdが漏れないようにoffline passwordは一律"password"で初期化
+		//user.setOfflinePassHash(calcPassHash(loginId,"password"));
 		user.setRoles(roles);
 		Date now=new Date();
 		user.setCreateDate(now);
-//		user.setChangePass(now);
 		synchronized(loginIdUserMap){
 			User regUser=getUserByLoginId(loginId);
 			if(regUser!=null){
@@ -120,11 +131,16 @@ public class Authenticator {
 	}
 	
 	public void term(){
-		TimerManager.clearInterval(interval);
-		for(User user:loginIdUserMap.values()){
-			user.update();
+		try{
+			TimerManager.clearInterval(interval);
+			for(User user:loginIdUserMap.values()){
+				user.update();
+			}
+		}catch(Throwable t){
+			logger.error("fail to authenticator.term",t);
+		}finally{
+			loginIdUserMap.clear();
 		}
-		loginIdUserMap.clear();
 	}
 
 	public String getScheme(){
@@ -140,6 +156,8 @@ public class Authenticator {
 			this.scheme=BASIC_FORM;
 		}else if(DIGEST_FORM.equalsIgnoreCase(scheme)){
 			this.scheme=DIGEST_FORM;
+		}else if(INTERNET_AUTH.equalsIgnoreCase(scheme)){
+			this.scheme=INTERNET_AUTH;
 		}else{
 			this.scheme=NONE;
 		}
@@ -148,38 +166,84 @@ public class Authenticator {
 	
 	private Config config;
 	private Configuration configuration;
+	private String passSalt;
+	private String offlinePassSalt;
+
+	public String calcOfflinePassHash(String username,String password){
+		return calcPassHash(offlinePassSalt,username,password);
+	}
+
+	public String calcPassHash(String username,String password){
+		return calcPassHash(passSalt,username,password);
+	}
+
+	public String calcPassHash(String salt,String username,String password){
+		StringBuffer sb=new StringBuffer(salt);
+		sb.append(':');
+		sb.append(username);
+		sb.append(':');
+		sb.append(password);
+		try {
+			byte[] digestByte=passDigest.digest(sb.toString().getBytes("iso8859_1"));
+			return DataUtil.byteToString(digestByte);
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public String calcDigestAuthPassHash(String username,String password,String realm){
+		StringBuilder sb=new StringBuilder();
+		sb.append(username);
+		sb.append(":");
+		sb.append(realm);
+		sb.append(":");
+		sb.append(password);
+		try {
+			byte[] digestByte=digestAuthDigest.digest(sb.toString().getBytes("iso8859_1"));
+			return DataUtil.byteToString(digestByte);
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	private String calcSalt(String key){
+		String entropy=configuration.getString(key +"Entropy");
+		if(entropy==null){
+			entropy=key+System.currentTimeMillis();
+		}
+		byte[]digestByte=passDigest.digest(entropy.getBytes());
+		String digest=DataUtil.encodeBase64(digestByte);
+		configuration.setProperty(key, digest);
+		return digest;
+	}
 	
 	public Authenticator(Config config,boolean isCleanup){
 		this.config=config;
 		this.configuration=config.getConfiguration(null);
 		setScheme(configuration.getString(AUTHENTICATE_SCHEME,null));
 		realm=configuration.getString(AUTHENTICATE_REALM,"phantomProxyRealm");
-//		logoutUrl=configuration.getString(AUTHENTICATE_LOGOUT_URL);
-//		Config config = Config.getConfig();
 		nonceRandom=config.getRandom(DIGEST_AUTHENTICATE_RANDOM_ENTOROPY);
 		tokenRandom=config.getRandom(TOKEN_RANDOM_ENTOROPY);
 		
-		/*
-		if(BASIC.equalsIgnoreCase(scheme)){
-			scheme=BASIC;
-		}else if(DIGEST.equalsIgnoreCase(scheme)){
-			scheme=DIGEST;
-		}else if(DIGEST.equalsIgnoreCase(scheme)){
-			scheme=DIGEST;
-		}else{
-			scheme=null;
-			admin=new User();
-			admin.setLoginId(adminId);
-			admin.setRoles("admin");
-			adminSession=new AuthSession(admin,getNextRandom(tokenRandom));
-			return;
+		String algorithm=configuration.getString(Config.PASS_HASH_ALGORITHM);
+		if(algorithm==null){
+			algorithm="SHA-256";
 		}
-		*/
+		try {
+			passDigest=MessageDigest.getInstance(algorithm);
+			digestAuthDigest=MessageDigest.getInstance("MD5");
+		} catch (NoSuchAlgorithmException e) {
+			logger.error("MessageDigest.getInstance error.algorithm:"+algorithm,e);
+			throw new RuntimeException("MessageDigest.getInstance error.algorithm:"+algorithm,e);
+		}
+		
 		//必要な場合、adminユーザを作成
 		String adminId=configuration.getString(ADMIN_ID);
 		if(isCleanup){
+			passSalt=calcSalt(Config.PASS_SALT);
+			offlinePassSalt=calcSalt(Config.OFFLINE_PASS_SALT);
 			String initAdminPass=configuration.getString("initAdminPass");
-			admin=createUser(adminId,initAdminPass,User.ROLE_ADMIN);
+			admin=createUser(adminId,adminId,initAdminPass,User.ROLE_ADMIN);
 		}
 		if(admin==null){
 			try{
@@ -189,21 +253,15 @@ public class Authenticator {
 				admin.setLoginId(adminId);
 			}
 		}
+		passSalt=config.getString(Config.PASS_SALT);
+		offlinePassSalt=config.getString(Config.OFFLINE_PASS_SALT);
 		
-//		adminSession=(AuthSession)PoolManager.getInstance(AuthSession.class);
-//		adminSession.init(admin,getNextRandom(tokenRandom));
-//		adminSession.ref();
-		//必要な場合、adminユーザを作成
-		/*
-		dummyUser=null;
-		try{
-			dummyUser=User.getByLoginId(DUMMY_USER_NAME);
-		}catch(Throwable e){
+		String openidDef=config.getString("authOpenidDef");
+		if(openidDef==null){
+			openidDef="googole(openid),https://www.google.com/accounts/o8/id\nyahoo japan,yahoo.co.jp\nyahoo.com,https://me.yahoo.com\n";
+			config.setProperty("authOpenidDef",openidDef);
 		}
-		if(dummyUser==null){
-			dummyUser=createUser(DUMMY_USER_NAME,DUMMY_USER_NAME,null);
-		}
-		*/
+		setupOpenidDef(openidDef);
 	}
 	
 	private static Pattern usernamePattern=Pattern.compile("(?:\\s*username\\s*=[\\s\"]*([^,\\s\"]*))",Pattern.CASE_INSENSITIVE);
@@ -251,7 +309,6 @@ public class Authenticator {
 		}
 		return user;
 	}
-	
 	
 	//mapping　authの場合は、loginしない
 	public AuthSession createAuthSession(User user){
@@ -348,6 +405,46 @@ public class Authenticator {
 		}
 	}
 	
+	public void forceDigestAuthenticate(AuthHandler authHandler,Authorizer authorizer,String authId){
+		HeaderParser requestHeader=authHandler.getRequestHeader();
+		Map<String,String> authParam=parseAuthHeaders(requestHeader,HeaderParser.WWW_AUTHORIZATION_HEADER,DIGEST,realm);
+		User user=headerAuthenticate(authParam,requestHeader.getMethod(),DIGEST);
+		if(user!=null){
+			//SessionId temporaryId = authorizer.createTemporaryId(null,authorizer.getAuthPath());
+			//String authId=temporaryId.getAuthId();
+			AuthSession authSession=loginUser(user);
+			authorizer.setAuthSessionToTemporaryId(authId, authSession);
+			authHandler.setAttribute(SCOPE.REQUEST,AuthHandler.AUTH_ID, authId);
+			authHandler.setAttribute(SCOPE.REQUEST,"dummyname", DUMMY_USER_NAME);
+			authHandler.setAttribute(SCOPE.REQUEST,"username", user.getLoginId());
+			authHandler.setAttribute(SCOPE.REQUEST,"dummyPassword", user.getDummyPassword());
+			authHandler.setAttribute(SCOPE.REQUEST,"cleanupPath", "cleanupAuthForceDigest");
+			authHandler.forwardPage("/creanupAuthHeader.vsp");
+		}else{
+			//TODO userのロールをadminに制限,ipアドレスを指定以外を制限等
+			//authHandler.getRemoteIp()
+			authHandler.setHeader(HeaderParser.WWW_AUTHENTICATE_HEADER,createDigestAuthenticateHeader(realm));
+			authHandler.setAttribute(SCOPE.REQUEST,AuthHandler.ATTRIBUTE_RESPONSE_STATUS_CODE, "401");
+			authHandler.forwardPage("/webAuthenticate.vsp");
+		}
+	}
+	
+	public boolean cleanupAuthForceDigest(AuthHandler authHandler){
+		//普通の認証どは逆でcredentialに誤りがあれば200,正しければ401
+		HeaderParser requestHeader=authHandler.getRequestHeader();
+		Map<String,String> authParam=parseAuthHeaders(requestHeader,HeaderParser.WWW_AUTHORIZATION_HEADER,DIGEST,realm);
+		if(authParam!=null){
+			User user=headerAuthenticate(authParam,requestHeader.getMethod(),DIGEST);
+			if(user==null){
+				return true;
+			}
+		}
+		authHandler.setHeader(HeaderParser.WWW_AUTHENTICATE_HEADER,createDigestAuthenticateHeader(realm));
+		authHandler.setAttribute(SCOPE.REQUEST,AuthHandler.ATTRIBUTE_RESPONSE_STATUS_CODE, "401");
+		authHandler.forwardPage("/webAuthenticate.vsp");
+		return false;
+	}
+	
 	/**
 	 * 任意のwebリクエストが通過
 	 * Cookieヘッダからuserを特定
@@ -378,6 +475,8 @@ public class Authenticator {
 			authParam.put(KEY_CNONCE, parameter.getParameter(KEY_CNONCE));
 			authParam.put(KEY_NONCE, parameter.getParameter(KEY_NONCE));
 			user=digestFormAuthentication(authParam);
+		}else if(scheme==INTERNET_AUTH){
+			
 		}
 		if(user==null){
 			forwardWebAuthenication(authHandler);
@@ -404,15 +503,15 @@ public class Authenticator {
 		if(scheme!=BASIC && scheme!=DIGEST){
 			return false;
 		}
-		authHandler.setRequestAttribute("dummyname", DUMMY_USER_NAME);
-		authHandler.setRequestAttribute("username", user.getLoginId());
-		authHandler.setRequestAttribute("dummyPassword", user.getDummyPassword());
+		authHandler.setAttribute(SCOPE.REQUEST,"dummyname", DUMMY_USER_NAME);
+		authHandler.setAttribute(SCOPE.REQUEST,"username", user.getLoginId());
+		authHandler.setAttribute(SCOPE.REQUEST,"dummyPassword", user.getDummyPassword());
 		//basic digestの場合は、authヘッダをcleanupする必要がある
 		//cookieOnceにauthSessionを詰め込んで以下の情報をcreanupAuthHeader.vspに渡す
 		//1)cookieOnceのid
 		//2)username:user.getLoginId()
 		//3)password:間違ったpassword..乱数からシークアンドトライ
-		authHandler.forwardAuthPage("/creanupAuthHeader.vsp");
+		authHandler.forwardPage("/creanupAuthHeader.vsp");
 		return true;
 	}
 	
@@ -453,6 +552,37 @@ public class Authenticator {
 		return sb.toString();
 	}
 	
+	private Map<String,String> openids=new HashMap<String,String>();
+	public void setupOpenidDef(String openidDef){
+		openids.clear();
+		if(openidDef==null){
+			return;
+		}
+		String[] lines=openidDef.split("\n");
+		for(String line:lines){
+			String[] parts=line.split(",",2);
+			if(parts.length<2){
+				continue;
+			}
+			openids.put(parts[0], parts[1]);
+		}
+	}
+	
+	private String internetAuthDirectLocation(String authId){
+		if(config.getBoolean("useAuthFb")){//facebook
+			return config.getAuthUrl()+"/internetAuth/fbReq?authId="+authId;
+		}else if(config.getBoolean("useAuthTwitter")){//twitter
+			return config.getAuthUrl()+"/internetAuth/twitterReq?authId="+authId;
+		}else if(config.getBoolean("useAuthGoogle")){//google
+			return config.getAuthUrl()+"/internetAuth/googleReq?authId="+authId;
+		}else if(config.getBoolean("useAuthOpenid") && openids.size()>=1){
+			Set<Entry<String,String>> set=openids.entrySet();
+			Entry<String,String> entry=set.iterator().next();
+			return config.getAuthUrl()+"/internetAuth/openIdReq?authId="+authId+"&identifier="+entry.getValue();
+		}
+		return null;
+	}
+	
 	/**
 	 * web認証できない場合のレスポンスを生成
 	 * @param headerParser
@@ -461,17 +591,30 @@ public class Authenticator {
 	private void forwardWebAuthenication(AuthHandler response){
 		if(scheme==BASIC){//isBasic
 			response.setHeader(HeaderParser.WWW_AUTHENTICATE_HEADER, createBasicAuthenticateHeader(realm));
-			response.setRequestAttribute(AuthHandler.ATTRIBUTE_RESPONSE_STATUS_CODE, "401");
-			response.forwardAuthPage("/webAuthenticate.vsp");
+			response.setAttribute(SCOPE.REQUEST,AuthHandler.ATTRIBUTE_RESPONSE_STATUS_CODE, "401");
+			response.forwardPage("/webAuthenticate.vsp");
 		}else if(scheme==DIGEST){
 			response.setHeader(HeaderParser.WWW_AUTHENTICATE_HEADER,createDigestAuthenticateHeader(realm));
-			response.setRequestAttribute(AuthHandler.ATTRIBUTE_RESPONSE_STATUS_CODE, "401");
-			response.forwardAuthPage("webAuthenticate.vsp");
+			response.setAttribute(SCOPE.REQUEST,AuthHandler.ATTRIBUTE_RESPONSE_STATUS_CODE, "401");
+			response.forwardPage("webAuthenticate.vsp");
 		}else if(scheme==BASIC_FORM){
-			response.forwardAuthPage("basicForm.vsp");
+			response.forwardPage("basicForm.vsp");
 		}else if(scheme==DIGEST_FORM){
-			response.setRequestAttribute("nonce", getNonce());
-			response.forwardAuthPage("digestForm.vsp");
+			response.setAttribute(SCOPE.REQUEST,"nonce", getNonce());
+			response.forwardPage("digestForm.vsp");
+		}else if(scheme==INTERNET_AUTH){
+			boolean isDirect=config.getBoolean("isAuthInternetDirect", false);
+			if(isDirect){
+				String authId=(String)response.getAttribute(SCOPE.REQUEST,AuthHandler.AUTH_ID);
+				String location=internetAuthDirectLocation(authId);
+				if(location!=null){
+					response.redirect(location);
+					return;
+				}
+				logger.warn("isAuthInternetDirect:true but no auth target.");
+			}
+			response.setAttribute(SCOPE.REQUEST,"openids", openids);
+			response.forwardPage("internetAuth.vsp");
 		}else{//ありえない
 			response.completeResponse("500","Authorization Error");
 		}
@@ -516,7 +659,7 @@ public class Authenticator {
 		sb.append(":");
 		sb.append(cnonce);
 		String response=authParam.get(KEY_RESPONSE);
-		String calcRespnse=DataUtil.digestHexSha1(sb.toString().getBytes());
+		String calcRespnse=DataUtil.byteToString(passDigest.digest(sb.toString().getBytes()));
 		if(calcRespnse.equals(response)){
 			return user;
 		}
@@ -537,7 +680,7 @@ public class Authenticator {
 			return null;
 		}
 		String password=authParam.get(KEY_PASSWORD);
-		String calcCredential=User.calcPassHashSha1(username, password);
+		String calcCredential=calcPassHash(username, password);
 		String credential=user.getPassHash();
 		if(calcCredential.equals(credential)){
 			return user;

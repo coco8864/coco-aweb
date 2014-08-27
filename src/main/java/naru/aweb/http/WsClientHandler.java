@@ -12,7 +12,7 @@ import org.apache.log4j.Logger;
 
 import naru.async.AsyncBuffer;
 import naru.async.Timer;
-import naru.async.cache.CacheBuffer;
+import naru.async.cache.Cache;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
@@ -22,6 +22,7 @@ import naru.async.timer.TimerManager;
 import naru.aweb.config.Config;
 import naru.aweb.handler.ws.WsHybiFrame;
 import naru.aweb.util.CodeConverter;
+import naru.aweb.util.HeaderParser;
 
 public class WsClientHandler extends SslHandler implements Timer {
 	private static final int STAT_INIT = 0;
@@ -55,15 +56,15 @@ public class WsClientHandler extends SslHandler implements Timer {
 	}
 	/**
 	 * webClientConnectionのライフサイクルは、作成されるWsClientHandlerと一致する
-	 * @param isHttps
+	 * @param isSsl
 	 * @param targetServer
 	 * @param targetPort
 	 * @return
 	 */
-	public static WsClientHandler create(boolean isHttps, String targetServer,int targetPort){
+	public static WsClientHandler create(boolean isSsl, String targetServer,int targetPort){
 		WsClientHandler wsClientHandler=(WsClientHandler)PoolManager.getInstance(WsClientHandler.class);
 		wsClientHandler.webClientConnection=(WebClientConnection)PoolManager.getInstance(WebClientConnection.class);
-		wsClientHandler.webClientConnection.init(isHttps, targetServer, targetPort,true);
+		wsClientHandler.webClientConnection.init(isSsl, targetServer, targetPort,true);
 		return wsClientHandler;
 	}
 	
@@ -129,7 +130,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 			stat = STAT_REQUEST_HEADER;
 			logger.debug("startRequest requestHeaderBuffer length:"+BuffersUtil.remaining(requestHeaderBuffer)+":"+getPoolId()+":cid:"+getChannelId());
 			requestHeaderLength=BuffersUtil.remaining(requestHeaderBuffer);
-			asyncWrite(CONTEXT_HEADER, PoolManager.duplicateBuffers(requestHeaderBuffer));
+			asyncWrite(PoolManager.duplicateBuffers(requestHeaderBuffer), CONTEXT_HEADER);
 		}
 	}
 	
@@ -152,7 +153,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 			sb.append("\r\nContent-Length: 0\r\n\r\n");
 			ByteBuffer buf = ByteBuffer.wrap(sb.toString().getBytes());
 //				sslProxyActualWriteTime=System.currentTimeMillis();
-			asyncWrite(CONTEXT_SSL_PROXY_CONNECT, BuffersUtil.toByteBufferArray(buf));
+			asyncWrite(BuffersUtil.toByteBufferArray(buf), CONTEXT_SSL_PROXY_CONNECT);
 			asyncRead(CONTEXT_SSL_PROXY_CONNECT);
 			return;
 		} else if(webClientConnection.isHttps()){
@@ -219,7 +220,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 			}
 			return;
 		}
-		super.onRead(userContext, buffers);
+		super.onRead(buffers, userContext);
 	}
 	
 	private void sendClose(short code,String reason){
@@ -230,7 +231,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 		}
 		isSendClose=true;
 		ByteBuffer[] closeBuffer=WsHybiFrame.createCloseFrame(true,code,reason);
-		asyncWrite(null, closeBuffer);
+		asyncWrite(closeBuffer, null);
 	}
 	
 	private void doFrame(){
@@ -286,7 +287,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 			break;
 		case WsHybiFrame.PCODE_BINARY:
 			logger.debug("WsClientHandler#doFrame pcode BINARY");
-			onWcMessage(CacheBuffer.open(payloadBuffers));
+			onWcMessage(Cache.open(payloadBuffers));
 			break;
 		case WsHybiFrame.PCODE_CLOSE:
 			logger.debug("WsClientHandler#doFrame pcode CLOSE");
@@ -297,7 +298,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 		case WsHybiFrame.PCODE_PING:
 			logger.debug("WsClientHandler#doFrame pcode PING");
 			ByteBuffer[] pongBuffer=WsHybiFrame.createPongFrame(true, payloadBuffers);
-			asyncWrite(null, pongBuffer);
+			asyncWrite(pongBuffer, null);
 			break;
 		case WsHybiFrame.PCODE_PONG:
 			logger.debug("WsClientHandler#doFrame pcode PONG");
@@ -324,7 +325,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 		PoolManager.poolArrayInstance(buffers);//配列を返却
 	}
 	
-	public void onReadPlain(Object userContext, ByteBuffer[] buffers) {
+	public void onReadPlain(ByteBuffer[] buffers, Object userContext) {
 		logger.debug("#readPlain.cid:" + getChannelId());
 		if (userContext == CONTEXT_MESSAGE) {
 			parseFrame(buffers);
@@ -376,7 +377,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 //		
 //	}
 	
-	private ByteBuffer[] crateWsRequestHeader(WebClientConnection webClientConnection,String uri,String subProtocols,String Origin){
+	private ByteBuffer[] crateWsRequestHeader(WebClientConnection webClientConnection,String uri,String subProtocols,String origin){
 		HeaderParser header=(HeaderParser)PoolManager.getInstance(HeaderParser.class);
 		header.setMethod(HeaderParser.GET_METHOD);
 		header.setRequestUri(uri);
@@ -385,16 +386,16 @@ public class WsClientHandler extends SslHandler implements Timer {
 				webClientConnection.getTargetServer()+":"+webClientConnection.getTargetPort());
 		header.setHeader("Upgrade", "websocket");
 		header.setHeader(HeaderParser.CONNECTION_HEADER, "Upgrade");
-		header.setHeader("Origin", Origin);
+		header.setHeader("Origin", origin);
 		if(subProtocols!=null){
 			header.setHeader("Sec-WebSocket-Protocol", subProtocols);
 		}
 		header.setHeader("Sec-WebSocket-Version", "8");//401とは返却されても困るからversion 8
 		
-		byte[] keyBytes = (byte[]) PoolManager.getArrayInstance(byte.class, 16);
+		byte[] keyBytes = new byte[16];//(byte[]) PoolManager.getArrayInstance(byte.class, 16);
 		random.nextBytes(keyBytes);
 		String key=DataUtil.digestBase64Sha1(keyBytes);
-		PoolManager.poolArrayInstance(keyBytes);
+		//PoolManager.poolArrayInstance(keyBytes);
 		acceptKey=DataUtil.digestBase64Sha1((key+GUID).getBytes());
 		header.setHeader("Sec-WebSocket-Key", key);
 		
@@ -403,7 +404,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 		return headerBuffer;
 	}
 
-	public final boolean startRequest(WsClient wsClient,Object userContext,long connectTimeout,String uri,String subProtocols,String Origin) {
+	public final boolean startRequest(WsClient wsClient,Object userContext,long connectTimeout,String uri,String subProtocols,String origin) {
 		synchronized (this) {
 			if (this.wsClient != null) {
 				throw new IllegalStateException("aleardy had wsClient:"+this.wsClient);
@@ -411,11 +412,11 @@ public class WsClientHandler extends SslHandler implements Timer {
 			setWsClient(wsClient);
 			this.userContext=userContext;
 		}
-		this.requestHeaderBuffer = crateWsRequestHeader(webClientConnection, uri, subProtocols, Origin);
+		this.requestHeaderBuffer = crateWsRequestHeader(webClientConnection, uri, subProtocols, origin);
 		Throwable error;
 		if(stat==STAT_INIT){
 			synchronized (this) {
-				if(asyncConnect(this, webClientConnection.getRemoteServer(), webClientConnection.getRemotePort(), connectTimeout)){
+				if(asyncConnect(webClientConnection.getRemoteServer(), webClientConnection.getRemotePort(), connectTimeout, this)){
 					//この時点で既にリクエストが終了してしまっている事がある...
 					stat = STAT_CONNECT;
 					setReadTimeout(config.getReadTimeout());
@@ -434,7 +435,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 	
 	public final void postMessage(String message){
 		ByteBuffer[] buffers=WsHybiFrame.createTextFrame(true, message);
-		asyncWrite(CONTEXT_MESSAGE,buffers);
+		asyncWrite(buffers,CONTEXT_MESSAGE);
 	}
 	
 	public final void postMessage(AsyncBuffer message){
@@ -496,7 +497,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 		}
 	}
 	
-	private void onWcMessage(CacheBuffer message) {
+	private void onWcMessage(Cache message) {
 		logger.debug("#message binary cid:"+getChannelId());
 		if (wsClient != null) {
 			wsClient.onWcMessage(userContext, message);

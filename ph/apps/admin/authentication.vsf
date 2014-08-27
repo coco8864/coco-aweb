@@ -1,0 +1,178 @@
+<script type="text/javascript"> 
+function setAuthFb(){
+  ph.admin.doCommand('setAuthFb',{
+    useAuthFb:ph.jQuery("#useAuthFb").is(':checked'),
+    authFbLabel:ph.jQuery("#authFbLabel").val(),
+    authFbAppId:ph.jQuery("#authFbAppId").val(),
+    authFbAppSecret:ph.jQuery("#authFbAppSecret").val()
+  },
+  function(x){
+    alert('fasebook設定完了');
+  });
+}
+function setAuthTwitter(){
+  ph.admin.doCommand('setAuthTwitter',{
+    useAuthTwitter:ph.jQuery("#useAuthTwitter").is(':checked'),
+    authTwitterLabel:ph.jQuery("#authTwitterLabel").val(),
+    authTwitterConsumerKey:ph.jQuery("#authTwitterConsumerKey").val(),
+    authTwitterConsumerSecret:ph.jQuery("#authTwitterConsumerSecret").val()
+  },
+  function(x){
+    alert('Twitter設定完了');
+  });
+}
+function setAuthGoogle(){
+  ph.admin.doCommand('setAuthGoogle',{
+    useAuthGoogle:ph.jQuery("#useAuthGoogle").is(':checked'),
+    authGoogleLabel:ph.jQuery("#authGoogleLabel").val(),
+    authGoogleClientId:ph.jQuery("#authGoogleClientId").val(),
+    authGoogleClientSecret:ph.jQuery("#authGoogleClientSecret").val()
+  },
+  function(x){
+    alert('google設定完了');
+  });
+}
+function setAuthOpenid(){
+  ph.admin.doCommand('setAuthOpenid',{
+    useAuthOpenid:ph.jQuery("#useAuthOpenid").is(':checked'),
+    useAuthDirectOpenid:ph.jQuery("#useAuthDirectOpenid").is(':checked'),
+    authOpenidDef:ph.jQuery("#authOpenidDefArea").val()
+  },
+  function(x){
+    alert('Openid設定完了');
+  });
+}
+
+function setAuth(){
+  var scheme=ph.jQuery("#authScheme").val();
+  ph.admin.doCommand('setAuth',{
+   scheme:scheme,
+## logoutUrlは、デフォルトで自サーバの情報を参照している。
+## 自サーバの情報を変更した場合追従した方がよいが、既に覚えている情報を上書きすることができない
+## 変更できない設定値とする
+##   logoutUrl:ph.jQuery("#authLogoutUrl").val(),
+   sessionTimeout:ph.jQuery("#authSessionTimeout").val(),
+   authInputTimeout:ph.jQuery("#authInputTimeout").val(),
+   authRedirectTimeout:ph.jQuery("#authRedirectTimeout").val(),
+   authFrameTimeout:ph.jQuery("#authFrameTimeout").val(),
+   isAuthInternetDirect:ph.jQuery("#isAuthInternetDirect").is(':checked'),
+   authInternetRole:ph.jQuery("#authInternetRole").val()
+  },
+  function(x){
+    ph.jQuery("#curSchme").text(scheme);
+    alert('Authentication設定完了');
+##setAuth完了
+  });
+}
+
+ph.jQuery(function(){
+  ph.jQuery(".internetAuthItem").hide();
+  var scheme=ph.jQuery("#curSchme").text();
+  ph.jQuery("#authScheme option[value='" +scheme+ "']").attr("selected","selected");
+});
+
+</script> 
+<H1>Authentication</H1>
+<Hr/>
+<H2 onclick="ph.jQuery('#authDiv').toggle();">+認証設定</H2>
+<div class="internetAuthItem" id="authDiv">
+<p>ph認証:mappingとuserのrolesで認可します</br>
+authUrl:${config.config.authUrl}
+</p>
+認証方法<select id="authScheme" size="1">
+<option value="None">None</option>
+<option value="Basic">Basic</option>
+<option value="Digest">Digest</option>
+<option value="BasicForm">BasicForm</option>
+<option value="DigestForm">DigestForm</option>
+<option value="InternetAuth">InternetAuth</option>
+</select>現在:<span id="curSchme">$!esc.html($!{config.getString('authenticateScheme')})</span><br/>
+sessionTimeout:<input type="text" id="authSessionTimeout" size="12" value="$!esc.html($!{config.getString('sessionTimeout')})"/>ms<br/>
+##logoutUrl:<input type="text" id="authLogoutUrl" size="64" value="$!esc.html($!{config.getString('logoutUrl')})"/><br/>
+inputTimeout:<input type="text" id="authInputTimeout" size="12" value="$!esc.html($!{config.getString('authInputTimeout','180000')})"/>ms<br/>
+redirectTimeout:<input type="text" id="authRedirectTimeout" size="12" value="$!esc.html($!{config.getString('authRedirectTimeout','5000')})"/>ms<br/>
+frameTimeout:<input type="text" id="authFrameTimeout" size="12" value="$!esc.html($!{config.getString('authFrameTimeout','5000')})"/>ms<br/>
+internetAuth direct:<input type="checkBox" name="isAuthInternetDirect" id="isAuthInternetDirect"
+#if(${config.getBoolean('isAuthInternetDirect')})
+checked="checked"
+#end
+/><br/>
+internetAuth role:<input type="text" id="authInternetRole" size="16" value="$!esc.html($!{config.getString('authInternetRole')})"/><br/>
+<input type="button" value="設定"  onclick="setAuth();"/><br/>
+</div>
+
+<Hr/>
+<H2 onclick="ph.jQuery('#fbDiv').toggle();">+facebook設定</H2>
+<div class="internetAuthItem" id="fbDiv">
+<p>InternetAuthの場合有効、facebook関連の設定<br/>
+参考:<a href='https://developers.facebook.com/apps' target='_blank'>Facebook Developers</a><br/>
+App Domains,ログインが可能なウェブサイトには、authUrlを参考に値を設定してしてください。
+</p>
+use:<input type="checkBox" name="useAuthFb" id="useAuthFb"
+#if(${config.getBoolean('useAuthFb')})
+checked="checked"
+#end
+/><br/>
+label:<input type="text" id="authFbLabel" size="32" value="$!esc.html($!{config.getString('authFbLabel','facebook')})"/><br/>
+App ID:<input type="text" id="authFbAppId" size="32" value="$!esc.html($!{config.getString('authFbAppId')})"/><br/>
+App Secret:<input type="text" id="authFbAppSecret" size="64" value="$!esc.html($!{config.getString('authFbAppSecret')})"/><br/>
+<input type="button" value="設定"  onclick="setAuthFb();"/><br/>
+</div>
+
+<Hr/>
+<H2 onclick="ph.jQuery('#twitterDiv').toggle();">+twitter設定</H2>
+<div class="internetAuthItem" id="twitterDiv">
+<p>InternetAuthの場合有効、twitter関連の設定<br/>
+参考:<a href='https://dev.twitter.com/apps' target='_blank'>Twitter Developpers</a><br/>
+Callback URL: ${config.config.authUrl}/internetAuth/twitterRes
+</p>
+use:<input type="checkBox" name="useAuthTwitter" id="useAuthTwitter"
+#if(${config.getBoolean('useAuthTwitter')})
+checked="checked"
+#end
+/><br/>
+label:<input type="text" id="authTwitterLabel" size="32" value="$!esc.html($!{config.getString('authTwitterLabel','twitter')})"/><br/>
+Consumer key:<input type="text" id="authTwitterConsumerKey" size="32" value="$!esc.html($!{config.getString('authTwitterConsumerKey')})"/><br/>
+Consumer secret:<input type="text" id="authTwitterConsumerSecret" size="64" value="$!esc.html($!{config.getString('authTwitterConsumerSecret')})"/><br/>
+<input type="button" value="設定"  onclick="setAuthTwitter();"/><br/>
+</div>
+
+
+<Hr/>
+<H2 onclick="ph.jQuery('#googleDiv').toggle();">+google設定</H2>
+<div class="internetAuthItem" id="googleDiv">
+<p>InternetAuthの場合有効、google関連の設定<br/>
+参考:<a href='https://code.google.com/apis/console/' target='_blank'>Google APIs Console&gt;API Access</a><br/>
+Redirect URIs: ${config.authUrl}/internetAuth/googleRes
+</p>
+use:<input type="checkBox" name="useAuthGoogle" id="useAuthGoogle"
+#if(${config.getBoolean('useAuthGoogle')})
+checked="checked"
+#end
+/><br/>
+label:<input type="text" id="authGoogleLabel" size="32" value="$!esc.html($!{config.getString('authGoogleLabel','google(oauth)')})"/><br/>
+Client ID:<input type="text" id="authGoogleClientId" size="128" value="$!esc.html($!{config.getString('authGoogleClientId')})"/><br/>
+Client secret:<input type="text" id="authGoogleClientSecret" size="128" value="$!esc.html($!{config.getString('authGoogleClientSecret')})"/><br/>
+<input type="button" value="設定"  onclick="setAuthGoogle();"/><br/>
+</div>
+
+<Hr/>
+<H2 onclick="ph.jQuery('#openIdDiv').toggle();">+openId設定</H2>
+<div class="internetAuthItem" id="openIdDiv">
+<p>InternetAuthの場合有効、openId関連の設定</p>
+use:<input type="checkBox" name="useAuthOpenid" id="useAuthOpenid"
+#if(${config.getBoolean('useAuthOpenid')})
+checked="checked"
+#end
+/><br/>
+label,identifier<br/>
+<textarea id="authOpenidDefArea" rows="10" cols="80">$!esc.html($!{config.getString('authOpenidDef')})</textarea><br/>
+directId:<input type="checkBox" name="useAuthDirectOpenid" id="useAuthDirectOpenid"
+#if(${config.getBoolean('useAuthDirectOpenid')})
+checked="checked"
+#end
+/><br/>
+<input type="button" value="設定"  onclick="setAuthOpenid();"/><br/>
+</div>
+
+

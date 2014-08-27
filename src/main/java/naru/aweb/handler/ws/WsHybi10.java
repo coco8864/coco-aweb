@@ -7,12 +7,12 @@ import org.apache.log4j.Logger;
 
 import naru.async.AsyncBuffer;
 import naru.async.BufferGetter;
-import naru.async.cache.CacheBuffer;
+import naru.async.cache.Cache;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
-import naru.aweb.http.HeaderParser;
+import naru.aweb.util.HeaderParser;
 
 public class WsHybi10 extends WsProtocol implements BufferGetter{
 	private static Logger logger=Logger.getLogger(WsHybi10.class);
@@ -24,7 +24,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 	private byte continuePcode;
 	private int continuePayloadLength=0;
 //	private List<ByteBuffer> continuePayload=new ArrayList<ByteBuffer>();
-	private CacheBuffer payloadBuffer;
+	private Cache payloadBuffer;
 	private WsHybiFrame frame=new WsHybiFrame();
 
 	@Override
@@ -49,7 +49,8 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 	public boolean onHandshake(HeaderParser requestHeader,String subProtocol) {
 		logger.debug("WsHybi10#onHandshake cid:"+handler.getChannelId());
 		if(!isUseSpec(SPEC)){
-			handler.completeResponse("400");
+			logger.warn("unsupport spec:"+SPEC);
+			handler.completeResponse("422");//422 Protocol Extension Refused
 			return false;
 		}
 		String version=requestHeader.getHeader(SEC_WEBSOCKET_VERSION);
@@ -58,7 +59,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 		if(v>SUPPORT_VERSION){//versionが大きすぎる場合は、8で会話するように交渉,chrome "16.0.912.12 dev-m"は、13
 			logger.debug("WsHybi10#version error:"+v);
 			handler.setHeader(SEC_WEBSOCKET_VERSION, Integer.toString(SUPPORT_VERSION));
-			handler.completeResponse("400");
+			handler.completeResponse("422");//422 Protocol Extension Refused
 			return false;
 		}
 		if(subProtocol!=null){
@@ -88,7 +89,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 		isSendClose=true;
 		traceClose(code, reason);
 		ByteBuffer[] closeBuffer=WsHybiFrame.createCloseFrame(isWebSocketResponseMask(),code,reason);
-		handler.asyncWrite(null, closeBuffer);
+		handler.asyncWrite(closeBuffer, null);
 	}
 	
 	private void doBinaryTrace(byte pcode,boolean isTop,boolean isFin,ByteBuffer[] payloadBuffers){
@@ -106,7 +107,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 		doBinaryTrace(pcode,payloadBuffer==null,frame.isFin(),payloadBuffers);
 		
 		if(payloadBuffer==null){
-			payloadBuffer=CacheBuffer.open();
+			payloadBuffer=Cache.open();
 		}
 		if(!frame.isFin()){//最終Frameじゃない
 			logger.debug("WsHybi10#doFrame not isFin");
@@ -165,7 +166,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 			logger.debug("WsHybi10#doFrame pcode PING");
 			tracePingPong("PING");			
 			ByteBuffer[] pongBuffer=WsHybiFrame.createPongFrame(isWebSocketResponseMask(), payloadBuffers);
-			handler.asyncWrite(null, pongBuffer);
+			handler.asyncWrite(pongBuffer, null);
 			break;
 		case WsHybiFrame.PCODE_PONG:
 			logger.debug("WsHybi10#doFrame pcode PONG");
@@ -237,7 +238,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 	public void onReadTimeout() {
 		logger.debug("WsHybi10#onReadTimeout cid:"+handler.getChannelId());
 		ByteBuffer[] buffers=WsHybiFrame.createPingFrame(isWebSocketResponseMask(),"ping:"+System.currentTimeMillis());
-		handler.asyncWrite(null, buffers);
+		handler.asyncWrite(buffers, null);
 		handler.asyncRead(null);
 	}
 
@@ -307,13 +308,13 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 		if(curReq.strMessage!=null){
 			tracePostMessage(curReq.strMessage);
 			ByteBuffer[] buffers=WsHybiFrame.createTextFrame(isWebSocketResponseMask(),curReq.strMessage);
-			handler.asyncWrite(curReq, buffers);
+			handler.asyncWrite(buffers, curReq);
 			return;
 		}
 		if(curReq.byteMessage!=null){
 			tracePostMessage(true,true,curReq.byteMessage);
 			ByteBuffer[] buffers=WsHybiFrame.createBinaryFrame(true,true,isWebSocketResponseMask(),curReq.byteMessage);
-			handler.asyncWrite(curReq, buffers);
+			handler.asyncWrite(buffers, curReq);
 			return;
 		}
 		curReq.asyncMessage.asyncBuffer(this,curReq);
@@ -357,7 +358,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 	}
 	
 	@Override
-	public boolean onBuffer(Object ctx, ByteBuffer[] buffers) {
+	public boolean onBuffer(ByteBuffer[] buffers, Object ctx) {
 		long len=BuffersUtil.remaining(buffers);
 		if( curReq.endPosition<=(curReq.position+len)){
 			BuffersUtil.cut(buffers, curReq.endPosition-curReq.position);
@@ -372,7 +373,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 		tracePostMessage(curReq.isTop,isFin,buffers);
 		buffers=WsHybiFrame.createBinaryFrame(curReq.isTop,isFin,isWebSocketResponseMask(),buffers);
 		curReq.isTop=false;
-		handler.asyncWrite(curReq, buffers);
+		handler.asyncWrite(buffers, curReq);
 		return false;
 	}
 
@@ -382,7 +383,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 	}
 
 	@Override
-	public void onBufferFailure(Object ctx, Throwable failure) {
+	public void onBufferFailure(Throwable failure, Object ctx) {
 		synchronized(this){
 			if(curReq==null){
 				return;//ありえない

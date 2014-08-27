@@ -46,7 +46,7 @@ public class ZipConverter extends PoolBase{
 			zipEntry=new ZipEntry(name);
 			zipOutputStream.putNextEntry(zipEntry);
 		} catch (IOException e) {
-			getter.onBufferFailure("ZipConveter putEntry error", e);
+			getter.onBufferFailure(e, "ZipConveter putEntry error");
 		}
 	}
 	
@@ -56,7 +56,7 @@ public class ZipConverter extends PoolBase{
 			zipOutputStream.flush();
 			callback();
 		} catch (IOException e) {
-			getter.onBufferFailure("ZipConveter put error", e);
+			getter.onBufferFailure(e, "ZipConveter put error");
 		}
 	}
 	
@@ -69,7 +69,7 @@ public class ZipConverter extends PoolBase{
 			zipOutputStream.flush();
 			callback();
 		} catch (IOException e) {
-			getter.onBufferFailure("ZipConveter puts error", e);
+			getter.onBufferFailure(e, "ZipConveter puts error");
 		}
 	}
 	
@@ -79,14 +79,14 @@ public class ZipConverter extends PoolBase{
 			callback();
 			getter.onBufferEnd(null);
 		} catch (IOException e) {
-			getter.onBufferFailure("ZipConveter end error", e);
+			getter.onBufferFailure(e, "ZipConveter end error");
 		}
 	}
 	
 	private synchronized void callback() throws IOException{
 		ByteBuffer[] buffers=innerOutputStream.getBuffer();
 		if(buffers!=null){
-			getter.onBuffer(zipEntry, buffers);
+			getter.onBuffer(buffers, zipEntry);
 		}
 	}
 	

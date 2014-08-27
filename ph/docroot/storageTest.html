@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head> 
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta charset="UTF-8" /> 
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>PhantomLink storage test</title>
+  <script type="text/javascript" src="/pub/js/ph.js"></script>
+  <script type="text/javascript">
+var outputCounter=1;
+function outputClear(){
+  ph.jQuery("#output").html("");
+}
+function outputLog(html){
+  var orgHtml=ph.jQuery("#output").html();
+  ph.jQuery("#output").html("*"+outputCounter+"*<br />"+html+"<br />"+orgHtml);
+  outputCounter++;
+}
+
+function scopesClear(){
+  for(i=0;i<scopes.length;i++){
+    var scope=scopes[i];
+    ph.jQuery("#"+scope+"Text").val('')
+  }
+}
+
+var link;
+var scopes=[
+  ph.SCOPE.PAGE_PRIVATE,
+  ph.SCOPE.SESSION_PRIVATE,
+  ph.SCOPE.APL_PRIVATE,
+  ph.SCOPE.APL_LOCAL,
+  ph.SCOPE.AUTH_PRIVATE,
+  ph.SCOPE.AUTH_LOCAL,
+  ph.SCOPE.APL_USER,
+  ph.SCOPE.APL_GLOBAL]
+var storages={};
+
+function testKey(){
+  return ph.jQuery("#keyText").val();
+}
+
+function aplUrl(){
+  return ph.jQuery("#aplUrl").val();
+}
+
+function auth(isOffline){
+  if(link!=null){
+    link.unlink();
+  }
+  var url=aplUrl();
+  link=ph.link(url,isOffline);
+  link.onReady(function(){
+    var linkInfo=
+    "isOffline:"+link.isOffline + "<br />"
+    + "isAuth:"+link.isAuth + "<br />"
+    + "isConnect:"+link.isAuth + "<br />"
+    + " keyUrl:"+link.keyUrl + "<br />";
+    if(link.isAuth){
+      var user=link.authInfo.user;
+      linkInfo +="loginId:"+ user.loginId + "<br />";
+      linkInfo +="nickname:"+ user.nickname ;
+      //linkInfo +="user:"+ ph.JSON.stringify(link.authInfo.user);
+    }else{
+      linkInfo +="cause:"+ link.cause ;
+    }
+    outputLog(linkInfo);
+    var bkmarklet="javascript:(function(){var d=document;var f=function(){var l=ph.link('$adminUrl$');var s=l.storage(ph.SCOPE.SESSION_PRIVATE);var k='$event$';s.off(k);s.on(k,function(x){if(x.value){eval(x.value)}});s.getItem(k);};if(window.ph){f();}else{var u='$publicWebUrl$pub/js/ph.js';var e=d.createElement('script');e.src=u;e.onload=function(){f();};d.getElementsByTagName('head')[0].appendChild(e);}})();"
+    bkmarklet=bkmarklet.replace("$event$",testKey());
+    bkmarklet=bkmarklet.replace("$adminUrl$",link.keyUrl);
+    bkmarklet=bkmarklet.replace("$publicWebUrl$",ph.publicWebUrl);
+    //bkmarklet=bkmarklet.split(' ').join('%20');
+    outputLog('SESSION_PRIVATE:testKey()+:<a href="'+bkmarklet+'">storageInjection</a>');
+    if(link.isAuth){
+      ph.jQuery("#isOffline").text(link.isOffline);
+      ph.jQuery("#loginId").text(user.loginId);
+      ph.jQuery("#nickname").text(user.nickname);
+      ph.jQuery("#linkAuthArea input").removeAttr('disabled');
+      ph.jQuery("#storageArea input").removeAttr('disabled');
+    }
+  });
+  link.onUnload(function(){
+    scopesClear();
+    ph.jQuery("#linkAuthArea input").attr('disabled','disabled');
+    ph.jQuery("#storageArea input").attr('disabled','disabled');
+    ph.jQuery("#isOffline").text("");
+    ph.jQuery("#loginId").text("");
+    ph.jQuery("#nickname").text("");
+  });
+  link.on(ph.EVENT.LOGOUT,function(){
+    outputLog('logout:'+url);
+  });
+  for(i=0;i<scopes.length;i++){
+    var scope=scopes[i];
+    storages[scope]=link.storage(scope,'storName1');
+    getItem(scope);
+    storages[scope].on(testKey(),function(data){
+      ph.jQuery("#"+data.scope+"Text").val(data.value)
+    });
+  }
+  //ph.debug=true;
+}
+
+function setItem(scope){
+  var value=ph.jQuery("#"+scope+"Text").val();
+  outputLog(scope + ' setItem("'+testKey()+'","'+value+'")');
+  storage=storages[scope];
+  storage.setItem(testKey(),value);
+}
+
+function getItem(scope){
+  outputLog(scope + ' getItem("'+testKey()+'")');
+  storage=storages[scope];
+  storage.getItem(testKey(),function(value){ph.jQuery("#"+scope+"Text").val(value)});
+}
+function removeItem(scope){
+  outputLog(scope + ' removeItem()');
+  storage=storages[scope];
+  storage.removeItem(testKey());
+}
+function keys(scope){
+  storage=storages[scope];
+  storage.keys(function(keys){
+    outputLog(scope + ' kyes()='+ph.JSON.stringify(keys));
+    });
+}
+ph.jQuery(function(){
+  scopesClear();
+  ph.jQuery("#linkAuthArea input").attr('disabled','disabled');
+  ph.jQuery("#storageArea input").attr('disabled','disabled');
+});
+
+  </script>
+  <link type="text/css" href="/pub/css/ph.css" rel="stylesheet" /> 
+  <style type="text/css"><!--
+  #outputArea {
+    margin-right: 20px;
+    height: 200px;
+    background: #ddd;
+    overflow: auto;
+  }
+  -->
+  </style>
+</head>
+<body>
+<H1>PhantomLink storage test</H1>
+<a href='/admin' target='adminWnd'>admin</a>|
+<a href='storageTest.html' target='_blank'>storageTest</a>|
+<a href='pubsubTest.html' target='_blank'>pubsubTest</a>|
+<a href='javascript:location.reload()'>reload</a>|
+<a href='#' onclick='outputClear();'>output clear</a>
+<hr/>
+<div id="storages">
+aplUrl:<input id='aplUrl' type="text" value="/link1" style="width:256px;"/>
+<input type="button" value="online link" onclick="auth(false);"/>
+<input type="button" value="offline link" onclick="auth(true);"/>
+<input type="button" value="link" onclick="auth(undefined);"/>
+<br />
+<div id='linkAuthArea'>
+isOffline:<span id='isOffline'></span><br />
+loginid:<span id='loginId'></span><br />
+nickname:<span id='nickname'></span><br />
+<input type="button" value="profile" onclick="link.userProfile();"/>
+<input type="button" value="logout" onclick="link.logout();"/>
+<input type="button" value="unlink" onclick="link.unlink();"/><br />
+</div>
+
+<div id='storageArea'>
+<hr/>
+key:<input id='keyText' type="text" value="testKey"/><br />
+<table>
+<tr>
+<td>
+scope
+</td>
+<td>
+operation
+</td>
+</tr>
+
+<tr>
+<td>
+PAGE_PRIVATE:
+</td>
+<td>
+<input id='pagePrivateText' type="text" style="width:200px;"/>
+<input type="button" value="setItem" onclick="setItem(ph.SCOPE.PAGE_PRIVATE);"/>
+<input type="button" value="getItem" onclick="getItem(ph.SCOPE.PAGE_PRIVATE);"/>
+<input type="button" value="removeItem" onclick="removeItem(ph.SCOPE.PAGE_PRIVATE);"/>
+<input type="button" value="keys" onclick="keys(ph.SCOPE.PAGE_PRIVATE);"/>
+</td>
+</tr>
+
+<tr>
+<td>
+SESSION_PRIVATE:
+</td>
+<td>
+<input id='sessionPrivateText' type="text" style="width:200px;"/>
+<input type="button" value="setItem" onclick="setItem(ph.SCOPE.SESSION_PRIVATE);"/>
+<input type="button" value="getItem" onclick="getItem(ph.SCOPE.SESSION_PRIVATE);"/>
+<input type="button" value="removeItem" onclick="removeItem(ph.SCOPE.SESSION_PRIVATE);"/>
+<input type="button" value="keys" onclick="keys(ph.SCOPE.SESSION_PRIVATE);"/>
+</td>
+</tr>
+
+<tr>
+<td>
+APL_PRIVATE:
+</td>
+<td>
+<input id='aplPrivateText' type="text" style="width:200px;"/>
+<input type="button" value="setItem" onclick="setItem(ph.SCOPE.APL_PRIVATE);"/>
+<input type="button" value="getItem" onclick="getItem(ph.SCOPE.APL_PRIVATE);"/>
+<input type="button" value="removeItem" onclick="removeItem(ph.SCOPE.APL_PRIVATE);"/>
+<input type="button" value="keys" onclick="keys(ph.SCOPE.APL_PRIVATE);"/>
+</td>
+</tr>
+
+<tr>
+<td>
+APL_LOCAL:
+</td>
+<td>
+<input id='aplLocalText' type="text" style="width:200px;"/>
+<input type="button" value="setItem" onclick="setItem(ph.SCOPE.APL_LOCAL);"/>
+<input type="button" value="getItem" onclick="getItem(ph.SCOPE.APL_LOCAL);"/>
+<input type="button" value="removeItem" onclick="removeItem(ph.SCOPE.APL_LOCAL);"/>
+<input type="button" value="keys" onclick="keys(ph.SCOPE.APL_LOCAL);"/>
+</td>
+</tr>
+
+<tr>
+<td>
+AUTH_PRIVATE:
+</td>
+<td>
+<input id='authPrivateText' type="text" style="width:200px;"/>
+<input type="button" value="setItem" onclick="setItem(ph.SCOPE.AUTH_PRIVATE);"/>
+<input type="button" value="getItem" onclick="getItem(ph.SCOPE.AUTH_PRIVATE);"/>
+<input type="button" value="removeItem" onclick="removeItem(ph.SCOPE.AUTH_PRIVATE);"/>
+<input type="button" value="keys" onclick="keys(ph.SCOPE.AUTH_PRIVATE);"/>
+</td>
+</tr>
+
+<tr>
+<td>
+AUTH_LOCAL:
+</td>
+<td>
+<input id='authLocalText' type="text" style="width:200px;"/>
+<input type="button" value="setItem" onclick="setItem(ph.SCOPE.AUTH_LOCAL);"/>
+<input type="button" value="getItem" onclick="getItem(ph.SCOPE.AUTH_LOCAL);"/>
+<input type="button" value="removeItem" onclick="removeItem(ph.SCOPE.AUTH_LOCAL);"/>
+<input type="button" value="keys" onclick="keys(ph.SCOPE.AUTH_LOCAL);"/>
+</td>
+</tr>
+
+<tr>
+<td>
+APL_USER:
+</td>
+<td>
+<input id='aplUserText' type="text" style="width:200px;"/>
+<input type="button" value="setItem" onclick="setItem(ph.SCOPE.APL_USER);"/>
+<input type="button" value="getItem" onclick="getItem(ph.SCOPE.APL_USER);"/>
+<input type="button" value="removeItem" onclick="removeItem(ph.SCOPE.APL_USER);"/>
+<input type="button" value="keys" onclick="keys(ph.SCOPE.APL_USER);"/>
+</td>
+</tr>
+
+<tr>
+<td>
+APL_GLOBAL:
+</td>
+<td>
+<input id='aplGlobalText' type="text" style="width:200px;"/>
+<input type="button" value="setItem" onclick="setItem(ph.SCOPE.APL_GLOBAL);"/>
+<input type="button" value="getItem" onclick="getItem(ph.SCOPE.APL_GLOBAL);"/>
+<input type="button" value="removeItem" onclick="removeItem(ph.SCOPE.APL_GLOBAL);"/>
+<input type="button" value="keys" onclick="keys(ph.SCOPE.APL_GLOBAL);"/>
+</td>
+</tr>
+
+
+</table>
+</div>
+output<br />
+<div id="outputArea">
+<div id="output"></div>
+</div>
+<!--div id="debug">
+<Hr/>
+<input type="button" value="出力クリア" onclick="ph.jQuery('#phDebugArea').text('');"/>
+<pre id="phDebugArea"></pre>
+</div-->
+</body>
+</html>

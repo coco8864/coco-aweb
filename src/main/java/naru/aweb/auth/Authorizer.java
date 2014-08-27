@@ -7,13 +7,11 @@ import java.util.List;
 import java.util.Map;
 
 import naru.async.Timer;
-import naru.async.pool.PoolManager;
 import naru.async.store.DataUtil;
 import naru.async.timer.TimerManager;
 import naru.aweb.auth.SessionId.Type;
 import naru.aweb.config.Config;
-import naru.aweb.config.Mapping;
-import naru.aweb.config.User;
+import naru.aweb.mapping.Mapping;
 import naru.aweb.util.ServerParser;
 
 import org.apache.commons.configuration.Configuration;
@@ -24,9 +22,7 @@ public class Authorizer implements Timer{
 	private static final String SESSION_TIMEOUT="sessionTimeout";
 	private static final String AUTHORIZE_RANDOM_ENTOROPY="authorizeRandomEntoropy";
 		
-	private static final long INTERVAL=1000*60;
-	private static final long PATH_ONCE_TIMEOUT=5000;
-	private static final long TEMPORARY_TIMEOUT=5000;
+	private static final long INTERVAL=60000;
 	private SecureRandom random;
 	//ばらばらに覚えた方が無駄な排他をしなくてよい
 	//pathOneceId /authからサービスurlに対してredirectする際にpath付加
@@ -131,12 +127,12 @@ public class Authorizer implements Timer{
 	public void onTimer(Object userContext) {
 		long now=System.currentTimeMillis();
 		int count=0;
-		count=timeoutIds(primaryIds,now-sessionTimeout);//この中で、secondaryIdsもクリアされる
+		count=timeoutIds(primaryIds,now);//この中で、secondaryIdsもクリアされる
 		if(count!=0){
 			logger.info("session timeout primaryIds:"+count);
 		}
-		timeoutIds(pathOnceIds,now-PATH_ONCE_TIMEOUT);
-		timeoutIds(temporaryIds,now-TEMPORARY_TIMEOUT);//この中で、temporaryAuthIdsもクリアされる
+		timeoutIds(pathOnceIds,now);
+		timeoutIds(temporaryIds,now);//この中で、temporaryAuthIdsもクリアされる
 	}
 	
 	public boolean logout(String id){
@@ -194,7 +190,7 @@ public class Authorizer implements Timer{
 	}
 	
 	public void registerSessionId(SessionId sessionId){
-		byte[] bytes = (byte[]) PoolManager.getArrayInstance(byte.class, 16);
+		byte[] bytes = new byte[16];//(byte[]) PoolManager.getArrayInstance(byte.class, 16);
 		Map<String, SessionId> ids=getIds(sessionId.getType());
 		Map<String, SessionId> authIds=null;
 		if(sessionId.getType()==Type.TEMPORARY){
@@ -229,7 +225,7 @@ public class Authorizer implements Timer{
 					break;
 				}
 			}
-			PoolManager.poolArrayInstance(bytes);
+			//PoolManager.poolArrayInstance(bytes);
 		}
 	}
 	
@@ -288,8 +284,11 @@ public class Authorizer implements Timer{
 	public static final int CHECK_NO_PRIMARY=1;
 	public static final int CHECK_PRIMARY_ONLY=2;
 	public static final int CHECK_SECONDARY_OK=3;
+	public int checkSecondarySessionByPrimaryId(String id,String aplUrl){
+		return checkSecondarySessionByPrimaryId(id, aplUrl, null, null);
+	}
 	
-	public int checkSecondarySessionByPrimaryId(String id,String authUrl,StringBuffer appId){
+	public int checkSecondarySessionByPrimaryId(String id,String aplUrl,String appSid,String token){
 		if(id==null){
 			return CHECK_NO_PRIMARY;
 		}
@@ -305,19 +304,21 @@ public class Authorizer implements Timer{
 			if(authSession==null){
 				return CHECK_NO_PRIMARY;
 			}
-			AuthSession secondarySession=authSession.getSecondarySession(authUrl);
+			AuthSession secondarySession=authSession.getSecondarySession(aplUrl);
 			if(secondarySession==null){
 				return CHECK_PRIMARY_ONLY;
 			}
-			if(appId!=null){
-				String secondaryId=secondarySession.getSessionId().getId();
-				appId.append(DataUtil.digestHex(secondaryId.getBytes()));
+			if(appSid!=null && !appSid.equals(secondarySession.getSid())){
+				return CHECK_PRIMARY_ONLY;
+			}
+			if(token!=null && !token.equals(secondarySession.getToken())){
+				return CHECK_PRIMARY_ONLY;
 			}
 		}
 		return CHECK_SECONDARY_OK;
 	}
 	
-	public User getUserByPrimaryId(String id){
+	public AuthSession getPrimarySession(String id){
 		if(id==null){
 			return null;
 		}
@@ -330,20 +331,25 @@ public class Authorizer implements Timer{
 				return null;
 			}
 			AuthSession authSession=primaryId.getAuthSession();
-			if(authSession==null){
-				return null;
-			}
-			return authSession.getUser();
+			return authSession;
 		}
 	}
 	
-	public boolean isSecondaryId(String id,StringBuffer appId){
+	public User getUserByPrimaryId(String id){
+		AuthSession authSession=getPrimarySession(id);
+		if(authSession==null){
+			return null;
+		}
+		return authSession.getUser();
+	}
+	
+	public boolean isSecondaryId(String id,StringBuffer appSid){
 		SessionId secondaryId = getSessionId(Type.SECONDARY,id);
 		if (secondaryId == null) {
 			return false;
 		}
-		if(appId!=null){
-			appId.append(DataUtil.digestHex(secondaryId.getId().getBytes()));
+		if(appSid!=null){
+			appSid.append(DataUtil.digestHex(secondaryId.getId().getBytes()));
 		}
 		return true;
 	}
@@ -415,6 +421,7 @@ public class Authorizer implements Timer{
 				}
 				pathOnceId.remove();
 			}
+			//roleが一致しているとは限らないが後からチェックする
 			AuthSession primarySession=primaryId.getAuthSession();
 			AuthSession secondarySession=primarySession.createSecondarySession();
 			secondarySession.setSessionId(secondaryId);
@@ -461,7 +468,7 @@ public class Authorizer implements Timer{
 	 * @return pathOnceIdからPrimaryIdの可能性がある、SessionIdを返却する。(ロックをはずすため、開放される可能性あり）
 	 */
 	public SessionId createSecondarySetCookieStringFromPathOnceId(String pathId,String url,Mapping mapping,
-			boolean isCookieSecure,String cookieDomain,String cookiePath,StringBuffer appId) {			
+			boolean isCookieSecure,String cookieDomain,String cookiePath,StringBuffer appSid) {			
 		SessionId pathOnceId = getSessionId(Type.PATH_ONCE,pathId);
 		if (pathOnceId == null) {
 			return null;
@@ -475,8 +482,8 @@ public class Authorizer implements Timer{
 		SessionId secondaryId = SessionId.createSecondaryId(isCookieSecure,cookieDomain,cookiePath);//1回目
 //		String cookieString=secondaryId.getSetCookieString(cookiePath, isSecure);
 		if( setupSecondaryId(secondaryId, primaryId, pathId, pathOnceId, url, mapping) ){//2回目
-			if(appId!=null){
-				appId.append(DataUtil.digestHex(secondaryId.getId().getBytes()));
+			if(appSid!=null){
+				appSid.append(DataUtil.digestHex(secondaryId.getId().getBytes()));
 			}
 			return secondaryId;
 		}

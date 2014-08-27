@@ -7,10 +7,10 @@ import java.util.Iterator;
 import java.util.List;
 
 import naru.aweb.auth.Authenticator;
+import naru.aweb.auth.User;
 import naru.aweb.config.Config;
-import naru.aweb.config.User;
-import naru.aweb.http.ParameterParser;
-import naru.aweb.http.WebServerHandler;
+import naru.aweb.handler.WebServerHandler;
+import naru.aweb.util.ParameterParser;
 import net.sf.json.JSON;
 import net.sf.json.JSONObject;
 
@@ -42,17 +42,6 @@ public class AdminUserHandler extends WebServerHandler{
 		completeResponse("404");
 	}
 	
-	/*
-	private String calcPass(String loginId,JSONObject jsonUser){
-		String pass1=jsonUser.optString("pass1");
-		String pass2=jsonUser.optString("pass2");
-		if(pass1!=null&&pass1.length()!=0&&pass1.equals(pass2)){
-			return authenticator.calcPass(loginId, pass1);
-		}
-		return null;
-	}
-	*/
-	
 	void doObjCommand(String command,Object paramObj){
 		if("userInsert".equals(command)){
 			JSONObject jsonUser=(JSONObject)paramObj;
@@ -65,12 +54,20 @@ public class AdminUserHandler extends WebServerHandler{
 				return;
 			}
 			user.changePassword(pass1, authenticator.getRealm());
-//			user.setPass(pass);
+			
+			pass1=jsonUser.optString("offlinePass1");
+			pass2=jsonUser.optString("offlinePass2");
+			if(pass1==null || !pass1.equals(pass2)){
+				logger.error("fail to get offline pass");
+				responseJson("fail to userInsert");
+				return;
+			}
+			if(!"".equals(pass1)&&!"$".equals(pass1)){
+				user.changeOfflinePassword(pass1);
+			}
 			Date now=new Date();
 			user.setCreateDate(now);
-//			user.setChangePass(now);
 			user.save();
-//			authenticator.putUserCache(user);
 			responseJson(user.toJson());
 			return;
 		}else if("userUpdate".equals(command)){
@@ -91,14 +88,21 @@ public class AdminUserHandler extends WebServerHandler{
 			//passwordÇÃê›íË
 			String pass1=jsonUser.optString("pass1");
 			String pass2=jsonUser.optString("pass2");
-			if(pass1!=null && pass1.equals(pass2)){
+			if(pass1!=null &&!"".equals(pass1)&& pass1.equals(pass2)){
 				user.changePassword(pass1, authenticator.getRealm());
-				user.setChangePass(new Date());
+			}
+			//offlinePasswordÇÃê›íË
+			pass1=jsonUser.optString("offlinePass1");
+			pass2=jsonUser.optString("offlinePass2");
+			if(pass1!=null&&!"".equals(pass1)&& pass1.equals(pass2)){
+				if("$".equals(pass1)){//offfLinePasswordÇ…"$"ÇéwíËÇ∑ÇÈÇ∆ê›íËÇè¡ãé
+					user.setOfflinePassHash(null);
+				}else{
+					user.changeOfflinePassword(pass1);
+				}
 			}
 			user.setRoles(jsonUser.getString("roles"));
-			user.setFirstName(jsonUser.getString("firstName"));
-			user.setLastName(jsonUser.getString("lastName"));
-			user.setFootSize(jsonUser.optInt("footSize",25));
+			user.setNickname(jsonUser.getString("nickname"));
 			if(isInDb){
 				user.save();
 			}
@@ -120,7 +124,7 @@ public class AdminUserHandler extends WebServerHandler{
 		completeResponse("404");
 	}
 	
-	public void startResponseReqBody(){
+	public void onRequestBody(){
 		ParameterParser parameter=getParameterParser();
 		String command=parameter.getParameter("command");
 		if(command!=null){

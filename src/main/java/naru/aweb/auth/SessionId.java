@@ -1,6 +1,8 @@
 package naru.aweb.auth;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -38,6 +40,10 @@ import naru.aweb.util.ServerParser;
 public class SessionId extends PoolBase{
 	private static Logger logger = Logger.getLogger(SessionId.class);
 	private static Config config=Config.getConfig();
+	public static final long PATH_ONCE_TIMEOUT=config.getLong("authRedirectTimeout", 5000);
+	public static final long TEMPORARY_FIRST_TIMEOUT=config.getLong("authRedirectTimeout", 5000);//temporaryIdは連打により大量に作られるのでauthに到着したら寿命を延ばしたい
+	public static final long TEMPORARY_TIMEOUT=config.getLong("authInputTimeout", 60000*3);
+	
 	public static final String SESSION_ID = config.getString("sessionCookieKey", "phId");
 	private static Pattern pathInfoPattern = Pattern.compile(";"+SESSION_ID+"=([^\\s;/?]*)");
 	private static Authorizer authorizer=config.getAuthorizer();
@@ -71,27 +77,36 @@ public class SessionId extends PoolBase{
 	}
 
 	public static SessionId createSecondaryId(boolean isCookieSecure,String cookieDomain,String cookiePath) {
-		return createSessionId(Type.SECONDARY,null,null,null,isCookieSecure, cookieDomain, cookiePath);
+		SessionId sessionId=createSessionId(Type.SECONDARY,null,null,null,isCookieSecure, cookieDomain, cookiePath);
+		sessionId.expireTime=0;//積極的にはタイムアウトさせない
+		return sessionId;
 	}
 	
 	public static SessionId createTemporaryId(String url,String cookiePath) {
+		SessionId sessionId;
 		if(url!=null){
 			boolean isCookieSecure=url.startsWith("https://");
 			String domain=null;//TODO url.substring();
-			return createSessionId(Type.TEMPORARY,url,null,null,isCookieSecure,domain,cookiePath);
+			sessionId=createSessionId(Type.TEMPORARY,url,null,null,isCookieSecure,domain,cookiePath);
+		}else{
+			sessionId=createSessionId(Type.TEMPORARY,null,null,null,false,null,cookiePath);
 		}
-		return createSessionId(Type.TEMPORARY,null,null,null,false,null,cookiePath);
+		sessionId.expireTime=sessionId.lastAccessTime+TEMPORARY_FIRST_TIMEOUT;
+		return sessionId;
 	}
 	
 	//cookieに設定されないのでcookie関連はダミー
 	public static SessionId createPathOnceId(String url,SessionId primaryId) {
-		return createSessionId(Type.PATH_ONCE,url,primaryId,null,
-				false,null,null);
+		SessionId sessionId=createSessionId(Type.PATH_ONCE,url,primaryId,null,false,null,null);
+		sessionId.expireTime=sessionId.lastAccessTime+PATH_ONCE_TIMEOUT;
+		return sessionId;
 	}
 	
 	public static SessionId createPrimaryId(AuthSession authSession) {
-		return createSessionId(Type.PRIMARY,null,null,authSession,
+		SessionId sessionId=createSessionId(Type.PRIMARY,null,null,authSession,
 				authorizer.isAuthSsl(), config.getSelfDomain()+":"+config.getInt(Config.SELF_PORT), authorizer.getAuthPath());
+		sessionId.expireTime=sessionId.lastAccessTime+authorizer.getSessionTimeout();
+		return sessionId;
 	}
 
 	public static SessionId createSessionId(Type type,String url,SessionId primaryId,AuthSession authSession,
@@ -108,27 +123,12 @@ public class SessionId extends PoolBase{
 		}
 		sessionId.lastAccessTime = System.currentTimeMillis();
 		sessionId.cookieLocation=CookieLocation.parse(isCookieSecure,cookieDomain,cookiePath);
-//		sessionId.isCookieSecure=isCookieSecure;
-//		sessionId.cookieDomain=cookieDomain;
-//		sessionId.cookiePath=cookiePath;
-//		if(isCookieSecure){
-//		}
-//		StringBuilder sb=new StringBuilder();
-//		if(isCookieSecure){
-//			sb.append("https://");
-//		}else{
-//			sb.append("http://");
-//		}
-//		sb.append(cookieDomain);
-//		sb.append(cookiePath);
-//		sessionId.authUrl=sb.toString();
-		
 		//idの生成は、authorizerに任せる
 		authorizer.registerSessionId(sessionId);
 		return sessionId;
 	}
 	
-	public boolean logoutIfTimeout(String id,long lastAccessLimit) {
+	public boolean logoutIfTimeout(String id,long now) {
 		synchronized (this) {
 			if(isValid==false){
 				return false;
@@ -136,7 +136,7 @@ public class SessionId extends PoolBase{
 			if(!id.equals(this.id)){
 				return false;
 			}
-			if(lastAccessLimit>0&&lastAccessTime>lastAccessLimit){
+			if(expireTime>0&&expireTime>now){//expireTime>0の判定は、SecondaryIdは積極的にはタイムアウトしないことを意味する
 				return false;
 			}
 			if(this.type==Type.PRIMARY){
@@ -192,20 +192,19 @@ public class SessionId extends PoolBase{
 	//urlが直接認証を必要とするURLか?wsなどAPIで認証をする場合originは認証画面とは関係しない
 	private boolean isDirectUrl;
 	private long lastAccessTime;
+	private long expireTime;
+	private Map<String,Object> attribute=new HashMap<String,Object>();//sessionに付随する属性
 	
 	/* secondaryIdが単一のmappingと結びつくとは限らない WebSocket対応*/
 	//	private Mapping mapping;//secondary用の場合、どのmapping用のSessionIdか
 	/* secondaryIdがどの範囲で有効かを保持する WebSocket対応*/
 	private CookieLocation cookieLocation;
-	/*
-	private String authUrl;
-	private boolean isCookieSecure;
-	private String cookieDomain;
-	private String cookiePath;
-	*/
 	
 	/* Cookie的に該当するsecondaryかをチェックする */
 	public boolean isCookieMatch(String authUrl){
+		if(cookieLocation==null){
+			return false;
+		}
 		return this.cookieLocation.isMatch(authUrl);
 	}
 	
@@ -213,45 +212,14 @@ public class SessionId extends PoolBase{
 	public boolean isCookieMatch(boolean isSecure,ServerParser domain,String path){
 		return this.cookieLocation.isMatch(isSecure,domain,path);
 	}
-
-	/*
-	public void onTimer(Object userContext) {
-		try {
-			switch (type) {
-			case PRIMARY:// セションタイムアウト,30minutes
-				long now=System.currentTimeMillis();
-				long latest=0;
-				long nextTimeoutInterval;
-				synchronized(this){
-					if(!isValid){
-						return;
-					}
-					for(SessionId secondaryId:secondaryIds.values()){
-						if(latest<secondaryId.lastAccessTime){
-							latest=secondaryId.lastAccessTime;
-						}
-					}
-					nextTimeoutInterval=SESSION_TIMEOUT-(now-latest);
-					if(nextTimeoutInterval<=0){
-						logoff();
-					}
-				}
-				if(nextTimeoutInterval>0){
-					setTimeout(nextTimeoutInterval);
-				}
-				break;
-			case COOKIE_ONCE:// 認証情報入力が遅すぎる場合は、再実行,5seconds
-				remove();
-				break;
-			case PATH_ONCE:// redirectが遅い,5seconds
-				remove();
-				break;
-			}
-		} finally {
-			unref();
-		}
+	
+	public Object getAttribute(String name){
+		return attribute.get(name);
 	}
-	*/
+	public void setAttribute(String name, Object value) {
+		attribute.put(name, value);
+	}
+	
 	public boolean isMatch(Type type){
 		if(!isValid){
 			return false;
@@ -393,16 +361,6 @@ public class SessionId extends PoolBase{
 		return isDirectUrl;
 	}
 	
-	/*
-	public void addSecondaryId(Mapping mapping,SessionId secondaryId) {
-		SessionId orgSecondaryId=secondaryIds.remove(mapping);
-		secondaryIds.put(mapping.getId(), secondaryId);
-		if(orgSecondaryId!=null){
-			orgSecondaryId.remove();
-		}
-	}
-	*/
-	
 	public void setPrimaryId(SessionId primaryId) {
 		if(primaryId!=null){
 			primaryId.ref();
@@ -418,10 +376,20 @@ public class SessionId extends PoolBase{
 	}
 
 	public void setLastAccessTime() {
-		if(type==type.SECONDARY){
-			primaryId.getLastAccessTime();
-		}else{
-			this.lastAccessTime=System.currentTimeMillis();
+		lastAccessTime=System.currentTimeMillis();
+		switch(type){
+		case SECONDARY:
+			primaryId.setLastAccessTime();
+			break;
+		case PATH_ONCE:
+			expireTime=lastAccessTime+PATH_ONCE_TIMEOUT;
+			break;
+		case PRIMARY:
+			expireTime=lastAccessTime+authorizer.getSessionTimeout();
+			break;
+		case TEMPORARY:
+			expireTime=lastAccessTime+TEMPORARY_TIMEOUT;
+			break;
 		}
 	}
 
@@ -454,6 +422,7 @@ public class SessionId extends PoolBase{
 			cookieLocation.unref();
 			cookieLocation=null;
 		}
+		attribute.clear();
 		super.recycle();
 	}
 

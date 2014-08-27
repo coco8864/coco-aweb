@@ -14,8 +14,7 @@ import naru.async.ssl.SslHandler;
 import naru.async.store.Store;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
-import naru.aweb.http.HeaderParser;
-import naru.aweb.http.WebServerHandler;
+import naru.aweb.util.HeaderParser;
 import naru.aweb.util.ServerParser;
 
 import org.apache.log4j.Logger;
@@ -53,7 +52,7 @@ public class SslPeekProxyHandler extends WebServerHandler {
 		super.recycle();
 	}
 	
-	public void startResponse(){
+	public void onRequestHeader(){
 		logger.debug("#doResponse.id:"+getChannelId());
 		this.client=this;
 		HeaderParser requestHeader=getRequestHeader();
@@ -77,7 +76,7 @@ public class SslPeekProxyHandler extends WebServerHandler {
 		*/
 		isConnected=false;
 //		attachHandler(server);
-		server.asyncConnect(this, targetHost, targetPort, writeTimeout);
+		server.asyncConnect(targetHost, targetPort, writeTimeout, this);
 	}
 	
 	/**
@@ -96,7 +95,7 @@ public class SslPeekProxyHandler extends WebServerHandler {
 	 * SSLデコードは、WebHandlerで処理、平文化結果がこのメソッドに通知される。
 	 * @param buffers
 	 */
-	public void onReadPlain(Object userContext,ByteBuffer[] buffers) {
+	public void onReadPlain(ByteBuffer[] buffers,Object userContext) {
 		logger.debug("#readPlain client.id:"+getChannelId());
 		if(!requestDecodeHeader.isParseEnd()){
 			for(int i=0;i<buffers.length;i++){
@@ -110,7 +109,7 @@ public class SslPeekProxyHandler extends WebServerHandler {
 				}
 			}
 		}
-		server.asyncWrite(null, buffers);
+		server.asyncWrite(buffers, null);
 		client.asyncRead(null);
 		lastIo=System.currentTimeMillis();
 		return;
@@ -183,7 +182,7 @@ public class SslPeekProxyHandler extends WebServerHandler {
 				//TODO back proxyが認証を必要とする場合どうする？
 				//CONNECTION メソッドをデリゲート
 				ByteBuffer[] headerBuffers=requestParser.getHeaderBuffer();
-				asyncWrite(null,headerBuffers);
+				asyncWrite(headerBuffers,null);
 				isProxyConnect=false;
 				asyncRead(null);
 			}else{//直接SSLサーバと通信する処理
@@ -203,7 +202,7 @@ public class SslPeekProxyHandler extends WebServerHandler {
 			logger.debug("#handshaked server.id:"+getChannelId());
 			isHandshaked=true;
 			client.setStatusCode("200");//アクセスログに記録するためWebHandlerに通知
-			client.asyncWrite(SSL_PROXY_OK_CONTEXT, BuffersUtil.toByteBufferArray(ByteBuffer.wrap(ProxyOkResponse)));
+			client.asyncWrite(BuffersUtil.toByteBufferArray(ByteBuffer.wrap(ProxyOkResponse)), SSL_PROXY_OK_CONTEXT);
 			//サーバ側からのデータはまだ要求しない。clientとの接続が完了した時に要求する
 			return false;
 		}
@@ -245,17 +244,17 @@ public class SslPeekProxyHandler extends WebServerHandler {
 				sslOpenWithBuffer(true, buffers);
 				return;
 			}
-			super.onRead(userContext, buffers);
+			super.onRead(buffers, userContext);
 		}
 		
 		/**
 		 * バックサーバからの応答メッセージ
 		 * @param buffers
 		 */
-		public void onReadPlain(Object userContext,ByteBuffer[] buffers) {
+		public void onReadPlain(ByteBuffer[] buffers,Object userContext) {
 			logger.debug("#readPlain server.cid:"+getChannelId());
 			long length=BuffersUtil.remaining(buffers);
-			client.asyncWrite(null, buffers);
+			client.asyncWrite(buffers, null);
 			client.responseBodyLength(length);
 			server.asyncRead(null);
 			lastIo=System.currentTimeMillis();

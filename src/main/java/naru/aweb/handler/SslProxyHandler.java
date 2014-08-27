@@ -10,8 +10,7 @@ import java.nio.ByteBuffer;
 import naru.async.ChannelHandler;
 import naru.async.pool.BuffersUtil;
 import naru.aweb.config.Config;
-import naru.aweb.http.HeaderParser;
-import naru.aweb.http.WebServerHandler;
+import naru.aweb.util.HeaderParser;
 import naru.aweb.util.ServerParser;
 
 import org.apache.log4j.Logger;
@@ -44,7 +43,7 @@ public class SslProxyHandler extends WebServerHandler {
 		super.recycle();
 	}
 	
-	public void startResponse(){
+	public void onRequestHeader(){
 		logger.debug("#doResponse client.cid:"+getChannelId());
 		this.client=this;
 		HeaderParser requestHeader=getRequestHeader();
@@ -68,7 +67,7 @@ public class SslProxyHandler extends WebServerHandler {
 		*/
 		isConnected=false;
 //		attachHandler(server);
-		if(server.asyncConnect(this, targetHost, targetPort, connectTimeout)){
+		if(server.asyncConnect(targetHost, targetPort, connectTimeout, this)){
 			client.ref();//clientがonFinishedするまでこのインスタンスを押さえる
 		}
 	}
@@ -76,7 +75,7 @@ public class SslProxyHandler extends WebServerHandler {
 	public void onRead(Object userContext, ByteBuffer[] buffers) {
 		logger.debug("#read client.cid:"+client.getChannelId());
 		lastIo=System.currentTimeMillis();
-		server.asyncWrite(WRITE_REQUEST, buffers);
+		server.asyncWrite(buffers, WRITE_REQUEST);
 		asyncRead(READ_REQUEST);
 	}
 	
@@ -120,11 +119,11 @@ public class SslProxyHandler extends WebServerHandler {
 			}else{
 				/* 接続成功 */
 				client.setStatusCode("200");//アクセスログに記録するためWebHandlerに通知
-				client.asyncWrite(WRITE_REQUEST, BuffersUtil.toByteBufferArray(ByteBuffer.wrap(ProxyOkResponse)));
+				client.asyncWrite(BuffersUtil.toByteBufferArray(ByteBuffer.wrap(ProxyOkResponse)), WRITE_REQUEST);
 				client.asyncRead(READ_REQUEST);
 				ByteBuffer[] body=requestParser.getBodyBuffer();
 				if(body!=null){
-					server.asyncWrite(WRITE_REQUEST,body);
+					server.asyncWrite(body,WRITE_REQUEST);
 				}
 			}
 			server.asyncRead(READ_REQUEST);
@@ -134,7 +133,7 @@ public class SslProxyHandler extends WebServerHandler {
 			logger.debug("#read.cid:"+getChannelId());
 			lastIo=System.currentTimeMillis();
 			long length=BuffersUtil.remaining(buffers);
-			client.asyncWrite(WRITE_REQUEST, buffers);
+			client.asyncWrite(buffers, WRITE_REQUEST);
 			client.responseBodyLength(length);
 			asyncRead(READ_REQUEST);
 			if(isUseProxy && isNeesClientRead){

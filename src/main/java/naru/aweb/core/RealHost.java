@@ -14,10 +14,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import javax.net.ssl.SSLContext;
+
 import org.apache.log4j.Logger;
 
 import naru.async.ChannelHandler;
-import naru.async.ChannelHandler.IpBlockType;
 import naru.aweb.config.Config;
 import naru.aweb.util.ServerParser;
 /*
@@ -158,6 +159,7 @@ public class RealHost {
 			logger.info(name + " bind ip:"+inetAdder.getHostAddress());
 			selfIp4Host=bindHost;
 		}else{
+			servers.add(new ServerParser("localhost", bindPort));
 			//ref http://www.itmedia.co.jp/enterprise/articles/0407/27/news031.html
 			java.util.Enumeration enuIfs = NetworkInterface.getNetworkInterfaces();
 			if (null != enuIfs) {
@@ -237,10 +239,17 @@ public class RealHost {
 			logger.error("bindHost error.",e);
 			return false;
 		}
+		Config config=Config.getConfig();
+		String sslCommonName=realHost.sslCommonName;
+		if(sslCommonName==null || sslCommonName.equals("")){
+			sslCommonName=config.getSelfDomain();
+		}
+		realHost.sslContext=config.getSslContextPool().getSSLContext(sslCommonName);
+		
 		int backlog=realHost.getBacklog();
 		Pattern blackPattern=createPattern(realHost.getBlackPattern());
 		Pattern whitePattern=createPattern(realHost.getWhitePattern());
-		handler=ChannelHandler.accept(realHost,address, backlog, DispatchHandler.class,IpBlockType.whiteBlack,blackPattern,whitePattern);
+		handler=ChannelHandler.accept(DispatchHandler.class,address, backlog, true,blackPattern,whitePattern,realHost);
 		if(handler==null){//bindに失敗した
 			realHost.completeUnbind();
 			logger.warn("fail to accept."+name+":"+address);
@@ -252,7 +261,6 @@ public class RealHost {
 		System.out.println(name + " listen start address:"+address);
 		realHost.setBinding(true);
 		if(name.equals(MAIN_HOST_NAME)){
-			Config config=Config.getConfig();
 			int port=realHost.getBindPort();
 			config.setProperty(Config.SELF_PORT,port);
 			String selfDomain=config.getString(Config.SELF_DOMAIN);
@@ -269,7 +277,6 @@ public class RealHost {
 			}
 			System.out.println("selfDomain:"+selfDomain);
 			config.setProperty(Config.SELF_URL, "http://" + selfDomain +":"+port);
-			
 			selfOrigins.add("http://"+selfDomain+":"+port+"/");
 			selfOrigins.add("https://"+selfDomain+":"+port+"/");
 			if(port==80){
@@ -331,7 +338,6 @@ public class RealHost {
 		return true;
 	}
 	
-//	private Configuration configuration;
 	private String name;//定義名
 	private Set<ServerParser> servers=new HashSet<ServerParser>();
 	private boolean isBinding;//現在binding中か否か
@@ -343,16 +349,24 @@ public class RealHost {
 	
 	private int bindPort;
 	private int backlog;
-//	private InetSocketAddress inetSocketAddress;
 	private Set<String> virtualHosts=new HashSet<String>();
 	private String blackPattern;
 	private String whitePattern;
 	private boolean isSpdyAvailable=true;//TODO 
+	private String sslCommonName;//SSLサーバ証明書のcnに入れるドメイン名
+	private SSLContext sslContext;
 	
-//	private boolean isProxy;
-//	private boolean isSslproxy;
-//	private boolean isWeb;
-//	private boolean isSslweb;
+	public String getSslCommonName() {
+		return sslCommonName;
+	}
+
+	public void setSslCommonName(String sslCommonName) {
+		this.sslCommonName = sslCommonName;
+	}
+
+	public SSLContext getSslContext() {
+		return sslContext;
+	}
 
 	public String getName() {
 		return name;

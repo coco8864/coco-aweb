@@ -1,7 +1,7 @@
 package naru.aweb;
 
+import naru.aweb.auth.User;
 import naru.aweb.config.CommissionAuth;
-import naru.aweb.config.User;
 
 import org.junit.Test;
 

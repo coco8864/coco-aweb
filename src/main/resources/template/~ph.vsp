@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html #if($useAppcache)manifest="$esc.html($manifest)"#end>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta charset="UTF-8" /> 
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<script type="text/javascript" src="/pub/js/jquery-1.8.3.min.js"></script>
+<script type="text/javascript" src="/pub/js/ph-json2.js"></script>
+<script type="text/javascript" src="/pub/js/aes.js"></script>
+<script type="text/javascript" src="/pub/js/aplOffline.js"></script>
+<script  type="text/javascript"><!--
+var authFrameTimeout=$esc.javascript(${config.getString("authFrameTimeout","5000")});
+// --></script>
+<title>appcache controle</title>
+<STYLE><!--H1 {font-family:Tahoma,Arial,sans-serif;color:white;background-color:#525D76;font-size:22px;} H2 {font-family:Tahoma,Arial,sans-serif;color:white;background-color:#525D76;font-size:16px;} H3 {font-family:Tahoma,Arial,sans-serif;color:white;background-color:#525D76;font-size:14px;} BODY {font-family:Tahoma,Arial,sans-serif;color:black;background-color:white;} B {font-family:Tahoma,Arial,sans-serif;color:white;background-color:#525D76;} P {font-family:Tahoma,Arial,sans-serif;background:white;color:black;font-size:12px;}A {color : black;}A.name {color : black;}HR {color : #525D76;}--></STYLE>
+<script>
+##サーバが認識しているモード
+var appcacheMode=$appcacheMode;
+var COOKIE_KEY='$phappcacheCookieKey=';
+
+##appcacheのon/offがしたいのであれば必要
+function appcache(flg){
+ if(flg){
+  var date=new Date();
+  date.setTime(0);
+  document.cookie=COOKIE_KEY+'on;expires='+date.toGMTString();
+  jQuery('#appcacheOff').show();
+  jQuery('#appcacheOn').hide();
+ }else{
+  document.cookie=COOKIE_KEY+'off';
+  jQuery('#appcacheOff').hide();
+  jQuery('#appcacheOn').show();
+ }
+ var appCache = window.applicationCache;
+ if(appCache){
+  appCache.update();
+ }
+}
+
+function calcStatus(){
+ var appCache = window.applicationCache;
+ if(!appCache){
+  return "Not supported"
+ }
+ switch (appCache.status) {
+ case appCache.UNCACHED: // UNCACHED == 0
+  return 'UNCACHED';
+ case appCache.IDLE: // IDLE == 1
+  var cm=cookieMode()
+##serverがcookieの指示に従うようにする
+  if(appcacheMode && !cm && !errorOccur){
+##   location.reload(true);
+   return;
+  }else if(!appcacheMode && cm && !errorOccur){
+##   location.reload(true);
+   return;
+  }
+  return 'IDLE';
+ case appCache.CHECKING: // CHECKING == 2
+  return 'CHECKING';
+ case appCache.DOWNLOADING: // DOWNLOADING == 3
+  return 'DOWNLOADING';
+ case appCache.UPDATEREADY:  // UPDATEREADY == 4
+  appCache.swapCache();
+  location.reload();
+  return 'UPDATEREADY';
+ case appCache.OBSOLETE: // OBSOLETE == 5
+  return 'OBSOLETE';
+ default:
+  return 'UKNOWN CACHE STATUS';
+ }
+}
+
+var errorOccur=false;
+function onError(){
+ errorOccur=true;
+ jQuery('#cacheStatus').text('error occured');
+}
+
+function onStatusChange(e){
+ var appCashStatus=calcStatus();
+ jQuery('#cacheStatus').text('cacheStatus:'+appCashStatus);
+}
+
+function onOnlineChange(e){
+ calcStatus();
+ if(window.navigator.onLine){
+  jQuery('#onLineStatus').text('network:online');
+ }else{
+  jQuery('#onLineStatus').text('network:offline');
+ }
+}
+
+function cookieMode(){
+ var cookie=document.cookie+';';
+ var start=cookie.indexOf(COOKIE_KEY,0);
+ if(start>=0){
+  start+=COOKIE_KEY.length;
+  var end=cookie.indexOf(';',start);
+  var value=cookie.substring(start,end);
+  if('off'===value){
+   return false;
+  }
+ }
+ return true;
+}
+
+jQuery(function() {
+ if (window.applicationCache) {
+  var appCache = window.applicationCache;
+   appCache.addEventListener('error', onError, false);
+   appCache.addEventListener('checking', onStatusChange, false);
+   appCache.addEventListener('noupdate', onStatusChange, false);
+   appCache.addEventListener('downloading', onStatusChange, false);
+   appCache.addEventListener('progress', onStatusChange, false);
+   appCache.addEventListener('updateready', onStatusChange, false);
+   appCache.addEventListener('cached', onStatusChange, false);
+   appCache.addEventListener('obsolete', onStatusChange, false);
+ }
+ onStatusChange();
+ onOnlineChange();
+ cm=cookieMode()
+ if(cm){
+  jQuery('#appcacheOff').show();
+  jQuery('#appcacheOn').hide();
+ }else{
+  jQuery('#appcacheOff').hide();
+  jQuery('#appcacheOn').show();
+ }
+});
+</script>
+</head>
+<body><h1>phantom appcache controle</h1><HR size="1" noshade="noshade">
+<ul>
+<li>useAppcache:$!useAppcache</li>
+<li>manifest:$!manifest</li>
+<li>appcacheMode(*):$!appcacheMode</li>
+<li id='cacheStatus'>...</li>
+<li id='onLineStatus'>...</li>
+</ul>
+##appcacheのon/offがしたいのであれば必要
+<div id='appcacheOff'>appcache enable:<input type='button' value='appcache off' onclick='appcache(false);'/></div>
+<div id='appcacheOn'>appcache disable:<input type='button' value='appcache on' onclick='appcache(true);'/></div>
+
+<table width="100%" cellspacing="0" cellpadding="5" align="center">
+<tr>
+<td align="left"><font size="+1"><strong>cache contents</strong></font></td>
+</tr>
+#foreach($file in $cachePaths)
+#if( ($velocityCount%2==1) )
+<tr>
+#else
+<tr bgcolor="#eeeeee">
+#end
+<td align="left">&nbsp;&nbsp;
+<a href="$esc.html(${file})"><tt>$esc.html(${file})</tt></a></td>
+</tr>
+#end
+</table>
+<HR size="1" noshade="noshade"><h3>Phantom Server</h3></body>
+</html>

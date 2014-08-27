@@ -1,149 +1,170 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja" dir="ltr">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja" dir="ltr" #if( $useAppcache )manifest="$esc.html($manifest)"#end>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta http-equiv="Pragma" content="no-cache"> 
 <meta http-equiv="Cache-Control" content="no-cache"> 
 <meta http-equiv="Expires" content="0"> 
-<script type="text/javascript" src="/pub/js/ph-loader.js?ph=ph"></script>
+<script type="text/javascript" src="/pub/js/jquery-1.8.3.min.js"></script>
+<script type="text/javascript" src="/pub/js/ph-json2.js"></script>
+<script type="text/javascript" src="/pub/js/aes.js"></script>
 <script  type="text/javascript"><!--
 ##親frameのlocation.href
+var OFFLINE_KEY='PaOfflineAuth'
 var parentOrigin;
 
-##受付リクエスト情報
-var orderInfo={isIn:false,req:null}
-
-function orderResponse(result){
-	if(!orderInfo.isIn){
-		return;
-	}
-	result.type=orderInfo.req.type;
-	var resText=ph.JSON.stringify(result);
-	orderInfo.isIn=false;
-	orderInfo.req=null;
-	parent.postMessage(resText,parentOrigin);
-}
+##このコンテンツはoffline cacheするので個別の値は保存できない
+##var offlinePassHash='$!esc.javascript(${offlinePassHash})';
+##var authInfo=ph.JSON.parse('$esc.javascript(${info})');
+##var offlinePassHash=null;
+##var authInfo=null;
+var userInfo=null;
 
 ##crossDomainRequest情報
-var cdrInfo={isIn:false,url:null,cb:null}
+var cdr={isIn:false,req:null};
 
-function crossDomainRequest(url,cb){
-	if(cdrInfo.isIn){//リクエスト中
-		cb({result:false});
-		return;
-	}
-	cdrInfo.isIn=true;
-	cdrInfo.url=url;
-	cdrInfo.cb=cb;
-	window._phAuthFrameChild.location.href=url;
+function onlineInfo(req,cb){
+  jQuery.ajax({
+    type:'POST',
+    url:'userInfo',
+    dataType:'json',
+    data:req,
+    success:function(x){
+      userInfo=x;
+      cb(x.result);},
+    error:function(x){cb({result:false});}
+  });
 }
 
-function endOfFrameLoad(){
-	//正常時はloadされる前にpostMessageされるはず
-	if(!cdrInfo.isIn){
-		return;
-	}
-	cdrInfo.isIn=false;
-	cdrInfo.url=null;
-	var cb=cdrInfo.cb;
-	cdrInfo.cb=null;
-	cb({result:false});
+function onRequest(ev){
+  if(ev.source!==parent){
+    return;
+  }
+  if(!ev.data){
+    return;
+  }
+  var origin = ev.origin;
+  var req=ph.JSON.parse(ev.data);
+  if(parentOrigin==="*" || origin===parentOrigin){
+    if(cdr.isIn){
+      return;##parentからresponseを待たずに続けてrequestされた（異常)
+    }
+    cdr.isIn=true;
+    cdr.req=req;
+    if(req.type==="init"){
+      if(req.isOffline){
+        _response({type:"showFrame"});
+      }else{
+        onlineInfo(req,function(result){
+            response({type:"init",result:result});
+          });
+      }
+    }else if(req.type==="encrypt"){
+      if(userInfo.offlinePassHash){
+        req.encryptText=CryptoJS.AES.encrypt(req.plainText, userInfo.offlinePassHash).toString();
+      }else{
+        req.encryptText=req.plainText
+      }
+      response(req);
+    }else if(req.type==="decrypt"){
+      if(userInfo.offlinePassHash){
+        req.plainText=CryptoJS.AES.decrypt(req.encryptText, userInfo.offlinePassHash).toString(CryptoJS.enc.Utf8);
+      }else{
+        req.plainText=req.encryptText
+      }
+      response(req);
+    }else if(req.type==="logout"){
+      jQuery.ajax({
+        type:'GET',
+        url:'ajaxLogout',
+        dataType:'json',
+        success:function(x){response(x);},
+        error:function(x){response({result:false});}
+      });
+    }else if(req.type==="info"){
+      response(userInfo.authInfo);
+    }
+  }
 }
 
-
-/* 親windowからのリクエスト */
-function getUser(req){
-	var cb=function(resText){
-		var resObj=ph.JSON.parse(resText);
-		var res={type:req.type,result:true,user:resObj};
-		postMessageToParent(res,parentOrigin);
-	}
-	ph.jQuery.post(ph.authUrl+"/user",{isAjax:true},cb,"html");
+function response(msg){
+  cdr.isIn=false;
+  cdr.req=null;
+  _response(msg);
 }
 
-function _setAuthCb(res){
-//	var res=ph.JSON.parse(resText);
-	if(res.result){//認可成功
-		orderResponse(res);
-	}else{
-		orderResponse(res);
-	}
+function _response(msg){
+  var jsonMsg=ph.JSON.stringify(msg);
+  parent.postMessage(jsonMsg,parentOrigin);
 }
 
-function _checkSessionCb(resText){
-	var res=ph.JSON.parse(resText);
-	if(res.result=='secondary'){//secondaryがあった場合
-		res.result=true;
-		orderResponse(res);
-	}else if(res.result=='primary'){//primaryは、あったがsecondaryがなかった場合
-//		var url=orderInfo.req.authUrl +"?PH_AUTH=setAuth&pathOnceId=" + res.pathOnceId;
-//		crossDomainRequest(url,_setAuthCb);
-		crossDomainRequest(res.authEncUrl,_setAuthCb);
-	}else if(res.result=='redirectAuth'){//primaryがなかったため、認証が必要な場合
-		orderResponse({result:'redirect',location:ph.authUrl+"?authId="+res.authId});
-	}else{//urlの問題等でerror
-		orderResponse({result:false});
-	}
-}
+jQuery(function(){
+  parentOrigin=decodeURIComponent(location.search.substring('?origin='.length));
+  if(parentOrigin==='file://'){
+    parentOrigin='*';
+  }
+  if(window.addEventListener){
+    window.addEventListener('message',onRequest, false);
+  }else if(window.attachEvent){
+    window.attachEvent('onmessage',onRequest);
+  }
+  _response({type:'load'});
+/*
+  var offlineInfo={};
+  var offlineInfoText=localStorage.getItem(OFFLINE_KEY);
+  if(offlineInfoText){
+    offlineInfo=ph.JSON.parse(offlineInfoText);
+  }
+  var loginId=authInfo.user.loginId;
+  var userInfoEncText=offlineInfo[loginId];
+  var userInfo;
+  if(userInfoEncText){
+    var userInfoText;
+    if(offlinePassHash){
+      userInfoText=CryptoJS.AES.decrypt(userInfoEncText, offlinePassHash).toString(CryptoJS.enc.Utf8);
+    }else{
+      userInfoText=userInfoEncText;
+    }
+    userInfo=ph.JSON.parse(userInfoText);
+  }else{
+    userInfo={onlineAuthCount:0,offlineAuthCount:0};
+  }
+##  userInfo.offlinePassHash=offlinePassHash;
+  userInfo.user=authInfo.user;
+  userInfo.onlineAuthCount++;
 
-function getAppId(req){
-    req.isAjax=true;
-	ph.jQuery.post(ph.authUrl+"/checkSession",req/*{authUrl:req.authUrl,originUrl:req.originUrl}*/,_checkSessionCb,"html");
-}
+  var userInfoText=ph.JSON.stringify(userInfo);
+  if(offlinePassHash){
+    userInfoEncText=CryptoJS.AES.encrypt(userInfoText, offlinePassHash).toString();
+  }else{
+    userInfoEncText=userInfoText;
+  }
+  offlineInfo[loginId]=userInfoEncText;
+  offlineInfoText=ph.JSON.stringify(offlineInfo);
+  localStorage.setItem(OFFLINE_KEY,offlineInfoText)
+  response(authInfo);
+*/
+/*
+  //XX {loginId1:{passCheckText:'',offlineLoginCount:99},loginId2:... }
+  //localStrageから既存のXXを取得
+  //logidIdでXXを複合かしてloginIdになることをチェック
+  //yesなら
+  //noなら
 
-function onMessageFunc(ev){
-	if(!ev.data){
-		return;
-	}
-	var origin = ev.origin;
-	var req=ph.JSON.parse(ev.data);
-	if(cdrInfo.isIn/*&& origin==cdrInfo.url*/){
-		cdrInfo.isIn=false;
-		cdrInfo.url=null;
-		var cb=cdrInfo.cb;
-		cdrInfo.cb=null;
-		cb(req);
-		return;
-	}
-	if(parentOrigin=="*" || origin==parentOrigin){
-		if(orderInfo.isIn){
-			return;//処理中
-		}
-		orderInfo.isIn=true;
-		orderInfo.req=req;
-		if(req.type=="getUser"){
-			getUser(req);
-		}else if(req.type=="getAppId"){
-			getAppId(req);
-		}
-  	}
-}
+  //login回数をインクリメント
 
-function postMessageToParent(msg,origin){
-	orderInfo.isIn=false;
-	orderInfo.req=null;
-	var jsonMsg=ph.JSON.stringify(msg);
-	parent.postMessage(jsonMsg,origin);
-}
+  //localStrageに設定
+  response({load:true});
+*/
 
-ph.jQuery(function(){
-	parentOrigin=decodeURIComponent(location.search.substring('?origin='.length));
-	if(parentOrigin=='file://'){
-		parentOrigin='*';
-	}
-//	alert('parentOrigin:'+parentOrigin); TODO check parentOrigin from
-	if(window.addEventListener){
-		window.addEventListener('message',onMessageFunc, false);
-	}else if(window.attachEvent){
-		window.attachEvent('onmessage',onMessageFunc);
-	}
-	postMessageToParent({load:true},parentOrigin);
 });
 // --></script>
 </head>
 <body>
-<iframe name="_phAuthFrameChild" id="_phAuthFrameChild" onload="endOfFrameLoad();"></iframe>
-認証処理用フレームコンテンツ
+<h1>Phantom offline logon</h1>
+<div>user:<input name=userid></div>
+<div>offline password:<input type='password' name=userid></div>
+<div><input type='button' value='logon' onclick='_response({type:"hideFrame"})'></div>
 </body>
 </html>

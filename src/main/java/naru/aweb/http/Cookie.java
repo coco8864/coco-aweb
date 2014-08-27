@@ -56,6 +56,9 @@ public class Cookie extends PoolBase{
 //	private static final Pattern KEY_VALUE_PATTERN=Pattern.compile("\\s*([^\\s=]*)\\s*=\\s*([^\\s;]*)\\s*[;|$]");
 	private static final Pattern KEY_VALUE_PATTERN=Pattern.compile("\\s*([^\\s=]*)\\s*=\\s*([^\\s;]*)\\s*[;]?");
     public static String parseHeader(String cookie,String key,StringBuilder restOfCookie){
+    	if(cookie==null){
+    		return null;
+    	}
     	Matcher matcher=null;
     	synchronized(KEY_VALUE_PATTERN){
     		matcher=KEY_VALUE_PATTERN.matcher(cookie);

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html manifest="~ph.appcache">
+<head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta charset="UTF-8" /> 
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>PhantomLink Sample Page</title>
+  <script type="text/javascript" src="/pub/js/ph.js"></script>
+  <link type="text/css" href="/pub/css/ph.css" rel="stylesheet" /> 
+<style type="text/css"><!--
+table {border-collapse: collapse;}
+td,th {border:1px solid #000;text-align:left;font-size:x-small}
+.ui-resizable-se {bottom: 17px;}
+.mainTitle{ margin: 0.0em 0.5em;padding:0em 0.0em 0.0em;}
+.welcome{ margin: 0.0em 1.0em;font-size: 125.0%;}
+-->
+</style>
+<script type="text/javascript">
+ph.jQuery(function() {
+  ph.jQuery("#version").text(ph.version);
+  ph.jQuery("#status").text('running');
+  ph.jQuery("#sessionStorage").text("necessary");
+  ph.jQuery("#crossDocument").text("necessary");
+  ph.jQuery("#websocket").text("optional");
+  ph.jQuery("#hashChange").text("optional");
+  ph.jQuery("#blob").text("optional");
+  ph.jQuery("#appCache").text("optional");
+
+  var available=true;
+  if(ph.useWebSocket){
+    useText="available"
+  }else{
+    useText="unavailable"
+  }
+  ph.jQuery("#useWebsocket").text(useText);
+  if(ph.useCrossDomain){
+    useText="available";
+  }else{
+    useText="unavailable";
+    available=false;
+  }
+  ph.jQuery("#useCrossDocument").text(useText);
+
+  if(ph.useHashChange){
+    useText="available";
+  }else{
+    useText="unavailable";
+  }
+  ph.jQuery("#useHashChange").text(useText);
+
+  if(ph.useSessionStorage){
+    useText="available";
+  }else{
+    useText="unavailable";
+    available=false;
+  }
+  ph.jQuery("#useSessionStorage").text(useText);
+
+  if(ph.useBlob){
+    useText="available";
+  }else{
+    useText="unavailable";
+  }
+  ph.jQuery("#useBlob").text(useText);
+
+  if(ph.useAppCache){
+    useText="available";
+  }else{
+    useText="unavailable";
+  }
+  ph.jQuery("#useAppCache").text(useText);
+  if(!available){
+    ph.jQuery("#welcome").text("このブラウザでは利用できません。");
+    ph.jQuery("#loginout").attr("src","/pub/images/logout.gif");
+    return;
+  }
+  ph.onLoad(function(){
+    if(ph.isOffline){
+      ph.jQuery("#isOnline").text("offline");
+    }else{
+      ph.jQuery("#isOnline").text("online");
+    }
+  });
+});
+
+function goAdmin(){
+  if(typeof ph != "undefined"){
+    checkGo(ph.adminUrl);
+  }else{
+    location.href="/admin";
+  }
+}
+function checkGo(url){
+  var now = new Date();
+  ph.jQuery.ajax({
+    type: 'GET',
+    url: '/check.html?'+now.getTime(),
+    success: function(){location.href=url;},
+    error: function(){alert('Phatom Server停止中');}
+  });
+}
+</script>
+</head>
+<body>
+<div>
+<H1 class="mainTitle" style="float: left;">PhantomLink Sample Page</H1>
+</div>
+<hr style="clear: both;"/>
+<H2>Reference link list</H2>
+<ul id="list">
+  <li><a href='/storageTest.html'>storage test</a></li>
+  <li><a href='/pubsubTest.html'>pub/sub test</a></li>
+  <li><a href='/api/coffee'>Client API document</a></li>
+  <ul>
+    <li><a href='/api/coffee/phLink.coffee.html#ph.link'>ph.link method</a></li>
+    <li><a href='/api/coffee/phLinkSubscription.coffee.html'>Subscription Class</a></li>
+    <li><a href='/api/coffee/phLink.coffee.html#PrivateSessionStorage'>Storage Class</a></li>
+  </ul>
+  <li><a href='/api/java'>Server API document</a></li>
+  <ul>
+    <li><a href='/api/java/naru/aweb/link/api/Linklet.html'>Linklet interface</a></li>
+    <li><a href='/api/java/naru/aweb/link/api/LinkletCtx.html'>LinkletCtx interface</a></li>
+  </ul>
+  <li><a href='#' onclick='goAdmin();'>Phantom Server Console</a></li>
+  <li><a href='/'>Phantom Server Home</a></li>
+</ul>
+<hr/>
+<!--div>Status:<span id="status">checking...</span></div-->
+<H2>Browser support function</H2>
+<table>
+<tr><td>Web Storage sessionStorage</td><td id="sessionStorage"></td><td id="useSessionStorage"></td></tr>
+<tr><td>Cross-document messaging</td><td id="crossDocument"></td><td id="useCrossDocument"></td></tr>
+<tr><td>HashChange event</td><td id="hashChange"></td><td id="useHashChange"></td></tr>
+<tr><td>WebSocket API</td><td id="websocket"></td><td id="useWebsocket"></td></tr>
+<tr><td>Blob</td><td id="blob"></td><td id="useBlob"></td></tr>
+<tr><td>AppCache</td><td id="appCache"></td><td id="useAppCache"></td></tr>
+<tr><td>network</td><td>-</td><td id="isOnline">checking...</td></tr>
+</table>
+<hr/>
+<H2>Version:<span id="version">checking...</span></H2>
+</body>
+</html>

@@ -10,7 +10,7 @@
 	<title>Phatom Server Console</title>
 
 	<link type="text/css" href="/pub/css/jquery-ui-1.10.2.custom.css" rel="stylesheet" />
-	<script type="text/javascript" src="/pub/js/ph-loader.js?include=ph-pa.js"></script>
+	<script type="text/javascript" src="/pub/js/ph.js"></script>
 	<script type="text/javascript" src="/pub/js/dateformat.js"></script>
 	<script type="text/javascript" src="/pub/js/jquery-1.8.3.min.js"></script>
 	<script type="text/javascript" src="/pub/js/jquery-ui-1.10.2.custom.min.js"></script>
@@ -28,37 +28,53 @@ td,th {border:1px solid #000;text-align:left;font-size:x-small}
 
 <script type="text/javascript">
 //hashとインデックスの組み合わせ
-var tabIndexs = {'#statusTab' : 0, '#settingTab' : 1, '#mappingTab' : 2, '#accessLogTab' : 3, '#traceTab' : 4, '#stressTab' : 5, '#userTab' : 6, '#chatTab' : 7, '#debugTab' : 8};
-var userTabHashKey='userTabHash.$!esc.html($loginUser.loginId)';
+var tabIndexs = {'#statusTab' : 0, '#settingTab' : 1,'#authenticationTab' : 2, '#mappingTab' : 3, '#accessLogTab' : 4, '#traceTab' : 5, '#stressTab' : 6, '#userTab' : 7, '#chatTab' : 8, '#debugTab' : 9};
 window.onhashchange = function(){
 	//現在のhashからインデックスの値を取得
 	jQuery('html,body').scrollTop(0);
 	var hash=window.location.hash;
-	if(!hash){
-		//hash from session strage
-		hash=sessionStorage[userTabHashKey];
+	var index=0
+	if(hash){
+		index = tabIndexs[hash];
 	}
-	sessionStorage[userTabHashKey]=hash;
-	var index = tabIndexs[hash];
 	//hashが無い場合は最初のタブを選択
 	index = index ? index : 0;
-	if(index===8){//#debug
+	if(hash==='#debugTab'){//#debug
 		jQuery('#debugLi').show();
 	}
 	//現在のインデックスでタブをセレクト
 	jQuery('#tabs').tabs("option", "active", index);
 };
+var link=null;
+var unloading=false;
+window.onbeforeunload = function(e){
+	unloading=true;
+}
 ph.jQuery(function() {
 	ph.setShowDebug(ph.showDebug);
-##	ph.queue.start('/queue',function(){
-##	ph.log('disconnect ph.queue');
-##/*location=ph.publicWebUrl*/});
 	jQuery("#textEditTextArea").resizable({
 		handles: "se"
 	});
-	ph.admin.cd=ph.pa.connect('/admin');
-	ph.admin.cd.done(function(){ph.admin.cd=null});
-	ph.admin.accessLogSd=ph.admin.cd.subscribe('admin','accessLog',
+##ph.useWebSocket=false;
+	ph.jQuery('#dialogs').hide();
+	link=ph.admin.con=ph.link('/admin');
+	var stor=ph.admin.storage=ph.admin.con.storage();
+	stor.getItem('logId',function(value){
+		ph.jQuery('#dialogs').show();
+		if(value){
+			changeEntry(value);
+		}
+	});
+	ph.admin.con.on(ph.EVENT.LOGOUT,function(){
+		//セションタイムアウト
+		unloading=true;
+		location=ph.publicWebUrl;
+	});
+	ph.admin.con.onUnload(function(){
+		if(unloading)return;
+		if (confirm('!!unlinked!!\nDo you go Phantom Server Home?')){location=ph.publicWebUrl;}
+	});
+	ph.admin.accessLogSub=ph.admin.con.subscribe('admin','accessLog',
 		function(res){
 			if(!res){
 				ph.log('res is null');
@@ -71,12 +87,8 @@ ph.jQuery(function() {
 				if(typeof searchPage!=='undefined')searchPage();
 			}
 		});
-	var logId=sessionStorage['logId'];
-	if(logId){
-		changeEntry(parseInt(logId));
-	}
-	ph.admin.perfSd=ph.admin.cd.subscribe('admin','perf');
-	ph.admin.perfSd.onMessage(perfCheckServer);
+	ph.admin.perfSub=ph.admin.con.subscribe('admin','perf',perfCheckServer);
+//	ph.admin.perfSub.onMessage(perfCheckServer);
 
 	jQuery("#stress").dialog({title:'stressオプション入力'});
 	jQuery("#stress").dialog('close');
@@ -84,15 +96,15 @@ ph.jQuery(function() {
 	jQuery("#textEdit").dialog('close');
 	jQuery("#imageBox").dialog({title:'image'});
 	jQuery("#imageBox").dialog('close');
-	jQuery("#mappingDialog").dialog({width: 500,title:'mapping編集'});
+	jQuery("#mappingDialog").dialog({width: 520,title:'mapping編集'});
 	jQuery("#mappingDialog").dialog('close');
 	jQuery("#realHostDialog").dialog({width: 500,title:'realHost編集'});
 	jQuery("#realHostDialog").dialog('close');
-	jQuery("#userDialog").dialog({title:'user編集'});
+	jQuery("#userDialog").dialog({width: 520,title:'user編集'});
 	jQuery("#userDialog").dialog('close');
 	jQuery("#commissionAuthDialog").dialog({title:'代理ログイン情報'});
 	jQuery("#commissionAuthDialog").dialog('close');
-	jQuery("#checkServerDialog").dialog({width: 600,title:'server check'});
+	jQuery("#checkServerDialog").dialog({width: 600,title:'server check',_moveToTop:function(){return null;}});
 	jQuery("#checkServerDialog").dialog('close');
 	jQuery("#commonOutputDialog").dialog({width: 500,title:'汎用出力'});
 	jQuery("#commonOutputDialog").dialog('close');
@@ -128,7 +140,8 @@ ph.log("tabs ajaxOptions success.index:"+index +":anchor:"+anchor);
 </head> 
 <body> 
 <H1 class="mainTitle" style="float: left;">Phantom Server Console</H1>
-<div style="float: right;" class="welcom">$!esc.html($loginUser.loginId)さんようこそ
+<div style="float: right;" class="welcom">$!esc.html($loginUser.nickname)さんようこそ
+<img src="/pub/images/profile.gif" title="profile" onclick='link.userProfile();'/>
 <img src="/pub/images/home.gif" title="home" onclick='location=ph.publicWebUrl'/>
 <img src="/pub/images/logout.gif" title="logout" onclick='location=(ph.authUrl+"/logout")'/>
 </div>
@@ -138,6 +151,7 @@ ph.log("tabs ajaxOptions success.index:"+index +":anchor:"+anchor);
 	<ul>
 		<li><a title="statusTab" href="/admin/status.vsf" hash="#status">status</a></li>
 		<li><a title="settingTab" href="#settingTab">setting</a></li>
+		<li><a title="authenticationTab" href="/admin/authentication.vsf">authentication</a></li>
 		<li><a title="mappingTab" href="/admin/mapping.vsf">mapping</a></li>
 		<li><a title="accessLogTab" href="/admin/accessLog.vsf">accessLog</a></li>
 		<li><a title="traceTab" href="#traceTab">trace</a></li>
@@ -169,11 +183,20 @@ ph.log("tabs ajaxOptions success.index:"+index +":anchor:"+anchor);
 </div>
 
 ##ダイアログの宣言
+<div id="dialogs">
 #parse("dialogs.vpf")
+</div>
 <form id="exportDownloadForm" action="accessLog" style="display:none" target="uploadFrame" method="post">
 <input type="hidden" name="command" value="downloadExportFile"/>
 <input type="hidden" name="token" value="$esc.html(${session.token})"/>
 <input type="hidden" name="fileId" id="exportFileId"/>
+</form>
+
+##証明書ダウンロード用フォーム
+<form id="certificateForm" action="admin" style="display:none" target="uploadFrame" method="post">
+<input type="hidden" name="command" value="certificate"/>
+<input type="hidden" name="cerFileName"  id="cerFileName"/>
+<input type="hidden" name="token" value="$esc.html(${session.token})"/>
 </form>
 
 ##phlogダウンロード用フォーム

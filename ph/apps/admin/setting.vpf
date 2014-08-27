@@ -74,14 +74,25 @@ function setFileCache(){
   });
 }
 
+function updateAppCache(){
+  ph.admin.doCommand('updateAppCache',{},
+  function(x){
+    alert('AppCache更新依頼完了');
+  });
+}
+
 function setSpdy(){
   var isSpdy2=ph.jQuery("#spdy2").is(':checked');
   var isSpdy3=ph.jQuery("#spdy3").is(':checked');
+  var isSpdy31=ph.jQuery("#spdy31").is(':checked');
   ph.admin.doCommand('setSpdy',{
     isSpdy2:isSpdy2,
     isSpdy3:isSpdy3,
+    isSpdy31:isSpdy31,
     spdyFrameLimit:ph.jQuery("#spdyFrameLimist").val(),
-    spdyTimeout:ph.jQuery("#spdyTimeout").val()
+    spdyTimeout:ph.jQuery("#spdyTimeout").val(),
+    maxConcurrentStreams:ph.jQuery("#spdyMaxConcurrentStreams").val(),
+    serverWindowSize:ph.jQuery("#spdyServerWindowSize").val()
   },
   function(x){
 ##Spdy設定完了
@@ -101,17 +112,17 @@ function setAuth(){
   },
   function(x){
     ph.jQuery("#curSchme").text(scheme);
-    alert('認証設定完了');
+    alert('Authentication設定完了');
 ##setAuth完了
   });
 }
 
 function accessLogDeleteQuery(query){
-	ph.admin.accessLogSd.publish({command:'deleteQuery',query:query});
+	ph.admin.accessLogSub.publish({command:'deleteQuery',query:query});
 }
 
 function accessLogExportQuery(query){
-	ph.admin.accessLogSd.publish({command:'exportQuery',query:query});
+	ph.admin.accessLogSub.publish({command:'exportQuery',query:query});
 }
 
 function accessLogImort(){
@@ -120,107 +131,10 @@ function accessLogImort(){
 		alert('fileが選択されていません');
 		return;
 	}
-	ph.admin.accessLogSd.publishForm('importsForm');
+	ph.admin.accessLogSub.publishForm('importsForm');
 ##	ph.jQuery('#importsForm')[0].reset();
 }
 
-
-##realHostの一行(tr)を作成
-function realHostLine(realHost){
-	var trTag=document.createElement("tr");
-	var name=realHost.name;
-	var tdTag;
-	var aInput=document.createElement("input");
-	aInput.setAttribute("type","button");
-	aInput.setAttribute("value","設定");
-	ph.jQuery(aInput).bind("click",function(){
-			realHostDialog(realHost);
-			return false;
-		});
-	tdTag=ph.admin.mkTdTag(name,aInput);
-	trTag.appendChild(tdTag);
-	if(realHost.binding){
-		tdTag=ph.admin.mkTdTag("起動");
-	}else{
-		tdTag=ph.admin.mkTdTag("停止");
-	}
-	trTag.appendChild(tdTag);
-	tdTag=ph.admin.mkTdTag(realHost.initBind);
-	trTag.appendChild(tdTag);
-	tdTag=ph.admin.mkTdTag(realHost.bindHost);
-	trTag.appendChild(tdTag);
-	tdTag=ph.admin.mkTdTag(realHost.bindPort);
-	trTag.appendChild(tdTag);
-	tdTag=ph.admin.mkTdTag(realHost.backlog);
-	trTag.appendChild(tdTag);
-//	var tdTag=ph.admin.mkTdTag(realHost.virtualHosts);
-//	trTag.appendChild(tdTag);
-	tdTag=ph.admin.mkTdTag(realHost.whitePattern);
-	trTag.appendChild(tdTag);
-	tdTag=ph.admin.mkTdTag(realHost.blackPattern);
-	trTag.appendChild(tdTag);
-	return trTag;
-}
-
-function realHostDialog(realHost){
-	ph.jQuery('#realHostName').val(realHost.name);
-	ph.jQuery('#realHostInitBind').attr("checked",realHost.initBind);
-	ph.jQuery('#realHostBindHost').val(realHost.bindHost);
-	ph.jQuery('#realHostBindPort').val(realHost.bindPort);
-	ph.jQuery('#realHostBacklog').val(realHost.backlog);
-	ph.jQuery('#realHostBlackPattern').val(realHost.blackPattern);
-	ph.jQuery('#realHostWhitePattern').val(realHost.whitePattern);
-	if(realHost.name=='mainHost'){//mainHostはunbind不可
-		ph.jQuery('#realHostDelete').hide();
-		ph.jQuery('#realHostBindButton').hide();
-		ph.jQuery('#realHostUnbindButton').hide();
-	}else if(realHost.name==''){//新規
-		ph.jQuery('#realHostDelete').hide();
-		ph.jQuery('#realHostBindButton').hide();
-		ph.jQuery('#realHostUnbindButton').hide();
-	}else if(realHost.binding){
-		ph.jQuery('#realHostDelete').show();
-		ph.jQuery('#realHostBindButton').hide();
-		ph.jQuery('#realHostUnbindButton').show();
-	}else{
-		ph.jQuery('#realHostDelete').show();
-		ph.jQuery('#realHostBindButton').show();
-		ph.jQuery('#realHostUnbindButton').hide();
-	}
-	jQuery('#realHostDialog').dialog('open');
-}
-
-
-##realHosts tableを作成
-function realHostList(realHostsStr){
-	ph.log("realHostList");
-	var realHosts=ph.JSON.parse(realHostsStr);
-    ph.admin.realHosts=realHosts;
-	ph.jQuery("#realHostData").empty();
-	var targetTag=document.getElementById("realHostData");
-	for(var i=0;i<realHosts.length;i++){
-		var trTag=realHostLine(realHosts[i]);
-		targetTag.appendChild(trTag);
-	}
-	jQuery('#realHostDialog').dialog('close');
-}
-
-##realHostを作成
-function realHostCreate(){
- var realHost={
-  name:ph.jQuery("#realHostName").val(),
-  initBind:ph.jQuery("#realHostInitBind").is(":checked"),
-  bindHost:ph.jQuery("#realHostBindHost").val(),
-  bindPort:ph.jQuery("#realHostBindPort").val(),
-  backlog:ph.jQuery("#realHostBacklog").val(),
-//  virtualHosts:ph.jQuery("#realHostVirtualHosts").val().split(",")
-  virtualHosts:[],
-  blackPattern:ph.jQuery("#realHostBlackPattern").val(),
-  whitePattern:ph.jQuery("#realHostWhitePattern").val()
- };
-// alert(ph.JSON.stringify(realHost));
- ph.admin.doObjCommand('realHost','realHostInsert',realHost,realHostList);
-}
 
 function setTimeouts(){
  ph.admin.doCommand('setTimeouts',{
@@ -248,27 +162,9 @@ function showDebug(){
 
 ph.jQuery(function(){
   ph.jQuery(".settingItem").hide();
-  ##realHost一覧を表示
-  ph.admin.doPramCommand('realHost','realHostList',null,realHostList);
-  var scheme=ph.jQuery("#curSchme").text();
-  ph.jQuery("#authScheme option[value='" +scheme+ "']").attr("selected","selected");
 });
 </script> 
 <H1>設定</H1>
-
-<Hr/>
-<H2 onclick="ph.jQuery('#realHostDiv').toggle();">+RealHost設定</H2>
-<div class="settingItem" id="realHostDiv">
-<p>サービスするサーバ情報を設定します</p>
-selfDomain:<input type="text" id="selfDomain" size="64" value="$!esc.html($!{config.selfDomain})"/><input type="button" value="設定" onClick="ph.admin.doCommand('setSelfDomain',{domain:ph.jQuery('#selfDomain').val()},function(){alert('変更を有効にするにはPhantomServerの再起動が必要です.')});"><br>
-<input type="button" value="real host作成" onClick="realHostDialog({name:'',realHostInitBind:false,bindHost:'*',bindPort:'',backlog:'100',binding:false});">
-<table style="width:100%;border-collapse:collapse;border: solid 1pt #000;">
-<thead>
-<tr><th>name</th><th>状態</th><th>init</th><th>host</th><th>port</th><th>backlog</th><th>whiteIpPattern</th><th>blackIpPattern</th></tr>
-</thead>
-<tbody id="realHostData"></tbody>
-</table>
-</div>
 
 <Hr/>
 <H2 onclick="ph.jQuery('#timeoutDiv').toggle();">+Timeout設定</H2>
@@ -279,22 +175,6 @@ connectTimeout:<input type="text" id="connectTimeout" size="8" value="$!esc.html
 readTimeout:<input type="text" id="readTimeout" size="8" value="$!esc.html($!{config.readTimeout})"/>ms<br>
 writeTimeout:<input type="text" id="writeTimeout" size="8" value="$!esc.html($!{config.writeTimeout})"/>ms<br>
 <input type="button" value="設定" onclick="setTimeouts();" /><br/>
-</div>
-
-<Hr/>
-<H2 onclick="ph.jQuery('#authDiv').toggle();">+認証設定</H2>
-<div class="settingItem" id="authDiv">
-<p>ph認証:mappingとuserのrolesで認可します</p>
-認証方法<select id="authScheme" size="1">
-<option value="None">None</option>
-<option value="Basic">Basic</option>
-<option value="Digest">Digest</option>
-<option value="BasicForm">BasicForm</option>
-<option value="DigestForm">DigestForm</option>
-</select>現在:<span id="curSchme">$!esc.html($!{config.getString('authenticateScheme')})</span><br/>
-sessionTimeout:<input type="text" id="authSessionTimeout" size="12" value="$!esc.html($!{config.getString('sessionTimeout')})"/>ms<br/>
-##logoutUrl:<input type="text" id="authLogoutUrl" size="64" value="$!esc.html($!{config.getString('logoutUrl')})"/><br/>
-<input type="button" value="設定"  onclick="setAuth();"/><br/>
 </div>
 
 <Hr/>
@@ -413,16 +293,23 @@ checked="checked"
 <Hr/>
 #set ($spdy2=false)
 #set ($spdy3=false)
+#set ($spdy31=false)
 #set ($spdyConfig=$config.getSpsyConfig())
 #set ($protocol=${spdyConfig.getSpdyProtocols()})
-#if($protocol.indexOf('spdy/2')>=0)
+#if($protocol.indexOf('spdy/2,')>=0)
  #set ($spdy2=true)
 #end
-#if($protocol.indexOf('spdy/3')>=0)
+#if($protocol.indexOf('spdy/3,')>=0)
  #set ($spdy3=true)
+#end
+#if($protocol.indexOf('spdy/3.1,')>=0)
+ #set ($spdy31=true)
 #end
 #set ($spdyFrameLimit=$spdyConfig.getSpdyFrameLimit())
 #set ($spdyTimeout=$spdyConfig.getSpdyTimeout())
+#set ($spdyMaxConcurrentStreams=$spdyConfig.getMaxConcurrentStreams())
+#set ($spdyServerWindowSize=$spdyConfig.getServerWindowSize())
+
 <H2 onclick="ph.jQuery('#spdySetting').toggle();">+Spdy設定</H2>
 <div class="settingItem" id="spdySetting">
 #if($spdyConfig.isSpdyAvailable)
@@ -437,20 +324,29 @@ spdy/3:<input type="checkBox" name="spdy3" id="spdy3"
 #if($spdy3==true)
 checked="checked"
 #end
+ />
+spdy/3.1:<input type="checkBox" name="spdy31" id="spdy31"
+#if($spdy31==true)
+checked="checked"
+#end
  /><br/>
 spdyTimeout:<input type="text" name="spdyTimeout" id="spdyTimeout" value="${spdyTimeout}"/><br/>
 spdyFrameLimit:<input type="text" name="spdyFrameLimit" id="spdyFrameLimit" value="${spdyFrameLimit}"/><br/>
+maxConcurrentStreams:<input type="text" name="spdyMaxConcurrentStreams" id="spdyMaxConcurrentStreams" value="${spdyMaxConcurrentStreams}"/><br/>
+serverWindowSize:<input type="text" name="spdyServerWindowSize" id="spdyServerWindowSize" value="${spdyServerWindowSize}"/><br/>
 <input type="button" value="設定" onclick="setSpdy();" /><br/>
 </div>
 
 <Hr/>
-<H2 onclick="ph.jQuery('#fileCache').toggle();">+FileCache設定</H2>
+<H2 onclick="ph.jQuery('#fileCache').toggle();">+Cache設定</H2>
 <div class="settingItem" id="fileCache">
 file cache:<input type="checkBox" name="isFileCache" id="isFileCache"
 #if(${config.fileCache.useCache()})
 checked="checked"
 #end
- onclick='setFileCache();' /><br>
+ onclick='setFileCache();' /><br/>
+appCache:<input type="button" name="appCache" id="appCache" value="update" onclick='updateAppCache();'/><br/>
+
 </div>
 
 <Hr/>

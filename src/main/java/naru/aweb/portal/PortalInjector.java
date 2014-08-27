@@ -10,8 +10,9 @@ import naru.aweb.config.Config;
 import naru.aweb.handler.InjectionHelper;
 import naru.aweb.handler.ProxyHandler;
 import naru.aweb.handler.ProxyInjector;
-import naru.aweb.http.HeaderParser;
+import naru.aweb.handler.ServerBaseHandler.SCOPE;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.util.HeaderParser;
 
 public class PortalInjector extends PoolBase implements ProxyInjector {
 	private static Pattern portalPathInfoPattern=Pattern.compile(";phportal=([^\\s;/?]*)");
@@ -49,7 +50,7 @@ public class PortalInjector extends PoolBase implements ProxyInjector {
 			path=sb.toString();
 			mapping.setResolvePath(path);
 			requestHeader.setRequestUri(mapping.getResolvePath());
-			proxyHandler.setRequestAttribute(PORTAL_PATHINFO_KEY, portalPathInfo);
+			proxyHandler.setAttribute(SCOPE.REQUEST,PORTAL_PATHINFO_KEY, portalPathInfo);
 		}
 		/*
 		 * proxyÇ≈AuthrizationÉwÉbÉ_Çïtâ¡Ç∑ÇÈçÏêÌÇÃèÍçá

@@ -1,7 +1,7 @@
 package naru.aweb.auth;
 
-import naru.aweb.http.HeaderParser;
-import naru.aweb.http.ParameterParser;
+import naru.aweb.util.HeaderParser;
+import naru.aweb.util.ParameterParser;
 
 public interface AuthenticateModule {
 	public boolean authenticate(HeaderParser requestHeader,ParameterParser parameter);

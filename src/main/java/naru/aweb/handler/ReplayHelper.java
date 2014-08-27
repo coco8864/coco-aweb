@@ -9,10 +9,10 @@ import naru.async.pool.PoolManager;
 import naru.async.store.Store;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
-import naru.aweb.config.Mapping;
-import naru.aweb.http.HeaderParser;
-import naru.aweb.http.WebServerHandler;
+import naru.aweb.handler.ServerBaseHandler.SCOPE;
+import naru.aweb.mapping.Mapping;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.util.HeaderParser;
 import naru.aweb.util.ServerParser;
 
 import org.apache.log4j.Logger;
@@ -72,7 +72,7 @@ public class ReplayHelper {
 			return null;
 		}
 		//a.com/path1/path2/file.jsの場合
-		String replayDocRoot=(String)mapping.getOption("replayDocroot");
+		String replayDocRoot=(String)mapping.getOption(Mapping.OPTION_REPLAY_DOCROOT);
 		File seachRoot=defaultRootDir;
 		if(replayDocRoot!=null){
 			seachRoot=new File(replayDocRoot);
@@ -108,6 +108,9 @@ public class ReplayHelper {
 		logger.debug("#doReplay cid:"+handler.getChannelId());
 //		Set history=getUserSetting().getReplayHistory();
 		AccessLog accessLog=handler.getAccessLog();
+		if(accessLog==null){
+			return true;//レスポンスが切れたから
+		}
 		HeaderParser requestHeader=handler.getRequestHeader();
 		MappingResult mapping=handler.getRequestMapping();
 		AccessLog recodeLog=searchAccessLog(accessLog,requestHeader,mapping);
@@ -127,7 +130,7 @@ public class ReplayHelper {
 //			bodyPage.recycle();
 			accessLog.setDestinationType(AccessLog.DESTINATION_TYPE_REPLAY);
 			logger.debug("response from file.file:"+file.getAbsolutePath());
-			handler.setRequestAttribute(ProxyHandler.ATTRIBUTE_RESPONSE_FILE,file);
+			handler.setAttribute(SCOPE.REQUEST,ProxyHandler.ATTRIBUTE_RESPONSE_FILE,file);
 			WebServerHandler response=(WebServerHandler) handler.forwardHandler(Mapping.FILE_SYSTEM_HANDLER);
 			PoolManager.poolBufferInstance(body);//TODO ちゃんと使おう
 			return true;

@@ -12,12 +12,12 @@ import naru.async.BufferGetter;
 import naru.async.pool.BuffersUtil;
 import naru.async.pool.PoolManager;
 import naru.async.store.Store;
+import naru.aweb.handler.WebServerHandler;
 import naru.aweb.http.ChunkContext;
 import naru.aweb.http.GzipContext;
-import naru.aweb.http.HeaderParser;
-import naru.aweb.http.ParameterParser;
-import naru.aweb.http.WebServerHandler;
 import naru.aweb.util.CodeConverter;
+import naru.aweb.util.HeaderParser;
+import naru.aweb.util.ParameterParser;
 import net.sf.json.JSONObject;
 
 import org.apache.log4j.Logger;
@@ -219,7 +219,7 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 	 * 2)json形式でPOSTされる場合-->parameterにjsonオブジェクトがあるか否か
 	 * 3)クエリにパラメタをしてしてリクエストされる場合　--> 上記以外
 	 */
-	public void startResponseReqBody() {
+	public void onRequestBody() {
 		Store store=(Store)getAttribute("Store");
 		if(store!=null){//fowardされてきた場合
 			setAttribute("Store",null);//削除しないとstoreのライフサイクルが狂う
@@ -238,7 +238,7 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 
 	public void onFailure(Object userContext, Throwable t) {
 		logger.debug("#failer.cid:" + getChannelId() + ":" + t.getMessage());
-		super.onFailure(userContext, t);
+		super.onFailure(t, userContext);
 	}
 
 	public void onTimeout(Object userContext) {
@@ -278,9 +278,10 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 	 * <?xml version="1.0" encoding="EUC-JP"?>
 	 * <meta http-equiv="content-type" content="text/html; charset=EUC-JP" />
 	 * <meta charset=utf-8>
+	 * <meta charset="utf-8">
 	 * 
 	 */
-	private static Pattern CHARSET_PATTERN = Pattern.compile("(?:encoding=\"([^\"\\s]*)\")|(?:charset=([^\"'>\\s]*))");
+	private static Pattern CHARSET_PATTERN = Pattern.compile("(?:encoding=\"([^\"\\s]*)\")|(?:charset=[\"]?([^\"'>\\s]*))");
 	private String guessCharset(String text){
 		Matcher matcher=null;
 		synchronized(CHARSET_PATTERN){
@@ -290,7 +291,7 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 		if(matcher.find()){
 			for(int i=1;i<=matcher.groupCount();i++){
 				String c=matcher.group(i);
-				if(c!=null){
+				if(c!=null&&!"".equals(c)){
 					charset=c;
 					break;
 				}
@@ -299,7 +300,7 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 		return charset;
 	}
 	
-	public boolean onBuffer(Object userContext, ByteBuffer[] buffers) {
+	public boolean onBuffer(ByteBuffer[] buffers, Object userContext) {
 		if(isResponseEnd()){//レスポンスが終わってる場合
 			PoolManager.poolBufferInstance(buffers);
 			releaseStore(false);
@@ -376,7 +377,7 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 		responseEnd();
 	}
 
-	public void onBufferFailure(Object userContext, Throwable failure) {
+	public void onBufferFailure(Throwable failure, Object userContext) {
 		logger.error("onBufferFailure error.", failure);
 		releaseStore(false);
 		if(isResponseEnd()){//レスポンスが終わってる場合

@@ -4,10 +4,11 @@ package naru.aweb.core;
 import naru.async.pool.PoolManager;
 import naru.aweb.auth.AuthHandler;
 import naru.aweb.config.Config;
-import naru.aweb.config.Mapping;
-import naru.aweb.http.HeaderParser;
-import naru.aweb.http.WebServerHandler;
+import naru.aweb.handler.WebServerHandler;
+import naru.aweb.handler.ServerBaseHandler.SCOPE;
+import naru.aweb.mapping.Mapping;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.util.HeaderParser;
 import net.sf.json.JSONObject;
 
 import org.apache.log4j.Logger;
@@ -30,7 +31,7 @@ public class DispatchResponseHandler extends WebServerHandler {
 	private static final String RESPONSE = "response";
 
 	private enum Type {
-		FORBIDDEN, NOT_FOUND, REDIRECT,AJAX_ALEADY_AUTH,AUTHENTICATE,CROSS_DOMAIN_FRAME
+		FORBIDDEN, NOT_FOUND, REDIRECT,AJAX_ALEADY_AUTH,AUTHENTICATE,CROSS_DOMAIN_FRAME,JSON_RESPONSE
 	}
 
 	public static MappingResult forbidden() {
@@ -71,17 +72,10 @@ public class DispatchResponseHandler extends WebServerHandler {
 		mapping.setAttribute(RESPONSE, response);
 		return mapping;
 	}
-	
-	public static MappingResult ajaxAleadyAuth(String appId) {
-		MappingResult mapping = createDispatchMapping(Type.AJAX_ALEADY_AUTH);
-		mapping.setAttribute(AuthHandler.APP_ID, appId);
-		return mapping;
-	}
 
-	public static MappingResult redirectOrgPath(String location,String setCookieString) {
-		MappingResult mapping=createDispatchMapping(Type.REDIRECT);
-		mapping.setAttribute(HeaderParser.LOCATION_HEADER, location);
-		mapping.setAttribute(HeaderParser.SET_COOKIE_HEADER, setCookieString);
+	public static MappingResult jsonResponse(Object response) {
+		MappingResult mapping = createDispatchMapping(Type.JSON_RESPONSE);
+		mapping.setAttribute(RESPONSE, response);
 		return mapping;
 	}
 
@@ -98,7 +92,7 @@ public class DispatchResponseHandler extends WebServerHandler {
 		return mapping;
 	}
 
-	public void startResponseReqBody() {
+	public void onRequestBody() {
 		MappingResult mapping = getRequestMapping();
 		Type type = (Type) mapping.getAttribute(TYPE);
 		String message;
@@ -125,7 +119,8 @@ public class DispatchResponseHandler extends WebServerHandler {
 		case AJAX_ALEADY_AUTH:
 			JSONObject json=new JSONObject();
 			json.put("result", true);
-			json.put(AuthHandler.APP_ID, mapping.getAttribute(AuthHandler.APP_ID));
+			json.put(AuthHandler.APP_SID, mapping.getAttribute(AuthHandler.APP_SID));
+			json.put(AuthHandler.LOGIN_ID, mapping.getAttribute(AuthHandler.LOGIN_ID));
 			responseJson(json);
 			break;
 		case AUTHENTICATE:
@@ -138,8 +133,12 @@ public class DispatchResponseHandler extends WebServerHandler {
 		case CROSS_DOMAIN_FRAME:
 			mapping.setResolvePath("/crossDomainFrame.vsp");
 			mapping.setDesitinationFile(config.getAuthDocumentRoot());
-			setRequestAttribute(RESPONSE, mapping.getAttribute(RESPONSE));
+			setAttribute(SCOPE.REQUEST,RESPONSE, mapping.getAttribute(RESPONSE));
 			forwardHandler(Mapping.VELOCITY_PAGE_HANDLER);
+			break;
+		case JSON_RESPONSE:
+			Object response=mapping.getAttribute(RESPONSE);
+			responseJson(response);
 			break;
 		default:
 			completeResponse("500", "type:" + type);
@@ -149,7 +148,7 @@ public class DispatchResponseHandler extends WebServerHandler {
 	public void onFailure(Object userContext, Throwable t) {
 		logger.debug("#failer.cid:" + getChannelId() + ":" + t.getMessage());
 		asyncClose(userContext);
-		super.onFailure(userContext, t);
+		super.onFailure(t, userContext);
 	}
 
 	public void onTimeout(Object userContext) {

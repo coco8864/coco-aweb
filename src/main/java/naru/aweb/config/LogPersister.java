@@ -31,8 +31,8 @@ import naru.async.store.Store;
 import naru.async.store.StoreManager;
 import naru.async.store.StoreStream;
 import naru.async.timer.TimerManager;
-import naru.aweb.pa.Blob;
-import naru.aweb.pa.PaPeer;
+import naru.aweb.link.api.Blob;
+import naru.aweb.link.api.LinkPeer;
 import naru.aweb.util.JdoUtil;
 import naru.aweb.util.UnzipConverter;
 import net.sf.json.JSONObject;
@@ -80,7 +80,7 @@ public class LogPersister implements Timer {
 	}
 	
 	private static class ImportGetter implements BufferGetter {
-		private PaPeer peer;
+		private LinkPeer peer;
 //		private PersistenceManager pm;
 		private LogPersister logPersister;
 		private ZipEntry currentZe=null;
@@ -90,7 +90,7 @@ public class LogPersister implements Timer {
 		private Set<String> addDigests = new HashSet<String>();
 		private List<String> refDigests = new ArrayList<String>();
 		
-		private ImportGetter(LogPersister logPersister,PaPeer peer){
+		private ImportGetter(LogPersister logPersister,LinkPeer peer){
 			this.logPersister=logPersister;
 	//		this.pm=pm;
 			this.peer=peer;
@@ -143,7 +143,7 @@ public class LogPersister implements Timer {
 		}
 
 		@Override
-		public boolean onBuffer(Object userContext, ByteBuffer[] buffers) {
+		public boolean onBuffer(ByteBuffer[] buffers, Object userContext) {
 			if(currentZe!=userContext){
 				endBuffer(currentZe);
 				currentZe=(ZipEntry)userContext;
@@ -178,7 +178,7 @@ public class LogPersister implements Timer {
 		}
 
 		@Override
-		public void onBufferFailure(Object userContext, Throwable failure) {
+		public void onBufferFailure(Throwable failure, Object userContext) {
 			if(store!=null){
 				store.close(false);
 				store=null;
@@ -193,7 +193,7 @@ public class LogPersister implements Timer {
 	 * @throws IOException
 	 */
 	// TODOîÒìØä˙
-	public void executeImport(Blob importBlob,PaPeer peer)
+	public void executeImport(Blob importBlob,LinkPeer peer)
 			throws IOException {
 		UnzipConverter converter=UnzipConverter.create(new ImportGetter(this,peer));
 		converter.parse(importBlob);
@@ -377,19 +377,19 @@ public class LogPersister implements Timer {
 	private static final int TYPE_IMPORT = 5;
 
 	private static class RequestInfo {
-		RequestInfo(int type, String query, PaPeer peer) {
+		RequestInfo(int type, String query, LinkPeer peer) {
 			this.type = type;
 			this.query = query;
 			this.peer = peer;
 		}
 
-		RequestInfo(int type, Collection<Long> ids, PaPeer peer) {
+		RequestInfo(int type, Collection<Long> ids, LinkPeer peer) {
 			this.type = type;
 			this.ids = ids;
 			this.peer = peer;
 		}
 
-		RequestInfo(int type, Blob importBlob, PaPeer peer) {
+		RequestInfo(int type, Blob importBlob, LinkPeer peer) {
 			this.type = type;
 			this.importBlob = importBlob;
 			this.peer = peer;
@@ -398,32 +398,32 @@ public class LogPersister implements Timer {
 		int type;
 		String query;
 //		String chId;
-		PaPeer peer;
+		LinkPeer peer;
 		Collection<Long> ids;
 		Blob importBlob;
 	}
 
 	// èåèÇ…àÍívÇµÇΩaccessLogÇçÌèú
-	public void deleteAccessLog(String query,PaPeer peer) {
+	public void deleteAccessLog(String query,LinkPeer peer) {
 		queue(new RequestInfo(TYPE_QUERY_DELTE, query, peer));
 	}
 
 	// idóÒãìÇ≥ÇÍÇΩaccessLogÇçÌèú
-	public void deleteAccessLog(Collection<Long> ids,PaPeer peer) {
+	public void deleteAccessLog(Collection<Long> ids,LinkPeer peer) {
 		queue(new RequestInfo(TYPE_LIST_DELTE, ids, peer));
 	}
 
 	// èåèÇ…àÍívÇµÇΩaccessLogÇà⁄èo
-	public void exportAccessLog(String query, PaPeer peer) {
+	public void exportAccessLog(String query, LinkPeer peer) {
 		queue(new RequestInfo(TYPE_QUERY_EXPORT, query, peer));
 	}
 
 	// idóÒãìÇ≥ÇÍÇΩaccessLogÇà⁄èo
-	public void exportAccessLog(Collection<Long> ids, PaPeer peer) {
+	public void exportAccessLog(Collection<Long> ids, LinkPeer peer) {
 		queue(new RequestInfo(TYPE_LIST_EXPORT, ids, peer));
 	}
 
-	public void importAccessLog(Blob importFile, PaPeer peer) {
+	public void importAccessLog(Blob importFile, LinkPeer peer) {
 		queue(new RequestInfo(TYPE_IMPORT, importFile, peer));
 	}
 }

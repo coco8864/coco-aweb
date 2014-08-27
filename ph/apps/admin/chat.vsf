@@ -12,7 +12,8 @@
 <input type="checkBox" value="echoback" id="chatEchoback" checked="checked">echoback</input></p>
 <textarea id="chatInputTextArea" rows="10" cols="80">
 </textarea><br/>
-<script type="text/javascript"> 
+this link is send chat bookmarklet.<a id='bkmarklet'>adminChat</a>
+<script type="text/javascript">
 function onChatSend(){
  var message=jQuery('#chatInputTextArea').val();
  if(message===''){//空白の場合sendさせない
@@ -22,7 +23,7 @@ function onChatSend(){
   kind:'message',
   message:message,
   date:new Date(),
-  userName:'$esc.javascript($loginUser.loginId)',
+  userName:'$esc.javascript($loginUser.nickname)',
   echoback:jQuery('#chatEchoback').is(':checked')});//echoback可否
  jQuery('#chatInputTextArea').val('');
 }
@@ -53,8 +54,8 @@ inputArea.keydown(function(e){
   return true;
 });
 
-var chatSd=ph.admin.cd.subscribe('admin','chat');
-chatSd.onMessage(
+var chatSd=ph.admin.con.subscribe('admin','chat');
+chatSd.onMsg(
  function(msg){
  ##chat画面を表示していない可能性がある
   var outputArea=jQuery('#chatOutputTextArea');
@@ -73,24 +74,12 @@ chatSd.onMessage(
   outputArea.val(text);
 });
 ph.admin.chatSd=chatSd;
-})();
 
-##function queueInfo(){
-##	var queueInfo;
-##	if(!ph.queue.isAuth){
-##		return "未認証"
-##	}else{
-##		queueInfo="接続中";
-##	}
-##	if(ph.useWebSocket){
-##		queueInfo+=":WebSocket";
-##	}else{
-##		queueInfo+=":Polling("+ph.queue.interval+")";
-##	}
-##	if(ph.useSessionStorage){
-##		queueInfo+=":SessionStorage";
-##	}
-##	return queueInfo;
-##}
-##//jQuery('#queueInfo').text(/*queueInfo()*/'');
+var bkmarklet="javascript:(function(){var d=document;var f=function(){var l=ph.link('$adminUrl$');var s=l.subscribe('admin','chat');s.publish({message:d.title+':'+d.location.href,echoback:false,userName:'bk',date:new Date(),kind:'message'});};if(window.ph){f();}else{var u='$publicWebUrl$pub/js/ph.js';var e=d.createElement('script');e.src=u;e.onload=function(){f();};d.getElementsByTagName('head')[0].appendChild(e);}})();"
+bkmarklet=bkmarklet.replace("$adminUrl$",ph.adminUrl);
+bkmarklet=bkmarklet.replace("$publicWebUrl$",ph.publicWebUrl);
+bkmarklet=bkmarklet.split(' ').join('%20');
+ph.jQuery('#bkmarklet').attr("href", bkmarklet);
+
+})();
 </script>

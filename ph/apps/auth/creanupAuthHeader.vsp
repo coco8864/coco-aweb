@@ -15,8 +15,13 @@ var username="$esc.javascript(${username})";
 if( jQuery.browser.mozilla ){
   username="$esc.javascript(${dummyname})";
 }
+var cleanupPath='$!esc.javascript($!{cleanupPath})';
+if(!cleanupPath){
+  cleanupPath='cleanupAuthHeader';
+}
+
 jQuery.ajax({
-    url: "$esc.javascript(${config.authUrl})/cleanupAuthHeader",
+    url: "$esc.javascript(${config.authUrl})/"+cleanupPath,
     type:"POST",
     dataType:"html",
     data:{authId:"$esc.javascript($!{authId})"},

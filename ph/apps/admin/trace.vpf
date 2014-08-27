@@ -39,7 +39,7 @@ function runTrace(){
 			param[part]=trace[part];
 		}
 	}
-	ph.admin.accessLogSd.publish(param);
+	ph.admin.accessLogSub.publish(param);
 }
 
 function saveTrace(){
@@ -55,7 +55,7 @@ function saveTrace(){
 			param[part]=trace[part];
 		}
 	}
-	ph.admin.accessLogSd.publish(param);
+	ph.admin.accessLogSub.publish(param);
 }
 
 function requestHeaderEdit(){
@@ -146,12 +146,12 @@ function changeEntry(newLogId){
 	}
 	trace.clear();
 	trace.accessLogId=newLogId;
-	sessionStorage['logId']=newLogId;
+	ph.admin.storage.setItem('logId',newLogId);
 	entryTable();
 }
 
 function entryTable(){
-	ph.admin.accessLogSd.publish({command:'entry',id:trace.accessLogId});
+	ph.admin.accessLogSub.publish({command:'entry',id:trace.accessLogId});
 }
 
 function jumpTrace(){
@@ -184,7 +184,7 @@ function updateEntry(accessLog){
 	}
 
 	ph.jQuery("#realHost").text(accessLog.realHost);
-	ph.jQuery("#userId").text(accessLog.userId);
+	ph.jQuery("#traceUserId").text(accessLog.userId);
 	ph.jQuery("#sourceType").text(sourceTypeDef[accessLog.sourceType]);
 	ph.jQuery("#destinationType").text(destinationTypeDef[accessLog.destinationType]);
 
@@ -307,7 +307,7 @@ ID:<input type="text" name="logId" id="inputLogId" size="8"/>
 <tbody>
 <tr><td><b>ID</b></td><td id="logId"></td></tr>
 <tr><td><b>realHost</b></td><td id="realHost"></td></tr>
-<tr><td><b>userId</b></td><td id="userId"></td></tr>
+<tr><td><b>userId</b></td><td id="traceUserId"></td></tr>
 <tr><td><b>souceType</b></td><td id="sourceType"></td></tr>
 <tr><td><b>destinationType</b></td><td id="destinationType"></td></tr>
 <tr><td><b>クライアントIP</b></td><td id="ip"></td></tr>

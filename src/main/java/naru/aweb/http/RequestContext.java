@@ -11,7 +11,10 @@ import naru.async.pool.PoolManager;
 import naru.aweb.auth.AuthSession;
 import naru.aweb.auth.LogoutEvent;
 import naru.aweb.config.AccessLog;
+import naru.aweb.handler.KeepAliveContext;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.util.HeaderParser;
+import naru.aweb.util.ParameterParser;
 /**
  * 
  * @author Naru
@@ -61,6 +64,7 @@ public class RequestContext extends PoolBase {
 			if(logountEvent!=null){
 				authSession.removeLogoutEvent(logountEvent);
 			}
+			logger.debug("registerAuthSession release authSessionPoolId:"+authSession.getPoolId() +":this:" +getPoolId());
 			authSession.unref();//requestContextからポイントされている間は開放されない
 			authSession=null;
 		}
@@ -92,6 +96,7 @@ public class RequestContext extends PoolBase {
 	}
 	//authSessionのrefカウンタはDispatchHandlerで、他認証系のライフサイクルにあわせてカウントアップされている
 	public void registerAuthSession(AuthSession authSession) {
+		logger.debug("registerAuthSession authSessionPoolId:"+authSession.getPoolId() +":this:" +getPoolId());
 		this.authSession = authSession;
 	}
 
@@ -111,8 +116,9 @@ public class RequestContext extends PoolBase {
 		return true;
 	}
 	
-	public void allocAccessLog() {
+	public AccessLog allocAccessLog() {
 		accessLog=(AccessLog)PoolManager.getInstance(AccessLog.class);
+		return accessLog;
 //		logger.info("$$$"+accessLog,new Exception());
 	}
 

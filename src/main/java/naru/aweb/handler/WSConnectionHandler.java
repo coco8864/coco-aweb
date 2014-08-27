@@ -1,11 +1,11 @@
 package naru.aweb.handler;
 
-import naru.async.AsyncBuffer;
-import naru.async.cache.CacheBuffer;
+import naru.async.cache.Cache;
 import naru.async.pool.PoolBase;
 import naru.aweb.config.Config;
-import naru.aweb.http.HeaderParser;
+import naru.aweb.handler.ws.WebSocketHandler;
 import naru.aweb.mapping.MappingResult;
+import naru.aweb.util.HeaderParser;
 
 import org.apache.log4j.Logger;
 
@@ -20,13 +20,13 @@ public class WSConnectionHandler extends WebSocketHandler {
 	private static Config config=Config.getConfig();
 	
 	@Override
-	public 	void startWebSocketResponse(HeaderParser requestHeader,String subprotocol){
+	public 	void onWebSocket(HeaderParser requestHeader,String subprotocol){
 		MappingResult mapping=getRequestMapping();
 		String ip=(String)mapping.getOption("ip");
 		if(ip!=null){
 			String remoteIp=getRemoteIp();
 			if(ip.equals(remoteIp)){
-				closeWebSocket("403");
+				completeResponse("422");//422 Protocol Extension Refused
 				return;
 			}
 		}
@@ -45,7 +45,7 @@ public class WSConnectionHandler extends WebSocketHandler {
 	}
 
 	@Override
-	public void onMessage(CacheBuffer msgs) {
+	public void onMessage(Cache msgs) {
 		logger.debug("#message bin cid:"+getChannelId());
 		if(msgs instanceof PoolBase){
 			((PoolBase)msgs).unref();
@@ -62,5 +62,4 @@ public class WSConnectionHandler extends WebSocketHandler {
 		logger.debug("#wsOpen cid:"+getChannelId());
 		postMessage("OK");
 	}
-
 }
