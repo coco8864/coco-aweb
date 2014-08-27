@@ -534,13 +534,7 @@ public class WebServerHandler extends ServerBaseHandler {
 		doAccessLog();
 		KeepAliveContext keepAliveContext = getKeepAliveContext();
 		keepAliveContext.endOfResponse();
-		
-		// このメソッドで実asyncWriteが出なければ、
-		// OnWrittenPlainが呼ばれない可能性がある。
-		// そのため、doneKeepAliveが呼ばれず、Contextの再利用に失敗する。
-		if (!isReadWrite) {
-			doneKeepAlive();
-		}
+		doneKeepAlive();
 	}
 
 	// SSL Proxy系は、直接レスポンスするがアクセスログのレスポンス長表示のため、長さを加算する。
@@ -1068,11 +1062,13 @@ public class WebServerHandler extends ServerBaseHandler {
 					return;
 				}
 				// logger.debug("onWrittenPlain.orderCount:"+orderCount());
+				/*
 				if (isResponseEnd) {
 					if (doneKeepAlive()) {
 						return;// keepaliveした
 					}
 				}
+				*/
 			}
 		}
 		super.onWrittenPlain(userContext);
@@ -1286,6 +1282,7 @@ public class WebServerHandler extends ServerBaseHandler {
 			spdySession.responseBody(true, lastBuffer);
 		}
 		doAccessLog();
-		System.currentTimeMillis();
+		KeepAliveContext keepAliveContext = spdySession.getKeepAliveContext();
+		keepAliveContext.endOfResponse();
 	}
 }

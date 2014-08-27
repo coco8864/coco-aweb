@@ -54,7 +54,7 @@ public class EnvelopeAsyncBuffer extends PoolBase implements AsyncBuffer,BufferG
 	@Override
 	public synchronized boolean asyncBuffer(BufferGetter bufferGetter, Object userContext) {
 		if(headerBuffer!=null){
-			bufferGetter.onBuffer(userContext, BuffersUtil.toByteBufferArray(headerBuffer));
+			bufferGetter.onBuffer(BuffersUtil.toByteBufferArray(headerBuffer), userContext);
 			headerBuffer=null;
 			curBlobIdx=0;
 			curBlobOffset=0L;
@@ -81,11 +81,11 @@ public class EnvelopeAsyncBuffer extends PoolBase implements AsyncBuffer,BufferG
 	/* BufferGetterインタフェース 
 	 * 個々のBlobを読み込むために実装*/
 	@Override
-	public boolean onBuffer(Object userContext, ByteBuffer[] buffers) {
+	public boolean onBuffer(ByteBuffer[] buffers, Object userContext) {
 		Object[] ctx=(Object[])userContext;
 		BufferGetter bufferGetter=(BufferGetter)ctx[0];
 		curBlobOffset+=BuffersUtil.remaining(buffers);
-		return bufferGetter.onBuffer(ctx[1], buffers);
+		return bufferGetter.onBuffer(buffers, ctx[1]);
 	}
 
 	@Override
@@ -103,9 +103,9 @@ public class EnvelopeAsyncBuffer extends PoolBase implements AsyncBuffer,BufferG
 	}
 
 	@Override
-	public void onBufferFailure(Object userContext, Throwable failure) {
+	public void onBufferFailure(Throwable failure, Object userContext) {
 		Object[] ctx=(Object[])userContext;
 		BufferGetter bufferGetter=(BufferGetter)ctx[0];
-		bufferGetter.onBufferFailure(ctx[1], failure);
+		bufferGetter.onBufferFailure(failure, ctx[1]);
 	}
 }

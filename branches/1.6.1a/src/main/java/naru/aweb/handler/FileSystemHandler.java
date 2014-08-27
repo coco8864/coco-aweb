@@ -345,7 +345,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		super.onWrittenBody();
 	}
 
-	public boolean onBuffer(Object userContext, ByteBuffer[] buffers) {
+	public boolean onBuffer(ByteBuffer[] buffers, Object userContext) {
 		responseBody(buffers);
 		return false;
 	}
@@ -355,7 +355,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		responseEnd();
 	}
 
-	public void onBufferFailure(Object userContext, Throwable failure) {
+	public void onBufferFailure(Throwable failure, Object userContext) {
 		logger.error("onGotFailure error.", failure);
 		responseEnd();
 	}

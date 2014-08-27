@@ -958,7 +958,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		}
 	}
 	
-	public boolean onBuffer(Object userContext, ByteBuffer[] buffers) {
+	public boolean onBuffer(ByteBuffer[] buffers, Object userContext) {
 		throw new RuntimeException("never use");
 	}
 
@@ -968,7 +968,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		decTrace();
 	}
 
-	public void onBufferFailure(Object userContext, Throwable failure) {
+	public void onBufferFailure(Throwable failure, Object userContext) {
 		logger.warn("AccessLog onBufferFailure.",failure);
 		decTrace();
 	}

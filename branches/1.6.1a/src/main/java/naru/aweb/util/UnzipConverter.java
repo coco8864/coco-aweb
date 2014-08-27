@@ -42,7 +42,7 @@ public class UnzipConverter extends PoolBase implements BufferGetter{
 	private long offset;
 	
 	@Override
-	public boolean onBuffer(Object userContext, ByteBuffer[] buffers) {
+	public boolean onBuffer(ByteBuffer[] buffers, Object userContext) {
 		offset+=BuffersUtil.remaining(buffers);
 		put(buffers);
 		asyncBuffer.asyncBuffer(this, offset, null);
@@ -60,8 +60,8 @@ public class UnzipConverter extends PoolBase implements BufferGetter{
 	}
 
 	@Override
-	public void onBufferFailure(Object userContext, Throwable failure) {
-		getter.onBufferFailure(userContext, failure);
+	public void onBufferFailure(Throwable failure, Object userContext) {
+		getter.onBufferFailure(failure, userContext);
 		if(asyncBuffer instanceof PoolBase){
 			((PoolBase)asyncBuffer).unref();
 		}
@@ -107,19 +107,19 @@ public class UnzipConverter extends PoolBase implements BufferGetter{
 				}else if(len<=0){
 					ByteBuffer[] buffers=page.getBuffer();
 					if(buffers!=null){
-						getter.onBuffer(zipEntry, buffers);
+						getter.onBuffer(buffers, zipEntry);
 					}
 					zipEntry=zipInputStream.getNextEntry();
 				}
 			}
 		} catch (IOException e) {
 			if(e!=UNDERFLOW){
-				getter.onBufferFailure(zipEntry, e);
+				getter.onBufferFailure(e, zipEntry);
 				return;
 			}
 			ByteBuffer[] buffers=page.getBuffer();
 			if(buffers!=null){
-				getter.onBuffer(zipEntry, buffers);
+				getter.onBuffer(buffers, zipEntry);
 			}
 		}
 	}

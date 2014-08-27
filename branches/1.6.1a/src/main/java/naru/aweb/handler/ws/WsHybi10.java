@@ -358,7 +358,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 	}
 	
 	@Override
-	public boolean onBuffer(Object ctx, ByteBuffer[] buffers) {
+	public boolean onBuffer(ByteBuffer[] buffers, Object ctx) {
 		long len=BuffersUtil.remaining(buffers);
 		if( curReq.endPosition<=(curReq.position+len)){
 			BuffersUtil.cut(buffers, curReq.endPosition-curReq.position);
@@ -383,7 +383,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 	}
 
 	@Override
-	public void onBufferFailure(Object ctx, Throwable failure) {
+	public void onBufferFailure(Throwable failure, Object ctx) {
 		synchronized(this){
 			if(curReq==null){
 				return;//‚ ‚è‚¦‚È‚¢

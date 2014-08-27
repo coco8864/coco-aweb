@@ -377,6 +377,13 @@ public class SpdyHandler extends ServerBaseHandler {
 		accessLog.setStatusCode(sb.toString());
 		accessLog.setResponseHeaderLength(readLength);
 		accessLog.setRequestHeaderLength(writeLength);
+		
+		synchronized(sessions){
+			for(SpdySession session:sessions.values()){
+				session.unref();
+			}
+			sessions.clear();
+		}
 		super.onFinished();
 	}
 	
@@ -403,5 +410,15 @@ public class SpdyHandler extends ServerBaseHandler {
 	public int getSpdyPri(){
 		return frame.getPriority();
 	}
-
+	
+	@Override
+	public void ref(){
+		super.ref();
+		logger.debug("#+#.cid:"+getPoolId(),new Throwable());
+	}
+	@Override
+	public boolean unref(){
+		logger.debug("#-#.cid:"+getPoolId(),new Throwable());
+		return super.unref();
+	}
 }

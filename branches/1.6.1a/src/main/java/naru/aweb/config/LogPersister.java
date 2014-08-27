@@ -143,7 +143,7 @@ public class LogPersister implements Timer {
 		}
 
 		@Override
-		public boolean onBuffer(Object userContext, ByteBuffer[] buffers) {
+		public boolean onBuffer(ByteBuffer[] buffers, Object userContext) {
 			if(currentZe!=userContext){
 				endBuffer(currentZe);
 				currentZe=(ZipEntry)userContext;
@@ -178,7 +178,7 @@ public class LogPersister implements Timer {
 		}
 
 		@Override
-		public void onBufferFailure(Object userContext, Throwable failure) {
+		public void onBufferFailure(Throwable failure, Object userContext) {
 			if(store!=null){
 				store.close(false);
 				store=null;

@@ -76,7 +76,7 @@ public class KeepAliveContext extends PoolBase {
 		keepAliveTimeout=config.getKeepAliveTimeout();
 		requestsCount=0;
 		isSendLastChunk=isChunked=isProxy=isSslProxy=isKeepAlive=isAllowChunked=isSelfProxy=false;
-		setupedHandler=null;
+		//setupedHandler=null;
 		setWebClientHandler(null);
 		if(requestContext!=null){
 			requestContext.unref(true);
@@ -239,7 +239,7 @@ public class KeepAliveContext extends PoolBase {
 	}
 
 	/* prepareResponseとendOfResponseは、対のメソッド 同一のhandlerから呼び出す事 */
-	private WebServerHandler setupedHandler;
+	//private WebServerHandler setupedHandler;
 	public boolean prepareResponse(WebServerHandler handler,HeaderParser responseHeader,long commitContentLength) {
 		logger.debug("prepareResponse handler.cid:"+handler+ ":webClientHandler.cid:"+webClientHandler);
 		//if(setupedHandler!=null){
@@ -249,7 +249,7 @@ public class KeepAliveContext extends PoolBase {
 		if(responseHeader.getStatusCode()==null){
 			isKeepAlive=false;
 		}
-		setupedHandler=handler;
+		//setupedHandler=handler;
 		isChunked=false;
 		if(!isKeepAlive){
 			setConnectionHandler(responseHeader,isProxy,false);
@@ -316,6 +316,7 @@ public class KeepAliveContext extends PoolBase {
 	 */
 	public synchronized boolean commitResponse(WebServerHandler handler){
 		logger.debug("commitResponse handler.cid:"+handler+ ":webClientHandler.cid:"+webClientHandler);
+		/*
 		if(setupedHandler==null){
 			setWebClientHandler(null);
 			logger.debug("commitResponse done end of keepAlive not prepareResponse.handler:"+handler);
@@ -325,8 +326,9 @@ public class KeepAliveContext extends PoolBase {
 		if(handler!=setupedHandler){
 			throw new IllegalStateException("fail to endOfResponse.setupedHandler:"+setupedHandler);
 		}
+		*/
 		if(!isKeepAlive/* || handler.isHandlerClosed()*/){
-			setupedHandler=null;
+			//setupedHandler=null;
 			setWebClientHandler(null);
 			logger.debug("commitResponse done end of keepAlive.handler:"+handler);
 			closeServerHandleOnce(handler);
@@ -338,7 +340,7 @@ public class KeepAliveContext extends PoolBase {
 			return false;
 		}
 		*/
-		setupedHandler=null;
+		//setupedHandler=null;
 		if(webClientHandler!=null){
 			if(!webClientHandler.isKeepAlive()){
 				setWebClientHandler(null);
@@ -360,7 +362,6 @@ public class KeepAliveContext extends PoolBase {
 	public RequestContext getRequestContext() {
 		if(requestContext==null){
 			requestContext=(RequestContext) PoolManager.getInstance(RequestContext.class);
-//			requestContext.allocAccessLog();
 		}
 		return requestContext;
 	}
@@ -370,7 +371,6 @@ public class KeepAliveContext extends PoolBase {
 			requestContext.unref(true);
 			requestContext=null;
 		}
-		//もし全レスポンスを送信済み(onWrittenPlain受信済み)なら、doneKeepAliveを呼びたい
 	}
 
 	//ssl proxy対象としたサーバ

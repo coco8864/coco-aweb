@@ -300,7 +300,7 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 		return charset;
 	}
 	
-	public boolean onBuffer(Object userContext, ByteBuffer[] buffers) {
+	public boolean onBuffer(ByteBuffer[] buffers, Object userContext) {
 		if(isResponseEnd()){//レスポンスが終わってる場合
 			PoolManager.poolBufferInstance(buffers);
 			releaseStore(false);
@@ -377,7 +377,7 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 		responseEnd();
 	}
 
-	public void onBufferFailure(Object userContext, Throwable failure) {
+	public void onBufferFailure(Throwable failure, Object userContext) {
 		logger.error("onBufferFailure error.", failure);
 		releaseStore(false);
 		if(isResponseEnd()){//レスポンスが終わってる場合

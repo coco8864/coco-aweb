@@ -8,7 +8,7 @@ import naru.async.pool.BuffersUtil;
 public class DummyGetter implements BufferGetter {
 
 	@Override
-	public boolean onBuffer(Object userContext, ByteBuffer[] buffers) {
+	public boolean onBuffer(ByteBuffer[] buffers, Object userContext) {
 		System.out.println("DummyGetter onBuffer."+BuffersUtil.remaining(buffers));
 		return true;
 	}
@@ -19,7 +19,7 @@ public class DummyGetter implements BufferGetter {
 	}
 
 	@Override
-	public void onBufferFailure(Object userContext, Throwable failure) {
+	public void onBufferFailure(Throwable failure, Object userContext) {
 		System.out.println("DummyGetter onBufferFailure.");
 		failure.printStackTrace();
 	}

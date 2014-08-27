@@ -51,7 +51,7 @@ public class StringConverter extends PoolBase implements BufferGetter{
 	}
 
 	@Override
-	public boolean onBuffer(Object arg0, ByteBuffer[] buffers) {
+	public boolean onBuffer(ByteBuffer[] buffers, Object arg0) {
 		long length=asyncBuffer.bufferLength();
 		for(ByteBuffer buffer:buffers){
 			offset+=buffer.remaining();
@@ -73,7 +73,7 @@ public class StringConverter extends PoolBase implements BufferGetter{
 	}
 
 	@Override
-	public void onBufferFailure(Object arg0, Throwable arg1) {
+	public void onBufferFailure(Throwable arg1, Object arg0) {
 		term(false);
 	}
 }

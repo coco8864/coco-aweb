@@ -211,6 +211,7 @@ public class SpdySession extends PoolBase{
 		return sessionInfo;
 	}
 	
+	/*
 	@Override
 	public void ref(){
 		super.ref();
@@ -221,5 +222,5 @@ public class SpdySession extends PoolBase{
 		logger.debug("#-#.cid:"+getPoolId(),new Throwable());
 		return super.unref();
 	}
-	
+	*/
 }

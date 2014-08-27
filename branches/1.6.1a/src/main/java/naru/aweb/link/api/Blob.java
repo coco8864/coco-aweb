@@ -171,7 +171,7 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 		return size;
 	}
 
-	public boolean onBuffer(Object userContext, ByteBuffer[] buffers) {
+	public boolean onBuffer(ByteBuffer[] buffers, Object userContext) {
 		long len=BuffersUtil.remaining(buffers);
 		Object[] ctx=(Object[])userContext;
 		BufferGetter bufferGetter=(BufferGetter)ctx[0];
@@ -180,7 +180,7 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 		if(len>maxLength){
 			BuffersUtil.cut(buffers, maxLength);
 		}
-		bufferGetter.onBuffer(orgUserContext, buffers);
+		bufferGetter.onBuffer(buffers, orgUserContext);
 		return false;
 	}
 
@@ -191,11 +191,11 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 		bufferGetter.onBufferEnd(orgUserContext);
 	}
 
-	public void onBufferFailure(Object userContext, Throwable failure) {
+	public void onBufferFailure(Throwable failure, Object userContext) {
 		Object[] ctx=(Object[])userContext;
 		BufferGetter bufferGetter=(BufferGetter)ctx[0];
 		Object orgUserContext=ctx[1];
-		bufferGetter.onBufferFailure(orgUserContext,failure);
+		bufferGetter.onBufferFailure(failure,orgUserContext);
 	}
 	
 	private static class DownloadGetter implements BufferGetter{
@@ -208,7 +208,7 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 		}
 		
 		@Override
-		public boolean onBuffer(Object h, ByteBuffer[] buffers) {
+		public boolean onBuffer(ByteBuffer[] buffers, Object h) {
 			WebServerHandler handler=(WebServerHandler)h;
 			offset+=BuffersUtil.remaining(buffers);
 			handler.responseBody(buffers);
@@ -224,7 +224,7 @@ public class Blob extends PoolBase implements AsyncBuffer,BufferGetter{
 		}
 
 		@Override
-		public void onBufferFailure(Object h, Throwable arg1) {
+		public void onBufferFailure(Throwable arg1, Object h) {
 			WebServerHandler handler=(WebServerHandler)h;
 			handler.responseEnd();
 			blob.unref();

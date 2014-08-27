@@ -49,10 +49,10 @@ function calcStatus(){
   var cm=cookieMode()
 ##serverÇ™cookieÇÃéwé¶Ç…è]Ç§ÇÊÇ§Ç…Ç∑ÇÈ
   if(appcacheMode && !cm && !errorOccur){
-   location.reload(true);
+##   location.reload(true);
    return;
   }else if(!appcacheMode && cm && !errorOccur){
-   location.reload(true);
+##   location.reload(true);
    return;
   }
   return 'IDLE';
