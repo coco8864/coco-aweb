@@ -110,6 +110,7 @@ public class DispatchHandler extends ServerBaseHandler {
 	public void onStartRequest() {
 		logger.debug("#startRequest.cid:" + getChannelId());
 		headerPage.recycle();
+		getRequestContext(true);
 		asyncRead(null);
 	}
 
@@ -225,13 +226,10 @@ public class DispatchHandler extends ServerBaseHandler {
 				}
 				mappingHandler();
 			}
-		} else {
-			if (getLimitRequestFieldSize() <= headerPage.getBufferLength()) {
-				logger.warn("too long header size."
-						+ headerPage.getBufferLength());
-				asyncClose(null);
-				return;
-			}
+		} else if (getLimitRequestFieldSize() <= headerPage.getBufferLength()) {
+			logger.warn("too long header size." + headerPage.getBufferLength());
+			asyncClose(null);
+		}else {
 			asyncRead(null);
 		}
 	}
@@ -744,7 +742,7 @@ public class DispatchHandler extends ServerBaseHandler {
 		AuthSession auth = requestContext.getAuthSession();
 		
 		/* dispatchHandler‚ðoq‚·‚é‚Æ‚«‚ÉAccessLog‚ð•t‰Á */
-		keepAliveContext.getRequestContext().allocAccessLog();
+		getRequestContext().allocAccessLog();
 		forwardMapping(realHost, requestHeader, mapping, auth,isWs);
 	}
 

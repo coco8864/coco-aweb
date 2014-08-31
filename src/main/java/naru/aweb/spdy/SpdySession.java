@@ -49,6 +49,7 @@ public class SpdySession extends PoolBase{
 	public void recycle(){
 		setSpdyHandler(null);
 		setKeepAliveContext(null);
+		setServerHandler(null);
 	}
 	
 	private void setKeepAliveContext(KeepAliveContext keepAliveContext) {
@@ -76,7 +77,7 @@ public class SpdySession extends PoolBase{
 		if(serverHandler!=null){
 			serverHandler.onReadClosed(readContext);
 			serverHandler.finishChildHandler();
-			serverHandler=null;
+			setServerHandler(null);
 		}
 	}
 	
@@ -171,7 +172,7 @@ public class SpdySession extends PoolBase{
 	}
 
 	public RequestContext getRequestContext(){
-		RequestContext requestContext=keepAliveContext.getRequestContext();
+		RequestContext requestContext=keepAliveContext.getRequestContext(false);
 		return requestContext;
 	}
 	
@@ -188,7 +189,7 @@ public class SpdySession extends PoolBase{
 			serverHandler.ref();
 		}
 		if(this.serverHandler!=null){
-			this.serverHandler.ref();
+			this.serverHandler.unref();
 		}
 		this.serverHandler = serverHandler;
 	}
@@ -210,17 +211,4 @@ public class SpdySession extends PoolBase{
 	public String spdyInfo(){
 		return sessionInfo;
 	}
-	
-	/*
-	@Override
-	public void ref(){
-		super.ref();
-		logger.debug("#+#.cid:"+getPoolId(),new Throwable());
-	}
-	@Override
-	public boolean unref(){
-		logger.debug("#-#.cid:"+getPoolId(),new Throwable());
-		return super.unref();
-	}
-	*/
 }
