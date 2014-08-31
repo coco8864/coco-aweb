@@ -888,10 +888,12 @@ public class WebServerHandler extends ServerBaseHandler {
 			return;// 何をしても無駄
 		}
 		traceHeader(isHeaderOnlyResponse,headerBuffer);
-		asyncWrite(headerBuffer, WRITE_CONTEXT_LAST_HEADER);
+		
 		if(isHeaderOnlyResponse){
+			asyncWrite(headerBuffer, WRITE_CONTEXT_LAST_HEADER);
 			return;
 		}
+		bodyBuffers=BuffersUtil.concatenate(headerBuffer, bodyBuffers);
 		setupTraceBody();
 		if (secondBody == null) {// 全レスポンスがある場合これで最後
 			internalWriteBody(true, true, bodyBuffers);
