@@ -4,11 +4,11 @@
 	<groupId>naru.aweb</groupId>
 	<artifactId>aweb</artifactId>
 	<name>aweb</name>
-	<version>1.6.2a</version>
+	<version>1.7.0</version>
 	<url>https://code.google.com/p/coco-aweb</url>
 
   <properties>
-    <naru.async.version>1.4.0b</naru.async.version>
+    <naru.async.version>1.5.0</naru.async.version>
     <queuelet-boot.version>1.2.0</queuelet-boot.version>
     <queuelet-common.version>1.2.2</queuelet-common.version>
     <queuelet-system.version>1.2.3</queuelet-system.version>
