@@ -10,6 +10,7 @@ import naru.async.ChannelHandler;
 import naru.async.pool.PoolManager;
 import naru.async.ssl.SslHandler;
 import naru.aweb.auth.AuthSession;
+import naru.aweb.auth.User;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
 import naru.aweb.http.GzipContext;
@@ -45,9 +46,9 @@ public abstract class ServerBaseHandler extends SslHandler {
 	public static final String ATTRIBUTE_VELOCITY_TEMPLATE="velocityTemplate";
 	public static final String ATTRIBUTE_VELOCITY_REPOSITORY="velocityRepository";
 	public static final String ATTRIBUTE_VELOCITY_ENGINE="velocityEngine";
-	public static final String ATTRIBUTE_KEEPALIVE_CONTEXT="keepAliveContext";
-	public static final String ATTRIBUTE_SPDY_SESSION="spdySession";
-	public static final String ATTRIBUTE_USER="loginUser";
+	public static final String ATTRIBUTE_KEEPALIVE_CONTEXT=KeepAliveContext.class.getName();
+	public static final String ATTRIBUTE_SPDY_SESSION=SpdySession.class.getName();
+	public static final String ATTRIBUTE_USER=User.class.getName();
 	
 	public enum SCOPE{
 		/**
@@ -112,11 +113,14 @@ public abstract class ServerBaseHandler extends SslHandler {
 	 * 当該リクエストのrequestContextを取得します。<br/>
 	 */
 	public RequestContext getRequestContext(){
+		return getRequestContext(false);
+	}
+	public RequestContext getRequestContext(boolean isNew){
 		KeepAliveContext keepAliveContext=getKeepAliveContext();
 		if(keepAliveContext==null){
 			return null;
 		}
-		RequestContext requestContext=keepAliveContext.getRequestContext();
+		RequestContext requestContext=keepAliveContext.getRequestContext(isNew);
 		return requestContext;
 	}
 	
@@ -287,7 +291,7 @@ public abstract class ServerBaseHandler extends SslHandler {
 		if(getChannelId()<0){//ChannelContextがいない場合
 			return null;
 		}
-		KeepAliveContext keepAliveContext=(KeepAliveContext)getAttribute(WebServerHandler.ATTRIBUTE_KEEPALIVE_CONTEXT);
+		KeepAliveContext keepAliveContext=(KeepAliveContext)getChannelAttribute(ATTRIBUTE_KEEPALIVE_CONTEXT);
 		if(isCreate && keepAliveContext==null){
 			keepAliveContext=(KeepAliveContext)PoolManager.getInstance(KeepAliveContext.class);
 			keepAliveContext.setAcceptServer(ServerParser.create(getLocalIp(), getLocalPort()));
@@ -301,7 +305,7 @@ public abstract class ServerBaseHandler extends SslHandler {
 	 * @param keepAliveContext
 	 */
 	public void setKeepAliveContext(KeepAliveContext keepAliveContext){
-		setAttribute(ATTRIBUTE_KEEPALIVE_CONTEXT,keepAliveContext);
+		endowChannelAttribute(ATTRIBUTE_KEEPALIVE_CONTEXT,keepAliveContext);
 	}
 	
 	/**

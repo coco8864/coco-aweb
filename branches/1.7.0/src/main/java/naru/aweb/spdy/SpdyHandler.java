@@ -151,7 +151,7 @@ public class SpdyHandler extends ServerBaseHandler {
 			//KeepAliveContext作って
 			KeepAliveContext keepAliveContext=(KeepAliveContext)PoolManager.getInstance(KeepAliveContext.class);
 			//KeepAliveContextからRequestContext取って
-			RequestContext requestContext=keepAliveContext.getRequestContext();
+			RequestContext requestContext=keepAliveContext.getRequestContext(true);
 			//RequestContextからrequestHeader取って
 			HeaderParser requestHeader=requestContext.getRequestHeader();
 			//ヘッダの内容を設定、ここにSpdyのVLが関係してくるので、SpdyFrameの中で実行
@@ -266,6 +266,7 @@ public class SpdyHandler extends ServerBaseHandler {
 		SpdySession spdySession;
 		Object ctx;
 		SpdyCtx(SpdySession spdySession,String ctx){
+			spdySession.ref();
 			this.spdySession=spdySession;
 			this.ctx=ctx;
 		}
@@ -318,6 +319,7 @@ public class SpdyHandler extends ServerBaseHandler {
 		}else if(spdyCtx.ctx==WRITE_CONTEXT_BODY){
 			session.onWrittenBody();
 		}
+		session.unref();
 	}
 	
 	//SpdySessionが自分の終了を通知してくる
@@ -409,16 +411,5 @@ public class SpdyHandler extends ServerBaseHandler {
 	}
 	public int getSpdyPri(){
 		return frame.getPriority();
-	}
-	
-	@Override
-	public void ref(){
-		super.ref();
-		logger.debug("#+#.cid:"+getPoolId(),new Throwable());
-	}
-	@Override
-	public boolean unref(){
-		logger.debug("#-#.cid:"+getPoolId(),new Throwable());
-		return super.unref();
 	}
 }

@@ -6,7 +6,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import naru.async.pool.BuffersUtil;
-import naru.async.pool.PoolBase;
+import naru.async.pool.Context;
 import naru.async.pool.PoolManager;
 import naru.aweb.config.Config;
 import naru.aweb.core.RealHost;
@@ -20,9 +20,10 @@ import naru.aweb.util.ServerParser;
  * @author Naru
  *
  */
-public class KeepAliveContext extends PoolBase {
+public class KeepAliveContext extends Context {
 	private static Logger logger = Logger.getLogger(KeepAliveContext.class);
 	private static Config config=Config.getConfig();
+	public static final String ATTRIBUTE_REQUEST_CONTEXT=RequestContext.class.getName();
 	
 	public static void setConnectionHandler(HeaderParser responseHeader,boolean isProxy,boolean isKeepAlive){
 		String value;
@@ -51,8 +52,6 @@ public class KeepAliveContext extends PoolBase {
 		}
 	}
 	
-	private RequestContext requestContext;//request単位の情報
-
 	private ServerParser acceptServer;
 	private RealHost realHost;
 	private ServerParser proxyTargetServer;//proxy対象サーバ
@@ -76,12 +75,7 @@ public class KeepAliveContext extends PoolBase {
 		keepAliveTimeout=config.getKeepAliveTimeout();
 		requestsCount=0;
 		isSendLastChunk=isChunked=isProxy=isSslProxy=isKeepAlive=isAllowChunked=isSelfProxy=false;
-		//setupedHandler=null;
 		setWebClientHandler(null);
-		if(requestContext!=null){
-			requestContext.unref(true);
-			requestContext=null;
-		}
 		isCloseServerHandle=false;
 		setProxyTargetServer(null);
 		if(acceptServer!=null){
@@ -89,6 +83,7 @@ public class KeepAliveContext extends PoolBase {
 			acceptServer=null;
 		}
 		realHost=null;
+		super.recycle();
 	}
 	
 	public synchronized void setWebClientHandler(WebClientHandler webClientHandler){
@@ -302,6 +297,7 @@ public class KeepAliveContext extends PoolBase {
 	 * KeepAliveContext１個につきServer handleを無効化するのは1回
 	 */
 	private void closeServerHandleOnce(WebServerHandler handler){
+		logger.debug("closeServerHandleOnce.cid:"+handler.getChannelId()+":isCloseServerHandle:"+isCloseServerHandle);
 		if(isCloseServerHandle==false){
 			handler.asyncClose(null);
 			isCloseServerHandle=true;
@@ -330,7 +326,7 @@ public class KeepAliveContext extends PoolBase {
 		if(!isKeepAlive/* || handler.isHandlerClosed()*/){
 			//setupedHandler=null;
 			setWebClientHandler(null);
-			logger.debug("commitResponse done end of keepAlive.handler:"+handler);
+			logger.debug("commitResponse done end of keepAlive.cid:"+handler.getChannelId());
 			closeServerHandleOnce(handler);
 			return false;
 		}
@@ -359,18 +355,17 @@ public class KeepAliveContext extends PoolBase {
 		setWebClientHandler(null);
 	}
 	
-	public RequestContext getRequestContext() {
-		if(requestContext==null){
+	public RequestContext getRequestContext(boolean isNew) {
+		RequestContext requestContext=(RequestContext)getAttribute(ATTRIBUTE_REQUEST_CONTEXT);
+		if(requestContext==null&&isNew){
 			requestContext=(RequestContext) PoolManager.getInstance(RequestContext.class);
+			endowAttribute(ATTRIBUTE_REQUEST_CONTEXT, requestContext);
 		}
 		return requestContext;
 	}
 	
 	public void endOfResponse(){
-		if(requestContext!=null){
-			requestContext.unref(true);
-			requestContext=null;
-		}
+		endowAttribute(ATTRIBUTE_REQUEST_CONTEXT, null);
 	}
 
 	//ssl proxy対象としたサーバ

@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import naru.async.pool.Context;
 import naru.async.pool.PoolBase;
 import naru.async.pool.PoolManager;
 import naru.aweb.auth.AuthSession;
@@ -20,7 +21,7 @@ import naru.aweb.util.ParameterParser;
  * @author Naru
  *
  */
-public class RequestContext extends PoolBase {
+public class RequestContext extends Context {
 	private static Logger logger = Logger.getLogger(RequestContext.class);
 	
 	private KeepAliveContext keepAliveContext;

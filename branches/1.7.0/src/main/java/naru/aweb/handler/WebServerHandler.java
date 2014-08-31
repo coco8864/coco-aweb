@@ -246,7 +246,7 @@ public class WebServerHandler extends ServerBaseHandler {
 			return;
 		}
 		String transferEncoding=requestHeader.getHeader(HeaderParser.TRANSFER_ENCODING_HEADER);
-		ChunkContext requestChunkContext=getKeepAliveContext().getRequestContext().getRequestChunkContext();
+		ChunkContext requestChunkContext=getRequestContext().getRequestChunkContext();
 		//spdyの場合は、transfer_encodingヘッダは無いはずだが念のため、chunkしない処理
 		if(HeaderParser.TRANSFER_ENCODING_CHUNKED.equalsIgnoreCase(transferEncoding)&&getSpdySession()==null){
 			requestChunkContext.decodeInit(true, -1);
