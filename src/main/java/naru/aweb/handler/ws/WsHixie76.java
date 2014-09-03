@@ -95,7 +95,7 @@ public class WsHixie76 extends WsProtocol {
 	private String subProtocol=null;
 	
 	private boolean wsShakehand(HeaderParser requestHeader,ByteBuffer[] readBody){//Chrome 6.0.437.3用
-		logger.debug("WsHiXie76#wsShakehand cid:"+handler.getChannelId());
+		if(logger.isDebugEnabled())logger.debug("WsHiXie76#wsShakehand cid:"+handler.getChannelId());
 		if(!isUseSpec(SPEC)){
 			handler.completeResponse("400");
 			return false;
@@ -173,7 +173,7 @@ public class WsHixie76 extends WsProtocol {
 	
 	@Override
 	public boolean onHandshake(HeaderParser requestHeader,String subProtocol) {
-		logger.debug("WsHiXie76#onHandshake cid:"+handler.getChannelId());
+		if(logger.isDebugEnabled())logger.debug("WsHiXie76#onHandshake cid:"+handler.getChannelId());
 		this.subProtocol=subProtocol;
 		ByteBuffer[] body=requestHeader.getBodyBuffer();
 		if(wsShakehand(requestHeader,body)){
@@ -248,7 +248,7 @@ public class WsHixie76 extends WsProtocol {
 	/* 回線からデータを受信した */
 	@Override
 	public void onBuffer(ByteBuffer[] buffers) {
-		logger.debug("WsHiXie76#onBuffer cid:"+handler.getChannelId());
+		if(logger.isDebugEnabled())logger.debug("WsHiXie76#onBuffer cid:"+handler.getChannelId());
 		if(handshakeStat==1){
 			if(wsShakehand(handler.getRequestHeader(), buffers)==false){
 				return;
@@ -263,7 +263,7 @@ public class WsHixie76 extends WsProtocol {
 	/* 回線が切断された or AplからcloseWebSocketが呼び出された */
 	@Override
 	public void onClose(short code,String reason) {
-		logger.debug("WsHiXie76#onClose cid:"+handler.getChannelId());
+		if(logger.isDebugEnabled())logger.debug("WsHiXie76#onClose cid:"+handler.getChannelId());
 		callOnWsClose(code,reason);
 		if(code!=WsHybiFrame.CLOSE_UNKOWN){
 			handler.asyncClose(null);
@@ -278,7 +278,7 @@ public class WsHixie76 extends WsProtocol {
 	/* アプリがpostMessageを呼び出した */
 	@Override
 	public void postMessage(String message) {
-		logger.debug("WsHiXie76#postMessage(txt) cid:"+handler.getChannelId());
+		if(logger.isDebugEnabled())logger.debug("WsHiXie76#postMessage(txt) cid:"+handler.getChannelId());
 		tracePostMessage(message);
 		ByteBuffer[] bufs=BuffersUtil.newByteBufferArray(3);
 		bufs[0]=ByteBuffer.wrap(START_FRAME);
@@ -296,7 +296,7 @@ public class WsHixie76 extends WsProtocol {
 	/* アプリがpostMessageを呼び出した */
 	@Override
 	public void postMessage(ByteBuffer[] msgs) {
-		logger.debug("WsHiXie76#postMessage(bin) cid:"+handler.getChannelId());
+		if(logger.isDebugEnabled())logger.debug("WsHiXie76#postMessage(bin) cid:"+handler.getChannelId());
 		PoolManager.poolBufferInstance(msgs);
 		throw new UnsupportedOperationException("postMessage binary mode");
 	}
@@ -328,7 +328,7 @@ public class WsHixie76 extends WsProtocol {
 
 	@Override
 	public void postMessage(AsyncBuffer msgs) {
-		logger.debug("WsHiXie75#postMessage(bin) cid:"+handler.getChannelId());
+		if(logger.isDebugEnabled())logger.debug("WsHiXie75#postMessage(bin) cid:"+handler.getChannelId());
 		if(msgs instanceof PoolBase){
 			((PoolBase)msgs).unref();
 		}

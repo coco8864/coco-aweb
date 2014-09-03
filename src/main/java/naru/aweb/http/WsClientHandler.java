@@ -128,14 +128,14 @@ public class WsClientHandler extends SslHandler implements Timer {
 	private void internalStartRequest() {
 		synchronized (this) {
 			stat = STAT_REQUEST_HEADER;
-			logger.debug("startRequest requestHeaderBuffer length:"+BuffersUtil.remaining(requestHeaderBuffer)+":"+getPoolId()+":cid:"+getChannelId());
+			if(logger.isDebugEnabled())logger.debug("startRequest requestHeaderBuffer length:"+BuffersUtil.remaining(requestHeaderBuffer)+":"+getPoolId()+":cid:"+getChannelId());
 			requestHeaderLength=BuffersUtil.remaining(requestHeaderBuffer);
 			asyncWrite(PoolManager.duplicateBuffers(requestHeaderBuffer), CONTEXT_HEADER);
 		}
 	}
 	
 	public void onConnected(Object userContext) {
-		logger.debug("#connected.id:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#connected.id:" + getChannelId());
 		onWcConnected();
 		if (webClientConnection.isUseProxy()) {//proxyを使う場合は、CONNECTメソッド経由
 			stat=STAT_SSL_PROXY;
@@ -169,7 +169,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 	}
 	
 	public boolean onHandshaked() {
-		logger.debug("#handshaked.cid:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#handshaked.cid:" + getChannelId());
 //		onWsHandshaked();
 		// 直接SSL接続する場合もproxy経由の接続の場合もここに来る
 		asyncRead(CONTEXT_HEADER);//リクエストしていないが、先行してレスポンスヘッダ要求を行う
@@ -178,7 +178,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 	}
 	
 	public final void onWrittenPlain(Object userContext) {
-		logger.debug("#writtenPlain.cid:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#writtenPlain.cid:" + getChannelId());
 		if (userContext == CONTEXT_HEADER) {
 			onWcWrittenHeader();
 		}else if (userContext == CONTEXT_MESSAGE) {
@@ -235,11 +235,11 @@ public class WsClientHandler extends SslHandler implements Timer {
 	}
 	
 	private void doFrame(){
-		logger.debug("WsClientHandler#doFrame cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("WsClientHandler#doFrame cid:"+getChannelId());
 		byte pcode=frame.getPcode();
 		ByteBuffer[] payloadBuffers=frame.getPayloadBuffers();
 		if(!frame.isFin()){
-			logger.debug("WsClientHandler#doFrame not isFin");
+			if(logger.isDebugEnabled())logger.debug("WsClientHandler#doFrame not isFin");
 			if(pcode!=WsHybiFrame.PCODE_CONTINUE){
 				continuePcode=pcode;
 			}
@@ -249,13 +249,13 @@ public class WsClientHandler extends SslHandler implements Timer {
 			}
 			PoolManager.poolArrayInstance(payloadBuffers);
 			if(continuePayloadLength>=webSocketMessageLimit){
-				logger.debug("WsClientHandler#doFrame too long frame.continuePayloadLength:"+continuePayloadLength);
+				if(logger.isDebugEnabled())logger.debug("WsClientHandler#doFrame too long frame.continuePayloadLength:"+continuePayloadLength);
 				sendClose(WsHybiFrame.CLOSE_MESSAGE_TOO_BIG,"too long frame");
 			}
 			return;
 		}
 		if(pcode==WsHybiFrame.PCODE_CONTINUE){
-			logger.debug("WsClientHandler#doFrame pcode CONTINUE");
+			if(logger.isDebugEnabled())logger.debug("WsClientHandler#doFrame pcode CONTINUE");
 			pcode=continuePcode;
 			for(ByteBuffer buffer:payloadBuffers){
 				continuePayload.add(buffer);
@@ -272,7 +272,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 		}
 		switch(pcode){
 		case WsHybiFrame.PCODE_TEXT:
-			logger.debug("WsClientHandler#doFrame pcode TEXT");
+			if(logger.isDebugEnabled())logger.debug("WsClientHandler#doFrame pcode TEXT");
 			for(ByteBuffer buffer:payloadBuffers){
 				codeConverte.putBuffer(buffer);
 			}
@@ -286,22 +286,22 @@ public class WsClientHandler extends SslHandler implements Timer {
 			}
 			break;
 		case WsHybiFrame.PCODE_BINARY:
-			logger.debug("WsClientHandler#doFrame pcode BINARY");
+			if(logger.isDebugEnabled())logger.debug("WsClientHandler#doFrame pcode BINARY");
 			onWcMessage(Cache.open(payloadBuffers));
 			break;
 		case WsHybiFrame.PCODE_CLOSE:
-			logger.debug("WsClientHandler#doFrame pcode CLOSE");
+			if(logger.isDebugEnabled())logger.debug("WsClientHandler#doFrame pcode CLOSE");
 			PoolManager.poolBufferInstance(payloadBuffers);
 			sendClose(WsHybiFrame.CLOSE_NORMAL,"OK");
 			doEndWsClient(frame.getCloseCode(),frame.getCloseReason());
 			break;
 		case WsHybiFrame.PCODE_PING:
-			logger.debug("WsClientHandler#doFrame pcode PING");
+			if(logger.isDebugEnabled())logger.debug("WsClientHandler#doFrame pcode PING");
 			ByteBuffer[] pongBuffer=WsHybiFrame.createPongFrame(true, payloadBuffers);
 			asyncWrite(pongBuffer, null);
 			break;
 		case WsHybiFrame.PCODE_PONG:
-			logger.debug("WsClientHandler#doFrame pcode PONG");
+			if(logger.isDebugEnabled())logger.debug("WsClientHandler#doFrame pcode PONG");
 			PoolManager.poolBufferInstance(payloadBuffers);
 			//do nothing
 			break;
@@ -326,7 +326,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 	}
 	
 	public void onReadPlain(ByteBuffer[] buffers, Object userContext) {
-		logger.debug("#readPlain.cid:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#readPlain.cid:" + getChannelId());
 		if (userContext == CONTEXT_MESSAGE) {
 			parseFrame(buffers);
 			asyncRead(CONTEXT_MESSAGE);
@@ -339,7 +339,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 		PoolManager.poolArrayInstance(buffers);//配列を返却
 		if (!responseHeader.isParseEnd()) {
 			// ヘッダが終わっていない場合後続のヘッダを読み込み
-			logger.debug("asyncRead(CONTEXT_HEADER) cid:"+getChannelId());
+			if(logger.isDebugEnabled())logger.debug("asyncRead(CONTEXT_HEADER) cid:"+getChannelId());
 			asyncRead(CONTEXT_HEADER);
 			return;
 		}
@@ -354,7 +354,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 		onWcResponseHeader(responseHeader);
 		String headerKey=responseHeader.getHeader("Sec-WebSocket-Accept");
 		if (!"101".equals(statusCode) || !acceptKey.equals(headerKey)) {
-			logger.debug("WsClientHandler fail to handshake.statusCode:"+statusCode+" acceptKey:" + acceptKey +" headerKey:" +headerKey);
+			if(logger.isDebugEnabled())logger.debug("WsClientHandler fail to handshake.statusCode:"+statusCode+" acceptKey:" + acceptKey +" headerKey:" +headerKey);
 			doEndWsClientFailure(stat, FAILURE_PROTOCOL);
 			asyncClose(null);
 			return;
@@ -368,7 +368,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 			parseFrame(body);
 		}
 		setReadTimeout(0);//handshakeが完了したのでタイムアウトさせない
-		logger.debug("asyncRead(CONTEXT_BODY) cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("asyncRead(CONTEXT_BODY) cid:"+getChannelId());
 		asyncRead(CONTEXT_MESSAGE);
 	}
 	
@@ -456,27 +456,27 @@ public class WsClientHandler extends SslHandler implements Timer {
 	 * 以降callbackメソッド
 	 */
 	private void onWcConnected() {
-		logger.debug("#wsConnected cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#wsConnected cid:"+getChannelId());
 		if (wsClient != null) {
 			wsClient.onWcConnected(userContext);
 		}
 	}
 	private void onWcProxyConnected() {
-		logger.debug("#wsProxyConnected cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#wsProxyConnected cid:"+getChannelId());
 		if (wsClient != null) {
 			wsClient.onWcProxyConnected(userContext);
 		}
 	}
 	
 	private void onWcHandshaked(String subprotocol) {
-		logger.debug("#wsHandshaked cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#wsHandshaked cid:"+getChannelId());
 		if (wsClient != null) {
 			wsClient.onWcHandshaked(userContext,subprotocol);
 		}
 	}
 	
 	private void onWcResponseHeader(HeaderParser responseHeader) {
-		logger.debug("#writtenRequestHeader cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#writtenRequestHeader cid:"+getChannelId());
 		if (wsClient != null) {
 			wsClient.onWcResponseHeader(userContext,responseHeader);
 		}
@@ -484,28 +484,28 @@ public class WsClientHandler extends SslHandler implements Timer {
 	
 	
 	private void onWcWrittenHeader() {
-		logger.debug("#writtenRequestHeader cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#writtenRequestHeader cid:"+getChannelId());
 		if (wsClient != null) {
 			wsClient.onWcWrittenHeader(userContext);
 		}
 	}
 	
 	private void onWcMessage(String message) {
-		logger.debug("#message text cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#message text cid:"+getChannelId());
 		if (wsClient != null) {
 			wsClient.onWcMessage(userContext, message);
 		}
 	}
 	
 	private void onWcMessage(Cache message) {
-		logger.debug("#message binary cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#message binary cid:"+getChannelId());
 		if (wsClient != null) {
 			wsClient.onWcMessage(userContext, message);
 		}
 	}
 
 	private synchronized void doEndWsClient(short closeCode,String closeReason) {
-		logger.debug("#endWsClient cid:"+getChannelId() +":wsClient:"+wsClient);
+		if(logger.isDebugEnabled())logger.debug("#endWsClient cid:"+getChannelId() +":wsClient:"+wsClient);
 		int lastStat=this.stat;
 		this.stat=STAT_END;
 		if (wsClient == null) {
@@ -519,7 +519,7 @@ public class WsClientHandler extends SslHandler implements Timer {
 	}
 
 	private void doEndWsClientFailure(int stat,Throwable t) {
-		logger.debug("#requestFailure cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#requestFailure cid:"+getChannelId());
 		synchronized (this) {
 			this.stat=STAT_END;
 			if (wsClient == null) {

@@ -42,7 +42,7 @@ public class PerfLinklet implements Linklet,Event {
 
 	@Override
 	public boolean onSubscribe(LinkPeer peer) {
-		logger.debug("perfLinklet onSubscribe:"+peer.getBid());
+		if(logger.isDebugEnabled())logger.debug("perfLinklet onSubscribe:"+peer.getBid());
 		return true;
 	}
 

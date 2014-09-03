@@ -53,13 +53,12 @@ import naru.aweb.util.ServerParser;
 import naru.queuelet.QueueletContext;
 import net.sf.json.JSON;
 import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.ConversionException;
-import org.apache.commons.configuration.DatabaseConfiguration;
+//import org.apache.commons.configuration.DatabaseConfiguration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
@@ -301,7 +300,7 @@ public class Config {
 				st.executeUpdate("CREATE TABLE CONFIGURATION(KEY VARCHAR(512) NOT NULL PRIMARY KEY,VALUE VARCHAR(512))");
 			}
 		} catch (SQLException e) {
-			logger.debug("dbcheck exception.",e);
+			if(logger.isDebugEnabled())logger.debug("dbcheck exception.",e);
 			if ("S0002".equals(e.getSQLState())) {// テーブルなしって意味
 				Statement st = con.createStatement();
 				st.executeUpdate("CREATE TABLE CONFIGURATION(KEY VARCHAR(512) NOT NULL PRIMARY KEY,VALUE VARCHAR(512))");
@@ -326,8 +325,7 @@ public class Config {
 			throw new RuntimeException("not found in class path.CONF_FILENAME:"	+ CONF_FILENAME);
 		}
 		Configuration fileConfig = loadConfig(is, "MS932");
-		String url = context.resolveProperty(
-				fileConfig.getString("config.url"), null);
+		String url = context.resolveProperty(fileConfig.getString("config.url"), null);
 		String user = context.resolveProperty(fileConfig.getString("config.user"), null);
 		String pass = context.resolveProperty(fileConfig.getString("config.pass"), null);
 		String driver = context.resolveProperty(fileConfig.getString("config.driver"), null);
@@ -348,8 +346,7 @@ public class Config {
 			logger.error("fail to checkAndCreateDb.", e);
 			throw new RuntimeException("fail to checkAndCreateDb.", e);
 		}
-		DatabaseConfiguration dbConfig = new DatabaseConfiguration(confDataSource,
-				table, keyColumn, valueColumn);
+		CacheConfiguration dbConfig = new CacheConfiguration(confDataSource,table, keyColumn, valueColumn);
 		// DBには、","区切で格納しアプリで分解する
 		dbConfig.setDelimiterParsingDisabled(true);
 		/* phantom.propetiesは最優先、他の設定(web,config)では上書きできないようにする */
@@ -359,7 +356,7 @@ public class Config {
 			String value = context.resolveProperty(fileConfig.getString(key),
 					null);
 			dbConfig.setProperty(key, value);
-			logger.debug(key + ":" + value);
+			if(logger.isDebugEnabled())logger.debug(key + ":" + value);
 		}
 		if (isCreate) {
 			// configを新規に作成した場合は、他のテーブルが仮に残っていたとしてもcleanup相当の動作をする
@@ -416,7 +413,7 @@ public class Config {
 		while (itr.hasNext()) {
 			String key = (String) itr.next();
 			String[] values = propConfig.getStringArray(key);
-			logger.debug("key:" + key + " values:" + values);
+			if(logger.isDebugEnabled())logger.debug("key:" + key + " values:" + values);
 			// 複数指定ができるrealHostsとmappingsは、追加書きにする
 			if (key.equals(REAL_HOSTS)) {
 				String[] orgValues = Config.getStringArray(targetConfiguration,
@@ -456,8 +453,7 @@ public class Config {
 		}
 		if (isRename) {
 			SimpleDateFormat format = new SimpleDateFormat(".yyMMddHHmmss");
-			File backup = new File(propFile.getAbsolutePath()
-					+ format.format(new Date()));
+			File backup = new File(propFile.getAbsolutePath()+ format.format(new Date()));
 			propFile.renameTo(backup);
 		}
 	}
@@ -1027,30 +1023,22 @@ public class Config {
 	public boolean isNextSocksProxy() {
 		return false;
 	}
-
-	/*
-	 * private static String[] NO_DOMEINS=new String[0]; public String[]
-	 * getExceptDomians() { if(!isNextSecureProxy()&&!isNextHttpProxy()){ return
-	 * NO_DOMEINS; } return exceptProxyDomainsList; }
-	 */
-
+	
 	/* configurationをデリゲート */
 	public String getString(String key) {
-		String result = configuration.getString(key);
-		return result;
+		return getString(key,"");
 	}
 
 	public String getString(String key, String defaultValue) {
-		return configuration.getString(key, defaultValue);
+		return configuration.getString(key,defaultValue);
 	}
 
 	public int getInt(String key) {
-		int defaultValue = 0;
-		return configuration.getInt(key, defaultValue);
+		return configuration.getInt(key, 0);
 	}
 
 	public int getInt(String key, int defaultValue) {
-		return configuration.getInt(key, defaultValue);
+		return configuration.getInt(key,defaultValue);
 	}
 
 	public long getLong(String key) {
@@ -1059,7 +1047,7 @@ public class Config {
 	}
 
 	public long getLong(String key, long defaultValue) {
-		return configuration.getLong(key, defaultValue);
+		return configuration.getLong(key,defaultValue);
 	}
 
 	public boolean getBoolean(String key) {
@@ -1067,7 +1055,7 @@ public class Config {
 	}
 
 	public boolean getBoolean(String key, boolean defaultValue) {
-		return configuration.getBoolean(key, defaultValue);
+		return configuration.getBoolean(key, false);
 	}
 
 	public String[] getStringArray(String key) {
@@ -1089,10 +1077,6 @@ public class Config {
 	}
 
 	/* realHost関連 */
-//	public Set<RealHost> getRealHosts() {
-//		return realHosts;
-//	}
-
 	public RealHost getRealHost(ServerParser server) {
 		return RealHost.getRealHostByServer(server);
 	}

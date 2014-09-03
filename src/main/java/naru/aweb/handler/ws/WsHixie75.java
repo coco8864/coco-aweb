@@ -26,7 +26,7 @@ public class WsHixie75 extends WsProtocol {
 	
 	@Override
 	public boolean onHandshake(HeaderParser requestHeader,String subProtocol) {
-		logger.debug("WsHiXie75#onHandshake cid:"+handler.getChannelId());
+		if(logger.isDebugEnabled())logger.debug("WsHiXie75#onHandshake cid:"+handler.getChannelId());
 		if(!isUseSpec(SPEC)){
 			handler.completeResponse("400");
 			return false;
@@ -147,7 +147,7 @@ public class WsHixie75 extends WsProtocol {
 	/* 回線からデータを受信した */
 	@Override
 	public void onBuffer(ByteBuffer[] buffers) {
-		logger.debug("WsHiXie75#onBuffer cid:"+handler.getChannelId());
+		if(logger.isDebugEnabled())logger.debug("WsHiXie75#onBuffer cid:"+handler.getChannelId());
 		for(ByteBuffer buffer:buffers){
 			parseMessage(buffer);
 		}
@@ -156,7 +156,7 @@ public class WsHixie75 extends WsProtocol {
 	/* 回線が切断された or AplからcloseWebSocketが呼び出された */
 	@Override
 	public void onClose(short code,String reason) {
-		logger.debug("WsHiXie75#onClose cid:"+handler.getChannelId());
+		if(logger.isDebugEnabled())logger.debug("WsHiXie75#onClose cid:"+handler.getChannelId());
 		callOnWsClose(code,reason);
 		if(code!=WsHybiFrame.CLOSE_UNKOWN){
 			handler.asyncClose(null);
@@ -171,7 +171,7 @@ public class WsHixie75 extends WsProtocol {
 	/* アプリがpostMessageを呼び出した */
 	@Override
 	public void postMessage(String message) {
-		logger.debug("WsHiXie75#postMessage(txt) cid:"+handler.getChannelId());
+		if(logger.isDebugEnabled())logger.debug("WsHiXie75#postMessage(txt) cid:"+handler.getChannelId());
 		tracePostMessage(message);
 		ByteBuffer[] bufs=BuffersUtil.newByteBufferArray(3);
 		bufs[0]=ByteBuffer.wrap(START_FRAME);
@@ -209,7 +209,7 @@ public class WsHixie75 extends WsProtocol {
 
 	@Override
 	public void postMessage(AsyncBuffer msgs) {
-		logger.debug("WsHiXie75#postMessage(bin) cid:"+handler.getChannelId());
+		if(logger.isDebugEnabled())logger.debug("WsHiXie75#postMessage(bin) cid:"+handler.getChannelId());
 		if(msgs instanceof PoolBase){
 			((PoolBase)msgs).unref();
 		}

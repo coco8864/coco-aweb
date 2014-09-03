@@ -122,7 +122,7 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 	}
 	
 	private boolean doProxy(){
-		logger.debug("#startResponse.cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#startResponse.cid:"+getChannelId());
 		HeaderParser requestHeader=getRequestHeader();
 		
 		boolean isCallerKeepAlive=false;//バックはkeepAliveしない
@@ -145,7 +145,7 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 			webClientHandler=null;
 			return false;
 		}
-		logger.debug("client cid:"+getChannelId() +" server cid:"+webClientHandler.getChannelId());
+		if(logger.isDebugEnabled())logger.debug("client cid:"+getChannelId() +" server cid:"+webClientHandler.getChannelId());
 		webClientHandler.setReadTimeout(getReadTimeout());
 		webClientHandler.setWriteTimeout(getWriteTimeout());
 		return true;
@@ -157,7 +157,7 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 		if(mapping.getBooleanOption(Mapping.OPTION_FILTER)){
 			FilterHelper helper=config.getFilterHelper();
 			if(helper.doFilter(this)==false){
-				logger.debug("filter blocked");
+				if(logger.isDebugEnabled())logger.debug("filter blocked");
 				return;
 			}
 		}
@@ -214,30 +214,30 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 	}
 	
 	public void onTimeout(Object userContext){
-		logger.debug("#timeout.cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#timeout.cid:"+getChannelId());
 		asyncClose(userContext);
 		responseEnd();
 	}
 	
 	public void onFailure(Object userContext,Throwable t){
-		logger.debug("#failure.cid:"+getChannelId(),t);
+		if(logger.isDebugEnabled())logger.debug("#failure.cid:"+getChannelId(),t);
 		asyncClose(userContext);
 		responseEnd();
 	}
 
 	public void onClosed(Object userContext) {
-		logger.debug("#closed.cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#closed.cid:"+getChannelId());
 		super.onClosed(userContext);
 	}
 	
 	public void onFinished(){
-		logger.debug("#finished.cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#finished.cid:"+getChannelId());
 		responseEnd();
 		super.onFinished();
 	}
 
 	public void onResponseBody(Object userContext,ByteBuffer[] buffer) {
-		logger.debug("#responseBody.cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#responseBody.cid:"+getChannelId());
 		if(isRequestEnd){
 			return;
 		}
@@ -246,11 +246,11 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 			return;//再実行時レスポンスbodyは捨てる
 		}
 		if(injector!=null){
-			logger.debug("inject add contents cid:"+getChannelId());
+			if(logger.isDebugEnabled())logger.debug("inject add contents cid:"+getChannelId());
 			buffer=injector.onResponseBody(buffer);
 		}
 //		if(injectContext!=null && buffer!=null){
-//			logger.debug("inject add contents cid:"+getChannelId());
+//			if(logger.isDebugEnabled())logger.debug("inject add contents cid:"+getChannelId());
 //			InjectionHelper helper=config.getInjectionHelper();
 //			helper.doInject(injectContext, this, buffer);
 //			return;
@@ -273,7 +273,7 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 			return;
 		}
 		isResponseHeader=true;
-		logger.debug("#responseHeader.cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#responseHeader.cid:"+getChannelId());
 		long injectLength=0;
 		boolean isInject=false;
 		if(injector!=null){
@@ -283,7 +283,7 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 				//chunk、gzipを解除してbodyを通知するようにwebClientHandlerに依頼（通信上の動作は関係しない）
 				webClientHandler.setReadableCallback(true);
 				injectLength=injector.getInjectLength();
-				logger.debug("inject cid:"+getChannelId()+":injectLength:"+injectLength+":ContentsLength:"+responseHeader.getContentLength());
+				if(logger.isDebugEnabled())logger.debug("inject cid:"+getChannelId()+":injectLength:"+injectLength+":ContentsLength:"+responseHeader.getContentLength());
 			}
 		}
 		/*
@@ -297,7 +297,7 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 			//chunk、gzipを解除してbodyを通知するようにwebClientHandlerに依頼（通信上の動作は関係しない）
 			webClientHandler.setReadableCallback(true);
 			injectContentsLength=helper.getInjectContentsLength(injectContext);
-			logger.debug("inject cid:"+getChannelId()+":injectContentsLength:"+injectContentsLength+":ContentsLength:"+responseHeader.getContentLength());
+			if(logger.isDebugEnabled())logger.debug("inject cid:"+getChannelId()+":injectContentsLength:"+injectContentsLength+":ContentsLength:"+responseHeader.getContentLength());
 		}
 		*/
 		//リダイレクトの場合、自分に帰ってくるようにlocationヘッダを設定
@@ -329,7 +329,7 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 				removeContentLength();
 			}else if(contentLength>=0){
 				setContentLength(contentLength+injectLength);
-				logger.debug("inject change contentLength cid:"+getChannelId()+":contentLength:"+(contentLength+injectLength));
+				if(logger.isDebugEnabled())logger.debug("inject change contentLength cid:"+getChannelId()+":contentLength:"+(contentLength+injectLength));
 			}
 			//onResponseBodyには、chunkがデコードされて通知されるため
 			removeHeader(HeaderParser.TRANSFER_ENCODING_HEADER);
@@ -348,7 +348,7 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 	}
 	
 	public void onRequestEnd(Object userContext,int stat) {
-		logger.debug("#webClientEnd.cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#webClientEnd.cid:"+getChannelId());
 		if(requestEnd()==false){
 			return;
 		}
@@ -362,12 +362,12 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 		if(injector!=null){
 			ByteBuffer[] buffers=injector.onResponseBody(null);
 			if(buffers!=null){
-				logger.debug("inject add contents last cid:"+getChannelId());
+				if(logger.isDebugEnabled())logger.debug("inject add contents last cid:"+getChannelId());
 				responseBody(buffers);
 			}
 		}
 //		if(injectContext!=null){
-//			logger.debug("inject add contents cid:"+getChannelId());
+//			if(logger.isDebugEnabled())logger.debug("inject add contents cid:"+getChannelId());
 //			InjectionHelper helper=config.getInjectionHelper();
 //			helper.doInject(injectContext, this, null);
 //		}
@@ -379,7 +379,7 @@ public class ProxyHandler extends  WebServerHandler implements WebClient{
 	}
 
 	public void onRequestFailure(Object userContext,int stat,Throwable t) {
-		logger.debug("#webClientFailure.cid:"+getChannelId()+":"+stat,t);
+		if(logger.isDebugEnabled())logger.debug("#webClientFailure.cid:"+getChannelId()+":"+stat,t);
 		if(requestEnd()==false){
 			return;
 		}

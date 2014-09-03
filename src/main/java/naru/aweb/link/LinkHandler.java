@@ -139,7 +139,7 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 	 */
 	@Override
 	public void onMessage(String msg){
-		logger.debug("onMessage.message:"+msg);
+		if(logger.isDebugEnabled())logger.debug("onMessage.message:"+msg);
 		JSONObject req=JSONObject.fromObject(msg);
 		if(!isNegotiated){
 			if(!negotiation(req)){
@@ -259,7 +259,7 @@ public class LinkHandler extends WebSocketHandler implements Timer{
 
 	@Override
 	public void onWsOpen(String subprotocol) {
-		logger.debug("onWsOpen subprotocol:"+subprotocol);
+		if(logger.isDebugEnabled())logger.debug("onWsOpen subprotocol:"+subprotocol);
 	}
 	
 	private static final Set<String> UPLOAD_RESERVE_KEY=new HashSet<String>();

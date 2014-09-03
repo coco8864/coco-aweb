@@ -221,7 +221,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	}
 	
 	public void startRequest(WebClientHandler webClientHandler,AccessLog accessLog,long connectTimeout){
-		logger.debug("#startRequest:"+browserName);
+		if(logger.isDebugEnabled())logger.debug("#startRequest:"+browserName);
 		if(this.accessLog!=null){
 			throw new RuntimeException("this caller is in use.");
 		}
@@ -287,7 +287,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	}
 	
 	public void onWrittenRequestHeader(Object userContext) {
-		logger.debug("#onWrittenRequestHeader:"+browserName);
+		if(logger.isDebugEnabled())logger.debug("#onWrittenRequestHeader:"+browserName);
 		accessLog.setTimeCheckPint(AccessLog.TimePoint.requestHeader);
 		if(requestBody==null){
 			accessLog.setTimeCheckPint(AccessLog.TimePoint.requestBody);
@@ -304,7 +304,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	}
 	
 	public void onWrittenRequestBody(Object userContext) {
-		logger.debug("#onWrittenRequestBody:"+browserName);
+		if(logger.isDebugEnabled())logger.debug("#onWrittenRequestBody:"+browserName);
 		accessLog.setTimeCheckPint(AccessLog.TimePoint.requestBody);
 		WebClientLog webClientLog=accessLog.getWebClientLog();
 		if(webClientLog!=null){
@@ -318,7 +318,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	}
 	
 	public void onResponseHeader(Object userContext, HeaderParser responseHeader) {
-		logger.debug("#onResponseHeader:"+browserName);
+		if(logger.isDebugEnabled())logger.debug("#onResponseHeader:"+browserName);
 		WebClientHandler webClientHandler=(WebClientHandler)userContext;
 		Store responseHeaderStore=webClientHandler.popReadPeekStore();
 		if(responseHeaderStore!=null){
@@ -344,7 +344,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	}
 
 	public void onResponseBody(Object userContext, ByteBuffer[] buffers) {
-		logger.debug("#onResponseBody:"+browserName);
+		if(logger.isDebugEnabled())logger.debug("#onResponseBody:"+browserName);
 		if(responseLength==0){
 			accessLog.setTimeCheckPint(AccessLog.TimePoint.responseBody);
 		}
@@ -367,7 +367,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 	
 	//onRequestFailureÇ©ÇÁÇ‡åƒÇŒÇÍÇÈÇÃÇ≈íçà”
 	public void onRequestEnd(Object userContext,int stat) {
-		logger.debug("#onRequestEnd:"+browserName);
+		if(logger.isDebugEnabled())logger.debug("#onRequestEnd:"+browserName);
 		if(accessLog.getStatusCode()==null){
 			accessLog.setStatusCode("%" +Integer.toHexString(stat));
 		}
@@ -378,7 +378,7 @@ public class Caller extends PoolBase implements WebClient/*,BufferGetter*/ {
 		accessLog.setChannelId(webClientHandler.getChannelId());
 //		if(accessLog.getStatusCode()==null){
 //			//connectÇ…é∏îsÇµÇΩèÍçáÅAhandshakeÇ…é∏îsÇµÇΩèÍçáÅAÇªÇÃëºâÒê¸Ç™êÿÇÍÇΩèÍçá
-//			logger.debug("Caller.onRequestEnd.no status code:"+webClientHandler.getChannelId()+":"+accessLog.getChannelId());
+//			if(logger.isDebugEnabled())logger.debug("Caller.onRequestEnd.no status code:"+webClientHandler.getChannelId()+":"+accessLog.getChannelId());
 //		}
 		accessLog.setResponseLength(responseLength);
 		if(responseLength==0){

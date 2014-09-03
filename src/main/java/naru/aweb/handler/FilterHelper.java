@@ -135,7 +135,7 @@ public class FilterHelper {
 	/**
 	 */
 	public boolean doFilter(ProxyHandler handler){
-		logger.debug("#doFilter cid:"+handler.getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#doFilter cid:"+handler.getChannelId());
 		User user=(User)handler.getAttribute(SCOPE.REQUEST,ServerBaseHandler.ATTRIBUTE_USER);
 		List<String> roles=user.getRolesList();
 		if(roles==null){
@@ -184,7 +184,7 @@ public class FilterHelper {
 		String path=mapping.getResolvePath();
 		long start=System.currentTimeMillis();
 		Collection<FilterEntry> list=matchFilter(server.getHost());
-		logger.debug("FilterEntry.matchFilter.time:"+(System.currentTimeMillis()-start));
+		if(logger.isDebugEnabled())logger.debug("FilterEntry.matchFilter.time:"+(System.currentTimeMillis()-start));
 		
 		FilterCategory category=matchCategory(whiteList,list,path);
 		if(category!=null){

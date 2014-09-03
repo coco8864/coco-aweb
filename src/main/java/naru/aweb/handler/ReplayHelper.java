@@ -105,7 +105,7 @@ public class ReplayHelper {
 	/**
 	 */
 	public boolean doReplay(WebServerHandler handler,ByteBuffer[] body){
-		logger.debug("#doReplay cid:"+handler.getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#doReplay cid:"+handler.getChannelId());
 //		Set history=getUserSetting().getReplayHistory();
 		AccessLog accessLog=handler.getAccessLog();
 		if(accessLog==null){
@@ -129,7 +129,7 @@ public class ReplayHelper {
 		if(file!=null){
 //			bodyPage.recycle();
 			accessLog.setDestinationType(AccessLog.DESTINATION_TYPE_REPLAY);
-			logger.debug("response from file.file:"+file.getAbsolutePath());
+			if(logger.isDebugEnabled())logger.debug("response from file.file:"+file.getAbsolutePath());
 			handler.setAttribute(SCOPE.REQUEST,ProxyHandler.ATTRIBUTE_RESPONSE_FILE,file);
 			WebServerHandler response=(WebServerHandler) handler.forwardHandler(Mapping.FILE_SYSTEM_HANDLER);
 			PoolManager.poolBufferInstance(body);//TODO ‚¿‚á‚ñ‚ÆŽg‚¨‚¤
@@ -138,7 +138,7 @@ public class ReplayHelper {
 			String bodyDigest=recodeLog.getResponseBodyDigest();
 			Store store=Store.open(bodyDigest);
 			if(store!=null){
-				logger.debug("response from trace.bodyDigest:"+bodyDigest);
+				if(logger.isDebugEnabled())logger.debug("response from trace.bodyDigest:"+bodyDigest);
 				String contentEncoding=recodeLog.getContentEncoding();
 				if(contentEncoding!=null){
 					handler.setHeader(HeaderParser.CONTENT_ENCODING_HEADER,contentEncoding);

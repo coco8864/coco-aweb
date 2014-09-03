@@ -82,7 +82,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		}
 		String resolveString=sb.toString();
 		try {
-			logger.debug("calcResolveDigest resolveString:"+resolveString);
+			if(logger.isDebugEnabled())logger.debug("calcResolveDigest resolveString:"+resolveString);
 			String digest=DataUtil.digest(resolveString.getBytes(HeaderParser.HEADER_ENCODE));
 			return digest;
 		} catch (UnsupportedEncodingException e) {
@@ -948,7 +948,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 		if(traceCount==0){
 			LogPersister logPersister=config.getLogPersister();
 			if(logPersister==null){
-				logger.debug("logPersister is null");
+				if(logger.isDebugEnabled())logger.debug("logPersister is null");
 				log(true);
 				log(false);
 				unref();
@@ -964,7 +964,7 @@ public class AccessLog extends PoolBase implements BufferGetter{
 
 	public void onBufferEnd(Object userContext) {
 		Store store=(Store)userContext;
-		logger.debug("store:"+store.getStoreId());
+		if(logger.isDebugEnabled())logger.debug("store:"+store.getStoreId());
 		decTrace();
 	}
 

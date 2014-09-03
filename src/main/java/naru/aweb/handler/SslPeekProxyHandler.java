@@ -53,7 +53,7 @@ public class SslPeekProxyHandler extends WebServerHandler {
 	}
 	
 	public void onRequestHeader(){
-		logger.debug("#doResponse.id:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#doResponse.id:"+getChannelId());
 		this.client=this;
 		HeaderParser requestHeader=getRequestHeader();
 		ServerParser sslServer=requestHeader.getServer();
@@ -83,7 +83,7 @@ public class SslPeekProxyHandler extends WebServerHandler {
 	 * フロントクライアントとのshakehand完了メソッド
 	 */
 	public boolean onHandshaked() {
-		logger.debug("#handshaked client.id:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#handshaked client.id:"+getChannelId());
 		/* このクラスが使われるという事は、トレースを採取するという事 */
 //		AccessLog accessLog=(AccessLog)getAttribute(ATTRIBUTE_ACCESSLOG);
 		server.asyncRead(null);
@@ -96,7 +96,7 @@ public class SslPeekProxyHandler extends WebServerHandler {
 	 * @param buffers
 	 */
 	public void onReadPlain(ByteBuffer[] buffers,Object userContext) {
-		logger.debug("#readPlain client.id:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#readPlain client.id:"+getChannelId());
 		if(!requestDecodeHeader.isParseEnd()){
 			for(int i=0;i<buffers.length;i++){
 				buffers[i].mark();
@@ -116,7 +116,7 @@ public class SslPeekProxyHandler extends WebServerHandler {
 	}
 	
 	public void onClosed(Object userContext) {
-		logger.debug("#close client.id:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#close client.id:"+getChannelId());
 		if(requestDecodeHeader.isParseEnd()){
 			AccessLog accessLog=getAccessLog();
 			String requestLine=accessLog.getRequestLine();
@@ -138,7 +138,7 @@ public class SslPeekProxyHandler extends WebServerHandler {
 	}
 	
 	public void onFinished() {
-		logger.debug("#finished client.id:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#finished client.id:"+getChannelId());
 		Store readPeek=popReadPeekStore();
 		readPeek.close();
 		Store writePeek=popWritePeekStore();
@@ -147,7 +147,7 @@ public class SslPeekProxyHandler extends WebServerHandler {
 	}
 	
 	public void onTimeout(Object userContext) {
-		logger.debug("#timeout client.id:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#timeout client.id:"+getChannelId());
 		//SslHandlerは、userContextをSSLCTX_READ_NETWORKにしてreadする
 		if(userContext==SslAdapter.SSLCTX_READ_NETWORK){
 			long now=System.currentTimeMillis();
@@ -161,7 +161,7 @@ public class SslPeekProxyHandler extends WebServerHandler {
 	}
 	
 	public void onFailure(Object userContext, Throwable t) {
-		logger.debug("#failure client.id:"+getChannelId(),t);
+		if(logger.isDebugEnabled())logger.debug("#failure client.id:"+getChannelId(),t);
 		client.asyncClose(userContext);
 	}
 	
@@ -176,7 +176,7 @@ public class SslPeekProxyHandler extends WebServerHandler {
 		}
 		
 		public void onConnected(Object userContext) {
-			logger.debug("#connected server.id:"+getChannelId()+":client id:"+client.getChannelId());
+			if(logger.isDebugEnabled())logger.debug("#connected server.id:"+getChannelId()+":client id:"+client.getChannelId());
 			isConnected=true;
 			if(isUseProxy){
 				//TODO back proxyが認証を必要とする場合どうする？
@@ -199,7 +199,7 @@ public class SslPeekProxyHandler extends WebServerHandler {
 		 * まずは、バックのshkehandを完了した後、フロントのshakehandを実行するようにプログラム
 		 */
 		public boolean onHandshaked() {
-			logger.debug("#handshaked server.id:"+getChannelId());
+			if(logger.isDebugEnabled())logger.debug("#handshaked server.id:"+getChannelId());
 			isHandshaked=true;
 			client.setStatusCode("200");//アクセスログに記録するためWebHandlerに通知
 			client.asyncWrite(BuffersUtil.toByteBufferArray(ByteBuffer.wrap(ProxyOkResponse)), SSL_PROXY_OK_CONTEXT);
@@ -209,14 +209,14 @@ public class SslPeekProxyHandler extends WebServerHandler {
 
 		@Override
 		public void onWrittenPlain(Object userContext) {
-			logger.debug("#writtenPlain server.id:"+getChannelId());
+			if(logger.isDebugEnabled())logger.debug("#writtenPlain server.id:"+getChannelId());
 			if(userContext==SSL_PROXY_OK_CONTEXT){
 				client.sslOpen(false);
 			}
 		}
 
 		public void onRead(Object userContext,ByteBuffer[] buffers){
-			logger.debug("#read server.cid:"+getChannelId());
+			if(logger.isDebugEnabled())logger.debug("#read server.cid:"+getChannelId());
 			if(isUseProxy && isProxyConnect==false){
 				for(int i=0;i<buffers.length;i++){
 					headerParser.parse(buffers[i]);
@@ -252,7 +252,7 @@ public class SslPeekProxyHandler extends WebServerHandler {
 		 * @param buffers
 		 */
 		public void onReadPlain(ByteBuffer[] buffers,Object userContext) {
-			logger.debug("#readPlain server.cid:"+getChannelId());
+			if(logger.isDebugEnabled())logger.debug("#readPlain server.cid:"+getChannelId());
 			long length=BuffersUtil.remaining(buffers);
 			client.asyncWrite(buffers, null);
 			client.responseBodyLength(length);
@@ -263,7 +263,7 @@ public class SslPeekProxyHandler extends WebServerHandler {
 		//orderしていないタイミングで回線が切断されると、
 		//onClosedが通知されないタイミングがある。
 		public void onFinished(){
-			logger.debug("#finished server.id:"+getChannelId());
+			if(logger.isDebugEnabled())logger.debug("#finished server.id:"+getChannelId());
 			if(!isConnected || !isHandshaked){
 				//connect時のエラー
 				client.completeResponse("500","fail to connect");
@@ -276,12 +276,12 @@ public class SslPeekProxyHandler extends WebServerHandler {
 		
 		/* sslHandshake中のエラーもここに通知される */
 		public void onFailure(Object userContext,Throwable t){
-			logger.debug("#failure server.id:"+getChannelId(),t);
+			if(logger.isDebugEnabled())logger.debug("#failure server.id:"+getChannelId(),t);
 			server.asyncClose(userContext);
 		}
 		
 		public void onTimeout(Object userContext) {
-			logger.debug("#timeout server.id:"+getChannelId());
+			if(logger.isDebugEnabled())logger.debug("#timeout server.id:"+getChannelId());
 			//SslHandlerは、userContextをSSLCTX_READ_NETWORKにしてreadする
 			if(userContext==SslAdapter.SSLCTX_READ_NETWORK){
 				long now=System.currentTimeMillis();

@@ -65,7 +65,7 @@ public class RequestContext extends Context {
 			if(logountEvent!=null){
 				authSession.removeLogoutEvent(logountEvent);
 			}
-			logger.debug("registerAuthSession release authSessionPoolId:"+authSession.getPoolId() +":this:" +getPoolId());
+			if(logger.isDebugEnabled())logger.debug("registerAuthSession release authSessionPoolId:"+authSession.getPoolId() +":this:" +getPoolId());
 			authSession.unref();//requestContextからポイントされている間は開放されない
 			authSession=null;
 		}
@@ -97,7 +97,7 @@ public class RequestContext extends Context {
 	}
 	//authSessionのrefカウンタはDispatchHandlerで、他認証系のライフサイクルにあわせてカウントアップされている
 	public void registerAuthSession(AuthSession authSession) {
-		logger.debug("registerAuthSession authSessionPoolId:"+authSession.getPoolId() +":this:" +getPoolId());
+		if(logger.isDebugEnabled())logger.debug("registerAuthSession authSessionPoolId:"+authSession.getPoolId() +":this:" +getPoolId());
 		this.authSession = authSession;
 	}
 

@@ -68,7 +68,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 	private Object userContext;
 	
 	public static WebClientHandler create(WebClientConnection webClientConnection){
-		logger.debug("create:"+webClientConnection);
+		if(logger.isDebugEnabled())logger.debug("create:"+webClientConnection);
 		WebClientHandler webClientHandler=(WebClientHandler)PoolManager.getInstance(WebClientHandler.class);
 		webClientHandler.setWebClientConnection(webClientConnection);
 		return webClientHandler;
@@ -147,7 +147,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 	private void internalStartRequest() {
 		synchronized (this) {
 			stat = STAT_REQUEST_HEADER;
-			logger.debug("startRequest requestHeaderBuffer length:"+BuffersUtil.remaining(requestHeaderBuffer)+":"+getPoolId()+":cid:"+getChannelId());
+			if(logger.isDebugEnabled())logger.debug("startRequest requestHeaderBuffer length:"+BuffersUtil.remaining(requestHeaderBuffer)+":"+getPoolId()+":cid:"+getChannelId());
 			//for sceduler ヘッダの送信
 			requestHeaderLength=BuffersUtil.remaining(requestHeaderBuffer);
 			ByteBuffer[] headerBuf=requestHeaderBuffer;
@@ -178,7 +178,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 	}
 
 	public void onConnected(Object userContext) {
-		logger.debug("#connected.id:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#connected.id:" + getChannelId());
 		onWebConnected();
 		if (webClientConnection.isHttps()) {
 			if (webClientConnection.isUseProxy()) {
@@ -218,7 +218,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 	}
 
 	public boolean onHandshaked() {
-		logger.debug("#handshaked.cid:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#handshaked.cid:" + getChannelId());
 		onWebHandshaked();
 		// 直接SSL接続する場合もproxy経由の接続の場合もここに来る
 		asyncRead(CONTEXT_HEADER);//リクエストしていないが、先行してレスポンスヘッダ要求を行う
@@ -227,7 +227,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 	}
 
 	public final void onWrittenPlain(Object userContext) {
-		logger.debug("#writtenPlain.cid:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#writtenPlain.cid:" + getChannelId());
 		if (userContext == CONTEXT_HEADER) {
 			onWrittenRequestHeader();
 		}else if (userContext == CONTEXT_BODY) {
@@ -268,7 +268,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 	}
 
 	public void onReadPlain(ByteBuffer[] buffers, Object userContext) {
-		logger.debug("#readPlain.cid:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#readPlain.cid:" + getChannelId());
 		if (userContext == CONTEXT_BODY) {
 			stat = STAT_RESPONSE_BODY;
 			boolean isLast;
@@ -287,7 +287,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 			if (isLast) {
 				endOfResponse();
 			} else {
-				logger.debug("asyncRead(CONTEXT_BODY) cid:"+getChannelId());
+				if(logger.isDebugEnabled())logger.debug("asyncRead(CONTEXT_BODY) cid:"+getChannelId());
 				asyncRead(CONTEXT_BODY);
 			}
 			return;
@@ -299,7 +299,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 		PoolManager.poolArrayInstance(buffers);//配列を返却
 		if (!responseHeader.isParseEnd()) {
 			// ヘッダが終わっていない場合後続のヘッダを読み込み
-			logger.debug("asyncRead(CONTEXT_HEADER) cid:"+getChannelId());
+			if(logger.isDebugEnabled())logger.debug("asyncRead(CONTEXT_HEADER) cid:"+getChannelId());
 			asyncRead(CONTEXT_HEADER);
 			return;
 		}
@@ -352,7 +352,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 			onResponseBody(null);
 			endOfResponse();
 		}else{
-			logger.debug("asyncRead(CONTEXT_BODY) cid:"+getChannelId());
+			if(logger.isDebugEnabled())logger.debug("asyncRead(CONTEXT_BODY) cid:"+getChannelId());
 			asyncRead(CONTEXT_BODY);
 		}
 	}
@@ -404,11 +404,11 @@ public class WebClientHandler extends SslHandler implements Timer {
 		responseHeader.recycle();
 		setReadTimeout(keepAliveTimeout);//keepAliveタイムアウト
 		asyncRead(CONTEXT_HEADER);//keepAlive中に切れたらすぐに検出できるように、次にヘッダの読み込み要求
-		logger.debug("WebClientHandler keepAlive.cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("WebClientHandler keepAlive.cid:"+getChannelId());
 	}
 
 	public void onFailure(Object userContext, Throwable t) {
-		logger.debug("#failure.cid:" + getChannelId(), t);
+		if(logger.isDebugEnabled())logger.debug("#failure.cid:" + getChannelId(), t);
 		isKeepAlive = false;
 		asyncClose(userContext);
 		onRequestFailure(stat,t);
@@ -416,7 +416,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 	}
 	
 	public void onTimeout(Object userContext) {
-		logger.debug("#timeout.cid:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#timeout.cid:" + getChannelId());
 		asyncClose(userContext);
 		if(isKeepAlive==false){//keepAlive中にtimeoutが来るのは問題ない
 			onRequestFailure(stat,FAILURE_TIMEOUT);
@@ -426,14 +426,14 @@ public class WebClientHandler extends SslHandler implements Timer {
 	}
 
 	public void onClosed(Object userContext) {
-		logger.debug("#closed.cid:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#closed.cid:" + getChannelId());
 		isKeepAlive = false;
 		onRequestEnd(STAT_END);
 		super.onClosed(userContext);
 	}
 
 	public void onFinished() {
-		logger.debug("#finished.cid:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#finished.cid:" + getChannelId());
 		isKeepAlive = false;
 		onRequestEnd(STAT_END);
 		super.onFinished();
@@ -441,7 +441,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 	
 	public boolean isSameConnection(boolean isHttps, String targetServer,int targetPort){
 		if(stat!=STAT_KEEP_ALIVE){
-			logger.debug("isSameConnection not keepAlive stat:"+stat);
+			if(logger.isDebugEnabled())logger.debug("isSameConnection not keepAlive stat:"+stat);
 			return false;
 		}
 		return webClientConnection.equalsConnection(isHttps,targetServer,targetPort);
@@ -514,7 +514,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 	public final boolean startRequest(WebClient webClient,Object userContext,long connectTimeout,HeaderParser requestHeader, boolean isCallerkeepAlive, long keepAliveTimeout) {
 		String requestLine=webClientConnection.getRequestLine(requestHeader);
 		ByteBuffer[] requestHeaderBuffer=webClientConnection.getRequestHeaderBuffer(requestLine,requestHeader,isCallerkeepAlive);
-//		logger.debug("requestHeader:" + BuffersUtil.getString(requestHeaderBuffer[0],"ISO8859_1"));
+//		if(logger.isDebugEnabled())logger.debug("requestHeader:" + BuffersUtil.getString(requestHeaderBuffer[0],"ISO8859_1"));
 		long requestContentLength = requestHeader.getContentLength();
 		if (requestContentLength < 0) {
 			requestContentLength = 0;
@@ -565,55 +565,55 @@ public class WebClientHandler extends SslHandler implements Timer {
 	 * 以降callbackメソッド
 	 */
 	private void onWebConnected() {
-		logger.debug("#webConnected cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#webConnected cid:"+getChannelId());
 		if (webClient != null) {
 			webClient.onWebConnected(userContext);
 		}
 	}
 	private void onWebProxyConnected() {
-		logger.debug("#webProxyConnected cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#webProxyConnected cid:"+getChannelId());
 		if (webClient != null) {
 			webClient.onWebProxyConnected(userContext);
 		}
 	}
 	
 	private void onWebHandshaked() {
-		logger.debug("#webHandshaked cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#webHandshaked cid:"+getChannelId());
 		if (webClient != null) {
 			webClient.onWebHandshaked(userContext);
 		}
 	}
 	
 	private void onWrittenRequestHeader() {
-		logger.debug("#writtenRequestHeader cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#writtenRequestHeader cid:"+getChannelId());
 		if (webClient != null) {
 			webClient.onWrittenRequestHeader(userContext);
 		}
 	}
 	
 	private void onWrittenRequestBody() {
-		logger.debug("#writtenRequestBody cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#writtenRequestBody cid:"+getChannelId());
 		if (webClient != null) {
 			webClient.onWrittenRequestBody(userContext);
 		}
 	}
 
 	private void onResponseHeader(HeaderParser responseHeader) {
-		logger.debug("#responseHeader cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#responseHeader cid:"+getChannelId());
 		if (webClient != null) {
 			webClient.onResponseHeader(userContext,responseHeader);
 		}
 	}
 
 	private void onResponseBody(ByteBuffer[] buffer) {
-		logger.debug("#responseBody cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#responseBody cid:"+getChannelId());
 		if (webClient != null) {
 			webClient.onResponseBody(userContext,buffer);
 		}
 	}
 
 	private synchronized void onRequestEnd(int stat) {
-		logger.debug("#requestEnd cid:"+getChannelId() +":webClient:"+webClient);
+		if(logger.isDebugEnabled())logger.debug("#requestEnd cid:"+getChannelId() +":webClient:"+webClient);
 		int lastStat=this.stat;
 		this.stat=stat;
 		if (webClient == null) {
@@ -627,7 +627,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 	}
 
 	private void onRequestFailure(int stat,Throwable t) {
-		logger.debug("#requestFailure cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#requestFailure cid:"+getChannelId());
 		synchronized (this) {
 			if (webClient == null) {
 				return;
@@ -661,7 +661,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 	}
 
 	public void setWebClientConnection(WebClientConnection webClientConnection) {
-		logger.debug("#setWebClientConnection:" +webClientConnection);
+		if(logger.isDebugEnabled())logger.debug("#setWebClientConnection:" +webClientConnection);
 		if(this.webClientConnection!=null){
 			this.webClientConnection.unref();
 		}
@@ -673,7 +673,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 	
 	public boolean unref() {
 		if(stat==STAT_INIT){//接続前に参照をやめる場合は、chanelContext分も減算
-			logger.debug("stat INIT unref");
+			if(logger.isDebugEnabled())logger.debug("stat INIT unref");
 			stat=STAT_END;//もう接続できない,もう一度unrefされても、減算しない
 			super.unref();
 		}

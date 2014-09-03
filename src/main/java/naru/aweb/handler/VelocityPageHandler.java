@@ -123,7 +123,7 @@ Caused by: java.lang.LinkageError: loader (instance of  naru/queuelet/loader/Que
 				veloRep=mapping.getDestinationFile();
 			}
 			if(veloRep==null || veloPage==null){
-				logger.debug("not found repository");
+				if(logger.isDebugEnabled())logger.debug("not found repository");
 				completeResponse("404","file not found");
 				return;
 			}
@@ -192,13 +192,13 @@ Caused by: java.lang.LinkageError: loader (instance of  naru/queuelet/loader/Que
 	}
 	
 	public void onFailure(Object userContext, Throwable t) {
-		logger.debug("#failer.cid:" +getChannelId() +":"+t.getMessage());
+		if(logger.isDebugEnabled())logger.debug("#failer.cid:" +getChannelId() +":"+t.getMessage());
 		asyncClose(userContext);
 		super.onFailure(t, userContext);
 	}
 
 	public void onTimeout(Object userContext) {
-		logger.debug("#timeout.cid:" +getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#timeout.cid:" +getChannelId());
 		asyncClose(userContext);
 		super.onTimeout(userContext);
 	}

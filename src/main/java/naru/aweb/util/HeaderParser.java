@@ -987,9 +987,9 @@ public class HeaderParser extends PoolBase {
 			// ヘッダ終端
 			page.putBytes(CRLF);
 			buffers = page.getBuffer();
-			// logger.debug("-------");
+			// if(logger.isDebugEnabled())logger.debug("-------");
 			// for(int i=0;i<buffers.length;i++){
-			// logger.debug(new
+			// if(logger.isDebugEnabled())logger.debug(new
 			// String(buffers[i].array(),0,buffers[i].remaining()));
 			// }
 		} catch (UnsupportedEncodingException e) {// あり得ない

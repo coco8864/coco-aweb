@@ -160,7 +160,7 @@ public class Browser extends PoolBase implements Timer{
 	}
 	
 	private void cleanupClients(){
-		logger.debug("#cleanupClients");
+		if(logger.isDebugEnabled())logger.debug("#cleanupClients");
 		Iterator<LinkedList<WebClientHandler>> listItr=webClientQueue.values().iterator();
 		while(listItr.hasNext()){
 			LinkedList<WebClientHandler> clientHandlers=listItr.next();
@@ -190,7 +190,7 @@ public class Browser extends PoolBase implements Timer{
 	}
 	
 	public void cleanup(){
-		logger.debug("#cleanup");
+		if(logger.isDebugEnabled())logger.debug("#cleanup");
 		cleanupConnection();
 		cleanupCaller(startCallers);
 		cleanupClients();
@@ -356,7 +356,7 @@ public class Browser extends PoolBase implements Timer{
 			peer.ref();
 			this.peer=peer;
 		}
-		logger.debug("#start startCallers.size():"+startCallers.size());
+		if(logger.isDebugEnabled())logger.debug("#start startCallers.size():"+startCallers.size());
 		this.startTime=System.currentTimeMillis();
 		synchronized(this){
 			if(isAsyncStop==false || isProcessing){
@@ -393,7 +393,7 @@ public class Browser extends PoolBase implements Timer{
 	}
 	
 	private void dispatch(){
-		logger.debug("#dispatch");
+		if(logger.isDebugEnabled())logger.debug("#dispatch");
 		Caller caller=null;
 		WebClientHandler clientHandler=null;
 		synchronized(this){
@@ -431,7 +431,7 @@ public class Browser extends PoolBase implements Timer{
 			caller.startRequest(clientHandler);
 		}else if(!isProcessing){
 			if(scenario!=null){
-				logger.debug("call onBrowserEnd");
+				if(logger.isDebugEnabled())logger.debug("call onBrowserEnd");
 				scenario.onBrowserEnd(this);
 			}
 			/*
@@ -444,7 +444,7 @@ public class Browser extends PoolBase implements Timer{
 	}
 	
 	public void onRequestEnd(Caller caller,AccessLog accessLog){
-		logger.debug("#onRequestEnd");
+		if(logger.isDebugEnabled())logger.debug("#onRequestEnd");
 		accessLog.setThinkingTime(thinkingTime);
 		thinkingTime=0;
 		if(scenario!=null){

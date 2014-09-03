@@ -116,13 +116,13 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 				return false;
 			}
 		}
-		logger.debug("Not found." + path);
+		if(logger.isDebugEnabled())logger.debug("Not found." + path);
 		completeResponse("404", "file not exists");
 		return true;
 	}
 
 	private void responseBodyFromFile(Cache asyncFile) {
-		logger.debug("FileSystemHandler#responseBodyFromFile cid:"+getChannelId()+":"+asyncFile.getFileInfo().getCanonicalFile().toString());
+		if(logger.isDebugEnabled())logger.debug("FileSystemHandler#responseBodyFromFile cid:"+getChannelId()+":"+asyncFile.getFileInfo().getCanonicalFile().toString());
 		Long offset = (Long) getAttribute(SCOPE.REQUEST,ATTRIBUTE_STORE_OFFSET);
 		if (offset != null) {
 			asyncFile.position(offset);
@@ -137,7 +137,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 			// velocityPageÇ©ÇÁÉäÉXÉgèoóÕ
 			return snedFileList(mapping,selfPath, dir, isBase);
 		}
-		logger.debug("Not allow listing");
+		if(logger.isDebugEnabled())logger.debug("Not allow listing");
 		completeResponse("404");
 		return true;
 	}
@@ -230,7 +230,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 	}
 	
 	private boolean response() {
-		logger.debug("FileSystemHandler#response cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("FileSystemHandler#response cid:"+getChannelId());
 		HeaderParser requestHeader = getRequestHeader();
 		String ifModifiedSince = requestHeader.getHeader(HeaderParser.IF_MODIFIED_SINCE_HEADER);
 		String selfPath = requestHeader.getRequestUri();
@@ -246,7 +246,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 			Cache asyncFile = Cache.open(file, useCache);
 			FileInfo fileInfo = asyncFile.getFileInfo();
 			if (!fileInfo.exists()) {
-				logger.debug("Not found." + file.getAbsolutePath());
+				if(logger.isDebugEnabled())logger.debug("Not found." + file.getAbsolutePath());
 				completeResponse("404", "file not exists");
 				asyncFile.close();
 				return true;
@@ -323,13 +323,13 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 	
 
 	public void onFailure(Object userContext, Throwable t) {
-		logger.debug("#failer.cid:" + getChannelId() + ":" + t.getMessage());
+		if(logger.isDebugEnabled())logger.debug("#failer.cid:" + getChannelId() + ":" + t.getMessage());
 		asyncClose(userContext);
 		super.onFailure(t, userContext);
 	}
 
 	public void onTimeout(Object userContext) {
-		logger.debug("#timeout.cid:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#timeout.cid:" + getChannelId());
 		asyncClose(userContext);
 		super.onTimeout(userContext);
 	}
@@ -338,11 +338,10 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 	private Cache asyncFile;
 
 	public void onWrittenBody() {
-		logger.debug("#writtenBody.cid:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#writtenBody.cid:" + getChannelId());
 		if(asyncFile!=null){
 			asyncFile.asyncBuffer(this, asyncFile);
 		}
-		super.onWrittenBody();
 	}
 
 	public boolean onBuffer(ByteBuffer[] buffers, Object userContext) {
@@ -351,7 +350,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 	}
 
 	public void onBufferEnd(Object userContext) {
-		logger.debug("#onBufferEnd.cid:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#onBufferEnd.cid:" + getChannelId());
 		responseEnd();
 	}
 

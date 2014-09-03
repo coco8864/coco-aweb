@@ -311,12 +311,12 @@ public class Scenario extends PoolBase{
 	}
 	
 	public void onBrowserEnd(Browser browser){
-		logger.debug("#onBrowserEnd runnningBrowserCount:"+runnningBrowserCount);
+		if(logger.isDebugEnabled())logger.debug("#onBrowserEnd runnningBrowserCount:"+runnningBrowserCount);
 		startBrowserIfNeed(browser);
 	}
 	
 	public void onRequest(AccessLog accessLog){
-		logger.debug("#onRequest runnningBrowserCount:"+runnningBrowserCount);
+		if(logger.isDebugEnabled())logger.debug("#onRequest runnningBrowserCount:"+runnningBrowserCount);
 		String requestKey=accessLog.getRequestHeaderDigest()+accessLog.getRequestBodyDigest()+accessLog.getStatusCode();
 		Performance requestPerformance=null;
 		synchronized(requestPerformances){

@@ -119,7 +119,7 @@ public class ChunkContext {
 					mode=MODE_NOT_CHUNK_DATA;				
 					return true;
 				}
-//				logger.debug("chunk:'"+chunk.toString()+"'");
+//				if(logger.isDebugEnabled())logger.debug("chunk:'"+chunk.toString()+"'");
 				try{
 					nextChunk=Long.parseLong(chunk.split(" ")[0],16);
 				} catch (NumberFormatException e) {

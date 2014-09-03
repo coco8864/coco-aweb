@@ -491,7 +491,7 @@ public class Authenticator {
 	//TODO 自分が意図して作ったnonceかどうかをチェックする。
 	//リモートIP,ローカルIP,entoropy,起動時間...
 	private boolean checkNonce(String nonce){
-		logger.debug("checkNonce:"+nonce);
+		if(logger.isDebugEnabled())logger.debug("checkNonce:"+nonce);
 		return true;
 	}
 	

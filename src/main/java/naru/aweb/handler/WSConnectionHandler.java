@@ -36,7 +36,7 @@ public class WSConnectionHandler extends WebSocketHandler {
 
 	@Override
 	public void onMessage(String msgs) {
-		logger.debug("#message text cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#message text cid:"+getChannelId());
 		if("doClose".equals(msgs)){
 			closeWebSocket("500");
 		}else{
@@ -46,7 +46,7 @@ public class WSConnectionHandler extends WebSocketHandler {
 
 	@Override
 	public void onMessage(Cache msgs) {
-		logger.debug("#message bin cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#message bin cid:"+getChannelId());
 		if(msgs instanceof PoolBase){
 			((PoolBase)msgs).unref();
 		}
@@ -54,12 +54,12 @@ public class WSConnectionHandler extends WebSocketHandler {
 
 	@Override
 	public void onWsClose(short code, String reason) {
-		logger.debug("#wsClose cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#wsClose cid:"+getChannelId());
 	}
 
 	@Override
 	public void onWsOpen(String subprotocol) {
-		logger.debug("#wsOpen cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#wsOpen cid:"+getChannelId());
 		postMessage("OK");
 	}
 }

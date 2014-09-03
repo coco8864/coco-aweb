@@ -237,12 +237,12 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 	}
 
 	public void onFailure(Object userContext, Throwable t) {
-		logger.debug("#failer.cid:" + getChannelId() + ":" + t.getMessage());
+		if(logger.isDebugEnabled())logger.debug("#failer.cid:" + getChannelId() + ":" + t.getMessage());
 		super.onFailure(t, userContext);
 	}
 
 	public void onTimeout(Object userContext) {
-		logger.debug("#timeout.cid:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#timeout.cid:" + getChannelId());
 		super.onTimeout(userContext);
 	}
 
@@ -319,7 +319,7 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 				return true;//次のバッファを要求
 			}
 		}
-		logger.debug("onBuffer traceStore:" + store.getStoreId() + ":length:" + BuffersUtil.remaining(buffers));
+		if(logger.isDebugEnabled())logger.debug("onBuffer traceStore:" + store.getStoreId() + ":length:" + BuffersUtil.remaining(buffers));
 		for (int i = 0; i < buffers.length; i++) {
 			skip(buffers[i]);
 		}
