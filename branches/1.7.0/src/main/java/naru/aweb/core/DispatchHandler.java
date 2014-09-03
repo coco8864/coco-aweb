@@ -108,7 +108,7 @@ public class DispatchHandler extends ServerBaseHandler {
 	 * 初回connection開設時および、KeepAlive時に呼び出される
 	 */
 	public void onStartRequest() {
-		logger.debug("#startRequest.cid:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#startRequest.cid:" + getChannelId());
 		headerPage.recycle();
 		getRequestContext(true);
 		asyncRead(null);
@@ -116,12 +116,12 @@ public class DispatchHandler extends ServerBaseHandler {
 
 	public void onAccepted(Object userContext) {
 		if(getConfig().getBoolean(Config.REFUSE_ACCEPT, false)){
-			logger.debug("accept refused");
+			if(logger.isDebugEnabled())logger.debug("accept refused");
 			asyncClose(null);//一時停止
 			return;
 		}
 		setReadTimeout(getConfig().getAcceptTimeout());// Connection Flood 攻撃対応で比較的短く設定
-		logger.debug("#accepted.cid:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#accepted.cid:" + getChannelId());
 		isFirstRead = true;
 		getKeepAliveContext(true);// keepAliveContextを用意する
 		startTime = new Date();
@@ -129,19 +129,19 @@ public class DispatchHandler extends ServerBaseHandler {
 	}
 
 	public void onFinished() {
-		logger.debug("#finished.cid:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#finished.cid:" + getChannelId());
 		super.onFinished();
 	}
 
 	public void onTimeout(Object userContext) {
 		// keep-alive timeoutもここに到着する
-		logger.debug("#timeout.cid:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#timeout.cid:" + getChannelId());
 		asyncClose(null);
 	}
 
 	public void onFailure(Object userContext, Throwable t) {
 		//負荷が高い場合、かなりの頻度でここに来る
-		logger.debug("Dispatcher failure.poolId:" + getPoolId(), t);
+		if(logger.isDebugEnabled())logger.debug("Dispatcher failure.poolId:" + getPoolId(), t);
 		asyncClose(null);
 	}
 	
@@ -152,7 +152,7 @@ public class DispatchHandler extends ServerBaseHandler {
 	 * ssl確立後、次データを要求する。(return true)
 	 */
 	public boolean onHandshaked() {
-		logger.debug("#handshaked.cid:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#handshaked.cid:" + getChannelId());
 		handshakeTime=System.currentTimeMillis()-startTime.getTime();
 		//SPDYのため、ここでfowardするとうまくいかない、原因調査要
 		this.nextProtocol=getConfig().getSpsyConfig().getNextProtocol(sslEngine);
@@ -162,7 +162,7 @@ public class DispatchHandler extends ServerBaseHandler {
 
 	@Override
 	public void onRead(ByteBuffer[] buffers,Object userContext) {
-		logger.debug("#onRead.cid:" + getChannelId() + ":buffers.hashCode:"+ buffers.hashCode());
+		if(logger.isDebugEnabled())logger.debug("#onRead.cid:" + getChannelId() + ":buffers.hashCode:"+ buffers.hashCode());
 		if (isFirstRead) {
 			if (startTime == null) {// keepAliveからのリクエストの場合ここがリクエストの基点となる
 				startTime = new Date();
@@ -183,7 +183,7 @@ public class DispatchHandler extends ServerBaseHandler {
 
 	@Override
 	public void onReadPlain(ByteBuffer[] buffers, Object userContext) {
-		logger.debug("#onReadPlain.cid:" + getChannelId()+ ":buffers.hashCode:" + buffers.hashCode());
+		if(logger.isDebugEnabled())logger.debug("#onReadPlain.cid:" + getChannelId()+ ":buffers.hashCode:" + buffers.hashCode());
 		if(isSpdyAvailable){
 			AccessLog accessLog = getRequestContext().allocAccessLog();
 			accessLog.setStartTime(startTime);
@@ -196,7 +196,7 @@ public class DispatchHandler extends ServerBaseHandler {
 			accessLog.setSpdyInfo(nextProtocol);
 			SpdyHandler handler=(SpdyHandler)forwardHandler(SpdyHandler.class);
 			if(handler!=null){
-				logger.debug("#onReadPlain.cid:" + getChannelId()+ "fowardHandler nextProtocol:"+nextProtocol );
+				if(logger.isDebugEnabled())logger.debug("#onReadPlain.cid:" + getChannelId()+ "fowardHandler nextProtocol:"+nextProtocol );
 				handler.onHandshaked(nextProtocol,connectHeaderLength!=0);
 				handler.onReadPlain(buffers, userContext);
 				return;
@@ -317,7 +317,7 @@ public class DispatchHandler extends ServerBaseHandler {
 		accessLog.setRequestHeaderLength(connectHeaderLength+requestHeader.getHeaderLength());
 		accessLog.setChannelId(getChannelId());
 		accessLog.setLocalIp(getLocalIp());
-		logger.debug("cid:" + getChannelId() + ":requestLine:"+ accessLog.getRequestLine());
+		if(logger.isDebugEnabled())logger.debug("cid:" + getChannelId() + ":requestLine:"+ accessLog.getRequestLine());
 		// DBへのアクセスログ採取有無
 		switch (mapping.getLogType()) {
 		case NONE:
@@ -339,7 +339,7 @@ public class DispatchHandler extends ServerBaseHandler {
 				accessLog.setRequestHeaderLength(BuffersUtil.remaining(buffers));
 			}
 			readPeekStore.putBuffer(buffers);
-			logger.debug("#setupTraceLog" + readPeekStore.getStoreId());
+			if(logger.isDebugEnabled())logger.debug("#setupTraceLog" + readPeekStore.getStoreId());
 			accessLog.incTrace();
 			readPeekStore.close(accessLog, readPeekStore);
 			accessLog.setRequestHeaderDigest(readPeekStore.getDigest());
@@ -377,7 +377,7 @@ public class DispatchHandler extends ServerBaseHandler {
 			logger.warn("fail to forwardHandler:cid:" + getChannelId() + ":" + this);
 			return;
 		}
-		logger.debug("responseObject:cid:" + getChannelId() + ":" + responseHandler + ":" + this);
+		if(logger.isDebugEnabled())logger.debug("responseObject:cid:" + getChannelId() + ":" + responseHandler + ":" + this);
 		responseHandler.onRequestHeader();
 	}
 
@@ -769,7 +769,7 @@ public class DispatchHandler extends ServerBaseHandler {
 	 */
 	@Override
 	public void onWrittenPlain(Object userContext) {
-		logger.debug("#WrittenPlain cid:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#WrittenPlain cid:" + getChannelId());
 		if (userContext == SSL_PROXY_OK_CONTEXT) {
 			isFirstRead = true;
 			asyncRead(null);

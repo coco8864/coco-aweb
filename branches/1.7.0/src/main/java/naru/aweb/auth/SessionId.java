@@ -258,7 +258,7 @@ public class SessionId extends PoolBase{
 				if(!this.mapping.getId().equals(mapping.getId())){
 					return false;
 				}
-				logger.debug("relaod mapping."+mapping.getId());
+				if(logger.isDebugEnabled())logger.debug("relaod mapping."+mapping.getId());
 				//ŒÃ‚¢mapping‚Í–Y‚ê‚½•û‚ª‚æ‚¢
 				setMapping(mapping);
 			}

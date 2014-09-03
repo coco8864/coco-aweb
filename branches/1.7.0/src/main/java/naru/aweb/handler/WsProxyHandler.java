@@ -81,19 +81,19 @@ public class WsProxyHandler extends  WebSocketHandler implements WsClient{
 	/* サーバからcloseが送られた場合、ブラウザにもcode,reasonを送りたいが... */
 	@Override
 	public void onWcClose(Object userContext,int stat,short closeCode,String closeReason) {
-		logger.debug("#onWcClose cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#onWcClose cid:"+getChannelId());
 		closeWebSocket("500",closeCode,closeReason);
 		unref();//serverに接続した場合closeまで自分は解放しない
 	}
 	@Override
 	public void onWcFailure(Object userContext, int stat, Throwable t) {
-		logger.debug("#wcFailure cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#wcFailure cid:"+getChannelId());
 		closeWebSocket("500");
 		unref();//serverに接続した場合closeまで自分は解放しない
 	}
 	@Override
 	public void onWcHandshaked(Object userContext,String subprotocol) {
-		logger.debug("#wcHandshaked cid:"+getChannelId() +" subprotocol:"+subprotocol);
+		if(logger.isDebugEnabled())logger.debug("#wcHandshaked cid:"+getChannelId() +" subprotocol:"+subprotocol);
 		//handshake開始
 		doHandshake(subprotocol);
 	}

@@ -50,9 +50,9 @@ public class AdminMappingHandler extends WebServerHandler{
 					save(json);
 				}
 			} catch (UnsupportedEncodingException e) {
-				logger.debug("importsMappings",e);
+				if(logger.isDebugEnabled())logger.debug("importsMappings",e);
 			} catch (RuntimeException e) {
-				logger.debug("importsMappings",e);
+				if(logger.isDebugEnabled())logger.debug("importsMappings",e);
 			}
 			setContentType("text/html");
 			completeResponse("200",//TODO vsfにfowardするのがスマート

@@ -54,7 +54,7 @@ public class PhatomTrustManager implements X509TrustManager {
 		try {
 			sunJSSEX509TrustManager.checkClientTrusted(certs, authType);
 		} catch (CertificateException e) {
-			logger.debug("checkClientTrusted fail",e);
+			if(logger.isDebugEnabled())logger.debug("checkClientTrusted fail",e);
 			//TODO 本当は、ユーザ毎に証明書の管理をすべき
 			//Userテーブルには、証明書の格納場所は作ってある
 //			throw e;

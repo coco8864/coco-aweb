@@ -94,7 +94,7 @@ public class WebServerHandler extends ServerBaseHandler {
 	 */
 	@Override
 	public void recycle() {
-		logger.debug("#recycle :"+hashCode());
+		if(logger.isDebugEnabled())logger.debug("#recycle :"+hashCode());
 		requestContentLength = requestReadBody = 0;
 		responseWriteBody = responseHeaderLength = responseWriteBodyApl = responseContentLengthApl = 0;
 		responseHeader.recycle();
@@ -411,7 +411,7 @@ public class WebServerHandler extends ServerBaseHandler {
 			responseContentLengthApl = responseHeader.getContentLength();
 		}
 		if (setupGzip()) {
-			logger.debug("contents gzip response.id:" + getPoolId());
+			if(logger.isDebugEnabled())logger.debug("contents gzip response.id:" + getPoolId());
 		}
 		return;
 	}
@@ -423,7 +423,7 @@ public class WebServerHandler extends ServerBaseHandler {
 	 * レスポンスを終了させます。<br/>
 	 */
 	public void responseEnd() {
-		logger.debug("#responseEnd isResponseEnd:"+isResponseEnd +":cid:"+getChannelId()+":"+hashCode());
+		if(logger.isDebugEnabled())logger.debug("#responseEnd isResponseEnd:"+isResponseEnd +":cid:"+getChannelId()+":"+hashCode());
 		SpdySession spdySession=getSpdySession();
 		synchronized (this) {
 			if(isResponseEnd){
@@ -437,7 +437,7 @@ public class WebServerHandler extends ServerBaseHandler {
 			if (getChannelId() == -1) {
 				return;
 			}
-			logger.debug("responseEnd called.handler:" + toString());
+			if(logger.isDebugEnabled())logger.debug("responseEnd called.handler:" + toString());
 			if (isFlushFirstResponse == false) {
 				flushFirstResponse(null);
 				isFlushFirstResponse = true;
@@ -485,7 +485,7 @@ public class WebServerHandler extends ServerBaseHandler {
 		
 		Store readPeek = popReadPeekStore();
 		if (readPeek != null && readPeek.getPutLength() >= 0) {
-			logger.debug("#endOfResponse"+readPeek.getStoreId());
+			if(logger.isDebugEnabled())logger.debug("#endOfResponse"+readPeek.getStoreId());
 			accessLog.incTrace();
 			readPeek.close(accessLog,readPeek);//closeが完了したらaccessLogに知らせてね
 			accessLog.setRequestBodyDigest(readPeek.getDigest());
@@ -720,7 +720,7 @@ public class WebServerHandler extends ServerBaseHandler {
 				responsePeek = Store.open(true);
 				ByteBuffer[] headerDup = PoolManager.duplicateBuffers(headerBuffer);
 				responsePeek.putBuffer(headerDup);
-				logger.debug("#flushHeader"+responsePeek.getStoreId());
+				if(logger.isDebugEnabled())logger.debug("#flushHeader"+responsePeek.getStoreId());
 				accessLog.incTrace();
 				responsePeek.close(accessLog,responsePeek);
 				accessLog.setResponseHeaderDigest(responsePeek.getDigest());
@@ -833,7 +833,7 @@ public class WebServerHandler extends ServerBaseHandler {
 				responsePeek = Store.open(true);
 				ByteBuffer[] headerDup = headerBuffer;
 				responsePeek.putBuffer(headerDup);
-				logger.debug("#flushFirstResponse"+responsePeek.getStoreId());
+				if(logger.isDebugEnabled())logger.debug("#flushFirstResponse"+responsePeek.getStoreId());
 				accessLog.incTrace();
 				responsePeek.close(accessLog,responsePeek);
 				accessLog.setResponseHeaderDigest(responsePeek.getDigest());
@@ -846,7 +846,7 @@ public class WebServerHandler extends ServerBaseHandler {
 			return;
 		}
 		/* bodyが続くレスポンス */
-		logger.debug("flushFirstResponse cid:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("flushFirstResponse cid:" + getChannelId());
 	}
 
 	/**
@@ -967,7 +967,7 @@ public class WebServerHandler extends ServerBaseHandler {
 	 * @param buffers 生のリクエストボディ
 	 */
 	public void onReadPlain(ByteBuffer[] buffers, Object userContext) {
-		logger.debug("#onReadPlain cid:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#onReadPlain cid:" + getChannelId());
 		ChunkContext requestChunkContext=getRequestContext().getRequestChunkContext();
 		if (requestChunkContext.isEndOfData()) {
 			//if (requestReadBody >= requestContentLength) {
@@ -1001,7 +1001,7 @@ public class WebServerHandler extends ServerBaseHandler {
 	 */
 	public ChannelHandler forwardHandler(Class handlerClass) {
 		boolean callStartMethod=true;
-		logger.debug("#forwardHandler cid:" + getChannelId() + ":"+ handlerClass.getName());
+		if(logger.isDebugEnabled())logger.debug("#forwardHandler cid:" + getChannelId() + ":"+ handlerClass.getName());
 		WebServerHandler handler = (WebServerHandler)super.allocHandler(handlerClass);
 		handler.responseHeader.setAllHeaders(responseHeader);
 		// request bodyを全部読んでfowardしようとしているのか？読まずにfowardしようとしているかが問題
@@ -1022,7 +1022,7 @@ public class WebServerHandler extends ServerBaseHandler {
 	}
 
 	protected void waitForNextRequest() {
-		logger.debug("#waitForNextRequest cid:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#waitForNextRequest cid:" + getChannelId());
 		DispatchHandler handler = (DispatchHandler) super.forwardHandler(DispatchHandler.class);
 		if(handler==null){//既にcloseされていた
 			logger.warn("fail to forward Dispatcher.Can't keepAlive.");
@@ -1036,7 +1036,7 @@ public class WebServerHandler extends ServerBaseHandler {
 	 * overrideする場合は、元メソッドも呼び出してください。<br/>
 	 */
 	public void onFinished() {
-		logger.debug("#onFinished cid:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#onFinished cid:" + getChannelId());
 		responseEnd();// SSL proxy系handler、および異常終了対策
 		KeepAliveContext keepAliveContext = getKeepAliveContext();
 		if (keepAliveContext != null) {
@@ -1051,7 +1051,7 @@ public class WebServerHandler extends ServerBaseHandler {
 	 */
 	@Override
 	public void onWrittenPlain(Object userContext) {
-		logger.debug("#onWrittenPlain cid:" + getChannelId()+":userContext:"+userContext);
+		if(logger.isDebugEnabled())logger.debug("#onWrittenPlain cid:" + getChannelId()+":userContext:"+userContext);
 		if (userContext == WRITE_CONTEXT_BODY) {
 			onWrittenBody();//この延長でresponseEndが呼び出される可能性がある、その場合contextがnullとなる
 		}
@@ -1063,7 +1063,7 @@ public class WebServerHandler extends ServerBaseHandler {
 				if(getChannelId()<0){
 					return;
 				}
-				// logger.debug("onWrittenPlain.orderCount:"+orderCount());
+				// if(logger.isDebugEnabled())logger.debug("onWrittenPlain.orderCount:"+orderCount());
 				/*
 				if (isResponseEnd) {
 					if (doneKeepAlive()) {
@@ -1082,7 +1082,7 @@ public class WebServerHandler extends ServerBaseHandler {
 	 * 大量のデータをレスポンスする場合、１バッファづつ送信することで使用メモリを削減する<br/>
 	 */
 	public void onWrittenBody() {
-		logger.debug("#onWrittenBody cid:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#onWrittenBody cid:" + getChannelId());
 	}
 
 	/* 出力をoutputStreamやwriter経由で指定するメソッド velocity等 */

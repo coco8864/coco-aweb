@@ -44,7 +44,7 @@ public class SslProxyHandler extends WebServerHandler {
 	}
 	
 	public void onRequestHeader(){
-		logger.debug("#doResponse client.cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#doResponse client.cid:"+getChannelId());
 		this.client=this;
 		HeaderParser requestHeader=getRequestHeader();
 		ServerParser sslServer=requestHeader.getServer();
@@ -73,14 +73,14 @@ public class SslProxyHandler extends WebServerHandler {
 	}
 	
 	public void onRead(Object userContext, ByteBuffer[] buffers) {
-		logger.debug("#read client.cid:"+client.getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#read client.cid:"+client.getChannelId());
 		lastIo=System.currentTimeMillis();
 		server.asyncWrite(buffers, WRITE_REQUEST);
 		asyncRead(READ_REQUEST);
 	}
 	
 	public void onTimeout(Object userContext) {
-		logger.debug("#timeout client.cid:"+client.getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#timeout client.cid:"+client.getChannelId());
 		if(userContext==READ_REQUEST){
 			long now=System.currentTimeMillis();
 			if( (now-lastIo)<readTimeout ){
@@ -92,7 +92,7 @@ public class SslProxyHandler extends WebServerHandler {
 	}
 
 	public void onClosed(Object userContext) {
-		logger.debug("#closed client.cid:"+client.getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#closed client.cid:"+client.getChannelId());
 		if(isConnected){
 			server.asyncClose(userContext);
 		}
@@ -101,7 +101,7 @@ public class SslProxyHandler extends WebServerHandler {
 
 	private class SslServer extends ChannelHandler {
 		public void onConnected(Object requestId) {
-			logger.debug("#connect.cid:"+getChannelId());
+			if(logger.isDebugEnabled())logger.debug("#connect.cid:"+getChannelId());
 			HeaderParser requestParser=getRequestHeader();
 			isConnected=true;
 			if(isUseProxy){
@@ -130,7 +130,7 @@ public class SslProxyHandler extends WebServerHandler {
 		}
 
 		public void onRead(Object userContext, ByteBuffer[] buffers) {
-			logger.debug("#read.cid:"+getChannelId());
+			if(logger.isDebugEnabled())logger.debug("#read.cid:"+getChannelId());
 			lastIo=System.currentTimeMillis();
 			long length=BuffersUtil.remaining(buffers);
 			client.asyncWrite(buffers, WRITE_REQUEST);
@@ -143,7 +143,7 @@ public class SslProxyHandler extends WebServerHandler {
 		}
 		
 		public void onTimeout(Object userContext) {
-			logger.debug("#timeout.cid:"+getChannelId());
+			if(logger.isDebugEnabled())logger.debug("#timeout.cid:"+getChannelId());
 			if(userContext==READ_REQUEST){
 				long now=System.currentTimeMillis();
 				if( (now-lastIo)<readTimeout ){
@@ -155,12 +155,12 @@ public class SslProxyHandler extends WebServerHandler {
 		}
 
 		public void onFailure(Object userContext, Throwable t) {
-			logger.debug("#failure.cid:"+getChannelId(),t);
+			if(logger.isDebugEnabled())logger.debug("#failure.cid:"+getChannelId(),t);
 			server.asyncClose(userContext);
 		}
 
 		public void onFinished() {
-			logger.debug("#finished.cid:"+getChannelId());
+			if(logger.isDebugEnabled())logger.debug("#finished.cid:"+getChannelId());
 			isConnected=false;
 			client.asyncClose(null);
 			client.unref();

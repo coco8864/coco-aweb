@@ -147,15 +147,15 @@ public class WebClientConnection extends PoolBase {
 	
 	public boolean equalsConnection(boolean isHttps, String targetServer,int targetPort){
 		if(this.isHttps!=isHttps){
-			logger.debug("equalsConnection not equals isHttps:"+this.isHttps+":"+isHttps);
+			if(logger.isDebugEnabled())logger.debug("equalsConnection not equals isHttps:"+this.isHttps+":"+isHttps);
 			return false;
 		}
 		if(!this.targetServer.equals(targetServer)){
-			logger.debug("equalsConnection not equals targetServer:"+this.targetServer+":"+targetServer);
+			if(logger.isDebugEnabled())logger.debug("equalsConnection not equals targetServer:"+this.targetServer+":"+targetServer);
 			return false;
 		}
 		if(this.targetPort!=targetPort){
-			logger.debug("equalsConnection not equals targetPort:"+this.targetPort+":"+targetPort);
+			if(logger.isDebugEnabled())logger.debug("equalsConnection not equals targetPort:"+this.targetPort+":"+targetPort);
 			return false;
 		}
 		return true;
@@ -216,12 +216,12 @@ public class WebClientConnection extends PoolBase {
 	/*
 	@Override
 	public void ref() {
-		logger.debug("ref",new Throwable());
+		if(logger.isDebugEnabled())logger.debug("ref",new Throwable());
 		super.ref();
 	}
 	@Override
 	public boolean unref() {
-		logger.debug("unref",new Throwable());
+		if(logger.isDebugEnabled())logger.debug("unref",new Throwable());
 		return super.unref();
 	}
 	*/

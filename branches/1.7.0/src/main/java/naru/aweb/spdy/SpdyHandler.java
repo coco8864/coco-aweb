@@ -8,6 +8,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import naru.async.pool.BuffersUtil;
+import naru.async.pool.Context;
 import naru.async.pool.PoolManager;
 import naru.aweb.config.AccessLog;
 import naru.aweb.config.Config;
@@ -44,7 +45,7 @@ public class SpdyHandler extends ServerBaseHandler {
 	private int limitServerWindowSize;
 	
 	public boolean onHandshaked(String protocol,boolean isProxy) {
-		logger.debug("#handshaked.cid:" + getChannelId() +":"+protocol);
+		if(logger.isDebugEnabled())logger.debug("#handshaked.cid:" + getChannelId() +":"+protocol);
 		this.isProxy=isProxy;
 		if(SpdyFrame.PROTOCOL_V2.equals(protocol)){
 			version=SpdyFrame.VERSION_V2;
@@ -113,12 +114,12 @@ public class SpdyHandler extends ServerBaseHandler {
 		}
 		short type=frame.getType();
 		inFrameCount[type]++;//統計情報
-		logger.debug("SpdyHandler#doFrame cid:"+getChannelId()+":streamId:"+streamId+":" +type);
+		if(logger.isDebugEnabled())logger.debug("SpdyHandler#doFrame cid:"+getChannelId()+":streamId:"+streamId+":" +type);
 		switch(type){
 		case SpdyFrame.TYPE_DATA_FRAME:
 			ByteBuffer[] dataBuffer=frame.getDataBuffers();
 			long length=BuffersUtil.remaining(dataBuffer);
-			logger.debug("TYPE_DATA_FRAME length:"+length);
+			if(logger.isDebugEnabled())logger.debug("TYPE_DATA_FRAME length:"+length);
 			if(session!=null){
 				session.onReadPlain(dataBuffer,frame.isFin());
 			}else{
@@ -163,7 +164,7 @@ public class SpdyHandler extends ServerBaseHandler {
 			acceptServer.ref();
 			/* spdy固有のkeepAlive初期化 */
 			keepAliveContext.setSpdyAcceptServer(acceptServer,realHost,server);
-			logger.debug("url:" + requestHeader.getRequestUri());
+			if(logger.isDebugEnabled())logger.debug("url:" + requestHeader.getRequestUri());
 			//KeepAliveContextからSpdySessionを作る
 			session=SpdySession.create(this, streamId, keepAliveContext,frame.isFin());
 			sessions.put(streamId, session);
@@ -192,13 +193,13 @@ public class SpdyHandler extends ServerBaseHandler {
 			asyncClose(null);
 			break;
 		case SpdyFrame.TYPE_WINDOW_UPDATE:
-			logger.debug("streamId:"+streamId+" deltaWindowSize:"+frame.getDeltaWindowSize());
+			if(logger.isDebugEnabled())logger.debug("streamId:"+streamId+" deltaWindowSize:"+frame.getDeltaWindowSize());
 			break;
 		case SpdyFrame.TYPE_SETTINGS:
-			logger.debug("setting:");
+			if(logger.isDebugEnabled())logger.debug("setting:");
 			break;
 		case SpdyFrame.TYPE_HEADERS:
-			logger.debug("headers:");
+			if(logger.isDebugEnabled())logger.debug("headers:");
 			break;
 		default:
 		}
@@ -214,7 +215,7 @@ public class SpdyHandler extends ServerBaseHandler {
 	@Override
 	public void onReadTimeout(Object userContext) {
 		if(sessions.size()==0){
-			logger.debug("onReadTimeout nomal end.cid:"+getChannelId());
+			if(logger.isDebugEnabled())logger.debug("onReadTimeout nomal end.cid:"+getChannelId());
 			sendGoaway(SpdyFrame.GOWST_OK);
 		}else{
 			logger.warn("onReadTimeout abnomal end.cid:"+getChannelId()+":"+sessions.size());
@@ -259,18 +260,10 @@ public class SpdyHandler extends ServerBaseHandler {
 		asyncWrite(resetFrame, null);
 	}
 	
+	private static final String CTX_KEY_SPDY_SESSION=SpdySession.class.getName();
+	private static final String CTX_KEY_CONTEXT_TYPE="contextType";
 	private static final String WRITE_CONTEXT_BODY = "writeContextBody";
 	private static final String WRITE_CONTEXT_HEADER = "writeContextHeader";
-	
-	private static class SpdyCtx{
-		SpdySession spdySession;
-		Object ctx;
-		SpdyCtx(SpdySession spdySession,String ctx){
-			spdySession.ref();
-			this.spdySession=spdySession;
-			this.ctx=ctx;
-		}
-	}
 	
 	public void responseHeader(SpdySession spdySession,boolean isFin,HeaderParser responseHeader){
 		if(responseHeader.getStatusCode()==null){
@@ -288,7 +281,11 @@ public class SpdyHandler extends ServerBaseHandler {
 		}
 		ByteBuffer[] synReplyFrame=frame.buildSynReply(spdySession.getStreamId(),flags,responseHeader);
 		outFrameCount[SpdyFrame.TYPE_SYN_REPLY]++;
-		asyncWrite(synReplyFrame,new SpdyCtx(spdySession,WRITE_CONTEXT_HEADER));
+		
+		Context ctx=(Context)PoolManager.getInstance(Context.class);
+		ctx.setAttribute(CTX_KEY_SPDY_SESSION, spdySession);
+		ctx.setAttribute(CTX_KEY_CONTEXT_TYPE, WRITE_CONTEXT_HEADER);
+		asyncWrite(synReplyFrame,ctx);
 	}
 	
 	public void responseBody(SpdySession spdySession,boolean isFin,ByteBuffer[] body){
@@ -298,7 +295,11 @@ public class SpdyHandler extends ServerBaseHandler {
 		}
 		ByteBuffer[] dataFrame=frame.buildDataFrame(spdySession.getStreamId(), flags, body);
 		outFrameCount[SpdyFrame.TYPE_DATA_FRAME]++;
-		asyncWrite(dataFrame,new SpdyCtx(spdySession,WRITE_CONTEXT_BODY));
+		
+		Context ctx=(Context)PoolManager.getInstance(Context.class);
+		ctx.setAttribute(CTX_KEY_SPDY_SESSION, spdySession);
+		ctx.setAttribute(CTX_KEY_CONTEXT_TYPE, WRITE_CONTEXT_BODY);
+		asyncWrite(dataFrame,ctx);
 	}
 	
 	/* 同期するためにオーバライド,けどそもそもsynchronizedがいい */
@@ -312,14 +313,15 @@ public class SpdyHandler extends ServerBaseHandler {
 		if(userContext==null){//pingの場合
 			return;
 		}
-		SpdyCtx spdyCtx=(SpdyCtx)userContext;
-		SpdySession session=spdyCtx.spdySession;
-		if(spdyCtx.ctx==WRITE_CONTEXT_HEADER){
+		Context ctx=(Context)userContext;
+		SpdySession session=(SpdySession)ctx.getAttribute(CTX_KEY_SPDY_SESSION);
+		String dataType=(String)ctx.getAttribute(CTX_KEY_CONTEXT_TYPE);
+		if(dataType==WRITE_CONTEXT_HEADER){
 			session.onWrittenHeader();
-		}else if(spdyCtx.ctx==WRITE_CONTEXT_BODY){
+		}else if(dataType==WRITE_CONTEXT_BODY){
 			session.onWrittenBody();
 		}
-		session.unref();
+		ctx.unref(true);
 	}
 	
 	//SpdySessionが自分の終了を通知してくる
@@ -339,7 +341,7 @@ public class SpdyHandler extends ServerBaseHandler {
 	}
 	
 	public void onFinished() {
-		logger.debug("#finished.cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#finished.cid:"+getChannelId());
 		resetAll();
 		AccessLog accessLog=getAccessLog();
 		if(accessLog==null){

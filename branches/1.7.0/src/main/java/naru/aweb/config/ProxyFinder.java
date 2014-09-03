@@ -99,9 +99,9 @@ public class ProxyFinder extends ProxySelector{
 			}
 			out.close();
 			String result = new String(baos.toByteArray(), "utf-8");
-			logger.debug("----marge result start:template:"+ template);
-			logger.debug(result);
-			logger.debug("----marge result end----");
+			if(logger.isDebugEnabled())logger.debug("----marge result start:template:"+ template);
+			if(logger.isDebugEnabled())logger.debug(result);
+			if(logger.isDebugEnabled())logger.debug("----marge result end----");
 			return result;
 		} catch (ResourceNotFoundException e) {
 			logger.error("Velocity.mergeTemplate ResourceNotFoundException."+ template, e);

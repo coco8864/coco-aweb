@@ -127,7 +127,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	 * overrideÇµÇ»Ç¢
 	 */
 	public void onRequestHeader() {
-		logger.debug("#doResponse.cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#doResponse.cid:"+getChannelId());
 		HeaderParser requestHeader=getRequestHeader();
 		if(!requestHeader.isWs()){
 			super.onRequestHeader();//bodyìûíÖéûÇ…åpè≥ÇµÇΩÉNÉâÉXÇÃstartResponseReqBodyÇ…í ímÇ≥ÇÍÇÈ
@@ -144,7 +144,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 			logger.warn("not found WebSocket Protocol");
 			return;
 		}
-		logger.debug("wsProtocol class:"+wsProtocol.getClass().getName());
+		if(logger.isDebugEnabled())logger.debug("wsProtocol class:"+wsProtocol.getClass().getName());
 		//subprotocolÇì¡íË
 		String selectSubprotocol=null;
 		String reqSubprotocols=wsProtocol.getRequestSubProtocols(requestHeader);
@@ -156,7 +156,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		}else{
 			selectSubprotocol=wsProtocol.checkSubprotocol(reqSubprotocols);
 			if(selectSubprotocol==null){//subprotocolÇ™àÍívÇµÇ»Ç¢
-				logger.debug("WsHybi10#suprotocol error.webSocketProtocol:"+reqSubprotocols);
+				if(logger.isDebugEnabled())logger.debug("WsHybi10#suprotocol error.webSocketProtocol:"+reqSubprotocols);
 				completeResponse("422");//422 Protocol Extension Refused
 				return;
 			}
@@ -197,7 +197,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	 * overrideÇµÇ»Ç¢<br/>
 	 */
 	public void onReadPlain(ByteBuffer[] buffers, Object userContext) {
-		logger.debug("#read.cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#read.cid:"+getChannelId());
 		if(!isWs){
 			super.onReadPlain(buffers, userContext);
 			return;
@@ -210,7 +210,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	 * overrideÇµÇ»Ç¢<br/>
 	 */
 	public void onFailure(Object userContext, Throwable t) {
-		logger.debug("#failer.cid:" +getChannelId() +":"+t.getMessage());
+		if(logger.isDebugEnabled())logger.debug("#failer.cid:" +getChannelId() +":"+t.getMessage());
 		if(isWs){
 			closeWebSocket("500");
 		}
@@ -222,7 +222,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	 * overrideÇµÇ»Ç¢<br/>
 	 */
 	public void onReadTimeout(Object userContext) {
-		logger.debug("#readTimeout.cid:" +getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#readTimeout.cid:" +getChannelId());
 		if(isWs){
 			wsProtocol.onReadTimeout();
 		}else{
@@ -235,7 +235,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	 * overrideÇµÇ»Ç¢<br/>
 	 */
 	public void onTimeout(Object userContext) {
-		logger.debug("#timeout.cid:" +getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#timeout.cid:" +getChannelId());
 		if(isWs){
 			closeWebSocket("500");
 		}
@@ -248,7 +248,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	 */
 	@Override
 	public void onFinished() {
-		logger.debug("#finished client.cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#finished client.cid:"+getChannelId());
 		if(wsProtocol!=null){
 			wsProtocol.onClose(WsHybiFrame.CLOSE_UNKOWN,null);
 		}
@@ -299,13 +299,13 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	/*
 	@Override
 	public void ref() {
-		logger.debug("ref.cid:"+getChannelId(),new Throwable());
+		if(logger.isDebugEnabled())logger.debug("ref.cid:"+getChannelId(),new Throwable());
 		super.ref();
 	}
 
 	@Override
 	public boolean unref() {
-		logger.debug("unref.cid:"+getChannelId(),new Throwable());
+		if(logger.isDebugEnabled())logger.debug("unref.cid:"+getChannelId(),new Throwable());
 		return super.unref();
 	}
 	*/

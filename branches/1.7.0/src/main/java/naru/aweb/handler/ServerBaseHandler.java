@@ -352,7 +352,7 @@ public abstract class ServerBaseHandler extends SslHandler {
 	 * overrideする場合は、元メソッドも呼び出してください。<br/>
 	 */
 	public void onFinished() {
-		logger.debug("#finished.cid:"+getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#finished.cid:"+getChannelId());
 		super.onFinished();
 	}
 	

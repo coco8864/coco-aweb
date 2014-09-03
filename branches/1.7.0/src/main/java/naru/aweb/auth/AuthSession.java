@@ -208,12 +208,12 @@ public class AuthSession extends PoolBase{
 	@Override
 	public void ref() {
 		super.ref();
-		logger.debug("AS ref:"+getPoolId()+":"+getRef(),new Exception());
+		if(logger.isDebugEnabled())logger.debug("AS ref:"+getPoolId()+":"+getRef(),new Exception());
 	}
 
 	@Override
 	public boolean unref() {
-		logger.debug("AS unref:"+getPoolId()+":"+getRef(),new Exception());
+		if(logger.isDebugEnabled())logger.debug("AS unref:"+getPoolId()+":"+getRef(),new Exception());
 		return super.unref();
 	}
 	*/

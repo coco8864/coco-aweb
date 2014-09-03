@@ -37,7 +37,7 @@ public class GzipContext extends PoolBase{
 		}
 		if(gzipInputStream!=null){
 			try {
-				logger.debug("##close gzipInputStream.gzipInputStream:"+gzipInputStream);
+				if(logger.isDebugEnabled())logger.debug("##close gzipInputStream.gzipInputStream:"+gzipInputStream);
 				gzipInputStream.close();
 			} catch (IOException ignore) {
 			}
@@ -152,7 +152,7 @@ public class GzipContext extends PoolBase{
 					if(zipedInputStream.isBuffer()==false){
 						len=0;
 					}else{
-						logger.debug("##error gzipInputStream.gzipInputStream:"+gzipInputStream);
+						if(logger.isDebugEnabled())logger.debug("##error gzipInputStream.gzipInputStream:"+gzipInputStream);
 						throw new IOException("zipedInputStream.isBuffer():"+zipedInputStream.isBuffer());
 					}
 				}
@@ -177,10 +177,10 @@ public class GzipContext extends PoolBase{
 			}
 			zipedInputStream.putBuffers(ziped);
 			if(gzipInputStream==null){
-//				logger.debug("##new 1gzipInputStream.ziped[0]:"+ziped[0]);
+//				if(logger.isDebugEnabled())logger.debug("##new 1gzipInputStream.ziped[0]:"+ziped[0]);
 				gzipInputStream=new GZIPInputStream(zipedInputStream);
-//				logger.debug("##new 2gzipInputStream.ziped[0]:"+ziped[0]);
-//				logger.debug("##new 3gzipInputStream.gzipInputStream:"+gzipInputStream);
+//				if(logger.isDebugEnabled())logger.debug("##new 2gzipInputStream.ziped[0]:"+ziped[0]);
+//				if(logger.isDebugEnabled())logger.debug("##new 3gzipInputStream.gzipInputStream:"+gzipInputStream);
 			}
 			while(true){
 				ByteBuffer buffer=PoolManager.getBufferInstance();
@@ -266,7 +266,7 @@ public class GzipContext extends PoolBase{
 					buffer=null;
 				}
 //				for(int i=0;i<length;i++){
-//					logger.debug("###"+(int)b[off+i]);
+//					if(logger.isDebugEnabled())logger.debug("###"+(int)b[off+i]);
 //				}
 				return length;
 			}

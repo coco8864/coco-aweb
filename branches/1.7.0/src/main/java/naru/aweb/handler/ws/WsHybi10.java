@@ -47,17 +47,17 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 	
 	@Override
 	public boolean onHandshake(HeaderParser requestHeader,String subProtocol) {
-		logger.debug("WsHybi10#onHandshake cid:"+handler.getChannelId());
+		if(logger.isDebugEnabled())logger.debug("WsHybi10#onHandshake cid:"+handler.getChannelId());
 		if(!isUseSpec(SPEC)){
 			logger.warn("unsupport spec:"+SPEC);
 			handler.completeResponse("422");//422 Protocol Extension Refused
 			return false;
 		}
 		String version=requestHeader.getHeader(SEC_WEBSOCKET_VERSION);
-		logger.debug("WebSocket version:"+version);
+		if(logger.isDebugEnabled())logger.debug("WebSocket version:"+version);
 		int v=Integer.parseInt(version);
 		if(v>SUPPORT_VERSION){//versionが大きすぎる場合は、8で会話するように交渉,chrome "16.0.912.12 dev-m"は、13
-			logger.debug("WsHybi10#version error:"+v);
+			if(logger.isDebugEnabled())logger.debug("WsHybi10#version error:"+v);
 			handler.setHeader(SEC_WEBSOCKET_VERSION, Integer.toString(SUPPORT_VERSION));
 			handler.completeResponse("422");//422 Protocol Extension Refused
 			return false;
@@ -100,7 +100,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 	}
 	
 	private void doFrame(){
-		logger.debug("WsHybi10#doFrame cid:"+handler.getChannelId());
+		if(logger.isDebugEnabled())logger.debug("WsHybi10#doFrame cid:"+handler.getChannelId());
 		byte pcode=frame.getPcode();
 		ByteBuffer[] payloadBuffers=frame.getPayloadBuffers();
 		//binaryデータの場合、payloadbuffersを消費する前にtraceを採取
@@ -110,7 +110,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 			payloadBuffer=Cache.open();
 		}
 		if(!frame.isFin()){//最終Frameじゃない
-			logger.debug("WsHybi10#doFrame not isFin");
+			if(logger.isDebugEnabled())logger.debug("WsHybi10#doFrame not isFin");
 			if(pcode!=WsHybiFrame.PCODE_CONTINUE){
 				continuePcode=pcode;
 			}
@@ -118,7 +118,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 			payloadBuffer.putBuffer(payloadBuffers);
 //			PoolManager.poolArrayInstance(payloadBuffers);
 			if(continuePayloadLength>=getWebSocketMessageLimit()){
-				logger.debug("WsHybi10#doFrame too long frame.continuePayloadLength:"+continuePayloadLength);
+				if(logger.isDebugEnabled())logger.debug("WsHybi10#doFrame too long frame.continuePayloadLength:"+continuePayloadLength);
 				sendClose(WsHybiFrame.CLOSE_MESSAGE_TOO_BIG,"too long frame");
 			}
 			//TODO
@@ -126,7 +126,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 		}
 		if(pcode==WsHybiFrame.PCODE_CONTINUE){
 			//1つのメッセージが複数のFrameからできている場合
-			logger.debug("WsHybi10#doFrame pcode CONTINUE");
+			if(logger.isDebugEnabled())logger.debug("WsHybi10#doFrame pcode CONTINUE");
 			pcode=continuePcode;
 			continuePayloadLength=0;
 			continuePcode=-1;
@@ -135,7 +135,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 		payloadBuffer.flip();
 		switch(pcode){
 		case WsHybiFrame.PCODE_TEXT:
-			logger.debug("WsHybi10#doFrame pcode TEXT");
+			if(logger.isDebugEnabled())logger.debug("WsHybi10#doFrame pcode TEXT");
 			if(!payloadBuffer.isInTopBuffer()){
 				//textの場合長いbufferは許さない
 				throw new UnsupportedOperationException("unsuppert big text");
@@ -150,12 +150,12 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 			callOnMessage(textMessage);
 			break;
 		case WsHybiFrame.PCODE_BINARY:
-			logger.debug("WsHybi10#doFrame pcode BINARY");
+			if(logger.isDebugEnabled())logger.debug("WsHybi10#doFrame pcode BINARY");
 			callBinaryOnMessage(payloadBuffer);
 			payloadBuffer=null;
 			break;
 		case WsHybiFrame.PCODE_CLOSE:
-			logger.debug("WsHybi10#doFrame pcode CLOSE");
+			if(logger.isDebugEnabled())logger.debug("WsHybi10#doFrame pcode CLOSE");
 //			PoolManager.poolBufferInstance(payloadBuffers);
 			//close受信
 			traceOnClose(frame.getCloseCode(),frame.getCloseReason());
@@ -163,13 +163,13 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 			sendClose(WsHybiFrame.CLOSE_NORMAL,null);
 			break;
 		case WsHybiFrame.PCODE_PING:
-			logger.debug("WsHybi10#doFrame pcode PING");
+			if(logger.isDebugEnabled())logger.debug("WsHybi10#doFrame pcode PING");
 			tracePingPong("PING");			
 			ByteBuffer[] pongBuffer=WsHybiFrame.createPongFrame(isWebSocketResponseMask(), payloadBuffers);
 			handler.asyncWrite(pongBuffer, null);
 			break;
 		case WsHybiFrame.PCODE_PONG:
-			logger.debug("WsHybi10#doFrame pcode PONG");
+			if(logger.isDebugEnabled())logger.debug("WsHybi10#doFrame pcode PONG");
 //			PoolManager.poolBufferInstance(payloadBuffers);
 			tracePingPong("PONG");
 			//do nothing
@@ -187,7 +187,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 	/* 回線からデータを受信した */
 	@Override
 	public void onBuffer(ByteBuffer[] buffers) {
-		logger.debug("WsHybi10#onBuffer cid:"+handler.getChannelId());
+		if(logger.isDebugEnabled())logger.debug("WsHybi10#onBuffer cid:"+handler.getChannelId());
 		try {
 			for(int i=0;i<buffers.length;i++){
 				ByteBuffer buffer=buffers[i];
@@ -209,7 +209,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 			*/
 			PoolManager.poolArrayInstance(buffers);
 			if(frame.getPayloadLength()>getWebSocketMessageLimit()){
-				logger.debug("WsHybi10#doFrame too long frame.frame.getPayloadLength():"+frame.getPayloadLength());
+				if(logger.isDebugEnabled())logger.debug("WsHybi10#doFrame too long frame.frame.getPayloadLength():"+frame.getPayloadLength());
 				sendClose(WsHybiFrame.CLOSE_MESSAGE_TOO_BIG,"too long frame");
 			}
 			handler.asyncRead(null);
@@ -222,11 +222,11 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 	/* 回線が切断された or アプリからcloseWebSocketが呼び出された */
 	@Override
 	public void onClose(short code,String reason) {
-		logger.debug("WsHybi10#onClose cid:"+handler.getChannelId());
+		if(logger.isDebugEnabled())logger.debug("WsHybi10#onClose cid:"+handler.getChannelId());
 		if(handler==null){//handshake前にfinishしてしまった場合
 			return;
 		}
-		logger.debug("WsHybi10#onClose cid:"+handler.getChannelId());
+		if(logger.isDebugEnabled())logger.debug("WsHybi10#onClose cid:"+handler.getChannelId());
 		callOnWsClose(code,reason);
 		if(code!=WsHybiFrame.CLOSE_UNKOWN){
 			sendClose((short)code,reason);
@@ -236,7 +236,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 	/* readTimeoutした場合は、回線を維持するためにpingを投げる */
 	@Override
 	public void onReadTimeout() {
-		logger.debug("WsHybi10#onReadTimeout cid:"+handler.getChannelId());
+		if(logger.isDebugEnabled())logger.debug("WsHybi10#onReadTimeout cid:"+handler.getChannelId());
 		ByteBuffer[] buffers=WsHybiFrame.createPingFrame(isWebSocketResponseMask(),"ping:"+System.currentTimeMillis());
 		handler.asyncWrite(buffers, null);
 		handler.asyncRead(null);
@@ -245,13 +245,13 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 	/* アプリがpostMessageを呼び出した */
 	@Override
 	public void postMessage(String message) {
-		logger.debug("WsHybi10#postMessage(txt) cid:"+handler.getChannelId());
+		if(logger.isDebugEnabled())logger.debug("WsHybi10#postMessage(txt) cid:"+handler.getChannelId());
 		postMessage(new PostRequest(message));
 	}
 	
 	@Override
 	public void postMessage(ByteBuffer[] message) {
-		logger.debug("WsHybi10#postMessage(bin) cid:"+handler.getChannelId());
+		if(logger.isDebugEnabled())logger.debug("WsHybi10#postMessage(bin) cid:"+handler.getChannelId());
 		postMessage(new PostRequest(message));
 	}
 	
@@ -353,7 +353,7 @@ public class WsHybi10 extends WsProtocol implements BufferGetter{
 	/* アプリがpostMessageを呼び出した */
 	@Override
 	public void postMessage(AsyncBuffer message) {
-		logger.debug("WsHybi10#postMessage(bin) cid:"+handler.getChannelId());
+		if(logger.isDebugEnabled())logger.debug("WsHybi10#postMessage(bin) cid:"+handler.getChannelId());
 		postMessage(new PostRequest(message));
 	}
 	

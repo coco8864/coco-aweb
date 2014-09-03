@@ -28,24 +28,24 @@ public class StandardLinklet implements Linklet{
 
 	@Override
 	public boolean onSubscribe(LinkPeer peer) {
-		logger.debug("onSubscribe.peer:"+peer);
+		if(logger.isDebugEnabled())logger.debug("onSubscribe.peer:"+peer);
 		return true;
 	}
 
 	@Override
 	public void onUnsubscribe(LinkPeer peer, String reason) {
-		logger.debug("onUnsubscribe.peer:"+peer+":"+reason);
+		if(logger.isDebugEnabled())logger.debug("onUnsubscribe.peer:"+peer+":"+reason);
 	}
 
 	@Override
 	public void onPublish(LinkPeer peer, LinkMsg data) {
-		logger.debug("onPublish(LinkMsg).peer:"+peer+":"+data);
+		if(logger.isDebugEnabled())logger.debug("onPublish(LinkMsg).peer:"+peer+":"+data);
 		ctx.message(data,peer.getSubname(),peer);
 	}
 	
 	@Override
 	public void onPublish(LinkPeer peer, String data) {
-		logger.debug("onPublish(String).peer:"+peer+":"+data);
+		if(logger.isDebugEnabled())logger.debug("onPublish(String).peer:"+peer+":"+data);
 		ctx.message(data,peer.getSubname(),peer);
 	}
 }

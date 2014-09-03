@@ -133,7 +133,7 @@ public class AppcacheOption {
 		byte[] digestByte=messageDigest.digest(sb.toString().getBytes());
 		String digest=DataUtil.byteToString(digestByte);
 		logger.info("appcache:"+ destinationFile+":digest:"+digest);
-		logger.debug(sb.toString());
+		if(logger.isDebugEnabled())logger.debug(sb.toString());
 		return digest;
 	}
 	

@@ -146,19 +146,19 @@ public class DispatchResponseHandler extends WebServerHandler {
 	}
 
 	public void onFailure(Object userContext, Throwable t) {
-		logger.debug("#failer.cid:" + getChannelId() + ":" + t.getMessage());
+		if(logger.isDebugEnabled())logger.debug("#failer.cid:" + getChannelId() + ":" + t.getMessage());
 		asyncClose(userContext);
 		super.onFailure(t, userContext);
 	}
 
 	public void onTimeout(Object userContext) {
-		logger.debug("#timeout.cid:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#timeout.cid:" + getChannelId());
 		asyncClose(userContext);
 		super.onTimeout(userContext);
 	}
 
 	public void onFinished() {
-		logger.debug("#finished.cid:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#finished.cid:" + getChannelId());
 		super.onFinished();
 	}
 }

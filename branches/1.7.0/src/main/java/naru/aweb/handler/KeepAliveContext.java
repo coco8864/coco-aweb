@@ -113,7 +113,7 @@ public class KeepAliveContext extends Context {
 		
 		/* 最大keepAlive回数を超えていればkeepAliveしない */
 		if(requestsCount>=maxKeepAliveRequests){
-			logger.debug("reach maxKeepAliveRequests."+maxKeepAliveRequests);
+			if(logger.isDebugEnabled())logger.debug("reach maxKeepAliveRequests."+maxKeepAliveRequests);
 			isKeepAlive=false;
 			return;
 		}
@@ -236,7 +236,7 @@ public class KeepAliveContext extends Context {
 	/* prepareResponseとendOfResponseは、対のメソッド 同一のhandlerから呼び出す事 */
 	//private WebServerHandler setupedHandler;
 	public boolean prepareResponse(WebServerHandler handler,HeaderParser responseHeader,long commitContentLength) {
-		logger.debug("prepareResponse handler.cid:"+handler+ ":webClientHandler.cid:"+webClientHandler);
+		if(logger.isDebugEnabled())logger.debug("prepareResponse handler.cid:"+handler+ ":webClientHandler.cid:"+webClientHandler);
 		//if(setupedHandler!=null){
 		//	throw new IllegalStateException("fail to setup."+setupedHandler);
 		//}
@@ -297,7 +297,7 @@ public class KeepAliveContext extends Context {
 	 * KeepAliveContext１個につきServer handleを無効化するのは1回
 	 */
 	private void closeServerHandleOnce(WebServerHandler handler){
-		logger.debug("closeServerHandleOnce.cid:"+handler.getChannelId()+":isCloseServerHandle:"+isCloseServerHandle);
+		if(logger.isDebugEnabled())logger.debug("closeServerHandleOnce.cid:"+handler.getChannelId()+":isCloseServerHandle:"+isCloseServerHandle);
 		if(isCloseServerHandle==false){
 			handler.asyncClose(null);
 			isCloseServerHandle=true;
@@ -311,11 +311,11 @@ public class KeepAliveContext extends Context {
 	 * @return
 	 */
 	public synchronized boolean commitResponse(WebServerHandler handler){
-		logger.debug("commitResponse handler.cid:"+handler+ ":webClientHandler.cid:"+webClientHandler);
+		if(logger.isDebugEnabled())logger.debug("commitResponse handler.cid:"+handler+ ":webClientHandler.cid:"+webClientHandler);
 		/*
 		if(setupedHandler==null){
 			setWebClientHandler(null);
-			logger.debug("commitResponse done end of keepAlive not prepareResponse.handler:"+handler);
+			if(logger.isDebugEnabled())logger.debug("commitResponse done end of keepAlive not prepareResponse.handler:"+handler);
 			closeServerHandleOnce(handler);
 			return false;
 		}
@@ -326,13 +326,13 @@ public class KeepAliveContext extends Context {
 		if(!isKeepAlive/* || handler.isHandlerClosed()*/){
 			//setupedHandler=null;
 			setWebClientHandler(null);
-			logger.debug("commitResponse done end of keepAlive.cid:"+handler.getChannelId());
+			if(logger.isDebugEnabled())logger.debug("commitResponse done end of keepAlive.cid:"+handler.getChannelId());
 			closeServerHandleOnce(handler);
 			return false;
 		}
 		/*
 		if(handler.orderCount()!=0){//未完了のorder(write)が残っている
-			logger.debug("commitResponse.left order wait for done write");
+			if(logger.isDebugEnabled())logger.debug("commitResponse.left order wait for done write");
 			return false;
 		}
 		*/
@@ -342,9 +342,9 @@ public class KeepAliveContext extends Context {
 				setWebClientHandler(null);
 			}
 		}
-		//logger.debug("commitResponse.handler.orderCount():"+handler.orderCount());
-		logger.debug("commitResponse done keepAlive.handler:"+handler);
-		logger.debug("commitResponse done keepAlive.webClientHandler:"+webClientHandler);
+		//if(logger.isDebugEnabled())logger.debug("commitResponse.handler.orderCount():"+handler.orderCount());
+		if(logger.isDebugEnabled())logger.debug("commitResponse done keepAlive.handler:"+handler);
+		if(logger.isDebugEnabled())logger.debug("commitResponse done keepAlive.webClientHandler:"+webClientHandler);
 		isSendLastChunk=isChunked=isProxy=isKeepAlive=isAllowChunked=false;
 		handler.setReadTimeout(keepAliveTimeout);
 		handler.waitForNextRequest();
@@ -357,9 +357,13 @@ public class KeepAliveContext extends Context {
 	
 	public RequestContext getRequestContext(boolean isNew) {
 		RequestContext requestContext=(RequestContext)getAttribute(ATTRIBUTE_REQUEST_CONTEXT);
-		if(requestContext==null&&isNew){
-			requestContext=(RequestContext) PoolManager.getInstance(RequestContext.class);
-			endowAttribute(ATTRIBUTE_REQUEST_CONTEXT, requestContext);
+		if(isNew){
+			if(requestContext==null){
+				requestContext=(RequestContext) PoolManager.getInstance(RequestContext.class);
+				endowAttribute(ATTRIBUTE_REQUEST_CONTEXT, requestContext);
+			}else{
+				logger.warn("requestContext aleady exist.",new Exception());
+			}
 		}
 		return requestContext;
 	}

@@ -420,13 +420,13 @@ public class SpdyFrame {
 		case SpdyFrame.TYPE_SETTINGS:
 			//TODO ç°ÇÃÇ∆Ç±ÇÎämîFÇæÇØ
 			int numberOfEntries=getIntFromData();
-			logger.debug("spdy settings numberOfEntries:"+numberOfEntries);
+			if(logger.isDebugEnabled())logger.debug("spdy settings numberOfEntries:"+numberOfEntries);
 			for(int i=0;i<numberOfEntries;i++){
 				int id=getIntFromData();
 				int flag=id>>24;
 				id&=0x00FFFF;
 				int value=getIntFromData();
-				logger.debug("flag:"+flag +":id:"+id +":value:"+value);
+				if(logger.isDebugEnabled())logger.debug("flag:"+flag +":id:"+id +":value:"+value);
 			}
 			break;
 		case SpdyFrame.TYPE_WINDOW_UPDATE:
