@@ -101,9 +101,6 @@ public class DispatchHandler extends ServerBaseHandler {
 		super.recycle();
 	}
 
-//	private long startTotalReadLength;
-//	private long startTotalWriteLength;
-	
 	/*
 	 * 初回connection開設時および、KeepAlive時に呼び出される
 	 */
@@ -124,7 +121,7 @@ public class DispatchHandler extends ServerBaseHandler {
 		if(logger.isDebugEnabled())logger.debug("#accepted.cid:" + getChannelId());
 		isFirstRead = true;
 		getKeepAliveContext(true);// keepAliveContextを用意する
-		startTime = new Date();
+		startTime = new Date(getAcceptTime());
 		onStartRequest();
 	}
 
