@@ -13,8 +13,7 @@
   <terminal name="pool" threadCount="1">
     <queuelet loaderName="main" className="naru.async.pool.PoolManager">
       <param name="recycleInterval" value="10000"/>
-      <!--param name="delayRecycleClasses" value="naru.async.core.ChannelContext,naru.async.ChannelHandler"/-->
-      <!--param name="delayRecycleClasses" value="naru.async.core.ChannelContext"/-->
+      <param name="useLocalPool" value="true"/>
       <param name="default.bufferSize" value="16384"/>
       <param name="default.initial" value="128"/>
       <param name="default.increment" value="128"/>
@@ -46,6 +45,10 @@
     <queuelet loaderName="main" className="naru.async.core.IOManager">
       <param name="selectorCount" value="4"/>
       <param name="selectInterval" value="60000"/>
+      <param name="tcpNoDelay" value="true"/>
+      <param name="reuseAddress" value="true"/>
+      <param name="useAcceptThread" value="true"/>
+      <param name="soLingerTime" value="-1"/>
     </queuelet>
   </terminal>
   <terminal name="dispatch" threadCount="4">
