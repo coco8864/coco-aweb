@@ -143,6 +143,16 @@ public abstract class ServerBaseHandler extends SslHandler {
 		return requestContext.getRequestHeader();
 	}
 	
+	public void setRequestHeader(HeaderParser requestHeader){
+		RequestContext requestContext=getRequestContext();
+		if(requestContext==null){
+			logger.warn("setRequestHeader requestContext is null.",new Throwable());
+			return;
+		}
+		requestContext.setRequestHeader(requestHeader);
+	}
+	
+	
 	/**
 	 * 他アプリケーションとも共有するsessionオブジェクトを取得します。<br/>
 	 */

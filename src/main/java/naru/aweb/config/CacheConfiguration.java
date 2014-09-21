@@ -1,5 +1,6 @@
 package naru.aweb.config;
 
+import java.util.HashMap;
 import java.util.WeakHashMap;
 
 import javax.sql.DataSource;
@@ -7,7 +8,8 @@ import javax.sql.DataSource;
 import org.apache.commons.configuration.DatabaseConfiguration;
 
 public class CacheConfiguration extends DatabaseConfiguration {
-    private WeakHashMap<String,Object> cache = new WeakHashMap<String,Object>();
+//    private WeakHashMap<String,Object> cache = new WeakHashMap<String,Object>();
+    private HashMap<String,Object> cache = new HashMap<String,Object>();
 	public CacheConfiguration(DataSource datasource, String table,
 			String keyColumn, String valueColumn) {
 		super(datasource, table, keyColumn, valueColumn);

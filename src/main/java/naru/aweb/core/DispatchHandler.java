@@ -2,7 +2,9 @@ package naru.aweb.core;
 
 import java.nio.ByteBuffer;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -118,7 +120,7 @@ public class DispatchHandler extends ServerBaseHandler {
 			return;
 		}
 		setReadTimeout(getConfig().getAcceptTimeout());// Connection Flood UŒ‚‘Î‰‚Å”äŠr“I’Z‚­İ’è
-		if(logger.isDebugEnabled())logger.debug("#accepted.cid:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#accepted.cid:" + getChannelId()+":lag:"+(System.currentTimeMillis()-getAcceptTime()));
 		isFirstRead = true;
 		getKeepAliveContext(true);// keepAliveContext‚ğ—pˆÓ‚·‚é
 		startTime = new Date(getAcceptTime());
@@ -178,6 +180,8 @@ public class DispatchHandler extends ServerBaseHandler {
 		super.onRead(buffers, userContext);
 	}
 
+	//private static Map<ByteBuffer,HeaderParser> headerCache=new HashMap<ByteBuffer,HeaderParser>();
+	
 	@Override
 	public void onReadPlain(ByteBuffer[] buffers, Object userContext) {
 		if(logger.isDebugEnabled())logger.debug("#onReadPlain.cid:" + getChannelId()+ ":buffers.hashCode:" + buffers.hashCode());
@@ -207,16 +211,42 @@ public class DispatchHandler extends ServerBaseHandler {
 			startTime = new Date();
 		}
 		headerPage.putBuffer(PoolManager.duplicateBuffers(buffers), true);
-		HeaderParser headerParser = getRequestHeader();
-		for (int i = 0; i < buffers.length; i++) {
-			headerParser.parse(buffers[i]);
+		HeaderParser headerParser=null;
+		/*
+		ByteBuffer header=headerPage.peekOnlyBuffer();
+		if(header!=null){
+			headerParser =headerCache.get(header);
 		}
-		PoolManager.poolArrayInstance(buffers);
+		*/
+		if(headerParser!=null){
+			//logger.info("hit header");
+			setRequestHeader(headerParser);
+			PoolManager.poolBufferInstance(buffers);
+		}else{
+			//header=null;
+			headerParser = getRequestHeader();
+			for (int i = 0; i < buffers.length; i++) {
+				headerParser.parse(buffers[i]);
+			}
+			PoolManager.poolArrayInstance(buffers);
+		}
+		
 		if (headerParser.isParseEnd()) {
 			if (headerParser.isParseError()) {
 				logger.warn("http header error");
 				asyncClose(null);
 			} else {
+				/*
+				if(header==null){
+					header=headerPage.peekOnlyBuffer();
+					if(header!=null){
+						headerParser.ref();
+						synchronized(headerCache){
+							headerCache.put(header, headerParser);
+						}
+					}
+				}
+				*/
 				if(headerParser.isProxy()&&getConfig().getRealHost(headerParser.getServer())!=null ){
 					//©•ª©g‚ğproxy‚µ‚æ‚¤‚Æ‚µ‚Ä‚¢‚éB
 					headerParser.forceWebRequest();
