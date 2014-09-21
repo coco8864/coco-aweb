@@ -27,11 +27,10 @@ public class RequestContext extends Context {
 	private KeepAliveContext keepAliveContext;
 	private AccessLog accessLog;
 	private MappingResult mapping;
-//	private ChunkContext chunkContext;//égÇÌÇ»Ç¢
 	private ChunkContext requestChunkContext=new ChunkContext();
 	private GzipContext gzipContext;//ïKóvÇ»èÍçáÇ…ê›íË
 	private AuthSession authSession;
-	private HeaderParser requestHeader=new HeaderParser();
+	//private HeaderParser requestHeader=new HeaderParser();
 	private ParameterParser parameterParser=new ParameterParser();
 	private LogoutEvent logountEvent=null;
 	
@@ -51,7 +50,7 @@ public class RequestContext extends Context {
 			gzipContext.unref();
 			gzipContext=null;
 		}
-		requestHeader.recycle();
+		//requestHeader.recycle();
 		parameterParser.recycle();
 		Iterator itr=attribute.values().iterator();
 		while(itr.hasNext()){
@@ -127,8 +126,17 @@ public class RequestContext extends Context {
 		return accessLog;
 	}
 
+	private static final String REQUEST_HEADER="requestHeader";
 	public HeaderParser getRequestHeader() {
+		HeaderParser requestHeader=(HeaderParser)getAttribute(REQUEST_HEADER);
+		if(requestHeader==null){
+			requestHeader=(HeaderParser)PoolManager.getInstance(HeaderParser.class);
+			endowAttribute(REQUEST_HEADER, requestHeader);
+		}
 		return requestHeader;
+	}
+	public void setRequestHeader(HeaderParser requestHeader) {
+		setAttribute(REQUEST_HEADER, requestHeader);
 	}
 
 	public ParameterParser getParameterParser() {
