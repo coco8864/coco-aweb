@@ -648,29 +648,6 @@ public class WebServerHandler extends ServerBaseHandler {
 			writeContext = WRITE_CONTEXT_BODY_INTERNAL;
 		}
 		if (responseWriteBody == 0) {
-			//ここでNPEになることあり
-			/*
-			 * java.lang.NullPointerException
-	at naru.aweb.http.WebServerHandler.internalWriteBody(WebServerHandler.java:591)
-	at naru.aweb.http.WebServerHandler.responseBody(WebServerHandler.java:841)
-	at naru.aweb.http.WebServerHandler.responseBody(WebServerHandler.java:482)
-	at naru.aweb.http.WebServerHandler.completeResponse(WebServerHandler.java:283)
-	at naru.aweb.http.WebServerHandler.completeResponse(WebServerHandler.java:265)
-	at naru.aweb.http.WebServerHandler.completeResponse(WebServerHandler.java:252)
-	at naru.aweb.handler.ProxyHandler.onRequestEnd(ProxyHandler.java:347)
-	at naru.aweb.http.WebClientHandler.onRequestEnd(WebClientHandler.java:625)
-	at naru.aweb.http.WebClientHandler.onClosed(WebClientHandler.java:434)
-	at naru.async.ChannelHandler.onCloseClosed(ChannelHandler.java:575)
-	at naru.async.core.Order.callbackClosed(Order.java:192)
-	at naru.async.core.Order.internalCallback(Order.java:205)
-	at naru.async.core.Order.callback(Order.java:253)
-	at naru.async.core.ChannelContext.callback(ChannelContext.java:388)
-	at naru.async.core.DispatchManager.service(DispatchManager.java:38)
-	at naru.queuelet.core.QueueletWrapper.service(QueueletWrapper.java:305)
-	at naru.queuelet.core.Terminal.service(Terminal.java:553)
-	at naru.queuelet.core.ServiceThread.run(ServiceThread.java:65)
-	at java.lang.Thread.run(Thread.java:722)
-			 */
 			AccessLog accessLog=getAccessLog();
 			if(accessLog==null){
 				logger.warn("accessLog is null.",new Throwable());
@@ -786,6 +763,7 @@ public class WebServerHandler extends ServerBaseHandler {
 		}
 	}
 	
+	/*
 	private void setupTraceBody(){
 		Store responsePeek = null;
 		MappingResult mapping=getRequestMapping();
@@ -805,6 +783,7 @@ public class WebServerHandler extends ServerBaseHandler {
 			}
 		}
 	}
+	*/
 	
 	private ByteBuffer NO_HEADER=ByteBuffer.wrap("no header".getBytes());
 	
@@ -888,17 +867,34 @@ public class WebServerHandler extends ServerBaseHandler {
 			return;// 何をしても無駄
 		}
 		traceHeader(isHeaderOnlyResponse,headerBuffer);
-		
 		if(isHeaderOnlyResponse){
 			asyncWrite(headerBuffer, WRITE_CONTEXT_LAST_HEADER);
 			return;
 		}
+		
+		Store responsePeek = null;
+		MappingResult mapping=getRequestMapping();
+		if(mapping!=null){
+			switch (mapping.getLogType()) {
+			case RESPONSE_TRACE:
+			case TRACE:
+				responsePeek = Store.open(true);
+				responsePeek.putBuffer(PoolManager.duplicateBuffers(bodyBuffers));
+			}
+		}
 		bodyBuffers=BuffersUtil.concatenate(headerBuffer, bodyBuffers);
-		setupTraceBody();
 		if (secondBody == null) {// 全レスポンスがある場合これで最後
 			internalWriteBody(true, true, bodyBuffers);
 		} else {
 			internalWriteBody(false, true, bodyBuffers);
+		}
+		if (responsePeek != null) {
+			SpdySession spdySession=getSpdySession();
+			if(spdySession==null){
+				pushWritePeekStore(responsePeek);
+			}else{
+				spdySession.pushResponseBodyStore(responsePeek);
+			}
 		}
 	}
 	
@@ -1230,7 +1226,14 @@ public class WebServerHandler extends ServerBaseHandler {
 		setupResponseHeader();
 		traceHeader(isFin,null);
 		if(!isFin){
-			setupTraceBody();
+			MappingResult mapping=getRequestMapping();
+			if(mapping!=null){
+				switch (mapping.getLogType()) {
+				case RESPONSE_TRACE:
+				case TRACE:
+					spdySession.pushResponseBodyStore(Store.open(true));
+				}
+			}
 		}
 		spdySession.responseHeader(isFin,responseHeader);
 		isFlushFirstResponse = true;

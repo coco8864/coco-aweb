@@ -71,7 +71,7 @@ public class SslContextPool {
 		}
 		password=config.getString(TRUST_STORE_PASSWORD);
 		keytool=config.getString(KEYTOOL);
-		if(keytool==null){
+		if(keytool==null||"".equals(keytool)){
 			String javaHome=System.getProperty("java.home");//JAVA_HOME
 			keytool=javaHome +"/bin/keytool";
 		}
