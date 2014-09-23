@@ -23,7 +23,7 @@ function onChatSend(){
   kind:'message',
   message:message,
   date:new Date(),
-  userName:'$esc.javascript($loginUser.nickname)',
+  userName:'$!esc.javascript($session.user.nickname)',
   echoback:jQuery('#chatEchoback').is(':checked')});//echoback可否
  jQuery('#chatInputTextArea').val('');
 }
