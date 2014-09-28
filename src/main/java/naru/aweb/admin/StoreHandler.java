@@ -281,7 +281,7 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 	 * <meta charset="utf-8">
 	 * 
 	 */
-	private static Pattern CHARSET_PATTERN = Pattern.compile("(?:encoding=\"([^\"\\s]*)\")|(?:charset=[\"]?([^\"'>\\s]*))");
+	private static Pattern CHARSET_PATTERN = Pattern.compile("(?:encoding=\"([^\"\\s]*)\")|(?:charset=[\"]?([^\"'>\\s]*))",Pattern.CASE_INSENSITIVE);
 	private String guessCharset(String text){
 		Matcher matcher=null;
 		synchronized(CHARSET_PATTERN){
