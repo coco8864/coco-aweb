@@ -13,7 +13,7 @@ ph["spdyProtocols"]="$esc.javascript(${config.getSpsyConfig().spdyProtocols})";
 ph["spdyInfo"]="$spdyInfo";
 ph["cid"]=${handler.channelId};
 ph["authFrameTimeout"]=$esc.javascript(${config.getString('authFrameTimeout','5000')});
-ph["webSocketMessageLimit"]=$esc.javascript(${config.getString("webSocketMessageLimit", '(1024*1024*2)')});
+ph["webSocketMessageLimit"]=${config.getInt('webSocketMessageLimit',2048000)};
 
 if(ph.useWebSocket && !ph.websocketSpec)
  ph.useWebSocket=false;
