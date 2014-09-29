@@ -268,7 +268,7 @@ public class WebClientHandler extends SslHandler implements Timer {
 	}
 
 	public void onReadPlain(ByteBuffer[] buffers, Object userContext) {
-		if(logger.isDebugEnabled())logger.debug("#readPlain.cid:" + getChannelId());
+		if(logger.isDebugEnabled())logger.debug("#readPlain.cid:" + getChannelId()+":userContext:"+userContext +":len:"+BuffersUtil.remaining(buffers));
 		if (userContext == CONTEXT_BODY) {
 			stat = STAT_RESPONSE_BODY;
 			boolean isLast;
@@ -282,7 +282,6 @@ public class WebClientHandler extends SslHandler implements Timer {
 			}else{//終端を判断するために必要
 				isLast=responseChunk.isEndOfData(buffers);
 			}
-			
 			onResponseBody(buffers);
 			if (isLast) {
 				endOfResponse();
@@ -606,7 +605,10 @@ public class WebClientHandler extends SslHandler implements Timer {
 	}
 
 	private void onResponseBody(ByteBuffer[] buffer) {
-		if(logger.isDebugEnabled())logger.debug("#responseBody cid:"+getChannelId());
+		if(logger.isDebugEnabled()){
+			logger.debug("#responseBody cid:"+getChannelId());
+			BuffersUtil.hexDump("onResponseBody", buffer);
+		}
 		if (webClient != null) {
 			webClient.onResponseBody(userContext,buffer);
 		}
