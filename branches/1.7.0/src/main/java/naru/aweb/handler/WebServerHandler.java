@@ -523,14 +523,13 @@ public class WebServerHandler extends ServerBaseHandler {
 		if (gzipContext != null) {
 			ByteBuffer[] zipdBuffer = gzipContext.getZipedBuffer(true);
 			if (zipdBuffer != null && BuffersUtil.remaining(zipdBuffer) != 0) {
-				isReadWrite = internalWriteBody(true, false, zipdBuffer);
+				isReadWrite = internalWriteBody(true, false,null,zipdBuffer);
 			} else {
-				isReadWrite = internalWriteBody(true, false, null);
+				isReadWrite = internalWriteBody(true, false,null,null);
 			}
 		} else {
-			isReadWrite = internalWriteBody(true, false, null);
+			isReadWrite = internalWriteBody(true, false,null,null);
 		}
-		
 		doAccessLog();
 		KeepAliveContext keepAliveContext = getKeepAliveContext();
 		keepAliveContext.endOfResponse();
@@ -631,7 +630,7 @@ public class WebServerHandler extends ServerBaseHandler {
 	 *            送信データ
 	 * @return 実writeしたか否か？
 	 */
-	private boolean internalWriteBody(boolean isLast, boolean needCallback,ByteBuffer[] buffers) {
+	private boolean internalWriteBody(boolean isLast, boolean needCallback,ByteBuffer[] headerBuffer,ByteBuffer[] buffers) {
 		KeepAliveContext keepAliveContext = getKeepAliveContext();
 		/* 必要があればchunkedして出力する */
 		buffers = keepAliveContext.chunkedIfNeed(isLast, buffers);
@@ -657,13 +656,7 @@ public class WebServerHandler extends ServerBaseHandler {
 		}
 		// bodyWriteCount++;
 		long length = BuffersUtil.remaining(buffers);
-/*
- * IE10でVelocityを経由したときだけ以下のエラーがデバッグコンソールにでる。
- * HTML1405: 無効な文字: U+0000 NULL。NULL 文字は使用できません。
- * HTML1507: 予期しない文字: U+0000 NULL。NULL 文字は使用できません。 
- * リロードした時だけ,表示に問題はなさそう
- */
-//		BuffersUtil.hexDump("WebServerHandler#internalWriteBody",buffers);
+		buffers=BuffersUtil.concatenate(headerBuffer, buffers);
 		if (asyncWrite(buffers, writeContext)) {
 			responseWriteBody += length;
 			return true;
@@ -882,11 +875,13 @@ public class WebServerHandler extends ServerBaseHandler {
 				responsePeek.putBuffer(PoolManager.duplicateBuffers(bodyBuffers));
 			}
 		}
-		bodyBuffers=BuffersUtil.concatenate(headerBuffer, bodyBuffers);
+		//bodyBuffers=BuffersUtil.concatenate(headerBuffer, bodyBuffers);
+		//asyncWrite(headerBuffer, WRITE_CONTEXT_HEADER);
+		
 		if (secondBody == null) {// 全レスポンスがある場合これで最後
-			internalWriteBody(true, true, bodyBuffers);
+			internalWriteBody(true, true, headerBuffer, bodyBuffers);
 		} else {
-			internalWriteBody(false, true, bodyBuffers);
+			internalWriteBody(false, true, headerBuffer, bodyBuffers);
 		}
 		if (responsePeek != null) {
 			SpdySession spdySession=getSpdySession();
@@ -916,7 +911,9 @@ public class WebServerHandler extends ServerBaseHandler {
 	 */
 	public void responseBody(ByteBuffer[] buffers) {
 		// bodyとしてwrite要求した長さを加算、write完了した長さは、SSLの場合もあるので難しい
-		responseWriteBodyApl += BuffersUtil.remaining(buffers);
+		long length=BuffersUtil.remaining(buffers);
+		if(logger.isDebugEnabled())logger.debug("#responseBody cid:" + getChannelId()+":length:"+length);
+		responseWriteBodyApl += length;
 		SpdySession spdySession=getSpdySession();
 		if(spdySession!=null){
 			spdyResponseBody(spdySession,buffers);
@@ -946,7 +943,7 @@ public class WebServerHandler extends ServerBaseHandler {
 			if (buffers == null) {// 圧縮したらなくなった
 				onWrittenBody();
 			} else {
-				internalWriteBody(false, true, buffers);
+				internalWriteBody(false, true,null, buffers);
 			}
 		}
 		if (needMoreResponse()) {
@@ -1050,24 +1047,6 @@ public class WebServerHandler extends ServerBaseHandler {
 		if(logger.isDebugEnabled())logger.debug("#onWrittenPlain cid:" + getChannelId()+":userContext:"+userContext);
 		if (userContext == WRITE_CONTEXT_BODY) {
 			onWrittenBody();//この延長でresponseEndが呼び出される可能性がある、その場合contextがnullとなる
-		}
-		if (userContext == WRITE_CONTEXT_BODY
-				|| userContext == WRITE_CONTEXT_BODY_INTERNAL
-				|| userContext == WRITE_CONTEXT_LAST_HEADER) {
-			synchronized (this) {
-				//onWrittenBodyの延長でresponseEnd->doneKeepAliveが呼ばれた可能性がある。
-				if(getChannelId()<0){
-					return;
-				}
-				// if(logger.isDebugEnabled())logger.debug("onWrittenPlain.orderCount:"+orderCount());
-				/*
-				if (isResponseEnd) {
-					if (doneKeepAlive()) {
-						return;// keepaliveした
-					}
-				}
-				*/
-			}
 		}
 		super.onWrittenPlain(userContext);
 	}
