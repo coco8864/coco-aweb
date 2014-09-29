@@ -228,8 +228,8 @@ isProxyKeepAlive:<input type="checkBox" name="isProxyKeepAlive" id="isProxyKeepA
 checked="checked"
 #end
 /><br/>
-maxKeepAliveRequests:<input type="text" name="maxKeepAliveRequests" id="maxKeepAliveRequests" size="4" value="$!esc.html($!{config.getString('maxKeepAliveRequests')})"/><br/>
-keepAliveTimeout:<input type="text" name="keepAliveTimeout" id="keepAliveTimeout" size="8" value="$!esc.html($!{config.getString('keepAliveTimeout')})"/>ms<br/>
+maxKeepAliveRequests:<input type="text" name="maxKeepAliveRequests" id="maxKeepAliveRequests" size="4" value="$!{config.getInt('maxKeepAliveRequests')}"/><br/>
+keepAliveTimeout:<input type="text" name="keepAliveTimeout" id="keepAliveTimeout" size="8" value="$!{config.getInt('keepAliveTimeout')}"/>ms<br/>
 contentEncoding:<select id="contentEncoding" size="1">
 <option value="non">non</option>
 <option value="gzip"
