@@ -119,6 +119,10 @@ public class SpdyHandler extends ServerBaseHandler {
 		case SpdyFrame.TYPE_DATA_FRAME:
 			ByteBuffer[] dataBuffer=frame.getDataBuffers();
 			long length=BuffersUtil.remaining(dataBuffer);
+			if(length==0){//FF‚Í‚±‚ñ‚È‚Ì‚ð‘—‚é‚Ý‚½‚¢
+				PoolManager.poolArrayInstance(dataBuffer);
+				return;
+			}
 			if(logger.isDebugEnabled())logger.debug("TYPE_DATA_FRAME length:"+length);
 			if(session!=null){
 				session.onReadPlain(dataBuffer,frame.isFin());
