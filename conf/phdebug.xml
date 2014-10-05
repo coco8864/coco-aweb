@@ -17,6 +17,7 @@
     <queuelet loaderName="main" className="naru.async.pool.PoolManager">
       <param name="recycleInterval" value="10000"/>
       <param name="useLocalPool" value="true"/>
+      <param name="localPoolInterval" value="1000"/>
       <param name="default.bufferSize" value="16384"/>
       <param name="default.initial" value="128"/>
       <param name="default.increment" value="128"/>
