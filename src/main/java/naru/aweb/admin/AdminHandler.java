@@ -22,6 +22,7 @@ import naru.aweb.config.AppcacheOption;
 import naru.aweb.config.Config;
 import naru.aweb.core.Main;
 import naru.aweb.handler.WebServerHandler;
+import naru.aweb.handler.ServerBaseHandler.SCOPE;
 import naru.aweb.handler.ws.WsProtocol;
 import naru.aweb.mapping.Mapping;
 import naru.aweb.mapping.MappingResult;
@@ -130,7 +131,7 @@ public class AdminHandler extends WebServerHandler{
 			responseEnd();
 			return;
 		}
-		setAttribute("Store", body);
+		setAttribute(SCOPE.REQUEST,"Store", body);
 		forwardHandler(Mapping.STORE_HANDLER);
 	}
 	

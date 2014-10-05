@@ -115,7 +115,7 @@ public class DispatchHandler extends ServerBaseHandler {
 
 	public void onAccepted(Object userContext) {
 		if(getConfig().getBoolean(Config.REFUSE_ACCEPT, false)){
-			if(logger.isDebugEnabled())logger.debug("accept refused");
+			if(logger.isDebugEnabled())logger.debug("accept refused.cid:"+getChannelId());
 			asyncClose(null);//ˆêŽž’âŽ~
 			return;
 		}
