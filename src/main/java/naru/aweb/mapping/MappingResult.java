@@ -368,7 +368,7 @@ public class MappingResult extends PoolBase {
 		locationServer.unref(true);
 		locationServer = null;
 		String destinationPath = mapping.getDestinationPath();
-		if (!locationPath.startsWith(destinationPath)) {
+		if (locationPath==null || !locationPath.startsWith(destinationPath)) {
 			return location;
 		}
 		StringBuilder sb = new StringBuilder();
