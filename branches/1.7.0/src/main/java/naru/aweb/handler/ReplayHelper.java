@@ -150,7 +150,7 @@ public class ReplayHelper {
 					long contentLength=recodeLog.getResponseLength();
 					handler.setContentLength(contentLength);
 				}
-				handler.setAttribute("Store", store);
+				handler.setAttribute(SCOPE.REQUEST,"Store", store);
 				handler.forwardHandler(Mapping.STORE_HANDLER);
 				PoolManager.poolBufferInstance(body);//TODO ‚¿‚á‚ñ‚ÆŽg‚¨‚¤
 				return true;
