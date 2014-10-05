@@ -206,9 +206,12 @@ public class WebClientConnection extends PoolBase {
 
 	@Override
 	public int hashCode() {
+		if(targetServer==null){
+			return 0;
+		}
 		int hashCode=targetServer.hashCode()+targetPort;
 		if(isHttps){
-			hashCode+=0xf0000000;
+			hashCode+=0x80000000;
 		}
 		return hashCode;
 	}

@@ -220,9 +220,9 @@ public class StoreHandler extends WebServerHandler implements BufferGetter {
 	 * 3)クエリにパラメタをしてしてリクエストされる場合　--> 上記以外
 	 */
 	public void onRequestBody() {
-		Store store=(Store)getAttribute("Store");
+		Store store=(Store)getAttribute(SCOPE.REQUEST,"Store");
 		if(store!=null){//fowardされてきた場合
-			setAttribute("Store",null);//削除しないとstoreのライフサイクルが狂う
+			setAttribute(SCOPE.REQUEST,"Store",null);//削除しないとstoreのライフサイクルが狂う
 			responseStoreByForward(store);
 			return;
 		}
