@@ -102,6 +102,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 		return fileLength;
 	}
 	
+	private static final byte[] FILE_NOT_EXIST="file not exists".getBytes();
 	/**
 	 * 該当するファイルがなかった、以下を探す
 	 * 1)phoffline.html
@@ -117,7 +118,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 			}
 		}
 		if(logger.isDebugEnabled())logger.debug("Not found." + path);
-		completeResponse("404", "file not exists");
+		completeResponse("404", FILE_NOT_EXIST);
 		return true;
 	}
 
@@ -247,7 +248,7 @@ public class FileSystemHandler extends WebServerHandler implements BufferGetter 
 			FileInfo fileInfo = asyncFile.getFileInfo();
 			if (!fileInfo.exists()) {
 				if(logger.isDebugEnabled())logger.debug("Not found." + file.getAbsolutePath());
-				completeResponse("404", "file not exists");
+				completeResponse("404", FILE_NOT_EXIST);
 				asyncFile.close();
 				return true;
 			}

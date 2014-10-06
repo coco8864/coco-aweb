@@ -134,6 +134,7 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 			return;
 		}
 		isWs=true;
+		getKeepAliveContext().setKeepAlive(false);
 		/* ログ出力タイプを取得 */
 		/* logoff時にonLogoutイベントが通知されるように設定 */
 		wsProtocol=WsProtocol.createWsProtocol(requestHeader,getRequestMapping());
@@ -198,11 +199,11 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 	 */
 	public void onReadPlain(ByteBuffer[] buffers, Object userContext) {
 		if(logger.isDebugEnabled())logger.debug("#read.cid:"+getChannelId());
-		if(!isWs){
+		if(isWs){
+			wsProtocol.onBuffer(buffers);
+		}else{
 			super.onReadPlain(buffers, userContext);
-			return;
 		}
-		wsProtocol.onBuffer(buffers);
 	}
 	
 	/**
@@ -238,8 +239,9 @@ public abstract class WebSocketHandler extends WebServerHandler implements Logou
 		if(logger.isDebugEnabled())logger.debug("#timeout.cid:" +getChannelId());
 		if(isWs){
 			closeWebSocket("500");
+		}else{
+			super.onTimeout(userContext);
 		}
-		super.onTimeout(userContext);
 	}
 
 	/**
