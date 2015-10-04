@@ -1,0 +1,38 @@
+# ようこそ Phantom Server Projectへ #
+> Phantom Serverは、http,websocket,SPDY等Web系のプロトコルを処理する汎用サーバです。トレースやアクセスログを採取することでWeb調査ツールとしても利用できます。詳細については、以下[Wiki](https://code.google.com/p/coco-aweb/wiki/WhatIsPhantomProxy?tm=6)サイトを参照ください。
+    * [新着情報](WhatsNew.md)
+    * [Phantom Serverとは](WhatIsPhantomProxy.md)
+    * [Getting Started](GettingStarted.md)
+      * [インストール](HowToInstall.md)
+      * [起動・停止](HowToStart.md)
+      * [Proxy設定](ProxySetting.md)
+      * [トレース採取](SampleTrace.md)
+    * [機能](Function.md)
+      * [realHost](RealHost.md)
+      * [mapping](Mapping.md)
+      * [認証](Authentication.md)
+      * [accessLog](AccessLog.md)
+      * [trace](Trace.md)
+      * [replay機能](Replay.md)
+      * [chat](Chat.md)
+      * [セキュア設定](SecureSetting.md)
+      * [ダウン監視](DownWatch.md)
+    * [カスタマイズ](Customize.md)
+    * [利用シーン](UerCase.md)
+      * [負荷テスト](Stress.md)
+      * [コンテンツ置換](ContentsReplace.md)
+      * [汎用サーバ](Servers.md)
+        * [webサーバ](Servers#webServer.md)
+        * [proxyサーバ](Servers#proxyServer.md)
+        * [reverse proxyサーバ](Servers#reverseProxyServer.md)
+        * [virtual host](Servers#virtualHost.md)
+    * [プログラムガイド](ProgrammingGuide.md)
+    * [ブラウザ](SupportBrawser.md)
+    * [dependency](Dependency.md)
+    * [構成](Structure.md)
+    * todo
+      * [view](ToDoView.md)
+      * [機能](ToDoFunction.md)
+> ご意見、ご要望がありましたら是非お聞かせください。[Wiki](https://code.google.com/p/coco-aweb/wiki/WhatIsPhantomProxy?tm=6)にコメントいただくか[coco8864](https://code.google.com/u/@UBBeQl1RBBBGXQN8EQ%3D%3D/)までメールでご連絡ください。
+> 不具合がありましたら、[Issues](https://code.google.com/p/coco-aweb/issues/list)より問題をレポートいただければ助かります。
+> ToDoリストにあるとおり、まだ実装したい機能があります。共同開発してみたい方大歓迎です。
